@@ -25,10 +25,10 @@ async function loadReal(){
  try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
-   round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowtype','class','category']),
-   club:pick(h,['club']),url:pick(h,['url','source','sourceurl','link']),tens:pick(h,['tens','10s']),xs:pick(h,['xs','x'])};
-  for(const row of rows.slice(1)){const g=k=>ix[k]>=0?(row[ix[k]]||'').trim():'';const sc=parseInt(g('score'));if(!g('name')||isNaN(sc))continue;
-   (REAL[g('name')]=REAL[g('name')]||[]).push({date:g('date'),event:g('event'),round:g('round')||'Unknown round',score:sc,division:g('division'),club:g('club'),url:g('url'),tens:g('tens'),xs:g('xs')})}
+   round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowclass','bowtype','class','category']),notes:pick(h,['notes']),
+   club:pick(h,['club']),url:pick(h,['url','resultsurl','source','sourceurl','link']),tens:pick(h,['tens','10s']),xs:pick(h,['xs','x'])};
+  for(const row of rows.slice(1)){const g=k=>ix[k]>=0?(row[ix[k]]||'').trim():'';const sc=parseInt(g('score'));if(!g('name')||isNaN(sc)||sc<=0)continue; /* skip not-entered/0 rows */
+   (REAL[g('name')]=REAL[g('name')]||[]).push({date:g('date'),event:g('event'),round:g('round')||'Unknown round',score:sc,division:g('division'),club:g('club'),url:g('url'),tens:g('tens'),xs:g('xs'),notes:g('notes')})}
   for(const k in REAL)REAL[k].sort((a,b)=>normDate(a.date)<normDate(b.date)?-1:1);
   csvState=Object.keys(REAL).length?'ok':'empty';
  }catch(e){csvState='missing'}}
@@ -183,8 +183,10 @@ function stats(){const d=done();if(!d.length){app.innerHTML='<div class="card">S
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
  $('#rs').onchange=e=>{window._r=e.target.value;stats()};
  $('#club').onchange=e=>{$('#clubout').innerHTML=e.target.checked?'<p class="small muted">Coming soon: club and division averages worked out from the public Archer\'s Diary results already on archerycalendars.com. Off by default for juniors.</p>':''}}
-function estRating(real){return`<div class="card"><h3>AA rating & classification <span class="est">estimated · placeholder</span></h3>
- <p class="small">The official Archery Australia ratings come from Archer's Diary's round tables. We haven't licensed or loaded those tables yet, so <b>no rating number is shown</b>. You need at least 3 official scores in the last 12 months. ${real.length>=3?`You have ${real.length} official results ✓`:`You have ${real.length} so far.`}</p>
+function estRating(real){const rr=real.map(r=>({r,m:(r.notes||'').match(/Rating\s*([\d.]+);?\s*([A-Za-z ]+)?/)})).filter(x=>x.m);
+ const off=rr.length?`<div class="list-item"><span class="real">official</span> Latest Archer's Diary rating: <b>${rr[rr.length-1].m[1]}</b>${rr[rr.length-1].m[2]?' · '+rr[rr.length-1].m[2].trim():''} <span class="small muted">(${rr[rr.length-1].r.round}, ${rr[rr.length-1].r.date})</span></div>`:'';
+ return`<div class="card"><h3>AA rating & classification <span class="est">estimated · placeholder</span></h3>${off}
+ <p class="small">The official Archery Australia ratings come from Archer's Diary's round tables. We haven't licensed or loaded those tables yet, so we don't calculate any rating or handicap ourselves. Any number above is copied straight from Archer's Diary. You need at least 3 official scores in the last 12 months. ${real.length>=3?`You have ${real.length} official results ✓`:`You have ${real.length} so far.`}</p>
  <div class="badges">${['White','Black','Blue','Red','Gold'].map(c=>`<div class="badge off"><i>🎽</i>${c}</div>`).join('')}</div><p class="small"><a href="https://www.archersdiary.com/RatingCalculator.aspx" target="_blank" rel="noopener">Check your official rating on Archer's Diary</a></p></div>`}
 
 function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(shareData())))));
