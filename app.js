@@ -126,21 +126,40 @@ function render(){
 function home(){const d=done(),last=d[d.length-1],real=findReal(S.profile);
  let h=`<div class="card dark"><span class="kicker">G'day ${S.profile.split(' ')[0]}</span><h1>Your progress zone</h1>
  <div class="stats"><div class="stat"><b>${d.length}</b>sessions</div><div class="stat"><b>${streak()}</b>wk streak</div><div class="stat"><b>${d.reduce((t,s)=>t+arrows(s).length,0)}</b>arrows</div></div>
- <p class="small muted" style="margin:10px 0 0">You're compared with <b>your own past self</b>, not with anyone else.</p></div>`;
+ <p class="small muted" style="margin:10px 0 0">You're compared with <b>your own past self</b>, not with anyone else.</p>${kidLine()}</div>`;
  const cb=comeback();if(cb)h+=cb;
  if(last){h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} ${last.sample?'<span class="sample">sample</span>':''}</span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}
  <button class="btn ghost" id="bank" style="margin-top:8px">⭐ Save to my evidence bank</button></div>`}
  const lo=offRounds()[0];if(lo){const ge=lo.ends.filter(e=>!e.flag);h+=`<div class="card"><span class="kicker">Wins of the day · ${lo.date} <span class="real">official</span></span><h2>${lo.round}</h2>${winsFor({id:'off',date:lo.date,round:lo.round,ends:ge.map(e=>e.arrows)}).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" onclick="nav('stats')" style="margin-top:8px">See full round analysis</button></div>`}
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}</div>`).join(''):csvNote()}</div>`;
- h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
+ h+=parentNote();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:last.date,text:winsFor(last).map(w=>w[1]).join(' '),total:total(last),round:last.round,sample:!!last.sample});save();$('#bank').textContent='Saved ✓'};bindCB()}
 
+
+function cite(c){return`<span class="small muted" style="display:block">George Ryles, ${c}</span>`}
+function tip(t,c){return`<div class="list-item">${t}${cite(c)}</div>`}
+const KID=[['Tell me about your best shot today.','TAW #74'],['Feel funny? Let it down, shake it out, start again. That\'s a pro move.','S1 44:15'],['Big scores just happen when you shoot one good arrow at a time.','S1 67:24'],['Hard days make you better. Look how far you\'ve come since last year.','S1 147:11']];
+function kidLine(){const k=KID[Math.floor(Date.now()/864e5)%KID.length];return`<p style="margin:10px 0 0">💬 ${k[0]}${cite(k[1]+', in simple words')}</p>`}
+function parentNote(){return`<div class="card"><span class="kicker">For parents & coaches</span>${tip('Don\'t rush in. Letting kids do hard things in a safe way is where confidence comes from.','S1 149:39')}${tip('Growth spurt? A slump can be draw length. Check it every month.','TAW #43')}</div>`}
+function drillsCard(){return`<div class="card"><span class="kicker">Coach George's drills</span><h3>Practice drills</h3>
+${tip('<b>Walk-back:</b> start close, then step back 2 at a time. Quick daily check: 5-7-10-14-18-20 before practice.','TAW #116')}
+${tip('<b>Blank bale first:</b> set your rhythm before you score. Practice ends are for tempo, not Xs.','S1 97:23, TAW #83')}
+${tip('<b>Bean bag on your head:</b> draw, release and follow through without dropping it.','TAW #71')}
+${tip('<b>Single-arrow games:</b> one arrow counts. Practising with nerves makes them feel normal.','PDF v6 p.3')}
+${tip('<b>Change faces often</b> in practice.','TAW #101')}</div>`}
+function ryTips(sums,good,all,dists,fe,le){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums);
+ if(le.length&&av(fe)-av(le)>=1)T.push(['Fading late',tip('Tired groups are form, not gear. "Leave the keys alone."','S2 00:47')+tip('Sit relaxed between ends and let your shoulders drop.','S1 108:41')+tip('Self-talk: "I\'m going to go 100% top speed all the way through to the end"','seminar, self-talk section')]);
+ if(sums.length>2&&sd(sums)>Math.max(2,m*0.08))T.push(['Big spread between ends',tip('Bad end? Throw it away and start again at arrow number one.','S1 142:58, TAW #77')+tip('One cue phrase: "One arrow. This one."','S1 73:43')]);
+ const dv=dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return{n:parseFloat(d)||0,v:a.reduce((t,x)=>t+val(x),0)/(a.length||1)}}).sort((a,b)=>b.n-a.n);
+ if(dv.length>1&&dv[0].v<av(dv.slice(1).map(x=>x.v))-0.3)T.push(['Weaker at long distance',tip('Train your form, don\'t change your gear.','S2 00:47')+tip('In wind: "keep your eyes in the red until the arrow hits the target"','TAW #23')]);
+ if(all.includes('M')||sums.some(x=>x<m*0.75))T.push(['A miss or a blown end',tip('"You don\'t shoot [a big score]. You receive it." So "your job is to just shoot an arrow".','S1 67:24')+tip('Feels wrong at full draw? Let down and reset.','S1 44:15')]);
+ return`<h3 style="margin-top:12px">Coach tips for this round</h3>${T.length?T.map(t=>`<p style="margin:8px 0 2px"><b>${t[0]}</b></p>${t[1]}`).join(''):tip('Steady round! Keep doing what works: one good arrow at a time.','S1 67:24, in simple words')}`}
 function comeback(){const d=done();if(d.length<4)return'';const last=d[d.length-1],prev=d.slice(0,-1).filter(s=>s.round==last.round).slice(-5);if(prev.length<3)return'';
  const avg=prev.reduce((a,s)=>a+total(s),0)/prev.length;if(total(last)>=avg*0.92||S.comebackFor==last.id)return'';
  const ev=S.best.length?S.best[S.best.length-1]:{text:`your best day was ${Math.max(...prev.map(total))} on this round`};
  return`<div class="card" style="border:3px solid var(--gold)"><span class="kicker">Comeback plan</span><h2>Tough day? Totally normal.</h2>
  <p>Last session was below your usual. Even the best archers have days like that. Let's rebuild with some easy wins:</p>
- <ol><li><b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the gold (X, 10 or 9).</li><li><b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.</li><li><b>Remember:</b> ${ev.text}</li></ol>
+ <ol><li><b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the gold (X, 10 or 9). Smooth shots matter more than Xs.${cite('S2 08:50, TAW #116')}</li><li><b>Walk back</b> a couple of metres at a time. Only move once it feels easy.${cite('TAW #116, #138')}</li><li><b>Between ends</b>, replay your best shot in your head.${cite('S1 108:41, TAW #96')}</li><li><b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.</li><li><b>Remember:</b> ${ev.text}</li></ol><p>"You can't have confidence without success." So set up easy wins first.${cite('S1 147:11')}</p><p class="small">Compare across months, not one day.${cite('S1 147:11')}</p>
  <button class="btn" id="cbdone">I did my comeback session ✓</button></div>`}
 function bindCB(){const b=$('#cbdone');if(b)b.onclick=()=>{S.comebackDone=true;S.comebackFor=done().slice(-1)[0].id;save();b.textContent='Awesome! Comeback badge earned 💪'}}
 
@@ -170,7 +189,7 @@ function plot(){const p=S.plots,g=groupStats(p);let hint='Tap at least 3 arrows 
  $('#tface').onclick=ev=>{const s=$('#tface'),pt=s.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(s.getScreenCTM().inverse());S.plots.push({x:+q.x.toFixed(3),y:+q.y.toFixed(3)});save();plot()};
  $('#pu').onclick=()=>{S.plots.pop();save();plot()};$('#pc').onclick=()=>{S.plots=[];save();plot()}}
 
-function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
+function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drillsCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
  const byRound={};d.forEach(s=>(byRound[s.round]=byRound[s.round]||[]).push(s));const rounds=Object.keys(byRound);
  const sel=window._r&&byRound[window._r]?window._r:rounds.sort((a,b)=>byRound[b].length-byRound[a].length)[0],ss=byRound[sel];
  const tot=ss.map(total),roll=tot.map((_,i)=>{const w=tot.slice(Math.max(0,i-2),i+1);return w.reduce((a,b)=>a+b)/w.length});
@@ -178,7 +197,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  const nE=Math.max(...ss.map(s=>s.ends.length)),endAvg=[...Array(nE)].map((_,i)=>{const v=ss.map(s=>s.ends[i]?endSum(s.ends[i]):null).filter(x=>x!=null);return v.reduce((a,b)=>a+b,0)/v.length});
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
- app.innerHTML=officialCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
+ app.innerHTML=officialCard()+drillsCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
  <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Last session, end by end</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
@@ -202,7 +221,7 @@ function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.m
  <h3>Arrow values</h3><div class="stats"><div class="stat"><b>${pc(a=>a=='X')}%</b>X</div><div class="stat"><b>${pc(a=>a=='10')}%</b>10</div><div class="stat"><b>${pc(a=>a=='9')}%</b>9</div></div>
  <h3 style="margin-top:12px">Per distance (avg per arrow)</h3>${dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return`<div class="list-item row"><span>${d}</span><b>${(a.reduce((t,x)=>t+val(x),0)/a.length).toFixed(2)}</b></div>`}).join('')}
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px"><div class="stat"><b>${av(fe).toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${av(le).toFixed(1)}</b>last ${third} ends</div><div class="stat"><b>${sd(sums).toFixed(1)}</b>end spread</div></div>
- <h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
+ ${ryTips(sums,good,all,dists,fe,le)}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
 function estRating(real){const rr=real.map(r=>({r,m:(r.notes||'').match(/Rating\s*([\d.]+);?\s*([A-Za-z ]+)?/)})).filter(x=>x.m);
  const off=rr.length?`<div class="list-item"><span class="real">official</span> Latest Archer's Diary rating: <b>${rr[rr.length-1].m[1]}</b>${rr[rr.length-1].m[2]?' · '+rr[rr.length-1].m[2].trim():''} <span class="small muted">(${rr[rr.length-1].r.round}, ${rr[rr.length-1].r.date})</span></div>`:'';
  return`<div class="card"><h3>AA rating & classification <span class="est">estimated · placeholder</span></h3>${off}
