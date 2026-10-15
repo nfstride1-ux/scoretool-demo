@@ -42,7 +42,7 @@ function sampleSessions(){const R=rng(7),out=[];const today=new Date();
  for(let s=0;s<10;s++){const d=new Date(today-(30-s*3)*864e5);const ends=[];const skill=7.2+s*0.08;
   for(let e=0;e<10;e++){const end=[];for(let a=0;a<3;a++){let v=Math.round(skill+(R()-0.5)*4-(e>7?0.6:0));v=Math.max(0,Math.min(10,v));end.push(v==10&&R()<.35?'X':v==0?'M':String(v))}ends.push(end)}
   out.push({id:'sample'+s,sample:true,date:d.toISOString().slice(0,10),round:'Practice 10 ends × 3',ends,note:''})}
- out[8].ends=out[8].ends.map(e=>e.map(v=>v=='X'||v=='10'?'7':v=='9'?'6':v)); // one rough day so the Comeback Plan shows
+ out[9].ends=out[9].ends.map(e=>e.map(v=>v=='X'||v=='10'?'7':v=='9'?'6':v)); // one rough day so the Comeback Plan shows
  return out}
 
 /* ---------- scoring helpers ---------- */
@@ -54,13 +54,13 @@ const avgArrow=s=>{const a=arrows(s);return a.length?total(s)/a.length:0};
 const sd=xs=>{if(xs.length<2)return 0;const m=xs.reduce((a,b)=>a+b)/xs.length;return Math.sqrt(xs.reduce((t,x)=>t+(x-m)**2,0)/(xs.length-1))};
 const col=a=>{const v=val(a);return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
 const allSessions=()=>[...S.sessions].sort((a,b)=>a.date<b.date?-1:1);
-const done=()=>allSessions().filter(s=>s.ends.length&&s.ends.every(e=>e.length));
+const done=()=>allSessions().filter(s=>{const R=ROUNDS[s.round];return R&&s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape)});
 
 /* ---------- PBs, streaks, badges, wins ---------- */
 function pbs(){const m={};for(const s of done()){const t=total(s);if(!m[s.round]||t>m[s.round].score)m[s.round]={score:t,date:s.date,sample:s.sample}}
  for(const r of findReal(S.profile||'')){if(!m['🏆 '+r.round]||r.score>m['🏆 '+r.round].score)m['🏆 '+r.round]={score:r.score,date:r.date,real:true}}return m}
-function streak(){const days=[...new Set(allSessions().map(s=>s.date))].sort().reverse();if(!days.length)return 0;
- let n=1;for(let i=1;i<days.length;i++){if((new Date(days[i-1])-new Date(days[i]))/864e5<=7)n++;else break}return n} // weeks-with-practice style streak
+function streak(){const wk=d=>Math.floor((new Date(d)-new Date('2024-01-01'))/6048e5);const w=[...new Set(allSessions().map(s=>wk(s.date)))].sort((a,b)=>b-a);if(!w.length)return 0;
+ let n=1;for(let i=1;i<w.length;i++){if(w[i-1]-w[i]==1)n++;else break}return n} // weeks-with-practice style streak
 function winsFor(s){const W=[],prev=done().filter(x=>x.round==s.round&&x.id!=s.id&&x.date<=s.date);const t=total(s);
  const ends=s.ends.map(endSum),best=Math.max(...ends),bi=ends.indexOf(best);
  W.push(['⭐',`Your best end was end ${bi+1}: ${best} points (${s.ends[bi].join(' ')}).`]);
@@ -208,3 +208,4 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
 
 loadReal().then(()=>{nav(view)});
+addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav('home')});
