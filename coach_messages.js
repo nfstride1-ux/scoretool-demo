@@ -1,22 +1,20 @@
-/* Coach card wording, keyed by how the archer's latest real shoot went.
-   PLACEHOLDER wording, our own words. Ideas informed by coaching notes; do not copy any coach's phrases.
-   Citations are kept for reference only and are not shown.
-   Placeholders: {score} {round} {pb} {usual} {diff} {date}
-   Each line: [text, citation or ''] . No direct quotes. */
+/* Coach card wording from Archery Coach (final, original wording, no quotes).
+   One message + 1-2 nudges are picked per shoot, rotating so the same one doesn't repeat back to back. */
 window.COACH_MSG={
- pb:{kicker:'New personal best 🏆',title:'You did it! {score} on {round}',intro:'That beats your old best of {pb}. You put together a lot of good shots today.',introCite:'S1 67:24, in simple words',
-  lines:[['Save today in your evidence bank, so you can read it before your next big shoot.',''],['Which shot felt the best? Remember what made it feel that way.','TAW #74, in simple words'],['Keep your setup the same. It\'s working!','S2 00:47, in simple words']]},
- great:{kicker:'Great shoot 🌟',title:'{score} on {round}. Right up near your best!',intro:'Only {diff} points off your PB of {pb}. That\'s top form.',introCite:'',
-  lines:[['Which shot felt the best? Tell someone about it.','TAW #74, in simple words'],['Good scores come from lots of good shots, one after another.','S1 67:24, in simple words'],['Keep the same routine next time.','S1 73:43, in simple words']]},
- solid:{kicker:'Solid shoot 👍',title:'{score} on {round}',intro:'Right around your usual of {usual}. Steady shooting builds big scores.',introCite:'',
-  lines:[['Pick one thing you control next time (setup, tempo or follow-through) and give yourself a 👍 each end you do it.',''],['Compare across months, not one day.','S1 147:11, in simple words']]},
- tough:{kicker:'Comeback plan',title:'Tough day? Totally normal.',intro:'{score} on {round} was {diff} below your usual of {usual}. Even the best archers have days like that. Let\'s rebuild with some easy wins:',introCite:'',
-  steps:[['<b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the gold (X, 10 or 9). Smooth shots matter more than Xs.','S2 08:50, TAW #116'],
-   ['<b>Walk back</b> a couple of metres at a time. Only move once it feels easy.','TAW #116, #138'],
-   ['<b>Between ends</b>, replay your best shot in your head.','S1 108:41, TAW #96'],
-   ['<b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.','']],
-  lines:[['Confidence grows from success, so set up some easy wins first.','S1 147:11'],['Tricky days still count. Look at months, not one day.','S1 147:11, in simple words']]},
- incomplete:{kicker:'Round not finished',title:'{round} on {date}',intro:'This round wasn\'t completed, so it isn\'t counted in your PBs or charts. That\'s OK.',introCite:'',
-  lines:[['Something feels off? Come down, relax, and draw again.','S1 44:15, in simple words'],['If you stopped because of a sore body, tell your coach or parent.','']]},
- first:{kicker:'First one logged',title:'{score} on {round}',intro:'This is your first score on this round, so it\'s your PB to beat next time!',introCite:'',lines:[['Which shot felt the best? Tell someone about it.','TAW #74, in simple words']]}
+ great:{kicker:'Great shoot 🌟',messages:["Right up there with your best. That's consistency in action!","Which shot was your best today? Hang on to that feeling.","Days like this are worth studying. Focus on what went right, and you'll get more of it."],
+  nudges:["Write down the one feeling that made your best shot work.","Keep the same gear and the same plan. Good days don't need fixing.","Keep your rhythm steady and shoot one arrow at a time."]},
+ solid:{kicker:'Solid shoot 👍',messages:["Solid day! Steady days are what big scores are built on.","You did your job. You shot good arrows, one at a time.","Lots of normal days stacked up make the great ones."],
+  nudges:["Pick just ONE thing for next time: setup, rhythm or follow-through.","Warm up on the blank bale first to find your rhythm.","In practice, if a shot feels wrong, let it down and start again."]},
+ tough:{kicker:'Comeback plan',messages:["Every archer has tough days, even the best in the world.","Confidence grows from small wins. Next time, start with some easy ones.","Look at how far you've come this year, not just today."],
+  nudges:["Move in close with a big target so it's almost too easy, then step back bit by bit.","Think about your best shot from today, not the worst one.","Talk to yourself like a good friend would."]},
+ pb:{kicker:'New personal best 🏆',messages:["NEW PB! You built that score one good arrow at a time.","You didn't chase it. You let it happen, shot by shot.","Shooting your best when it counts means your training is working!"],
+  nudges:["Write down how it felt, and remind yourself before your next shoot.","Keep your gear exactly the same.","Next goal: make this score your new normal."]},
+ incomplete:{kicker:'Round not finished',messages:["Some arrows beat no arrows. Logged!","Every good shot still helps build your pattern.","Next time is a fresh start from arrow one."],
+  nudges:["If something felt off, let down, shake it out and reset.","If you were tired, get a good sleep before the next session.","Try a short blank-bale warm-up before your next round."]}
 };
+window.VOL_BADGES={
+ daily:[[100,'🏹','First Hundred','A third of the way there, so keep every shot in good shape.'],[200,'🏹','Double Ton','Keep it smooth and steady.'],[300,'🔥','Full Quiver Day','You hit 300 today!']],
+ streak:[[3,'📅','Hat Trick','Three in a row, and a habit is forming!'],[7,'📅','Full Week','Seven days straight. Huge effort!'],[14,'🗓️','Fortnight Fire','Two weeks! Your shot is getting automatic.'],[30,'👑','Iron Archer','A whole month of 300s. Legend!']],
+ weekly:[[1000,'📦','Thousand Club','1,000 arrows this week!'],[2100,'🚀','Perfect Week','300 a day, every single day!']]
+};
+window.VOL_NUDGES=["Lots of arrows only help if they're good ones. Let down any shot that feels wrong.","When you're getting tired, keep good shape or switch to the blank bale.","If something hurts, rest it and tell your coach."];

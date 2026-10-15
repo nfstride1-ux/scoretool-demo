@@ -133,24 +133,27 @@ function latestShoot(){const L=realShoots();if(!L.length)return null;const x=L[L
  let cat=x.incomplete?'incomplete':!prior.length?'first':x.score>pb?'pb':x.score>=pb*0.98?'great':x.score<usual*0.95?'tough':'solid';
  const diff=cat=='pb'?x.score-pb:cat=='great'?pb-x.score:Math.abs(Math.round((usual||x.score)-x.score));return{...x,cat,pb,usual:usual&&Math.round(usual),diff}}
 function fill(t,v){return t.replace(/\{(\w+)\}/g,(_,k)=>v[k]??'')}
-function coachCard(L){const M=(window.COACH_MSG||{})[L.cat];if(!M)return'';const f=t=>fill(t,L),c=x=>x?cite(x):'';
+function rot(key,list,n=1){S.rot=S.rot||{};const r=S.rot[key]||{shoot:null,i:-1};const sk=S._shootKey;if(r.shoot!==sk){r.i=(r.i+n)%list.length;r.shoot=sk;S.rot[key]=r;save()}return[...Array(n)].map((_,k)=>list[(r.i+k)%list.length])}
+function coachCard(L){const cat=L.cat=='first'?'solid':L.cat,M=(window.COACH_MSG||{})[cat];if(!M)return'';S._shootKey=L.date+'|'+L.round+'|'+L.score;
+ const msg=rot('m_'+cat,M.messages)[0],nud=rot('n_'+cat,M.nudges,2);
+ const fact=L.cat=='pb'?`${L.score} on ${L.round}, up from ${L.pb}.`:L.cat=='great'?`${L.score} on ${L.round}, just ${L.diff} off your PB of ${L.pb}.`:L.cat=='tough'?`${L.score} on ${L.round}, ${L.diff} below your usual of ${L.usual}.`:L.cat=='incomplete'?`${L.round}: round not finished, so it isn't counted in PBs or charts.`:L.cat=='first'?`${L.score} on ${L.round}. Your first score on this round, so it's the PB to beat.`:`${L.score} on ${L.round}, around your usual of ${L.usual}.`;
  const border=L.cat=='tough'?'border:3px solid var(--gold)':(L.cat=='pb'||L.cat=='great')?'border:3px solid #16a34a':'';
- return`<div class="card" style="${border}"><span class="kicker">${f(M.kicker)} · ${L.date} <span class="real">${L.kind}</span></span><h2>${f(M.title)}</h2><p>${f(M.intro)}${c(M.introCite)}</p>
- ${M.steps?`<ol>${M.steps.map(x=>`<li>${f(x[0])}${c(x[1])}</li>`).join('')}</ol>`:''}${(M.lines||[]).map(x=>`<p class="small">${f(x[0])}${c(x[1])}</p>`).join('')}
+ return`<div class="card" style="${border}"><span class="kicker">${M.kicker} · ${L.date} <span class="real">${L.kind}</span></span><h2>${msg}</h2><p class="small muted">${fact}</p>
+ <h3>Next time</h3><ul>${nud.map(x=>`<li>${x}</li>`).join('')}</ul>
  ${L.cat=='tough'?`<button class="btn" id="cbdone">${S.comebackFor==L.date+L.round?'Awesome! Comeback badge earned 💪':'I did my comeback session ✓'}</button>`:''}${L.cat=='pb'||L.cat=='great'?'<div style="font-size:28px;text-align:center">🎉🏹🎯</div>':''}</div>`}
 function latestWins(L){if(L.kind=='practice')return{s:L.s,label:L.s.round};const o=offRounds().find(x=>normDate(x.date)==L.date);
  if(o){const ge=o.ends.filter(e=>!e.flag);return{s:{id:'off',date:L.date,round:o.round,ends:ge.map(e=>e.arrows),dists:ge.map(e=>e.dist)},label:o.round}}return null}
 /* ---------- arrow volume (300-a-day idea from George Ryles notes; not shown) ---------- */
 function dayArrows(){const m={};const add=(d,n)=>{if(n>0)m[d]=(m[d]||0)+n};S.sessions.filter(s=>!s.sample).forEach(s=>add(s.date,arrows(s).length));
  offRounds().forEach(o=>add(normDate(o.date),o.ends.reduce((t,e)=>t+e.arrows.length,0)));Object.entries(S.vol||{}).forEach(([d,n])=>add(d,n));return m}
-function volBadges(){const m=dayArrows(),days=Object.keys(m).sort(),mx=Math.max(0,...Object.values(m));
- let best=0,run=0,prev=null;days.forEach(d=>{if(m[d]>=300){run=prev&&(new Date(d)-new Date(prev))/864e5==1&&m[prev]>=300?run+1:1;best=Math.max(best,run)}prev=d});
- let wk=0;days.forEach(d=>{let t=0;for(let i=0;i<7;i++){const k=ld(new Date(d).getTime()-i*864e5);t+=m[k]||0}wk=Math.max(wk,t)});
- return[['🏹','100 in a day',mx>=100],['🏹','200 in a day',mx>=200],['🔥','300 in a day',mx>=300],['📅','3 days of 300',best>=3],['📅','7 days of 300',best>=7],['🗓️','14 days of 300',best>=14],['👑','30 days of 300',best>=30],['📦','1,000 in a week',wk>=1000],['🚀','2,100 in a week',wk>=2100]]}
-function volCard(){const n=dayArrows()[today()]||0,p=Math.min(1,n/300),C=2*Math.PI*42;
- return`<div class="card"><span class="kicker">Today's arrows · goal 300</span><div class="row" style="gap:12px;align-items:center"><svg viewBox="0 0 100 100" width="110" height="110" role="img" aria-label="${n} of 300 arrows today"><circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold,#e0a800)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*p} ${C}" transform="rotate(-90 50 50)"/><text x="50" y="50" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">${n}</text><text x="50" y="66" text-anchor="middle" font-size="10" fill="#475569">of 300</text></svg>
- <div style="flex:1;min-width:0"><p class="small" style="margin:0 0 6px">Shot some without scoring? Add them here.</p><div style="display:flex;flex-wrap:wrap;gap:6px">${[6,12,36,72].map(k=>`<button class="btn ghost" data-vol="${k}" style="padding:6px 10px">+${k}</button>`).join('')}<button class="btn ghost" data-vol="-6" style="padding:6px 10px" aria-label="remove 6">−6</button></div></div></div><p class="small muted" style="margin:6px 0 0">Lots of arrows build a strong, repeatable shot.</p></div>`}
-function shelf(){const b=[...volBadges(),...badges()];return`<div class="card"><span class="kicker">Badges shelf</span><h3>${b.filter(x=>x[2]).length} of ${b.length} earned</h3><div class="badges">${b.map(x=>`<div class="badge ${x[2]?'':'off'}"><i>${x[0]}</i>${x[1]}</div>`).join('')}</div></div>`}
+function volBadges(){const m=dayArrows(),days=Object.keys(m).sort(),mx=Math.max(0,...Object.values(m)),B=window.VOL_BADGES;
+ let best=0,run=0,prev=null;days.forEach(d=>{if(m[d]>=300){run=prev&&Math.round((new Date(d)-new Date(prev))/864e5)==1&&m[prev]>=300?run+1:1;best=Math.max(best,run)}prev=d});
+ let wk=0;days.forEach(d=>{let t=0;for(let i=0;i<7;i++){t+=m[ld(new Date(d).getTime()-i*864e5)]||0}wk=Math.max(wk,t)});
+ return[...B.daily.map(b=>[b[1],b[2],mx>=b[0],b[3]]),...B.streak.map(b=>[b[1],b[2],best>=b[0],b[3]]),...B.weekly.map(b=>[b[1],b[2],wk>=b[0],b[3]])]}
+function volCard(){const g=S.goal||300,n=dayArrows()[today()]||0,p=Math.min(1,n/g),C=2*Math.PI*42;S._shootKey=S._shootKey||today();const nd=rot('vol',window.VOL_NUDGES)[0];
+ return`<div class="card"><span class="kicker">Today's arrows</span><div class="row" style="gap:12px;align-items:center"><svg viewBox="0 0 100 100" width="110" height="110" role="img" aria-label="${n} of ${g} arrows today"><circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold,#e0a800)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*p} ${C}" transform="rotate(-90 50 50)"/><text x="50" y="50" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">${n}</text><text x="50" y="66" text-anchor="middle" font-size="10" fill="#475569">of ${g}</text></svg>
+ <div style="flex:1;min-width:0"><label class="small" for="goal" style="display:block">Your goal: <input id="goal" type="number" min="10" max="1000" step="10" value="${g}" style="width:70px;display:inline-block;padding:4px"> arrows a day</label><p class="small" style="margin:6px 0">Shot some without scoring? Add them:</p><div style="display:flex;flex-wrap:wrap;gap:6px">${[6,12,36,72].map(k=>`<button class="btn ghost" data-vol="${k}" style="padding:6px 10px">+${k}</button>`).join('')}<button class="btn ghost" data-vol="-6" style="padding:6px 10px" aria-label="remove 6">−6</button></div></div></div><p class="small muted" style="margin:8px 0 0">💡 ${nd}</p></div>`}
+function shelf(){const b=[...volBadges(),...badges()];return`<div class="card"><span class="kicker">Badges shelf</span><h3>${b.filter(x=>x[2]).length} of ${b.length} earned</h3><div class="badges">${b.map(x=>`<div class="badge ${x[2]?'':'off'}" title="${(x[3]||'').replace(/"/g,'')}"><i>${x[0]}</i>${x[1]}${x[3]?`<span class="small muted" style="display:block;font-weight:400;font-size:11px">${x[3]}</span>`:''}</div>`).join('')}</div></div>`}
 function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  let h=`<div class="card dark"><span class="kicker">G'day ${S.profile.split(' ')[0]}</span><h1>Your progress zone</h1>
  <div class="stats"><div class="stat"><b>${d.length}</b>sessions</div><div class="stat"><b>${streak()}</b>wk streak</div><div class="stat"><b>${d.reduce((t,s)=>t+arrows(s).length,0)}</b>arrows</div></div>
@@ -166,7 +169,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  $('#go').onclick=()=>nav('score');
  if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:L.date,text:winsFor(W.s).map(w=>w[1]).join(' '),total:L.score,round:L.round});save();$('#bank').textContent='Saved ✓'};
  if($('#cbdone'))$('#cbdone').onclick=()=>{S.comebackDone=true;S.comebackFor=L.date+L.round;save();$('#cbdone').textContent='Awesome! Comeback badge earned 💪'};
- app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
+ if($('#goal'))$('#goal').onchange=e=>{const v=Math.max(10,Math.min(1000,+e.target.value||300));S.goal=v;save();home()};app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
 
 
 /* Source refs (George Ryles notes) are kept in code only, never shown. Wording is our own. */
