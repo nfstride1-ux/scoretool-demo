@@ -178,7 +178,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} <span class="sample">sample</span></span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
  h+=volCard()+shelf();
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
- h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
+ h+=(window.rankCard?rankCard(S.profile):"");h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
  if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:L.date,text:winsFor(W.s).map(w=>w[1]).join(' '),total:L.score,round:L.round});save();$('#bank').textContent='Saved ✓'};
 
