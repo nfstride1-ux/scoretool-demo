@@ -2,10 +2,10 @@
    No free text between members: the only interaction is one preset cheer per item. */
 const CHEERS=['👏','🔥','💪','🎯'],AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
-function seedAdults(){const Q=S.squad;if(Q.adults)return;Q.adults=[{id:'a-nath',name:'Nathaniel Stride',role:'Admin',child:'m-logan'},{id:'a-c1',name:'Jordan Hale',role:'Coach',sample:true},{id:'a-p1',name:'Priya Rivers',role:'Parent',child:'m-s1',sample:true},{id:'a-p2',name:'Ben Chen',role:'Parent',child:'m-s2',sample:true}];save()}
+function seedAdults(){const Q=S.squad;if(Q.adultsV==2)return;Q.adultsV=2;Q.adults=[{id:'a-nath',name:'Nathaniel Stride',role:'Admin',tag:'Coach'},{id:'a-p0',name:'Logan Parent',display:'Parent of Logan W.',role:'Parent',child:'m-logan',sample:true},{id:'a-c1',name:'Jordan Hale',role:'Coach',sample:true},{id:'a-p1',name:'Priya Rivers',role:'Parent',child:'m-s1',sample:true},{id:'a-p2',name:'Ben Chen',role:'Parent',child:'m-s2',sample:true}];save()}
 function seedSquad(){if(S.squad)return seedAdults();const day=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');
  S.squad={name:'Gosnells Juniors (SAMPLE)',code:'GJX-4827',admin:'Nathaniel Stride',rawRank:false,cheers:{},
-  members:[{id:'m-logan',name:'Logan Wolfe',avatar:'🦅',u18:true,parent:'Nathaniel S. (linked)',status:'active'},
+  members:[{id:'m-logan',name:'Logan Wolfe',avatar:'🦅',u18:true,parent:'linked (SAMPLE)',status:'active'},
    {id:'m-s1',name:'Sam Rivers',avatar:'🐨',u18:true,parent:'linked',status:'active',sample:true,wk:640,streak:2,badges:7,impr:4.1,last:day(0),goalToday:true,raw:[[day(1),'Australian Indoor 18m',271,'official']]},
    {id:'m-s2',name:'Mia Chen',avatar:'🦊',u18:true,parent:'linked',status:'active',sample:true,wk:410,streak:0,badges:5,impr:6.8,last:day(2),raw:[[day(2),'Practice 10 ends × 3',248,'keypad']]},
    {id:'m-s3',name:'Ollie Park',avatar:'🐢',u18:true,parent:'linked',status:'active',sample:true,wk:90,streak:0,badges:3,impr:-1.2,last:day(6),raw:[[day(6),'Short Canberra',702,'plot']]},
@@ -19,8 +19,10 @@ function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filte
  if(m.name==S.profile)wk=Object.entries(dayArrows()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
  const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);
  const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
- const last=real[real.length-1];const vb=m.name==S.profile?volBadges().filter(x=>x[2]).length+badges().filter(x=>x[2]).length:3;
- return{...m,wk,streak:0,badges:vb,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
+ const last=real[real.length-1];const dm={};(OFF[m.name]||[]).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
+ if(m.name==S.profile)Object.assign(dm,dayArrows());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
+ const vb=volBadges(dm).filter(x=>x[2]).length+(m.name==S.profile?badges().filter(x=>x[2]).length:0);
+ return{...m,wk,streak:st,badges:vb,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
 const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
 function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name);
  if(m.raw&&m.raw[0]){const r=m.raw[0];F.push({id:m.id+'s'+r[0],date:r[0],who:m,text:`${n} logged ${r[1]}`,ver:r[3]})}
@@ -43,7 +45,7 @@ function squad(){seedSquad();const Q=S.squad;
  <div class="card"><span class="kicker">Activity</span>${feed(act).map(f=>{const c=Q.cheers[f.id]||{};return`<div class="list-item"><div><span style="font-size:20px">${f.who.avatar}</span> ${esc(f.text)} ${f.ver?VER[f.ver]:''} <span class="small muted">${f.date}</span></div>
   <div style="display:flex;gap:6px;margin-top:4px" role="group" aria-label="Cheer">${CHEERS.map(e=>`<button class="btn ${c.mine==e?'':'ghost'}" data-c="${f.id}" data-e="${e}" aria-pressed="${c.mine==e}" style="padding:4px 10px">${e} ${(c[e]||0)+(f.who.sample?(e=='👏'?2:e=='🔥'?1:0):0)||''}</button>`).join('')}</div></div>`}).join('')}<p class="small muted">One cheer per item. No messages or comments.</p></div>`;
  const AD=Q.adults||[],kid=id=>{const m=Q.members.find(x=>x.id==id);return m?shortName(m.name):'?'};
- h+=`<div class="card"><span class="kicker">Coaches & parents</span><p class="small muted" style="margin:2px 0 6px">They can see the feed, leaderboards and badges, and send the same cheers.</p>${AD.map(a=>`<div class="list-item row"><span><b>${shortName(a.name)}</b> ${ROLE_TAG(a.role)}${a.child?` <span class="small muted">parent of ${kid(a.child)}</span>`:''}${a.sample?' <span class="sample">sample</span>':''}</span>${isAdmin()&&a.role!='Admin'?`<button class="btn ghost" data-ra="${a.id}" style="padding:4px 10px">Remove</button>`:''}</div>`).join('')}
+ h+=`<div class="card"><span class="kicker">Coaches & parents</span><p class="small muted" style="margin:2px 0 6px">They can see the feed, leaderboards and badges, and send the same cheers.</p>${AD.map(a=>`<div class="list-item row"><span><b>${a.display||shortName(a.name)}</b> ${ROLE_TAG(a.role)}${a.tag?' '+ROLE_TAG(a.tag):''}${a.child&&!a.display?` <span class="small muted">parent of ${kid(a.child)}</span>`:''}${a.sample?' <span class="sample">sample</span>':''}</span>${isAdmin()&&a.role!='Admin'?`<button class="btn ghost" data-ra="${a.id}" style="padding:4px 10px">Remove</button>`:''}</div>`).join('')}
  ${isAdmin()?`<details style="margin-top:8px"><summary class="small"><b>Add a coach or parent</b></summary><label for="an">First and last name</label><input id="an" autocomplete="off"><label for="ar">Role</label><select id="ar"><option>Coach</option><option>Parent</option></select><label for="ac">Parent of (parents only)</label><select id="ac"><option value="">–</option>${act.map(m=>`<option value="${m.id}">${shortName(m.name)}</option>`).join('')}</select><button class="btn" id="aadd" style="margin-top:6px">Add</button><p class="small muted">They get an invite to an adult account. Parents are linked to their own child only.</p></details>`:''}</div>`;
  if(isAdmin()){const quiet=act.filter(m=>!m.last||(new Date(today())-new Date(m.last))/864e5>=5);
   h+=`<div class="card" style="border:2px dashed #94a3b8"><span class="kicker">Admin only</span><h3>Squad settings</h3><p>Invite code: <b>${Q.code}</b> <span class="small muted">(private; squads can't be searched)</span></p>

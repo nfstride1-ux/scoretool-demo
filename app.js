@@ -159,7 +159,7 @@ function latestWins(L){if(L.kind=='practice')return{s:L.s,label:L.s.round};const
 /* ---------- arrow volume (300-a-day idea from George Ryles notes; not shown) ---------- */
 function dayArrows(){const m={};const add=(d,n)=>{if(n>0)m[d]=(m[d]||0)+n};S.sessions.filter(s=>!s.sample).forEach(s=>add(s.date,arrows(s).length));
  offRounds().forEach(o=>add(normDate(o.date),o.ends.reduce((t,e)=>t+e.arrows.length,0)));Object.entries(S.vol||{}).forEach(([d,n])=>add(d,n));return m}
-function volBadges(){const m=dayArrows(),days=Object.keys(m).sort(),mx=Math.max(0,...Object.values(m)),B=window.VOL_BADGES;
+function volBadges(mm){const m=mm||dayArrows(),days=Object.keys(m).sort(),mx=Math.max(0,...Object.values(m)),B=window.VOL_BADGES;
  let best=0,run=0,prev=null;days.forEach(d=>{if(m[d]>=300){run=prev&&Math.round((new Date(d)-new Date(prev))/864e5)==1&&m[prev]>=300?run+1:1;best=Math.max(best,run)}prev=d});
  let wk=0;days.forEach(d=>{let t=0;for(let i=0;i<7;i++){t+=m[ld(new Date(d).getTime()-i*864e5)]||0}wk=Math.max(wk,t)});
  return[...B.daily.map(b=>[b[1],b[2],mx>=b[0],b[3]]),...B.streak.map(b=>[b[1],b[2],best>=b[0],b[3]]),...B.weekly.map(b=>[b[1],b[2],wk>=b[0],b[3]])]}
