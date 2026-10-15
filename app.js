@@ -131,7 +131,7 @@ function pickProfile(){return`<div class="card"><span class="kicker">Welcome</sp
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
-function render(){seedNotes();
+function render(){seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
@@ -178,7 +178,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  if(W){h+=`<div class="card"><span class="kicker">Wins of the day · ${L.date} <span class="real">${L.kind}</span></span><h2>${W.label}</h2>${winsFor(W.s).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" id="bank" style="margin-top:8px">⭐ Save to my evidence bank</button></div>`}
  else if(L){h+=`<div class="card"><span class="kicker">Wins of the day · ${L.date} <span class="real">${L.kind}</span></span><h2>${L.round}: ${L.score}</h2><p class="small muted">No arrow-by-arrow data for this shoot yet, so end-by-end wins aren't available.</p></div>`}
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} <span class="sample">sample</span></span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
- h+=volCard()+shelf();
+ const dr=S.sessions.filter(x=>!x.sample&&ROUNDS[x.round]&&!(x.ends.length==ROUNDS[x.round].ends&&x.ends[x.ends.length-1].length==ROUNDS[x.round].ape)&&arrowsIn(x)>0);if(dr.length)h+=`<div class="card" style="border:2px solid #2563eb"><span class="kicker">Unfinished rounds</span>${dr.map(x=>`<div class="list-item row"><span><b>${esc(x.round)}</b><span class="small muted"> · ${fmtD(x.date)} · ${total(x)} so far (${arrowsIn(x)} arrows)</span></span><button class="btn" data-resume="${x.id}" style="padding:4px 10px">Resume</button></div>`).join('')}</div>`;h+=volCard()+shelf();
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
  h+=(window.rankCard?rankCard(S.profile):"");h+=`<button class="btn ghost full" onclick="nav('squad')" style="margin-bottom:8px">👥 My squad</button>`;h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
@@ -186,7 +186,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
 
  if($('#goal'))$('#goal').onchange=e=>{const v=Math.max(0,Math.min(1000,+e.target.value||0));S.goal=v;save();home()};if($('#ringbtn'))$('#ringbtn').onclick=()=>{const e=$('#vedit');e.hidden=!e.hidden;if(!e.hidden)$('#vset').focus()};
  if($('#vsave'))$('#vsave').onclick=()=>{S.vol=S.vol||{};S.vol[today()]=Math.max(0,Math.min(2000,Math.round(+$('#vset').value||0)));save();home()};
- if($('#vreset'))$('#vreset').onclick=()=>{if(!confirm("Reset today's added arrows?"))return;S.vol=S.vol||{};delete S.vol[today()];save();home()};app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
+ if($('#vreset'))$('#vreset').onclick=()=>{if(!confirm("Reset today's added arrows?"))return;S.vol=S.vol||{};delete S.vol[today()];save();home()};app.querySelectorAll('[data-resume]').forEach(b=>b.onclick=()=>{cur=S.sessions.find(x=>x.id==b.dataset.resume);history.pushState({scoring:1},'');nav('score')});app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
 
 
 /* Source refs (George Ryles notes) are kept in code only, never shown. Wording is our own. */
@@ -219,29 +219,40 @@ function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.for
  return`<div class="card"><span class="kicker">From your notes</span><h3>What your notes show</h3>${out.length?out.join('')+'<p class="small muted">Compared with your own average for the same round. Notes starting "SAMPLE" are demo notes.</p>':'<p>Add a note under each score (tired, windy, nerves, new gear, sore, didn\'t finish). Once 2 sessions share a tag, you\'ll see how it affects your scores.</p>'}</div>`}
 
 let fix=null;
-const isSix=R=>/6-ring/.test(R.face||'');
+const isSix=R=>/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');
+const faceVB=R=>isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
+/* face for a given end: custom rounds have distance blocks, each with its own face */
+function faceR(R,ei){if(!R.blocks)return R;let k=0;for(const b of R.blocks){k+=+b.ends;if(ei<k)return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}const b=R.blocks[R.blocks.length-1];return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}
+/* custom practice rounds (practice only, never counted for classification) */
+function regCustom(){(S.customRounds||[]).forEach(c=>{const ends=c.blocks.reduce((t,b)=>t+ +b.ends,0);ROUNDS[c.name]={ends,ape:+c.ape,face:c.blocks.map(b=>`${b.size}cm ${b.type}`).join(' / '),max:ends*c.ape*10,custom:true,practice:true,blocks:c.blocks,xs:c.xs}})}
 function faceSVG(pts,id,vb,R,extra=''){const rings=[['#fff','#333'],['#fff','#333'],['#111','#fff'],['#111','#fff'],['#2563eb','#111'],['#2563eb','#111'],['#d62828','#111'],['#d62828','#111'],['#ffd84d','#111'],['#ffd84d','#111']];
  let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block" role="img" aria-label="Target face, tap where the arrow landed">`;
- rings.forEach((c,i)=>{if(R&&isSix(R)&&i<4)return;g+=`<circle r="${1-i*0.1}" fill="${c[0]}" stroke="${c[1]}" stroke-width="0.006"/>`});g+=`<circle r="0.05" fill="none" stroke="#111" stroke-width="0.005"/>`;
+ rings.forEach((c,i)=>{if(R&&isSix(R)&&i<4)return;if(R&&isSpot(R)&&i<5)return;g+=`<circle r="${1-i*0.1}" fill="${c[0]}" stroke="${c[1]}" stroke-width="0.006"/>`});g+=`<circle r="0.05" fill="none" stroke="#111" stroke-width="0.005"/>`;
  pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.025" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.008"/>`);return g+extra+'</svg>'}
-function plotScore(x,y,R){const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
+function plotScore(x,y,R){const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
  if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;save();score();return}
  let e=cur.ends[cur.ends.length-1];if(e.length==R.ape){if(cur.ends.length>=R.ends)return;cur.ends.push([]);e=cur.ends[cur.ends.length-1]}
  const i=cur.ends.length-1;e.push(k);(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
  if(e.length==R.ape){sortEnd(i);if(cur.ends.length<R.ends)cur.ends.push([])}save();score()}
-function score(){if(!cur){app.innerHTML=`<div class="card"><span class="kicker">New session</span><h1>Score it</h1><label for="rd">Round</label><select id="rd">${Object.keys(ROUNDS).map(r=>`<option>${r}</option>`).join('')}</select>
- <label for="dt">Date</label><input id="dt" type="date" value="${new Date().toISOString().slice(0,10)}"><button class="btn alt full" style="margin-top:14px" id="st">Start</button>
- <p class="small muted">Saved on this phone as you go (localStorage).</p></div>`+sessionList();$('#st').onclick=()=>{cur={id:'s'+Date.now(),date:$('#dt').value,round:$('#rd').value,ends:[[]],pos:[[]],note:''};S.sessions.push(cur);save();score()};bindList();return}
+let crEdit=null;
+function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom);
+ app.innerHTML=`<div class="card"><span class="kicker">New session</span><h1>Score it</h1><label for="rd">Round</label><select id="rd"><optgroup label="Standard rounds">${std.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>${mine.length?`<optgroup label="My rounds">${mine.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`:''}<option value="__new">+ Create my own practice round</option></select>
+ <label for="dt">Date</label><input id="dt" type="date" value="${today()}"><button class="btn alt full" style="margin-top:14px" id="st">Start</button>
+ <p class="small muted">Saved on this phone as you go (localStorage).</p></div>${mine.length?`<div class="card"><h3>My rounds</h3>${(S.customRounds||[]).map((c,i)=>`<div class="list-item row"><div><b>${esc(c.name)}</b><div class="small muted">${ROUNDS[c.name].ends} ends × ${c.ape} · max ${ROUNDS[c.name].max} · practice</div></div><span><button class="btn ghost" data-ce="${i}" style="padding:4px 10px">Edit</button> <button class="btn ghost" data-cd="${i}" style="padding:4px 10px">Delete</button></span></div>`).join('')}</div>`:''}`+sessionList();
+ $('#rd').onchange=e=>{if(e.target.value=='__new'){crEdit={i:-1};score()}};
+ app.querySelectorAll('[data-ce]').forEach(b=>b.onclick=()=>{crEdit={i:+b.dataset.ce};score()});
+ app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const c=S.customRounds[+b.dataset.cd];if(!confirm(`Delete "${c.name}"? Sessions already shot keep their scores.`))return;S.customRounds.splice(+b.dataset.cd,1);save();score()});
+ $('#st').onclick=()=>{if($('#rd').value=='__new')return;cur={id:'s'+Date.now(),date:$('#dt').value,round:$('#rd').value,ends:[[]],pos:[[]],note:''};S.sessions.push(cur);save();history.pushState({scoring:1},'');score()};bindList();return}
  const R=ROUNDS[cur.round],e=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&e.length==R.ape,mode=S.mode||'keypad',P=cur.pos||[];
- const vb=isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
+ const FR=faceR(R,fix?fix[0]:cur.ends.length-1+(e.length==R.ape&&!fin?1:0)),vb=faceVB(FR);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(e.length==R.ape&&!fin?[]:(P[cur.ends.length-1]||[]).filter(Boolean));
  const entry=fin&&!fix?`<p><b>All done!</b> 🎉</p><button class="btn full" id="fin">See my wins</button>`:
-  (mode=='plot'?`<p class="small muted" style="margin:4px 0">${R.face=='any'?'Full 10-ring face':R.face+' face'} · press and slide, lift to place${fix?' · tap the face to move the selected arrow':''}</p><div id="fwrap" style="position:relative;max-width:340px;margin:0 auto">${faceSVG(shown,'pface',vb,R)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>
+  (mode=='plot'?`<p class="small muted" style="margin:4px 0">${FR.face=='any'?'Full 10-ring face':FR.face+' face'}${FR.dist?' · '+FR.dist:''} · press and slide, lift to place${fix?' · tap the face to move the selected arrow':''}</p><div id="fwrap" style="position:relative;max-width:340px;margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>
   <div class="keypad" style="margin-top:8px"><button class="k-u" data-k="M" style="grid-column:span 2">Miss (M)</button><button class="k-u" id="undo" style="grid-column:span 2">↶ Undo</button><button class="k-u" id="quit" style="grid-column:span 2">Save & exit</button></div>`
-  :`<div class="keypad">${['X','10','9','8','7','6','5','4','3','2','1','M'].map(k=>`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}">${k}</button>`).join('')}<button class="k-u" id="undo" style="grid-column:span 2">↶ Undo</button><button class="k-u" id="quit" style="grid-column:span 2">Save & exit</button></div>`);
- app.innerHTML=`<div class="card"><div class="row"><span class="kicker">${cur.round}</span><b>${total(cur)} / ${R.max}</b></div>
+  :`<div class="keypad">${(R.xs===false?['10','9','8','7','6','5','4','3','2','1','M']:['X','10','9','8','7','6','5','4','3','2','1','M']).map(k=>`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}">${k}</button>`).join('')}<button class="k-u" id="undo" style="grid-column:span 2">↶ Undo</button><button class="k-u" id="quit" style="grid-column:span 2">Save & exit</button></div>`);
+ app.innerHTML=`<div class="card"><div class="row"><button class="btn ghost" id="sback" style="padding:4px 10px">← Back</button><span class="kicker" style="flex:1;margin-left:8px">${esc(cur.round)}${R.custom?' · practice':''}</span><b>${total(cur)} / ${R.max}</b></div>
  <div class="row" style="margin:6px 0"><h2 style="margin:0">End ${cur.ends.length} of ${R.ends}</h2><div role="group" aria-label="Entry mode" style="display:flex;gap:4px">${['plot','keypad'].map(m=>`<button class="btn ${mode==m?'':'ghost'}" data-mode="${m}" aria-pressed="${mode==m}" style="padding:6px 10px">${m=='plot'?'Plot':'Keypad'}</button>`).join('')}</div></div>
  <div style="min-height:40px">${e.map(a=>`<span class="arrow ${col(a)}">${a}</span>`).join('')}</div>${entry}</div>
  <div class="card"><p class="small muted" style="margin:0 0 6px">${fix?(mode=='plot'?'Now tap the face (or Miss) to move this arrow.':'Now tap the new score on the keypad.'):'Tap an arrow to fix it'}</p><table class="ends"><tr><th>End</th><th>Arrows</th><th>Sum</th><th>Run</th></tr>${cur.ends.map((x,i)=>`<tr><td>${i+1}</td><td>${x.map((a,j)=>`<span class="arrow ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix arrow ${a}" style="cursor:pointer${fix&&fix[0]==i&&fix[1]==j?';outline:3px solid #7c3aed;outline-offset:2px':''}">${a}</span>`).join('')}</td><td>${endSum(x)}</td><td>${cur.ends.slice(0,i+1).reduce((t,y)=>t+endSum(y),0)}</td></tr>`).join('')}</table></div>`;
@@ -249,13 +260,49 @@ function score(){if(!cur){app.innerHTML=`<div class="card"><span class="kicker">
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
  const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
   const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=(ev.clientX-r.left-55)+'px';L.style.top=(ev.clientY-r.top-140)+'px';
-   L.innerHTML=faceSVG(shown,'lf',`${q.x-0.12} ${q.y-0.12} 0.24 0.24`,R,`<path d="M${q.x-0.04} ${q.y}h0.08M${q.x} ${q.y-0.04}v0.08" stroke="#a855f7" stroke-width="0.006"/><circle cx="${q.x}" cy="${q.y}" r="0.012" fill="none" stroke="#a855f7" stroke-width="0.004"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,R)}</b>`};
+   L.innerHTML=faceSVG(shown,'lf',`${q.x-0.12} ${q.y-0.12} 0.24 0.24`,FR,`<path d="M${q.x-0.04} ${q.y}h0.08M${q.x} ${q.y-0.04}v0.08" stroke="#a855f7" stroke-width="0.006"/><circle cx="${q.x}" cy="${q.y}" r="0.012" fill="none" stroke="#a855f7" stroke-width="0.004"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
   f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);show(ev)};f.onpointermove=ev=>{if(!L.hidden)show(ev)};
-  f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,R),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
+  f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  if($('#undo'))$('#undo').onclick=()=>{fix=null;let l=cur.ends[cur.ends.length-1];if(!l.length&&cur.ends.length>1){cur.ends.pop();(cur.pos||[]).length=cur.ends.length;l=cur.ends[cur.ends.length-1]}l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;save();score()};
  if($('#quit'))$('#quit').onclick=()=>{fix=null;if(!cur.ends[cur.ends.length-1].length&&cur.ends.length>1){cur.ends.pop();(cur.pos||[]).length=cur.ends.length}cur=null;save();score()};
- if($('#fin'))$('#fin').onclick=()=>{cur=null;nav('home')}}
+ if($('#fin'))$('#fin').onclick=()=>{cur=null;nav('home')};
+ $('#sback').onclick=()=>leaveScoring()}
+function arrowsIn(s){return s.ends.reduce((t,e)=>t+e.length,0)}
+function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;save();if(after)after();else score()};
+ if(!arrowsIn(cur)){S.sessions=S.sessions.filter(x=>x!==cur);return go()}
+ const ov=document.createElement('div');ov.id='leaveov';ov.style.cssText='position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end;justify-content:center';
+ ov.innerHTML=`<div class="card" role="dialog" aria-modal="true" aria-label="Leave this round?" style="width:100%;max-width:480px;margin:0;border-radius:16px 16px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))"><h2>Leave this round?</h2><p class="small muted">${arrowsIn(cur)} arrows entered so far.</p>
+ <button class="btn full" id="lkeep">Keep this round for later</button><button class="btn full" id="ldisc" style="margin-top:8px;background:#dc2626;color:#fff">Discard round</button><button class="btn ghost full" id="lstay" style="margin-top:8px">Keep scoring</button></div>`;
+ document.body.appendChild(ov);const close=()=>ov.remove();
+ $('#lkeep').onclick=()=>{close();go()};$('#lstay').onclick=()=>{close();history.pushState({scoring:1},'')};
+ $('#ldisc').onclick=()=>{if(!confirm('Discard this round? Its arrows will be deleted.'))return;close();S.sessions=S.sessions.filter(x=>x!==cur);go()}}
+addEventListener('popstate',()=>{if(cur&&view=='score'&&!document.getElementById('leaveov')){history.pushState({scoring:1},'');leaveScoring()}});
+
+
+function roundForm(){const c=crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):(crEdit.d||{name:'',ape:6,xs:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]});crEdit.d=c;
+ const tot=()=>c.blocks.reduce((t,b)=>t+ +b.ends,0)*c.ape*10;
+ app.innerHTML=`<div class="card"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="e.g. Tuesday 30m blast">
+ <label for="cape">Arrows per end</label><div style="display:flex;gap:6px"><select id="cape" style="flex:1">${[3,6].map(n=>`<option ${c.ape==n?'selected':''}>${n}</option>`).join('')}<option value="c" ${![3,6].includes(+c.ape)?'selected':''}>Custom</option></select><input id="capec" type="number" min="1" max="12" value="${c.ape}" style="flex:1" ${[3,6].includes(+c.ape)?'hidden':''} aria-label="Custom arrows per end"></div>
+ <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="cxs" style="width:auto" ${c.xs!==false?'checked':''}> Count Xs</label>
+ <h3 style="margin-top:10px">Distance blocks</h3>${c.blocks.map((b,i)=>`<div class="list-item" data-b="${i}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+  <label>Distance<div style="display:flex;gap:4px"><input data-f="dist" type="number" min="1" value="${b.dist}" style="min-width:0"><select data-f="unit" style="width:64px">${['m','yd'].map(u=>`<option ${b.unit==u?'selected':''}>${u}</option>`).join('')}</select></div></label>
+  <label>Ends<input data-f="ends" type="number" min="1" max="60" value="${b.ends}"></label>
+  <label>Face size<select data-f="size">${[122,80,60,40].map(z=>`<option value="${z}" ${b.size==z?'selected':''}>${z}cm</option>`).join('')}</select></label>
+  <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
+  ${c.blocks.length>1?`<button class="btn ghost" data-rb="${i}" style="margin-top:6px;padding:4px 10px">Remove block</button>`:''}</div>`).join('')}
+ <button class="btn ghost" id="addb" style="margin-top:6px">+ Add distance</button>
+ <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${tot()}</span></b> <span class="small muted">· practice only, never counted for classification</span></p>
+ <div style="display:flex;gap:6px;margin-top:10px"><button class="btn" id="csave">Save round</button><button class="btn ghost" id="ccancel">Cancel</button></div></div>`;
+ const up=()=>{$('#cmax').textContent=tot()};
+ app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{const b=c.blocks[+el.closest('[data-b]').dataset.b];b[el.dataset.f]=['dist','ends','size'].includes(el.dataset.f)?+el.value:el.value;up()});
+ $('#cape').onchange=e=>{if(e.target.value=='c'){$('#capec').hidden=false}else{$('#capec').hidden=true;c.ape=+e.target.value}up()};$('#capec').oninput=e=>{c.ape=Math.max(1,Math.min(12,+e.target.value||1));up()};
+ $('#cn').oninput=e=>c.name=e.target.value;$('#cxs').onchange=e=>c.xs=e.target.checked;
+ $('#addb').onclick=()=>{const l=c.blocks[c.blocks.length-1];c.blocks.push({...l});roundForm()};
+ app.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{c.blocks.splice(+b.dataset.rb,1);roundForm()});
+ $('#ccancel').onclick=()=>{crEdit=null;score()};
+ $('#csave').onclick=()=>{const n=c.name.trim();if(!n)return alert('Give your round a name.');if(ROUNDS[n]&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
+  c.name=n;S.customRounds=S.customRounds||[];if(crEdit.i>=0){const old=S.customRounds[crEdit.i].name;if(old!=n){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=n})}S.customRounds[crEdit.i]=c}else S.customRounds.push(c);crEdit=null;save();regCustom();score();$('#rd').value=n}}
 function plottedCard(){const d=done().filter(s=>(s.pos||[]).some(e=>(e||[]).some(Boolean)));if(!d.length)return'';const s=d[d.length-1],pts=s.pos.flat().filter(Boolean),g=groupStats(pts),R=ROUNDS[s.round]||{};
  return`<div class="card"><h3>Group plot · ${s.date}</h3><p class="small muted">${pts.length} plotted arrows from ${s.round}. Keypad arrows have no position, so they aren't shown.</p><div style="max-width:300px;margin:0 auto">${faceSVG(pts,'gplot',isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08',R,pts.length>=3?`<circle cx="${g.cx}" cy="${g.cy}" r="${g.r}" fill="none" stroke="#a855f7" stroke-width="0.012" stroke-dasharray="0.04 0.03"/><path d="M${g.cx-0.06} ${g.cy}h0.12M${g.cx} ${g.cy-0.06}v0.12" stroke="#a855f7" stroke-width="0.018"/>`:'')}</div>${pts.length>=3?`<p class="small">Centre of group: ${Math.abs(g.cy)<0.04?'level':g.cy<0?'high':'low'}, ${Math.abs(g.cx)<0.04?'centred':g.cx<0?'left':'right'}. Spread ${(g.r*10).toFixed(1)} rings.</p>`:''}</div>`}
 function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}</div>${noteBox(s)}</div>${s.sample?'':`<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button>`}</div>`).join('')}</div>`}
