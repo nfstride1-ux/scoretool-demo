@@ -1,0 +1,62 @@
+/* ScoreTool demo: Squads. Closed, chat-free groups. Local-only simulation (no server).
+   No free text between members: the only interaction is one preset cheer per item. */
+const CHEERS=['👏','🔥','💪','🎯'],AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
+const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
+function seedSquad(){if(S.squad)return;const day=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');
+ S.squad={name:'Gosnells Juniors (SAMPLE)',code:'GJX-4827',admin:'Nathaniel Stride',rawRank:false,cheers:{},
+  members:[{id:'m-logan',name:'Logan Wolfe',avatar:'🦅',u18:true,parent:'Nathaniel S. (linked)',status:'active'},
+   {id:'m-s1',name:'Sam Rivers',avatar:'🐨',u18:true,parent:'linked',status:'active',sample:true,wk:640,streak:2,badges:7,impr:4.1,last:day(0),goalToday:true,raw:[[day(1),'Australian Indoor 18m',271,'official']]},
+   {id:'m-s2',name:'Mia Chen',avatar:'🦊',u18:true,parent:'linked',status:'active',sample:true,wk:410,streak:0,badges:5,impr:6.8,last:day(2),raw:[[day(2),'Practice 10 ends × 3',248,'keypad']]},
+   {id:'m-s3',name:'Ollie Park',avatar:'🐢',u18:true,parent:'linked',status:'active',sample:true,wk:90,streak:0,badges:3,impr:-1.2,last:day(6),raw:[[day(6),'Short Canberra',702,'plot']]},
+   {id:'m-s4',name:'Ava Brooks',avatar:'🐧',u18:true,parent:'linked',status:'pending',sample:true}]};save()}
+const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
+/* Logan's numbers come from his real data; sample kids use fixed numbers. */
+function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filter(r=>!r.incomplete);
+ const wkAgo=new Date(Date.now()-7*864e5).toLocaleDateString('en-CA');let wk=0;(OFF[m.name]||[]).forEach(o=>{if(normDate(o.date)>=wkAgo)wk+=o.ends.reduce((t,e)=>t+e.arrows.length,0)});
+ if(m.name==S.profile)wk=Object.entries(dayArrows()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
+ const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);
+ const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
+ const last=real[real.length-1];const vb=m.name==S.profile?volBadges().filter(x=>x[2]).length+badges().filter(x=>x[2]).length:3;
+ return{...m,wk,streak:0,badges:vb,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
+const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
+function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name);
+ if(m.raw&&m.raw[0]){const r=m.raw[0];F.push({id:m.id+'s'+r[0],date:r[0],who:m,text:`${n} logged ${r[1]}`,ver:r[3]})}
+ if(m.goalToday)F.push({id:m.id+'g',date:today(),who:m,text:`${n} hit their goal today`});
+ if(m.badges>=5)F.push({id:m.id+'b',date:m.last||today(),who:m,text:`${n} earned ${m.name.startsWith('Logan')?'Thousand Club':m.badges>=7?'Hat Trick':'First Hundred'}`});
+ if(m.impr>3)F.push({id:m.id+'i',date:m.last||today(),who:m,text:`${n} is ${m.impr}% above their own average`})});return F.sort((a,b)=>a.date<b.date?1:-1)}
+let sqTab='wk';
+function squad(){seedSquad();const Q=S.squad;
+ if(!Q.members.some(m=>m.name==S.profile)&&!isAdmin()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Ask your coach or parent for the invite code. The squad admin has to approve you, and under-18s need a parent account linked.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234"><button class="btn" id="jb" style="margin-top:8px">Request to join</button><div id="jo"></div></div>${safe()}`;
+  $('#jb').onclick=()=>{$('#jo').innerHTML='<p class="small">Request sent. A parent account must be linked and the admin must approve before you can see the squad. (Demo: not sent anywhere.)</p>'};return}
+ const act=Q.members.filter(m=>m.status=='active').map(memberStats),pend=Q.members.filter(m=>m.status=='pending');
+ const metrics={wk:['This week\'s arrows',m=>m.wk,v=>v],streak:['Goal streak (days)',m=>m.streak,v=>v],badges:['Badges earned',m=>m.badges,v=>v],impr:['Improvement vs own average',m=>m.impr,v=>(v>0?'+':'')+v+'%']};
+ if(Q.rawRank)metrics.raw=['Latest score (admin on)',m=>m.raw&&m.raw[0]?m.raw[0][2]:0,v=>v];
+ const M=metrics[sqTab]||metrics.wk,rows=act.slice().sort((a,b)=>M[1](b)-M[1](a));
+ const me=act.find(m=>m.name==S.profile);
+ let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${act.length} members · no chat, cheers only${isAdmin()?' · you are the admin':''}</p></div>
+ <div class="card"><span class="kicker">Leaderboard</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${Object.entries(metrics).map(([k,v])=>`<button class="btn ${k==sqTab?'':'ghost'}" data-m="${k}" style="padding:6px 10px;font-size:13px">${v[0]}</button>`).join('')}</div>
+ ${rows.map((m,i)=>`<div class="list-item row"><span>${i+1}. <span style="font-size:22px">${m.avatar}</span> <b>${shortName(m.name)}</b>${m.sample?' <span class="sample">sample</span>':''}</span><b>${M[2](M[1](m))}</b></div>`).join('')}
+ <p class="small muted">${sqTab=='impr'?'Each archer is compared with their own last 10 rounds, so it\'s fair across ability.':'Ranks effort and badges, not raw scores.'}</p></div>
+ <div class="card"><span class="kicker">Activity</span>${feed(act).map(f=>{const c=Q.cheers[f.id]||{};return`<div class="list-item"><div><span style="font-size:20px">${f.who.avatar}</span> ${esc(f.text)} ${f.ver?VER[f.ver]:''} <span class="small muted">${f.date}</span></div>
+  <div style="display:flex;gap:6px;margin-top:4px" role="group" aria-label="Cheer">${CHEERS.map(e=>`<button class="btn ${c.mine==e?'':'ghost'}" data-c="${f.id}" data-e="${e}" aria-pressed="${c.mine==e}" style="padding:4px 10px">${e} ${(c[e]||0)+(f.who.sample?(e=='👏'?2:e=='🔥'?1:0):0)||''}</button>`).join('')}</div></div>`}).join('')}<p class="small muted">One cheer per item. No messages or comments.</p></div>`;
+ if(isAdmin()){const quiet=act.filter(m=>!m.last||(new Date(today())-new Date(m.last))/864e5>=5);
+  h+=`<div class="card" style="border:2px dashed #94a3b8"><span class="kicker">Admin only</span><h3>Squad settings</h3><p>Invite code: <b>${Q.code}</b> <span class="small muted">(private; squads can't be searched)</span></p>
+  ${pend.map(m=>`<div class="list-item row"><span>${m.avatar} ${shortName(m.name)} wants to join ${m.u18?`· parent ${m.parent?'linked ✓':'not linked'}`:''} ${m.sample?'<span class="sample">sample</span>':''}</span><span><button class="btn" data-ap="${m.id}" style="padding:4px 10px">Approve</button> <button class="btn ghost" data-de="${m.id}" style="padding:4px 10px">Decline</button></span></div>`).join('')}
+  ${quiet.map(m=>`<p class="small">🔔 ${shortName(m.name)} hasn't logged for 5+ days. Only you can see this.</p>`).join('')}
+  <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rr" style="width:auto" ${Q.rawRank?'checked':''}> Show a raw-score leaderboard</label>
+  <h3>Members</h3>${act.map(m=>`<div class="list-item row"><span>${m.avatar} ${shortName(m.name)}</span>${m.name==S.profile?'':`<button class="btn ghost" data-rm="${m.id}" style="padding:4px 10px">Remove</button>`}</div>`).join('')}</div>`}
+ if(me){h+=`<div class="card"><h3>Me in this squad</h3><label for="av">My avatar</label><select id="av">${AVATARS.map(a=>`<option ${a==me.avatar?'selected':''}>${a}</option>`).join('')}</select><p class="small muted">Shown as ${shortName(me.name)}. No photo, club or contact details are shared.</p><button class="btn ghost" id="lv">Leave squad</button></div>`}
+ h+=safe();app.innerHTML=h;
+ app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sqTab=b.dataset.m;squad()});
+ app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=Q.cheers[b.dataset.c]=Q.cheers[b.dataset.c]||{};if(c.mine){c[c.mine]--;}if(c.mine==b.dataset.e){c.mine=null}else{c.mine=b.dataset.e;c[b.dataset.e]=(c[b.dataset.e]||0)+1}save();squad()});
+ app.querySelectorAll('[data-ap]').forEach(b=>b.onclick=()=>{Q.members.find(m=>m.id==b.dataset.ap).status='active';save();squad()});
+ app.querySelectorAll('[data-de],[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.de||b.dataset.rm;if(b.dataset.rm&&!confirm('Remove this member from the squad?'))return;Q.members=Q.members.filter(m=>m.id!=id);save();squad()});
+ if($('#rr'))$('#rr').onchange=e=>{Q.rawRank=e.target.checked;if(!Q.rawRank&&sqTab=='raw')sqTab='wk';save();squad()};
+ if($('#av'))$('#av').onchange=e=>{Q.members.find(m=>m.name==S.profile).avatar=e.target.value;save();squad()};
+ if($('#lv'))$('#lv').onclick=()=>{if(!confirm('Leave this squad?'))return;Q.members=Q.members.filter(m=>m.name!=S.profile);save();squad()}}
+function safe(){return`<div class="card"><span class="kicker">Safe squads</span><ul class="small" style="padding-left:18px;margin:6px 0">
+ <li>Private and invite-only. Squads can't be searched, and the admin approves every join.</li><li>Under-18s need a linked parent account.</li>
+ <li>No chat, comments or photos. Only 4 preset cheers.</li><li>Only first name, last initial and an avatar are shown. No club or contact details.</li>
+ <li>Leaderboards rank effort and badges, and improvement against your own average. Raw scores stay hidden unless the admin turns them on.</li>
+ <li>"Hasn't logged lately" reminders go only to the admin, never to the squad.</li><li>Anyone can leave at any time. Admins can remove members.</li>
+ <li>✓ verified means the score came from Archer's Diary or was plotted arrow by arrow; keypad-only practice shows as self-logged.</li></ul></div>`}

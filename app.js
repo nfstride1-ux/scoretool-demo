@@ -136,7 +136,7 @@ function render(){seedNotes();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;if(!S.sessions.length)S.sessions=sampleSessions();save();nav('home')});return}
- ({home,score,plot,stats,diary,me})[view]()}
+ ({home,score,plot,stats,diary,me,squad})[view]()}
 
 /* ---------- latest real shoot ---------- */
 const ld=d=>new Date(d).toLocaleDateString('en-CA');const today=()=>new Date().toLocaleDateString('en-CA');
@@ -178,7 +178,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} <span class="sample">sample</span></span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
  h+=volCard()+shelf();
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
- h+=(window.rankCard?rankCard(S.profile):"");h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
+ h+=(window.rankCard?rankCard(S.profile):"");h+=`<button class="btn ghost full" onclick="nav('squad')" style="margin-bottom:8px">👥 My squad</button>`;h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
  if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:L.date,text:winsFor(W.s).map(w=>w[1]).join(' '),total:L.score,round:L.round});save();$('#bank').textContent='Saved ✓'};
 
@@ -320,7 +320,7 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  ${S.best.length?S.best.map(e=>`<div class="list-item"><b>${e.total}</b> · ${e.round} · ${e.date} ${e.sample?'<span class="sample">sample</span>':''}<div class="small">${e.text}</div></div>`).join(''):'<p>Nothing saved yet. Tap "Save to my evidence bank" on a good day.</p>'}
  <label for="bm">Add a moment in your own words</label><textarea id="bm" rows="2" placeholder="e.g. Stayed calm in the shoot-off at Kalamunda"></textarea><button class="btn ghost" id="bmadd" style="margin-top:6px">Add</button></div>
  <div class="card"><span class="kicker">Coach / parent</span><h2>Share a read-only view</h2><p class="small">Send this link to your coach or parent. They'll see progress and effort, but can't change anything.</p><input readonly value="${url}" id="sh" aria-label="share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a></div>
- <div class="card"><button class="btn ghost" id="sw">Switch archer</button> <button class="btn ghost" id="rs">Reset demo</button></div>`;
+ <div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div><div class="card"><button class="btn ghost" id="sw">Switch archer</button> <button class="btn ghost" id="rs">Reset demo</button></div>`;
  $('#bmadd').onclick=()=>{const t=$('#bm').value.trim();if(t){S.best.push({date:new Date().toISOString().slice(0,10),text:t,total:'⭐',round:'My note'});save();me()}};
  $('#cp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(url);$('#cp').textContent='Copied ✓'};
  $('#sw').onclick=()=>{S.profile=null;save();render()};$('#rs').onclick=()=>{localStorage.removeItem(KEY);location.reload()}}
