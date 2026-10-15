@@ -248,7 +248,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const R=ROUNDS[cur.round],e=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&e.length==R.ape,mode=S.mode||'keypad',P=cur.pos||[];
  const FR=faceR(R,fix?fix[0]:cur.ends.length-1+(e.length==R.ape&&!fin?1:0)),vb=faceVB(FR);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(e.length==R.ape&&!fin?[]:(P[cur.ends.length-1]||[]).filter(Boolean));
- const keys=(R.xs===false?['10','9','8','7','6','5','4','3','2','1','M']:['X','10','9','8','7','6','5','4','3','2','1','M']);
+ const keys=(R.xs===false?['10','9','8','7','6','5','4','3','2','1','M']:['X','10','9','8','7','6','5','4','3','2','1','M']).filter(k=>!(isSix(FR)||isSpot(FR))||!/^[1-4]$|^[1-5]$/.test(k)||(isSix(FR)&&k=='5'));
  const entry=fin&&!fix?`<p><b>All done!</b> 🎉</p><button class="btn full" id="fin">See my wins</button>`:
   `${S.hideFace?'':`<p class="small muted" style="margin:4px 0;text-align:center">${FR.face=='any'?'Full 10-ring face':FR.face+' face'}${FR.dist?' · '+FR.dist:''} · tap the face to plot${fix?' · tap to move the selected arrow':''}</p><div id="fwrap" style="position:relative;max-width:260px;margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
   <div class="keypad" style="margin-top:8px">${keys.map(k=>`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}">${k}</button>`).join('')}<button class="k-u" id="undo" style="grid-column:span 2">↶ Undo</button><button class="k-u" id="quit" style="grid-column:span 2">Save & exit</button></div>`;
