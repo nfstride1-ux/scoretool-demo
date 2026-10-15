@@ -286,10 +286,10 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  <div class="card"><h3>Early vs late ends</h3><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${early.toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${late.toFixed(1)}</b>last ${third} ends</div></div>
  <p>${late>=early-0.3?'💪 You hold your score right to the end. Great focus!':`Your last ends average ${(early-late).toFixed(1)} points lower. Worth a chat with your coach?`}</p></div>
  <div class="card"><h3>Personal bests</h3>${Object.entries(pbs()).map(([r,v])=>`<div class="list-item row"><span>${r}</span><span><b>${v.score}</b> ${v.real?'<span class="real">official</span>':v.sample?'<span class="sample">sample</span>':''}</span></div>`).join('')}</div>
- ${real.length?`<div class="card"><h3>Official competition scores</h3>${lineChart([{name:'Official score',data:real.filter(r=>!r.incomplete).map(r=>r.score),c:'#166534'}],{labels:real.filter(r=>!r.incomplete).map(r=>normDate(r.date).slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(real.filter(r=>!r.incomplete).map(r=>normDate(r.date))):[]})}<p class="small muted">Mixed rounds; compare within the same round.</p></div>`:''}
+ ${officialCharts(real)}
  ${estRating(real)}
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
- bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
+ app.querySelectorAll('[data-oc]').forEach(b=>b.onclick=()=>{window._oc=b.dataset.oc;const y=scrollY;stats();scrollTo(0,y)});bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
  $('#club').onchange=e=>{$('#clubout').innerHTML=e.target.checked?'<p class="small muted">Coming soon: club and division averages worked out from the public Archer\'s Diary results already on archerycalendars.com. Off by default for juniors.</p>':''}}
 function offRounds(){const k=Object.keys(OFF).find(x=>x.toLowerCase()==(S.profile||'').toLowerCase());return k?OFF[k]:[]}
 function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i],good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
@@ -304,6 +304,28 @@ function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.m
  <h3 style="margin-top:12px">Per distance (avg per arrow)</h3>${dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return`<div class="list-item row"><span>${d}</span><b>${(a.reduce((t,x)=>t+val(x),0)/a.length).toFixed(2)}</b></div>`}).join('')}
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px"><div class="stat"><b>${av(fe).toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${av(le).toFixed(1)}</b>last ${third} ends</div><div class="stat"><b>${sd(sums).toFixed(1)}</b>end spread</div></div>
  ${ryTips(sums,good,all,dists,fe,le,j=>endLabel(fake,j))}${noteBox({date:o.date,round:o.round})}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
+
+/* Official scores: one chart per round + bow type (chips), plus AA rating over time. */
+const fmtD=d=>{const x=new Date(normDate(d));return isNaN(x)?d:x.getDate()+' '+x.toLocaleString('en-AU',{month:'short'})};
+function ptChart(P,{mn,mx,id}){const W=340,h=170,L=34,R=10,T=14,B=24,n=P.length,X=i=>L+(n<2?(W-L-R)/2:i*(W-L-R)/(n-1)),Y=v=>T+(1-(v-mn)/(mx-mn||1))*(h-T-B);
+ let g=`<svg viewBox="0 0 ${W} ${h}" width="100%" role="img" aria-label="chart"><line x1="${L}" y1="${h-B}" x2="${W-R}" y2="${h-B}" stroke="#94a3b8"/>`;
+ [mn,(mn+mx)/2,mx].forEach(v=>g+=`<text x="${L-4}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="#475569">${Math.round(v)}</text><line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/>`);
+ g+=`<polyline fill="none" stroke="#166534" stroke-width="2" points="${P.map((p,i)=>`${X(i)},${Y(p.v)}`).join(' ')}"/>`;
+ const step=Math.ceil(n/5);P.forEach((p,i)=>{if(i%step==0||i==n-1)g+=`<text x="${X(i)}" y="${h-8}" font-size="10" text-anchor="${i==0&&n>1?'start':i==n-1&&n>1?'end':'middle'}" fill="#475569">${p.label}</text>`;
+  g+=p.star?`<text x="${X(i)}" y="${Y(p.v)+5}" font-size="15" text-anchor="middle">⭐</text>`:`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="#166534"/>`;
+  g+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="12" fill="transparent" style="cursor:pointer" data-t="${esc(p.tip)}" onclick="this.closest('.pc').querySelector('.pcap').textContent=this.dataset.t"><title>${esc(p.tip)}</title></circle>`});
+ return`<div class="pc">${g}</svg><p class="small pcap" style="margin:2px 0;min-height:1.2em">Tap a point for details.</p></div>`}
+function officialCharts(real){const ok=real.filter(r=>!r.incomplete&&r.score>0);if(!ok.length)return'';const G={};
+ ok.forEach(r=>{const c=aaCategory(r.division),k=r.round+' · '+(c?c.bow:(r.division||'').split(' ').pop());(G[k]=G[k]||[]).push(r)});
+ const keys=Object.keys(G).sort((a,b)=>G[b].length-G[a].length);const k=window._oc&&G[window._oc]?window._oc:keys[0],L=G[k].slice().sort((a,b)=>normDate(a.date)<normDate(b.date)?-1:1);
+ const rd=L[0].round,def=AA_ROUNDS&&AA_ROUNDS[rd],max=def?def.r.reduce((t,p)=>t+p[0]*p[3][0][1],0):null,best=Math.max(...L.map(r=>r.score)),bi=L.findIndex(r=>r.score==best);
+ const lo=Math.min(...L.map(r=>r.score)),pad=Math.max(2,(best-lo)*0.15);
+ const chart=ptChart(L.map((r,i)=>({v:r.score,label:fmtD(r.date),star:i==bi,tip:`${fmtD(r.date)} ${normDate(r.date).slice(0,4)} · ${r.event} · ${r.score}${max?' / '+max:''}${i==bi?' ⭐ PB':''}`})),{mn:Math.floor(lo-pad),mx:Math.min(max||1e9,Math.ceil(best+pad))});
+ const rt=ok.map(r=>{const c=aaCategory(r.division);return{r,v:c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}}).filter(x=>x.v!=null).sort((a,b)=>normDate(a.r.date)<normDate(b.r.date)?-1:1);
+ const rb=rt.length?Math.max(...rt.map(x=>x.v)):0,rl=rt.length?Math.min(...rt.map(x=>x.v)):0;
+ return`<div class="card"><h3>Official scores by round</h3><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${keys.map(x=>`<button class="btn ${x==k?'':'ghost'}" data-oc="${esc(x)}" style="padding:5px 10px;font-size:13px">${esc(x)} (${G[x].length})</button>`).join('')}</div>
+ <p class="small muted" style="margin:0">${esc(k)}${max?` · out of ${max}`:''} · best ${best} ⭐</p>${chart}</div>
+ ${rt.length>1?`<div class="card"><h3>Rating over time</h3><p class="small muted" style="margin:0">Rating lets you compare different rounds.</p>${ptChart(rt.map(x=>({v:x.v,label:fmtD(x.r.date),star:x.v==rb,tip:`${fmtD(x.r.date)} ${normDate(x.r.date).slice(0,4)} · ${x.r.event} · ${x.r.round} ${x.r.score} · rating ${x.v.toFixed(1)}`})),{mn:Math.floor(rl-2),mx:Math.ceil(rb+2)})}</div>`:''}`}
 /* Ratings: Archery Australia rating scheme (Park 2014) + Schedule 4A.1 classification levels; see ratings.js for sources. */
 function estRating(real){if(typeof aaRating!='function')return'';const yr=today().slice(0,4),groups={};
  real.filter(r=>!r.incomplete).forEach(r=>{const c=aaCategory(r.division);if(!c)return;const rt=aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m');const ad=((r.notes||'').match(/Rating\s*([\d.]+)/)||[])[1];
