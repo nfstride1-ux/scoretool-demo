@@ -120,8 +120,8 @@ function targetSVG(pts){const rings=[['#fff','#333'],['#fff','#333'],['#111','#f
  return g+'</svg>'}
 
 /* ---------- views ---------- */
-let view='home',cur=null;
-function nav(v){view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
+let view=/^#plot/.test(location.hash)?'score':'home',cur=null;
+function nav(v){if(v=='plot')v='score';view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
 function gate(){return`<div class="card dark gate"><span class="kicker">Members only</span><h1>Unlock ScoreTool</h1><p>Track every arrow, see your progress, and celebrate your wins.</p>
 <ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with group centre</li><li>Coach/parent share link</li></ul>
@@ -136,7 +136,7 @@ function render(){seedNotes();regCustom();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;if(!S.sessions.length)S.sessions=sampleSessions();save();nav('home')});return}
- ({home,score,plot,stats,diary,me,squad})[view]()}
+ if(view=='plot'){view='score'}({home,score,stats,diary,me,squad})[view]()}
 
 /* ---------- latest real shoot ---------- */
 const ld=d=>new Date(d).toLocaleDateString('en-CA');const today=()=>new Date().toLocaleDateString('en-CA');
@@ -308,17 +308,14 @@ function plottedCard(){const d=done().filter(s=>(s.pos||[]).some(e=>(e||[]).some
 function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}</div>${noteBox(s)}</div>${s.sample?'':`<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button>`}</div>`).join('')}</div>`}
 function bindList(){bindNotes();app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.sessions=S.sessions.filter(s=>s.id!=b.dataset.del);save();score()})}
 
-function plot(){const p=S.plots,g=groupStats(p);let hint='Tap at least 3 arrows to see your group.';
- if(p.length>=3){const dx=g.cx,dy=g.cy,off=Math.hypot(dx,dy);
-  hint=off<0.08?'Your group is centred on the middle. 🎯':`Your group centre is ${[dy<-0.04?'high':dy>0.04?'low':'',dx<-0.04?'left':dx>0.04?'right':''].filter(Boolean).join(' and ')} of the middle. Worth a chat with your coach?`}
- app.innerHTML=`<div class="card"><span class="kicker">Arrow plotting</span><h2>Tap where each arrow hit</h2><div class="target-wrap">${targetSVG(p)}</div>
- <div class="stats" style="margin-top:8px"><div class="stat"><b>${p.length}</b>arrows</div><div class="stat"><b>${p.length?Math.round(p.reduce((t,a)=>t+val(ringScore(a.x,a.y)),0)/p.length*10)/10:'–'}</b>avg</div><div class="stat"><b>${p.length>=3?Math.round(g.r*100)/10:'–'}</b>group (rings)</div></div>
- <p>${hint}</p><p class="small muted">The purple ring shows your average spread around the group centre (+). Smaller means more consistent.</p>
- <button class="btn ghost" id="pu">↶ Undo</button> <button class="btn ghost" id="pc">Clear</button></div>`;
- $('#tface').onclick=ev=>{const s=$('#tface'),pt=s.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(s.getScreenCTM().inverse());S.plots.push({x:+q.x.toFixed(3),y:+q.y.toFixed(3)});save();plot()};
- $('#pu').onclick=()=>{S.plots.pop();save();plot()};$('#pc').onclick=()=>{S.plots=[];save();plot()}}
+/* The old Plot tab's free plots now live in Stats (read-only group view). Plotting happens on the scoring screen. */
+function freePlotCard(){const p=S.plots||[];if(!p.length)return'';const g=groupStats(p);let hint='';
+ if(p.length>=3){const dx=g.cx,dy=g.cy,off=Math.hypot(dx,dy);hint=off<0.08?'This group is centred on the middle. 🎯':`This group's centre is ${[dy<-0.04?'high':dy>0.04?'low':'',dx<-0.04?'left':dx>0.04?'right':''].filter(Boolean).join(' and ')} of the middle. Worth a chat with your coach?`}
+ return`<div class="card"><span class="kicker">Earlier free plots</span><h3>Your plotted group</h3><div class="target-wrap" style="max-width:260px;margin:0 auto;pointer-events:none">${targetSVG(p)}</div>
+ <div class="stats" style="margin-top:8px"><div class="stat"><b>${p.length}</b>arrows</div><div class="stat"><b>${Math.round(p.reduce((t,a)=>t+val(ringScore(a.x,a.y)),0)/p.length*10)/10}</b>avg</div><div class="stat"><b>${p.length>=3?Math.round(g.r*100)/10:'–'}</b>group (rings)</div></div>
+ <p class="small">${hint}</p><p class="small muted">From the old Plot screen. New plots are made while you score.</p></div>`}
 
-function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
+function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+freePlotCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
  const byRound={};d.forEach(s=>(byRound[s.round]=byRound[s.round]||[]).push(s));const rounds=Object.keys(byRound);
  const sel=window._r&&byRound[window._r]?window._r:rounds.sort((a,b)=>byRound[b].length-byRound[a].length)[0],ss=byRound[sel];
  const tot=ss.map(total),roll=tot.map((_,i)=>{const w=tot.slice(Math.max(0,i-2),i+1);return w.reduce((a,b)=>a+b)/w.length});
@@ -326,7 +323,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  const nE=Math.max(...ss.map(s=>s.ends.length)),endAvg=[...Array(nE)].map((_,i)=>{const v=ss.map(s=>s.ends[i]?endSum(s.ends[i]):null).filter(x=>x!=null);return v.reduce((a,b)=>a+b,0)/v.length});
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
- app.innerHTML=officialCard()+noteInsights()+plottedCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
+ app.innerHTML=officialCard()+noteInsights()+plottedCard()+freePlotCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
  <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(ss.map(s=>s.date)):[]})}</div>
  <div class="card"><h3>Last session, end by end${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${endChart(ends,last.ends.map(e=>e.length),null)}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
@@ -431,4 +428,4 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
 
 loadReal().then(()=>{nav(view)});
-addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav('home')});
+addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav(location.hash=='#plot'?'score':'home')});
