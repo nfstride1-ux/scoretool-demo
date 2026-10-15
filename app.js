@@ -48,7 +48,7 @@ function sampleSessions(){const R=rng(7),out=[];const today=new Date();
  for(let s=0;s<10;s++){const d=new Date(today-(30-s*3)*864e5);const ends=[];const skill=7.2+s*0.08;
   for(let e=0;e<10;e++){const end=[];for(let a=0;a<3;a++){let v=Math.round(skill+(R()-0.5)*4-(e>7?0.6:0));v=Math.max(0,Math.min(10,v));end.push(v==10&&R()<.35?'X':v==0?'M':String(v))}ends.push(end)}
   out.push({id:'sample'+s,sample:true,date:d.toISOString().slice(0,10),round:'Practice 10 ends × 3',ends,note:''})}
- out[9].ends=out[9].ends.map(e=>e.map(v=>v=='X'||v=='10'?'7':v=='9'?'6':v)); // one rough day so the Comeback Plan shows
+ out[9].ends=out[9].ends.map(e=>e.map(v=>v=='X'||v=='10'?'7':v=='9'?'6':v)); // one rough sample day
  return out}
 
 /* ---------- scoring helpers ---------- */
@@ -79,7 +79,7 @@ function winsFor(s){const W=[],prev=done().filter(x=>x.round==s.round&&x.id!=s.i
  W.push(['🏹',`You shot ${arrows(s).length} arrows. Every arrow is practice banked.`]);return W.slice(0,3)}
 function badges(){const d=done(),p=pbs(),st=streak(),arr=d.reduce((t,s)=>t+arrows(s).length,0),xs=d.reduce((t,s)=>t+arrows(s).filter(a=>a=='X').length,0);
  return[['🏹','First session',d.length>=1],['💯','100 arrows',arr>=100],['🔥','3-week streak',st>=3],['❌','10 X\'s',xs>=10],['🏆','Beat a PB',d.some(s=>winsFor(s).some(w=>w[0]=='🏆'))],
- ['🎯','Tight group',S.plots.length>=6&&groupStats(S.plots).r<0.25],['🌈','Clean end (no misses)',d.some(s=>s.ends.some(e=>e.every(a=>a!='M')))],['📓','Evidence bank',S.best.length>=1],['💪','Comeback done',S.comebackDone]]}
+ ['🎯','Tight group',S.plots.length>=6&&groupStats(S.plots).r<0.25],['🌈','Clean end (no misses)',d.some(s=>s.ends.some(e=>e.every(a=>a!='M')))],['📓','Evidence bank',S.best.length>=1]]}
 
 /* ---------- charts (inline SVG) ---------- */
 function lineChart(series,{h=170,labels=[]}={}){const W=340,P=30;const all=series.flatMap(s=>s.data).filter(v=>v!=null);if(!all.length)return'<p class="muted">Not enough data yet.</p>';
@@ -110,7 +110,7 @@ let view='home',cur=null;
 function nav(v){view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
 function gate(){return`<div class="card dark gate"><span class="kicker">Members only</span><h1>Unlock ScoreTool</h1><p>Track every arrow, see your progress, and celebrate your wins.</p>
-<ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with sight hints</li><li>Coach/parent share link</li></ul>
+<ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with group centre</li><li>Coach/parent share link</li></ul>
 <p class="small muted">Payments aren't switched on in this demo. Card, Apple Pay and Google Pay via Stripe will come later.</p>
 <button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their official results from Archer's Diary.</p>
@@ -135,12 +135,11 @@ function latestShoot(){const L=realShoots();if(!L.length)return null;const x=L[L
 function fill(t,v){return t.replace(/\{(\w+)\}/g,(_,k)=>v[k]??'')}
 function rot(key,list,n=1){S.rot=S.rot||{};const r=S.rot[key]||{shoot:null,i:-1};const sk=S._shootKey;if(r.shoot!==sk){r.i=(r.i+n)%list.length;r.shoot=sk;S.rot[key]=r;save()}return[...Array(n)].map((_,k)=>list[(r.i+k)%list.length])}
 function coachCard(L){const cat=L.cat=='first'?'solid':L.cat,M=(window.COACH_MSG||{})[cat];if(!M)return'';S._shootKey=L.date+'|'+L.round+'|'+L.score;
- const msg=rot('m_'+cat,M.messages)[0],nud=rot('n_'+cat,M.nudges,2);
+ const msg=rot('m_'+cat,M.messages)[0],nud=M.nudges.length?rot('n_'+cat,M.nudges,1):[];
  const fact=L.cat=='pb'?`${L.score} on ${L.round}, up from ${L.pb}.`:L.cat=='great'?`${L.score} on ${L.round}, just ${L.diff} off your PB of ${L.pb}.`:L.cat=='tough'?`${L.score} on ${L.round}, ${L.diff} below your usual of ${L.usual}.`:L.cat=='incomplete'?`${L.round}: round not finished, so it isn't counted in PBs or charts.`:L.cat=='first'?`${L.score} on ${L.round}. Your first score on this round, so it's the PB to beat.`:`${L.score} on ${L.round}, around your usual of ${L.usual}.`;
  const border=L.cat=='tough'?'border:3px solid var(--gold)':(L.cat=='pb'||L.cat=='great')?'border:3px solid #16a34a':'';
  return`<div class="card" style="${border}"><span class="kicker">${M.kicker} · ${L.date} <span class="real">${L.kind}</span></span><h2>${msg}</h2><p class="small muted">${fact}</p>
- <h3>Next time</h3><ul>${nud.map(x=>`<li>${x}</li>`).join('')}</ul>
- ${L.cat=='tough'?`<button class="btn" id="cbdone">${S.comebackFor==L.date+L.round?'Awesome! Comeback badge earned 💪':'I did my comeback session ✓'}</button>`:''}${L.cat=='pb'||L.cat=='great'?'<div style="font-size:28px;text-align:center">🎉🏹🎯</div>':''}</div>`}
+ ${L.cat=='tough'&&L.pb?`<p>Your best on this round is <b>${L.pb}</b>. You've done it before.</p>`:''}${nud.length?`<h3>Think about it</h3><ul>${nud.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}${L.cat=='tough'?'<p class="small"><b>Your coach can help you plan your next session.</b></p>':''}${L.cat=='pb'||L.cat=='great'?'<div style="font-size:28px;text-align:center">🎉🏹🎯</div>':''}</div>`}
 function latestWins(L){if(L.kind=='practice')return{s:L.s,label:L.s.round};const o=offRounds().find(x=>normDate(x.date)==L.date);
  if(o){const ge=o.ends.filter(e=>!e.flag);return{s:{id:'off',date:L.date,round:o.round,ends:ge.map(e=>e.arrows),dists:ge.map(e=>e.dist)},label:o.round}}return null}
 /* ---------- arrow volume (300-a-day idea from George Ryles notes; not shown) ---------- */
@@ -150,9 +149,9 @@ function volBadges(){const m=dayArrows(),days=Object.keys(m).sort(),mx=Math.max(
  let best=0,run=0,prev=null;days.forEach(d=>{if(m[d]>=300){run=prev&&Math.round((new Date(d)-new Date(prev))/864e5)==1&&m[prev]>=300?run+1:1;best=Math.max(best,run)}prev=d});
  let wk=0;days.forEach(d=>{let t=0;for(let i=0;i<7;i++){t+=m[ld(new Date(d).getTime()-i*864e5)]||0}wk=Math.max(wk,t)});
  return[...B.daily.map(b=>[b[1],b[2],mx>=b[0],b[3]]),...B.streak.map(b=>[b[1],b[2],best>=b[0],b[3]]),...B.weekly.map(b=>[b[1],b[2],wk>=b[0],b[3]])]}
-function volCard(){const g=S.goal||300,n=dayArrows()[today()]||0,p=Math.min(1,n/g),C=2*Math.PI*42;S._shootKey=S._shootKey||today();const nd=rot('vol',window.VOL_NUDGES)[0];
- return`<div class="card"><span class="kicker">Today's arrows</span><div class="row" style="gap:12px;align-items:center"><svg viewBox="0 0 100 100" width="110" height="110" role="img" aria-label="${n} of ${g} arrows today"><circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold,#e0a800)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*p} ${C}" transform="rotate(-90 50 50)"/><text x="50" y="50" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">${n}</text><text x="50" y="66" text-anchor="middle" font-size="10" fill="#475569">of ${g}</text></svg>
- <div style="flex:1;min-width:0"><label class="small" for="goal" style="display:block">Your goal: <input id="goal" type="number" min="10" max="1000" step="10" value="${g}" style="width:70px;display:inline-block;padding:4px"> arrows a day</label><p class="small" style="margin:6px 0">Shot some without scoring? Add them:</p><div style="display:flex;flex-wrap:wrap;gap:6px">${[6,12,36,72].map(k=>`<button class="btn ghost" data-vol="${k}" style="padding:6px 10px">+${k}</button>`).join('')}<button class="btn ghost" data-vol="-6" style="padding:6px 10px" aria-label="remove 6">−6</button></div></div></div><p class="small muted" style="margin:8px 0 0">💡 ${nd}</p></div>`}
+function volCard(){const g=S.goal||(/logan/i.test(S.profile||'')?300:0),n=dayArrows()[today()]||0,p=g?Math.min(1,n/g):0,C=2*Math.PI*42;S._shootKey=S._shootKey||today();const nd=rot('vol',window.VOL_NUDGES)[0];
+ return`<div class="card"><span class="kicker">Today's arrows</span><div class="row" style="gap:12px;align-items:center"><svg viewBox="0 0 100 100" width="110" height="110" role="img" aria-label="${n} arrows today${g?" of "+g:""}"><circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold,#e0a800)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*p} ${C}" transform="rotate(-90 50 50)"/><text x="50" y="50" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">${n}</text><text x="50" y="66" text-anchor="middle" font-size="10" fill="#475569">${g?"of "+g:"arrows"}</text></svg>
+ <div style="flex:1;min-width:0"><label class="small" for="goal" style="display:block">Daily goal (set by you or your coach): <input id="goal" type="number" min="0" max="1000" step="10" value="${g||""}" placeholder="–" style="width:70px;display:inline-block;padding:4px"> arrows a day</label><p class="small" style="margin:6px 0">Shot some without scoring? Add them:</p><div style="display:flex;flex-wrap:wrap;gap:6px">${[6,12,36,72].map(k=>`<button class="btn ghost" data-vol="${k}" style="padding:6px 10px">+${k}</button>`).join('')}<button class="btn ghost" data-vol="-6" style="padding:6px 10px" aria-label="remove 6">−6</button></div></div></div><p class="small muted" style="margin:8px 0 0">💡 ${nd}</p></div>`}
 function shelf(){const b=[...volBadges(),...badges()];return`<div class="card"><span class="kicker">Badges shelf</span><h3>${b.filter(x=>x[2]).length} of ${b.length} earned</h3><div class="badges">${b.map(x=>`<div class="badge ${x[2]?'':'off'}" title="${(x[3]||'').replace(/"/g,'')}"><i>${x[0]}</i>${x[1]}${x[3]?`<span class="small muted" style="display:block;font-weight:400;font-size:11px">${x[3]}</span>`:''}</div>`).join('')}</div></div>`}
 function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  let h=`<div class="card dark"><span class="kicker">G'day ${S.profile.split(' ')[0]}</span><h1>Your progress zone</h1>
@@ -165,32 +164,26 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} <span class="sample">sample</span></span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
  h+=volCard()+shelf();
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
- h+=noteInsights()+parentNote();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
+ h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
  if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:L.date,text:winsFor(W.s).map(w=>w[1]).join(' '),total:L.score,round:L.round});save();$('#bank').textContent='Saved ✓'};
- if($('#cbdone'))$('#cbdone').onclick=()=>{S.comebackDone=true;S.comebackFor=L.date+L.round;save();$('#cbdone').textContent='Awesome! Comeback badge earned 💪'};
- if($('#goal'))$('#goal').onchange=e=>{const v=Math.max(10,Math.min(1000,+e.target.value||300));S.goal=v;save();home()};app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
+
+ if($('#goal'))$('#goal').onchange=e=>{const v=Math.max(0,Math.min(1000,+e.target.value||0));S.goal=v;save();home()};app.querySelectorAll('[data-vol]').forEach(b=>b.onclick=()=>{S.vol=S.vol||{};const t=today();S.vol[t]=Math.max(0,(S.vol[t]||0)+ +b.dataset.vol);save();home()});bindNotes()}
 
 
 /* Source refs (George Ryles notes) are kept in code only, never shown. Wording is our own. */
 function cite(c){return''}
 function tip(t,c){return`<div class="list-item">${t}${cite(c)}</div>`}
-const KID=[['What was your favourite shot today? Tell someone about it.','TAW #74'],['Something feels off? Come down, relax, and draw again. Good archers do it all the time.','S1 44:15'],['Forget the total. Make this shot a good one, then the next.','S1 67:24'],['Tricky days still count. Look back a few months and see how much you\'ve grown.','S1 147:11']];
+const KID=[['Every arrow you shoot is part of your story. Nice work showing up!',''],['What was your favourite shot today?',''],['Look back a few months and see how far you\'ve come.',''],['Tricky days still count. You kept going!','']];
 function kidLine(){const k=KID[Math.floor(Date.now()/864e5)%KID.length];return`<p style="margin:10px 0 0">💬 ${k[0]}${cite(k[1]+', in simple words')}</p>`}
-function parentNote(){return`<div class="card"><span class="kicker">For parents & coaches</span>${tip('Give them room. Kids build real confidence by working through hard things with you nearby.','S1 149:39')}${tip('Growing fast? A dip in scores can mean the draw length no longer fits. Check it monthly.','TAW #43')}</div>`}
-function drillsCard(){return`<div class="card"><span class="kicker">Practice drills</span><h3>Practice drills</h3>
-${tip('<b>Walk-back:</b> begin very close, then move back a little at a time. A quick warm-up ladder: 5, 7, 10, 14, 18, 20.','TAW #116')}
-${tip('<b>Blank bale first:</b> shoot a few with no face to find your rhythm, then score.','S1 97:23, TAW #83')}
-${tip('<b>Bean bag on your head:</b> keep it balanced through the whole shot to check you stay steady.','TAW #71')}
-${tip('<b>Single-arrow games:</b> make one shot count, like a mini competition. Practising under a bit of pressure makes match day feel familiar.','PDF v6 p.3')}
-${tip('<b>Swap target faces</b> often so you don\'t get used to one spot.','TAW #101')}</div>`}
-function ryTips(sums,good,all,dists,fe,le,EL){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums);
- if(le.length&&av(fe)-av(le)>=1)T.push([`Fading late (${EL(sums.length-le.length)} to ${EL(sums.length-1)})`,tip('When you\'re tired your form slips. Fix the form, don\'t touch the sight.','S2 00:47')+tip('Between ends, sit down, breathe and let your shoulders loosen.','S1 108:41')+tip('Tell yourself you\'ll finish just as strong as you started.','seminar, self-talk section')]);
- if(sums.length>2&&sd(sums)>Math.max(2,m*0.08))T.push([`Big spread between ends (best ${EL(sums.indexOf(Math.max(...sums)))}: ${Math.max(...sums)}, lowest ${EL(sums.indexOf(Math.min(...sums)))}: ${Math.min(...sums)})`,tip('Rough end? Let it go. The next end is a clean start.','S1 142:58, TAW #77')+tip('Choose one short reminder word and use it on every shot.','S1 73:43')]);
- const dv=dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return{n:parseFloat(d)||0,v:a.reduce((t,x)=>t+val(x),0)/(a.length||1)}}).sort((a,b)=>b.n-a.n);
- if(dv.length>1&&dv[0].v<av(dv.slice(1).map(x=>x.v))-0.3)T.push(['Weaker at long distance',tip('Train your form, don\'t change your gear.','S2 00:47')+tip('In wind, keep your focus on the gold (X, 10 or 9) until the arrow lands.','TAW #23, in simple words')]);
- if(all.includes('M')||sums.some(x=>x<m*0.75))T.push([`A miss or a blown end (${EL(sums.indexOf(Math.min(...sums)))}: ${Math.min(...sums)})`,tip('One miss doesn\'t decide your day. Just focus on the shot you\'re about to make.','S1 67:24')+tip('Doesn\'t feel right at full draw? Come down and start the shot again.','S1 44:15')]);
- return`<h3 style="margin-top:12px">Coach tips for this round</h3>${T.length?T.map(t=>`<p style="margin:8px 0 2px"><b>${t[0]}</b></p>${t[1]}`).join(''):tip('Steady round! Keep doing what works.','S1 67:24, in simple words')}`}
+function ryTips(sums,good,all,dists,fe,le,EL){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums),f1=x=>x.toFixed(1);
+ if(le.length&&av(fe)-av(le)>=1)T.push(`Your last ${le.length} ends (${EL(sums.length-le.length)} to ${EL(sums.length-1)}) averaged ${f1(av(fe)-av(le))} points lower than your first ${fe.length} (${f1(av(le))} vs ${f1(av(fe))}).`);
+ else if(le.length)T.push(`Your last ${le.length} ends averaged ${f1(av(le))}, compared with ${f1(av(fe))} for your first ${fe.length}.`);
+ if(sums.length>1)T.push(`Your best end was ${EL(sums.indexOf(Math.max(...sums)))} with ${Math.max(...sums)}. Your lowest was ${EL(sums.indexOf(Math.min(...sums)))} with ${Math.min(...sums)}.`);
+ const dv=dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return{d,n:parseFloat(d)||0,v:a.reduce((t,x)=>t+val(x),0)/(a.length||1)}}).sort((a,b)=>b.n-a.n);
+ if(dv.length>1)T.push(`Average per arrow: ${dv.map(x=>`${x.d} ${x.v.toFixed(2)}`).join(', ')}.`);
+ const ms=all.filter(a=>a=='M').length;if(ms)T.push(`${ms} miss${ms>1?'es':''} this round.`);
+ return`<h3 style="margin-top:12px">Your round in numbers</h3>${T.map(t=>`<div class="list-item">${t}</div>`).join('')}<p class="small" style="margin-top:6px"><b>Worth a chat with your coach?</b></p>`}
 
 const TAGS=[['😴','Tired',/tired|sleep|exhaust|fatigu/i],['🌬️','Wind/weather',/wind|rain|hot|heat|cold|weather|storm/i],['😬','Nerves',/nerv|anxious|shak|pressure/i],['🔧','Gear change',/new (arrow|bow|sight|string|tab|release)|gear|changed|tuned|equipment/i],['🩹','Injury',/injur|sore|pain|hurt/i],['⏸️','Incomplete',/didn.?t (finish|complete)|incomplete|retired|stopped early/i]];
 function seedNotes(){if(S.notes)return;S.notes={'sample9':'SAMPLE: windy and felt tired','sample5':'SAMPLE: windy afternoon','sample2':'SAMPLE: bad sleep, felt tired','o:2026-10-11|WA 90/1440':"Didn't complete the round"};save()}
@@ -204,14 +197,6 @@ function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.for
  const out=TAGS.map(([e,n])=>{const w=items.filter(i=>tagsOf(i.t).some(x=>x[1]==n)),o=items.filter(i=>!tagsOf(i.t).some(x=>x[1]==n));if(w.length<2||!o.length)return'';const d=w.reduce((a,b)=>a+b.pct,0)/w.length-o.reduce((a,b)=>a+b.pct,0)/o.length;
   return`<div class="list-item">${e} On <b>${n.toLowerCase()}</b> days you score <b>${Math.abs(d).toFixed(1)}% ${d<0?'less':'more'}</b> than your usual for that round (${w.length} sessions).</div>`}).filter(Boolean);
  return`<div class="card"><span class="kicker">From your notes</span><h3>What your notes show</h3>${out.length?out.join('')+'<p class="small muted">Compared with your own average for the same round. Notes starting "SAMPLE" are demo notes.</p>':'<p>Add a note under each score (tired, windy, nerves, new gear, sore, didn\'t finish). Once 2 sessions share a tag, you\'ll see how it affects your scores.</p>'}</div>`}
-function comeback(){const d=done();if(d.length<4)return'';const last=d[d.length-1],prev=d.slice(0,-1).filter(s=>s.round==last.round).slice(-5);if(prev.length<3)return'';
- const avg=prev.reduce((a,s)=>a+total(s),0)/prev.length;if(total(last)>=avg*0.92||S.comebackFor==last.id)return'';
- const ev=S.best.length?S.best[S.best.length-1]:{text:`your best day was ${Math.max(...prev.map(total))} on this round`};
- return`<div class="card" style="border:3px solid var(--gold)"><span class="kicker">Comeback plan</span><h2>Tough day? Totally normal.</h2>
- <p>Last session was below your usual. Even the best archers have days like that. Let's rebuild with some easy wins:</p>
- <ol><li><b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the gold (X, 10 or 9). Smooth shots matter more than Xs.${cite('S2 08:50, TAW #116')}</li><li><b>Walk back</b> a couple of metres at a time. Only move once it feels easy.${cite('TAW #116, #138')}</li><li><b>Between ends</b>, replay your best shot in your head.${cite('S1 108:41, TAW #96')}</li><li><b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.</li><li><b>Remember:</b> ${ev.text}</li></ol><p>Confidence grows from success, so set up some easy wins first.${cite('S1 147:11')}</p><p class="small">Compare across months, not one day.${cite('S1 147:11')}</p>
- <button class="btn" id="cbdone">I did my comeback session ✓</button></div>`}
-function bindCB(){const b=$('#cbdone');if(b)b.onclick=()=>{S.comebackDone=true;S.comebackFor=done().slice(-1)[0].id;save();b.textContent='Awesome! Comeback badge earned 💪'}}
 
 let fix=null;
 const isSix=R=>/6-ring/.test(R.face||'');
@@ -258,7 +243,7 @@ function bindList(){bindNotes();app.querySelectorAll('[data-del]').forEach(b=>b.
 
 function plot(){const p=S.plots,g=groupStats(p);let hint='Tap at least 3 arrows to see your group.';
  if(p.length>=3){const dx=g.cx,dy=g.cy,off=Math.hypot(dx,dy);
-  hint=off<0.08?'Your group is nicely centred. No sight change needed! 🎯':`Group centre is ${dy<-0.04?'high':dy>0.04?'low':''}${Math.abs(dy)>0.04&&Math.abs(dx)>0.04?' and ':''}${dx<-0.04?'left':dx>0.04?'right':''}. <b>Move your sight ${[dy<-0.04?'UP':dy>0.04?'DOWN':'',dx<-0.04?'LEFT':dx>0.04?'RIGHT':''].filter(Boolean).join(' and ')}</b> ("follow the arrow"). Ask your coach how many clicks.`}
+  hint=off<0.08?'Your group is centred on the middle. 🎯':`Your group centre is ${[dy<-0.04?'high':dy>0.04?'low':'',dx<-0.04?'left':dx>0.04?'right':''].filter(Boolean).join(' and ')} of the middle. Worth a chat with your coach?`}
  app.innerHTML=`<div class="card"><span class="kicker">Arrow plotting</span><h2>Tap where each arrow hit</h2><div class="target-wrap">${targetSVG(p)}</div>
  <div class="stats" style="margin-top:8px"><div class="stat"><b>${p.length}</b>arrows</div><div class="stat"><b>${p.length?Math.round(p.reduce((t,a)=>t+val(ringScore(a.x,a.y)),0)/p.length*10)/10:'–'}</b>avg</div><div class="stat"><b>${p.length>=3?Math.round(g.r*100)/10:'–'}</b>group (rings)</div></div>
  <p>${hint}</p><p class="small muted">The purple ring shows your average spread around the group centre (+). Smaller means more consistent.</p>
@@ -266,7 +251,7 @@ function plot(){const p=S.plots,g=groupStats(p);let hint='Tap at least 3 arrows 
  $('#tface').onclick=ev=>{const s=$('#tface'),pt=s.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(s.getScreenCTM().inverse());S.plots.push({x:+q.x.toFixed(3),y:+q.y.toFixed(3)});save();plot()};
  $('#pu').onclick=()=>{S.plots.pop();save();plot()};$('#pc').onclick=()=>{S.plots=[];save();plot()}}
 
-function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drillsCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
+function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
  const byRound={};d.forEach(s=>(byRound[s.round]=byRound[s.round]||[]).push(s));const rounds=Object.keys(byRound);
  const sel=window._r&&byRound[window._r]?window._r:rounds.sort((a,b)=>byRound[b].length-byRound[a].length)[0],ss=byRound[sel];
  const tot=ss.map(total),roll=tot.map((_,i)=>{const w=tot.slice(Math.max(0,i-2),i+1);return w.reduce((a,b)=>a+b)/w.length});
@@ -274,12 +259,12 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drill
  const nE=Math.max(...ss.map(s=>s.ends.length)),endAvg=[...Array(nE)].map((_,i)=>{const v=ss.map(s=>s.ends[i]?endSum(s.ends[i]):null).filter(x=>x!=null);return v.reduce((a,b)=>a+b,0)/v.length});
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
- app.innerHTML=officialCard()+noteInsights()+plottedCard()+drillsCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
+ app.innerHTML=officialCard()+noteInsights()+plottedCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
  <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Last session, end by end${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Early vs late ends</h3><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${early.toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${late.toFixed(1)}</b>last ${third} ends</div></div>
- <p>${late>=early-0.3?'💪 You hold your score right to the end. Great focus!':`Your last ends average ${(early-late).toFixed(1)} points lower. Try a short reset routine (breathe, check your feet) before each of the last few ends.`}</p></div>
+ <p>${late>=early-0.3?'💪 You hold your score right to the end. Great focus!':`Your last ends average ${(early-late).toFixed(1)} points lower. Worth a chat with your coach?`}</p></div>
  <div class="card"><h3>Personal bests</h3>${Object.entries(pbs()).map(([r,v])=>`<div class="list-item row"><span>${r}</span><span><b>${v.score}</b> ${v.real?'<span class="real">official</span>':v.sample?'<span class="sample">sample</span>':''}</span></div>`).join('')}</div>
  ${real.length?`<div class="card"><h3>Official competition scores</h3>${lineChart([{name:'Official score',data:real.filter(r=>!r.incomplete).map(r=>r.score),c:'#166534'}],{labels:real.filter(r=>!r.incomplete).map(r=>normDate(r.date).slice(5))})}<p class="small muted">Mixed rounds; compare within the same round.</p></div>`:''}
  ${estRating(real)}
@@ -322,7 +307,7 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  <div class="card"><h3>Progress</h3>${lineChart([{name:'Session score',data:D.s.map(x=>x[2]),c:'#1d4ed8'}],{labels:D.s.map(x=>x[0].slice(5))})}${D.s.some(x=>x[4])?'<p class="small"><span class="sample">Includes sample data</span></p>':''}</div>
  <div class="card"><h3>Badges earned</h3><p>${D.b.join(' · ')||'None yet'}</p></div>
  ${real.length?`<div class="card"><h3>Official results</h3>${real.slice(-5).reverse().map(r=>`<div class="list-item"><b>${r.score}</b> · ${r.round} · ${r.date}</div>`).join('')}</div>`:''}
- <div class="card"><h3>💬 How to help</h3><ul><li>Praise effort and routine, like "I loved how you reset after that end", rather than the score.</li><li>Ask "What went well today?" before "What went wrong?"</li><li>Compare with their own last month, not other kids.</li></ul></div>
+ 
  <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
 
 loadReal().then(()=>{nav(view)});
