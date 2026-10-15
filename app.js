@@ -140,7 +140,7 @@ function comeback(){const d=done();if(d.length<4)return'';const last=d[d.length-
  const ev=S.best.length?S.best[S.best.length-1]:{text:`your best day was ${Math.max(...prev.map(total))} on this round`};
  return`<div class="card" style="border:3px solid var(--gold)"><span class="kicker">Comeback plan</span><h2>Tough day? Totally normal.</h2>
  <p>Last session was below your usual. Even the best archers have days like that. Let's rebuild with some easy wins:</p>
- <ol><li><b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the X.</li><li><b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.</li><li><b>Remember:</b> ${ev.text}</li></ol>
+ <ol><li><b>Move closer or use a bigger face</b> for 3 ends. Aim to get 2 out of 3 arrows in the gold (X, 10 or 9).</li><li><b>Pick one thing you control</b>, like your shot routine or follow-through, and give yourself a 👍 for each end where you did it.</li><li><b>Remember:</b> ${ev.text}</li></ol>
  <button class="btn" id="cbdone">I did my comeback session ✓</button></div>`}
 function bindCB(){const b=$('#cbdone');if(b)b.onclick=()=>{S.comebackDone=true;S.comebackFor=done().slice(-1)[0].id;save();b.textContent='Awesome! Comeback badge earned 💪'}}
 
