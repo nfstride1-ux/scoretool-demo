@@ -67,13 +67,14 @@ function pbs(){const m={};for(const s of done()){const t=total(s);if(!m[s.round]
  for(const r of findReal(S.profile||'')){if(r.incomplete)continue;const k='🏆 '+r.round+(r.division?' · '+r.division.replace(/^(Under \d+|Open) (Male|Female) /,''):'');if(!m[k]||r.score>m[k].score)m[k]={score:r.score,date:r.date,real:true}}return m}
 function streak(){const wk=d=>Math.floor((new Date(d)-new Date('2024-01-01'))/6048e5);const w=[...new Set(allSessions().map(s=>wk(s.date)))].sort((a,b)=>b-a);if(!w.length)return 0;
  let n=1;for(let i=1;i<w.length;i++){if(w[i-1]-w[i]==1)n++;else break}return n} // weeks-with-practice style streak
+function endLabel(s,i){if(s.dists&&s.dists[i]){const d=s.dists[i];return`end ${s.dists.slice(0,i+1).filter(x=>x==d).length} at ${d}`}const m=(s.round||'').match(/(\d+m)/);return`end ${i+1}${m?' at '+m[1]:''}`}
 function winsFor(s){const W=[],prev=done().filter(x=>x.round==s.round&&x.id!=s.id&&x.date<=s.date);const t=total(s);
  const ends=s.ends.map(endSum),best=Math.max(...ends),bi=ends.indexOf(best);
- W.push(['⭐',`Your best end was end ${bi+1}: ${best} points (${s.ends[bi].join(' ')}).`]);
+ W.push(['⭐',`Your best end was ${endLabel(s,bi)}: ${best} points (${s.ends[bi].join(' ')}).`]);
  const gold=arrows(s).filter(a=>val(a)>=9).length;if(gold)W.push(['🟡',`${gold} arrows in the gold. That's ${Math.round(gold/arrows(s).length*100)}% of your shots.`]);
  if(prev.length){const avg=prev.reduce((a,x)=>a+total(x),0)/prev.length;if(t>avg)W.push(['📈',`${Math.round(t-avg)} points above your usual for this round.`]);
   const p=Math.max(...prev.map(total));if(t>p)W.push(['🏆',`NEW personal best! ${t} beats your old best of ${p}.`]);
-  const half=Math.ceil(ends.length/2),late=ends.slice(half);if(late.length&&late.reduce((a,b)=>a+b)/late.length>=ends.slice(0,half).reduce((a,b)=>a+b)/half)W.push(['💪','You finished as strong as you started. Great stamina and focus.'])}
+  const half=Math.ceil(ends.length/2),late=ends.slice(half);if(late.length&&late.reduce((a,b)=>a+b)/late.length>=ends.slice(0,half).reduce((a,b)=>a+b)/half)W.push(['💪',`You finished as strong as you started: your last ends (${endLabel(s,half)} to ${endLabel(s,ends.length-1)}) held up. Great stamina and focus.`])}
  if(sd(ends)<2.5)W.push(['🎯','Super consistent: your ends were all close together.']);
  W.push(['🏹',`You shot ${arrows(s).length} arrows. Every arrow is practice banked.`]);return W.slice(0,3)}
 function badges(){const d=done(),p=pbs(),st=streak(),arr=d.reduce((t,s)=>t+arrows(s).length,0),xs=d.reduce((t,s)=>t+arrows(s).filter(a=>a=='X').length,0);
@@ -90,8 +91,8 @@ function lineChart(series,{h=170,labels=[]}={}){const W=340,P=30;const all=serie
   if(!s.dash)s.data.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="${s.c}"/>`})}
  labels.forEach((l,i)=>{if(n<=12||i%Math.ceil(n/6)==0)g+=`<text x="${X(i)}" y="${h-6}" font-size="10" text-anchor="middle" fill="#475569">${l}</text>`});
  return g+'</svg>'+`<div class="small">${series.map(s=>`<span style="color:${s.c};font-weight:800">━</span> ${s.name}`).join(' &nbsp; ')}</div>`}
-function bars(vals,labels,c='#1d4ed8'){const W=340,h=150,mx=Math.max(...vals,1),bw=(W-20)/vals.length;
- return`<svg viewBox="0 0 ${W} ${h}" width="100%" role="img" aria-label="bar chart">${vals.map((v,i)=>`<rect x="${10+i*bw+2}" y="${h-20-v/mx*(h-40)}" width="${bw-4}" height="${v/mx*(h-40)}" rx="3" fill="${c}"/><text x="${10+i*bw+bw/2}" y="${h-24-v/mx*(h-40)}" font-size="10" text-anchor="middle" fill="#0f172a">${Math.round(v*10)/10}</text><text x="${10+i*bw+bw/2}" y="${h-6}" font-size="10" text-anchor="middle" fill="#475569">${labels[i]}</text>`).join('')}</svg>`}
+function bars(vals,labels,c='#1d4ed8',groups){const W=340,h=groups?165:150,mx=Math.max(...vals,1),bw=(W-20)/vals.length;
+ return`<svg viewBox="0 0 ${W} ${h}" width="100%" role="img" aria-label="bar chart">${vals.map((v,i)=>`<rect x="${10+i*bw+2}" y="${h-20-v/mx*(h-40)}" width="${bw-4}" height="${v/mx*(h-40)}" rx="3" fill="${c}"/><text x="${10+i*bw+bw/2}" y="${h-24-v/mx*(h-40)}" font-size="10" text-anchor="middle" fill="#0f172a">${Math.round(v*10)/10}</text><text x="${10+i*bw+bw/2}" y="${h-6}" font-size="10" text-anchor="middle" fill="#475569">${labels[i]}</text>${groups&&(i==0||groups[i]!=groups[i-1])?`${i?`<line x1="${10+i*bw}" x2="${10+i*bw}" y1="2" y2="${h-4}" stroke="#94a3b8" stroke-dasharray="3 3"/>`:''}<text x="${10+i*bw+3}" y="11" font-size="11" font-weight="700" fill="#0f172a">${groups[i]}</text>`:''}`).join('')}</svg>`}
 
 /* ---------- target plotting ---------- */
 function groupStats(p){if(!p.length)return{cx:0,cy:0,r:0};const cx=p.reduce((a,b)=>a+b.x,0)/p.length,cy=p.reduce((a,b)=>a+b.y,0)/p.length;
@@ -130,7 +131,7 @@ function home(){const d=done(),last=d[d.length-1],real=findReal(S.profile);
  const cb=comeback();if(cb)h+=cb;
  if(last){h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} ${last.sample?'<span class="sample">sample</span>':''}</span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}
  <button class="btn ghost" id="bank" style="margin-top:8px">⭐ Save to my evidence bank</button></div>`}
- const lo=offRounds()[0];if(lo){const ge=lo.ends.filter(e=>!e.flag);h+=`<div class="card"><span class="kicker">Wins of the day · ${lo.date} <span class="real">official</span></span><h2>${lo.round}</h2>${winsFor({id:'off',date:lo.date,round:lo.round,ends:ge.map(e=>e.arrows)}).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" onclick="nav('stats')" style="margin-top:8px">See full round analysis</button></div>`}
+ const lo=offRounds()[0];if(lo){const ge=lo.ends.filter(e=>!e.flag);h+=`<div class="card"><span class="kicker">Wins of the day · ${lo.date} <span class="real">official</span></span><h2>${lo.round}</h2>${winsFor({id:'off',date:lo.date,round:lo.round,ends:ge.map(e=>e.arrows),dists:ge.map(e=>e.dist)}).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" onclick="nav('stats')" style="margin-top:8px">See full round analysis</button></div>`}
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
  h+=noteInsights()+parentNote();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:last.date,text:winsFor(last).map(w=>w[1]).join(' '),total:total(last),round:last.round,sample:!!last.sample});save();$('#bank').textContent='Saved ✓'};bindCB();bindNotes()}
@@ -147,12 +148,12 @@ ${tip('<b>Blank bale first:</b> set your rhythm before you score. Practice ends 
 ${tip('<b>Bean bag on your head:</b> draw, release and follow through without dropping it.','TAW #71')}
 ${tip('<b>Single-arrow games:</b> one arrow counts. Practising with nerves makes them feel normal.','PDF v6 p.3')}
 ${tip('<b>Change faces often</b> in practice.','TAW #101')}</div>`}
-function ryTips(sums,good,all,dists,fe,le){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums);
- if(le.length&&av(fe)-av(le)>=1)T.push(['Fading late',tip('Tired groups are form, not gear. "Leave the keys alone."','S2 00:47')+tip('Sit relaxed between ends and let your shoulders drop.','S1 108:41')+tip('Self-talk: "I\'m going to go 100% top speed all the way through to the end"','seminar, self-talk section')]);
- if(sums.length>2&&sd(sums)>Math.max(2,m*0.08))T.push(['Big spread between ends',tip('Bad end? Throw it away and start again at arrow number one.','S1 142:58, TAW #77')+tip('One cue phrase: "One arrow. This one."','S1 73:43')]);
+function ryTips(sums,good,all,dists,fe,le,EL){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums);
+ if(le.length&&av(fe)-av(le)>=1)T.push([`Fading late (${EL(sums.length-le.length)} to ${EL(sums.length-1)})`,tip('Tired groups are form, not gear. "Leave the keys alone."','S2 00:47')+tip('Sit relaxed between ends and let your shoulders drop.','S1 108:41')+tip('Self-talk: "I\'m going to go 100% top speed all the way through to the end"','seminar, self-talk section')]);
+ if(sums.length>2&&sd(sums)>Math.max(2,m*0.08))T.push([`Big spread between ends (best ${EL(sums.indexOf(Math.max(...sums)))}: ${Math.max(...sums)}, lowest ${EL(sums.indexOf(Math.min(...sums)))}: ${Math.min(...sums)})`,tip('Bad end? Throw it away and start again at arrow number one.','S1 142:58, TAW #77')+tip('One cue phrase: "One arrow. This one."','S1 73:43')]);
  const dv=dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return{n:parseFloat(d)||0,v:a.reduce((t,x)=>t+val(x),0)/(a.length||1)}}).sort((a,b)=>b.n-a.n);
  if(dv.length>1&&dv[0].v<av(dv.slice(1).map(x=>x.v))-0.3)T.push(['Weaker at long distance',tip('Train your form, don\'t change your gear.','S2 00:47')+tip('In wind: "keep your eyes in the red until the arrow hits the target"','TAW #23')]);
- if(all.includes('M')||sums.some(x=>x<m*0.75))T.push(['A miss or a blown end',tip('"You don\'t shoot [a big score]. You receive it." So "your job is to just shoot an arrow".','S1 67:24')+tip('Feels wrong at full draw? Let down and reset.','S1 44:15')]);
+ if(all.includes('M')||sums.some(x=>x<m*0.75))T.push([`A miss or a blown end (${EL(sums.indexOf(Math.min(...sums)))}: ${Math.min(...sums)})`,tip('"You don\'t shoot [a big score]. You receive it." So "your job is to just shoot an arrow".','S1 67:24')+tip('Feels wrong at full draw? Let down and reset.','S1 44:15')]);
  return`<h3 style="margin-top:12px">Coach tips for this round</h3>${T.length?T.map(t=>`<p style="margin:8px 0 2px"><b>${t[0]}</b></p>${t[1]}`).join(''):tip('Steady round! Keep doing what works: one good arrow at a time.','S1 67:24, in simple words')}`}
 
 const TAGS=[['😴','Tired',/tired|sleep|exhaust|fatigu/i],['🌬️','Wind/weather',/wind|rain|hot|heat|cold|weather|storm/i],['😬','Nerves',/nerv|anxious|shak|pressure/i],['🔧','Gear change',/new (arrow|bow|sight|string|tab|release)|gear|changed|tuned|equipment/i],['🩹','Injury',/injur|sore|pain|hurt/i],['⏸️','Incomplete',/didn.?t (finish|complete)|incomplete|retired|stopped early/i]];
@@ -239,7 +240,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drill
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
  app.innerHTML=officialCard()+noteInsights()+plottedCard()+drillsCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
  <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5))})}</div>
- <div class="card"><h3>Last session, end by end</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
+ <div class="card"><h3>Last session, end by end${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Early vs late ends</h3><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${early.toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${late.toFixed(1)}</b>last ${third} ends</div></div>
  <p>${late>=early-0.3?'💪 You hold your score right to the end. Great focus!':`Your last ends average ${(early-late).toFixed(1)} points lower. Try a short reset routine (breathe, check your feet) before each of the last few ends.`}</p></div>
@@ -253,15 +254,15 @@ function offRounds(){const k=Object.keys(OFF).find(x=>x.toLowerCase()==(S.profil
 function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i],good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
  const sums=good.map(e=>endSum(e.arrows)),all=good.flatMap(e=>e.arrows),n=all.length||1,pc=f=>Math.round(all.filter(f).length/n*100);
  const dists=[...new Set(good.map(e=>e.dist))],third=Math.max(1,Math.floor(sums.length/3)),fe=sums.slice(0,third),le=sums.slice(-third),av=a=>a.reduce((x,y)=>x+y,0)/a.length;
- const fake={id:'off',date:o.date,round:o.round,ends:good.map(e=>e.arrows)};
+ const fake={id:'off',date:o.date,round:o.round,ends:good.map(e=>e.arrows),dists:good.map(e=>e.dist)};const gl=sums.map((_,j)=>endLabel(fake,j).match(/end (\d+)/)[1]);
  return`<div class="card"><span class="kicker">Official round · real arrows <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}</option>`).join('')}</select>
  <p class="small muted">${o.event} · ${good.length} ends · ${all.length} arrows · total ${sums.reduce((a,b)=>a+b,0)} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
  ${flagged.length?`<p class="small"><span class="sample">Flagged</span> ${flagged.map(e=>e.dist).join(', ')}: ${flagged.length} end(s) with every arrow a miss. That's most likely a scoresheet error, so it's left out of these stats and isn't treated as real form.</p>`:''}
- <h3>End by end</h3>${bars(sums,sums.map((_,j)=>j+1),'#166534')}
+ <h3>End by end${dists.length>1?' (by distance)':' at '+dists[0]}</h3>${bars(sums,gl,'#166534',dists.length>1?fake.dists:null)}
  <h3>Arrow values</h3><div class="stats"><div class="stat"><b>${pc(a=>a=='X')}%</b>X</div><div class="stat"><b>${pc(a=>a=='10')}%</b>10</div><div class="stat"><b>${pc(a=>a=='9')}%</b>9</div></div>
  <h3 style="margin-top:12px">Per distance (avg per arrow)</h3>${dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return`<div class="list-item row"><span>${d}</span><b>${(a.reduce((t,x)=>t+val(x),0)/a.length).toFixed(2)}</b></div>`}).join('')}
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px"><div class="stat"><b>${av(fe).toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${av(le).toFixed(1)}</b>last ${third} ends</div><div class="stat"><b>${sd(sums).toFixed(1)}</b>end spread</div></div>
- ${ryTips(sums,good,all,dists,fe,le)}${noteBox({date:o.date,round:o.round})}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
+ ${ryTips(sums,good,all,dists,fe,le,j=>endLabel(fake,j))}${noteBox({date:o.date,round:o.round})}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
 function estRating(real){const rr=real.map(r=>({r,m:(r.notes||'').match(/Rating\s*([\d.]+);?\s*([A-Za-z ]+)?/)})).filter(x=>x.m);
  const off=rr.length?`<div class="list-item"><span class="real">official</span> Latest Archer's Diary rating: <b>${rr[rr.length-1].m[1]}</b>${rr[rr.length-1].m[2]?' · '+rr[rr.length-1].m[2].trim():''} <span class="small muted">(${rr[rr.length-1].r.round}, ${rr[rr.length-1].r.date})</span></div>`:'';
  return`<div class="card"><h3>AA rating & classification <span class="est">estimated · placeholder</span></h3>${off}
