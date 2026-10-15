@@ -9,7 +9,7 @@ function seedSquad(){if(S.squad)return seedAdults();const day=k=>new Date(Date.n
    {id:'m-s1',name:'Sam Rivers',avatar:'🐨',u18:true,parent:'linked',status:'active',sample:true,wk:640,streak:2,badges:7,impr:4.1,last:day(0),goalToday:true,raw:[[day(1),'Australian Indoor 18m',271,'official']]},
    {id:'m-s2',name:'Mia Chen',avatar:'🦊',u18:true,parent:'linked',status:'active',sample:true,wk:410,streak:0,badges:5,impr:6.8,last:day(2),raw:[[day(2),'Practice 10 ends × 3',248,'keypad']]},
    {id:'m-s3',name:'Ollie Park',avatar:'🐢',u18:true,parent:'linked',status:'active',sample:true,wk:90,streak:0,badges:3,impr:-1.2,last:day(6),raw:[[day(6),'Short Canberra',702,'plot']]},
-   {id:'m-s4',name:'Ava Brooks',avatar:'🐧',u18:true,parent:'linked',status:'pending',sample:true}]};seedAdults();save()}
+   {id:'m-s4',name:'Ava Brooks',avatar:'🐧',u18:true,parent:'linked',status:'pending',sample:true,wk:0,streak:0,badges:0,impr:0,last:null,raw:[]}]};seedAdults();save()}
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
 const myAdult=()=>(S.squad.adults||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
@@ -51,7 +51,7 @@ function squad(){seedSquad();const Q=S.squad;
   ${quiet.map(m=>`<p class="small">🔔 ${shortName(m.name)} hasn't logged for 5+ days. Only you can see this.</p>`).join('')}
   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rr" style="width:auto" ${Q.rawRank?'checked':''}> Show a raw-score leaderboard</label>
   <h3>Members</h3>${act.map(m=>`<div class="list-item row"><span>${m.avatar} ${shortName(m.name)}</span>${m.name==S.profile?'':`<button class="btn ghost" data-rm="${m.id}" style="padding:4px 10px">Remove</button>`}</div>`).join('')}</div>`}
- if(me){h+=`<div class="card"><h3>Me in this squad</h3><label for="av">My avatar</label><select id="av">${AVATARS.map(a=>`<option ${a==me.avatar?'selected':''}>${a}</option>`).join('')}</select><p class="small muted">Shown as ${shortName(me.name)}. No photo, club or contact details are shared.</p><button class="btn ghost" id="lv">Leave squad</button></div>`}
+ if(me){h+=`<div class="card"><h3>Me in this squad</h3><label for="av">My avatar</label><select id="av">${AVATARS.map(a=>`<option ${a==me.avatar?'selected':''}>${a}</option>`).join('')}</select><p class="small muted">Shown as ${shortName(me.name)} No photo, club or contact details are shared.</p><button class="btn ghost" id="lv">Leave squad</button></div>`}
  h+=safe();app.innerHTML=h;
  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sqTab=b.dataset.m;squad()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=Q.cheers[b.dataset.c]=Q.cheers[b.dataset.c]||{};if(c.mine){c[c.mine]--;}if(c.mine==b.dataset.e){c.mine=null}else{c.mine=b.dataset.e;c[b.dataset.e]=(c[b.dataset.e]||0)+1}save();squad()});
