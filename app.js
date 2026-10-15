@@ -232,11 +232,11 @@ function faceSVG(pts,id,vb,R,extra=''){const rings=[['#fff','#333'],['#fff','#33
 function plotScore(x,y,R){const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
- if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(sv=='entry'&&i<cur.ends.length-1)sv='sheet';save();score();return}
+ if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(fixRet||(sv=='entry'&&i<cur.ends.length-1))sv='sheet';fixRet=false;save();score();return}
  let e=cur.ends[cur.ends.length-1];if(e.length==R.ape){if(cur.ends.length>=R.ends)return;cur.ends.push([]);e=cur.ends[cur.ends.length-1]}
  const i=cur.ends.length-1;e.push(k);(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
  if(e.length==R.ape){sortEnd(i);justDone=true}save();score()}
-let crEdit=null,sv='sheet',justDone=false;
+let crEdit=null,sv='sheet',justDone=false,fixRet=false;
 function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom);
  app.innerHTML=`<div class="card"><span class="kicker">New session</span><h1>Score it</h1><label for="rd">Round</label><select id="rd"><optgroup label="Standard rounds">${std.map(r=>`<option ${r==S.lastRound?'selected':''}>${esc(r)}</option>`).join('')}</optgroup>${mine.length?`<optgroup label="My rounds">${mine.map(r=>`<option ${r==S.lastRound?'selected':''}>${esc(r)}</option>`).join('')}</optgroup>`:''}<option value="__new">+ Create my own practice round</option></select>
  <label for="dt">Date</label><input id="dt" type="date" value="${today()}"><button class="btn alt full" style="margin-top:14px" id="st">Start</button>
@@ -271,7 +271,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
   f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{if(L.hidden)return;L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  $('#undo').onclick=()=>{const l=cur.ends[cur.ends.length-1];if(!l.length)return;l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;justDone=false;save();score()};
- $('#eback').onclick=()=>{fix=null;justDone=false;sv='sheet';score()};
+ $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
  $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
 const faceName=F=>F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
@@ -286,7 +286,7 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  ${fin?summaryCard(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
  <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();
- app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);sv='entry';score()});
+ app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';score()});
  if($('#addsc'))$('#addsc').onclick=()=>{sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
