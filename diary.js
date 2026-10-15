@@ -49,12 +49,9 @@ function diary(){seedDiary();const d0=new Date(Date.now()-30*864e5).toLocaleDate
  <label for="sd">Date</label><input id="sd" type="date" value="${t}"><textarea id="stxt" rows="4" aria-label="Describe your setup changes" placeholder="e.g. changed my points from 120gn to 140gn to see how they shot in the wind, i noticed they drifted less"></textarea>
  <button class="btn ghost" id="sparse" style="margin-top:8px">Sort it out</button><div id="sprev"></div></div>
  <div class="card"><span class="kicker">Current setup</span><h3>Latest change per part</h3>${currentSetup().map(x=>`<div class="list-item">${setupLine(x)} <span class="small muted">${x.date}</span>${x.sample?' <span class="sample">sample</span>':''}</div>`).join('')||'<p class="small muted">No setup changes logged yet.</p>'}</div>
- <div class="card"><span class="kicker">Send to my coach</span><h3>Summary for a date range</h3><div class="row" style="gap:8px"><label style="flex:1">From<input id="cf" type="date" value="${d0}"></label><label style="flex:1">To<input id="ct" type="date" value="${t}"></label></div>
- <button class="btn alt full" id="csend" style="margin-top:8px">📤 Send to my coach</button><div id="cout"></div></div>
  <div class="card"><span class="kicker">Timeline</span><h3>Your diary</h3>${entries.map(e=>`<div class="list-item"><div class="small muted">${e.date} · ${esc(e.kind)} ${e.sample?'<span class="sample">sample</span>':''}</div><div>${e.html||esc(e.text)}</div>${e.text&&e.kind!='Diary'?chips(e.text):''}</div>`).join('')||'<p class="small muted">Nothing yet.</p>'}</div>`;
  $('#dsave').onclick=()=>{const v=$('#dt2').value.trim();if(!v)return;S.diary.push({id:'d'+Date.now(),archer:S.profile,date:$('#dd').value,text:v});save();diary()};
- $('#sparse').onclick=()=>{draft=parseSetup($('#stxt').value,$('#sd').value);renderDraft()};
- $('#csend').onclick=()=>sendCoach($('#cf').value,$('#ct').value)}
+ $('#sparse').onclick=()=>{draft=parseSetup($('#stxt').value,$('#sd').value);renderDraft()}}
 function renderDraft(){const P=$('#sprev');if(!draft.length){P.innerHTML='<p class="small">Couldn\'t spot a setup change. Try naming the part, e.g. points, sight, draw length.</p>';return}
  P.innerHTML=`<h3 style="margin-top:12px">Check before saving (${draft.length})</h3>${draft.map((x,i)=>`<div class="list-item" data-i="${i}"><p class="small muted" style="margin:0">${setupLine(x)}</p>
  <label>Part<select data-f="cat">${SETUP_CATS.map(c=>`<option ${c==x.cat?'selected':''}>${c}</option>`).join('')}</select></label>
