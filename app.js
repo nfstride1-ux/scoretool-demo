@@ -232,11 +232,11 @@ function faceSVG(pts,id,vb,R,extra=''){const rings=[['#fff','#333'],['#fff','#33
 function plotScore(x,y,R){const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
- if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;save();score();return}
+ if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(sv=='entry'&&i<cur.ends.length-1)sv='sheet';save();score();return}
  let e=cur.ends[cur.ends.length-1];if(e.length==R.ape){if(cur.ends.length>=R.ends)return;cur.ends.push([]);e=cur.ends[cur.ends.length-1]}
  const i=cur.ends.length-1;e.push(k);(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
- if(e.length==R.ape){sortEnd(i);if(cur.ends.length<R.ends)cur.ends.push([])}save();score()}
-let crEdit=null;
+ if(e.length==R.ape){sortEnd(i);justDone=true}save();score()}
+let crEdit=null,sv='sheet',justDone=false;
 function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom);
  app.innerHTML=`<div class="card"><span class="kicker">New session</span><h1>Score it</h1><label for="rd">Round</label><select id="rd"><optgroup label="Standard rounds">${std.map(r=>`<option ${r==S.lastRound?'selected':''}>${esc(r)}</option>`).join('')}</optgroup>${mine.length?`<optgroup label="My rounds">${mine.map(r=>`<option ${r==S.lastRound?'selected':''}>${esc(r)}</option>`).join('')}</optgroup>`:''}<option value="__new">+ Create my own practice round</option></select>
  <label for="dt">Date</label><input id="dt" type="date" value="${today()}"><button class="btn alt full" style="margin-top:14px" id="st">Start</button>
@@ -244,32 +244,63 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#rd').onchange=e=>{if(e.target.value=='__new'){crEdit={i:-1};score()}};
  app.querySelectorAll('[data-ce]').forEach(b=>b.onclick=()=>{crEdit={i:+b.dataset.ce};score()});
  app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const c=S.customRounds[+b.dataset.cd];if(!confirm(`Delete "${c.name}"? Sessions already shot keep their scores.`))return;S.customRounds.splice(+b.dataset.cd,1);save();score()});
- $('#st').onclick=()=>{if($('#rd').value=='__new')return;S.lastRound=$('#rd').value;cur={id:'s'+Date.now(),date:$('#dt').value,round:$('#rd').value,ends:[[]],pos:[[]],note:''};S.sessions.push(cur);save();history.pushState({scoring:1},'');score()};bindList();return}
- const R=ROUNDS[cur.round],e=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&e.length==R.ape,mode=S.mode||'keypad',P=cur.pos||[];
- const FR=faceR(R,fix?fix[0]:cur.ends.length-1+(e.length==R.ape&&!fin?1:0)),vb=faceVB(FR);
- const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(e.length==R.ape&&!fin?[]:(P[cur.ends.length-1]||[]).filter(Boolean));
- const keys=(R.xs===false?['10','9','8','7','6','5','4','3','2','1','M']:['X','10','9','8','7','6','5','4','3','2','1','M']).filter(k=>!(isSix(FR)||isSpot(FR))||!/^[1-4]$|^[1-5]$/.test(k)||(isSix(FR)&&k=='5'));
- const entry=fin&&!fix?`<p><b>All done!</b> 🎉</p><button class="btn full" id="fin">See my wins</button>`:
-  `${S.hideFace?'':`<p class="small muted" style="margin:4px 0;text-align:center">${FR.face=='any'?'Full 10-ring face':FR.face+' face'}${FR.dist?' · '+FR.dist:''} · tap the face to plot${fix?' · tap to move the selected arrow':''}</p><div id="fwrap" style="position:relative;max-width:260px;margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
-  <div class="keypad" style="margin-top:8px">${keys.map(k=>`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}">${k}</button>`).join('')}<button class="k-u" id="undo" style="grid-column:span 2">↶ Undo</button><button class="k-u" id="quit" style="grid-column:span 2">Save & exit</button></div>`;
- app.innerHTML=`<div class="card"><div class="row"><button class="btn ghost" id="sback" style="padding:4px 10px">← Back</button><span class="kicker" style="flex:1;margin-left:8px">${esc(cur.round)}${R.custom?' · practice':''}</span><b>${total(cur)} / ${R.max}</b></div>
- <div class="row" style="margin:6px 0"><h2 style="margin:0">End ${cur.ends.length} of ${R.ends}</h2>${(()=>{const d=FR.dist||((cur.round.match(/(\d+(?:m|yd))/)||[])[1]);if(typeof sightFor!='function'||!d)return'';const m=sightFor(d);return`<span class="small" id="sighttag" style="background:#eef2ff;border-radius:8px;padding:4px 8px;font-weight:700">${esc(d)}, sight ${m?esc(m):'not set'}</span>`})()}<button class="btn ghost" id="hideface" aria-pressed="${!!S.hideFace}" style="padding:4px 10px;font-size:13px">${S.hideFace?'Show target':'Hide target'}</button></div>
- <div style="min-height:40px">${e.map(a=>`<span class="arrow ${col(a)}">${a}</span>`).join('')}</div>${entry}</div>
- <div class="card"><p class="small muted" style="margin:0 0 6px">${fix?'Now tap the face or a keypad score to fix this arrow.':'Tap an arrow to fix it'}</p><table class="ends"><tr><th>End</th><th>Arrows</th><th>Sum</th><th>Run</th></tr>${cur.ends.map((x,i)=>`<tr><td>${i+1}</td><td>${x.map((a,j)=>`<span class="arrow ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix arrow ${a}" style="cursor:pointer${fix&&fix[0]==i&&fix[1]==j?';outline:3px solid #7c3aed;outline-offset:2px':''}">${a}</span>`).join('')}</td><td>${endSum(x)}</td><td>${cur.ends.slice(0,i+1).reduce((t,y)=>t+endSum(y),0)}</td></tr>`).join('')}</table></div>`;
+ $('#st').onclick=()=>{if($('#rd').value=='__new')return;S.lastRound=$('#rd').value;sv='entry';justDone=false;cur={id:'s'+Date.now(),date:$('#dt').value,round:$('#rd').value,ends:[[]],pos:[[]],note:''};S.sessions.push(cur);save();history.pushState({scoring:1},'');score()};bindList();return}
+ const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&last.length==R.ape,P=cur.pos||[];
+ if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
+ const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
+ const FR=faceR(R,ei),vb=faceVB(FR),d=distOf(FR,cur.round);
+ const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
+ const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
+ const rows=[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
+ const sm=typeof sightFor=='function'&&d?sightFor(d):'';
+ app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
+ <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
+ <div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
+ <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${col(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #7c3aed;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
+ <button class="ad-small" id="undo" ${e.length&&!fix?'':'disabled'}>↶ Undo</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
+ <p class="small muted" style="margin:2px 12px">${fix?'Tap the face or a score to fix this arrow.':locked?'End complete. Tap an arrow to fix it, or press Next.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
+ ${S.hideFace?'':`<div id="fwrap" style="position:relative;max-width:260px;margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
+ <div class="ad-pad">${rows.map(r=>r.map(k=>k?`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`:'<span></span>').join('')).join('')}</div>
+ <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fix?'':'disabled'}>Next ›</button></div></div>`;
  $('#hideface').onclick=()=>{S.hideFace=!S.hideFace;save();score()};
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
  const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
   const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=(ev.clientX-r.left-55)+'px';L.style.top=(ev.clientY-r.top-140)+'px';
    L.innerHTML=faceSVG(shown,'lf',`${q.x-0.12} ${q.y-0.12} 0.24 0.24`,FR,`<path d="M${q.x-0.04} ${q.y}h0.08M${q.x} ${q.y-0.04}v0.08" stroke="#a855f7" stroke-width="0.006"/><circle cx="${q.x}" cy="${q.y}" r="0.012" fill="none" stroke="#a855f7" stroke-width="0.004"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
-  f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);show(ev)};f.onpointermove=ev=>{if(!L.hidden)show(ev)};
-  f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
+  f.onpointerdown=ev=>{if(locked)return;f.setPointerCapture(ev.pointerId);show(ev)};f.onpointermove=ev=>{if(!L.hidden)show(ev)};
+  f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{if(L.hidden)return;L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
- if($('#undo'))$('#undo').onclick=()=>{fix=null;let l=cur.ends[cur.ends.length-1];if(!l.length&&cur.ends.length>1){cur.ends.pop();(cur.pos||[]).length=cur.ends.length;l=cur.ends[cur.ends.length-1]}l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;save();score()};
- if($('#quit'))$('#quit').onclick=()=>{fix=null;if(!cur.ends[cur.ends.length-1].length&&cur.ends.length>1){cur.ends.pop();(cur.pos||[]).length=cur.ends.length}cur=null;save();score()};
- if($('#fin'))$('#fin').onclick=()=>{cur=null;nav('home')};
- $('#sback').onclick=()=>leaveScoring()}
+ $('#undo').onclick=()=>{const l=cur.ends[cur.ends.length-1];if(!l.length)return;l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;justDone=false;save();score()};
+ $('#eback').onclick=()=>{fix=null;justDone=false;sv='sheet';score()};
+ $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
+const faceName=F=>F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
+const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
+function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
+function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
+ const arrowsAll=s.ends.flat(),xs=arrowsAll.filter(a=>a=='X').length,tens=arrowsAll.filter(a=>a=='X'||a=='10').length;
+ app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>
+ ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
+ ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
+ ${secs.length>1?`<div class="ad-sum small">X's: <b>${A.filter(a=>a=='X').length}</b> 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b> <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
+ <div class="ad-sum">X's: <b>${xs}</b>&nbsp; 10's/X's: <b>${tens}</b>&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${R.max}</span></div></div>
+ ${fin?summaryCard(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
+ <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
+ bindNotes();
+ app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);sv='entry';score()});
+ if($('#addsc'))$('#addsc').onclick=()=>{sv='entry';score()};
+ if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
+ $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
+const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m'};
+function summaryCard(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
+ const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,aa=AA_MAP[s.round];
+ const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
+ const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
+ const pb=best?(sc>total(best)?`🎉 New practice PB for this round, beating ${total(best)}.`:sc==total(best)?'Equal to your practice best for this round.':''):'First time you have scored this round here.';
+ return`<div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><table class="ad-kv">${div?row('Division',esc(div),'from your official results'):''}${row('Round Name',esc(s.round))}${row('Score',sc)}
+ ${best?row('Best Score',Math.max(total(best),sc),total(best)>=sc?fmtD(best.date):fmtD(s.date)):''}${rt!=null?row('AA Rating',rt.toFixed(1)):''}${lv?row('Classification',esc(lv.name),'level for this rating · practice isn\'t counted'):''}</table>
+ ${pb?`<div class="ad-band" style="margin:0">Personal best</div><p style="margin:8px 12px">${pb}</p>`:''}</div>`}
 function arrowsIn(s){return s.ends.reduce((t,e)=>t+e.length,0)}
-function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;save();if(after)after();else score()};
+function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;sv='sheet';save();if(after)after();else score()};
  if(!arrowsIn(cur)){S.sessions=S.sessions.filter(x=>x!==cur);return go()}
  const ov=document.createElement('div');ov.id='leaveov';ov.style.cssText='position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end;justify-content:center';
  ov.innerHTML=`<div class="card" role="dialog" aria-modal="true" aria-label="Leave this round?" style="width:100%;max-width:480px;margin:0;border-radius:16px 16px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))"><h2>Leave this round?</h2><p class="small muted">${arrowsIn(cur)} arrows entered so far.</p>
