@@ -13,8 +13,8 @@ window.COACH_MSG={
   nudges:["Write down how the day went."]}
 };
 window.VOL_BADGES={
- daily:[[100,'🏹','First Hundred','100 arrows in a day!'],[200,'🏹','Double Ton','200 arrows in a day!'],[300,'🔥','Full Quiver Day','You hit 300 today!']],
- streak:[[3,'📅','Hat Trick','Three in a row, and a habit is forming!'],[7,'📅','Full Week','Seven days straight. Huge effort!'],[14,'🗓️','Fortnight Fire','Two weeks straight!'],[30,'👑','Iron Archer','A whole month of 300s. Legend!']],
- weekly:[[1000,'📦','Thousand Club','1,000 arrows this week!'],[2100,'🚀','Perfect Week','300 a day, every single day!']]
+ daily:[[100,'🥉','First Hundred','100 arrows in a day!'],[200,'🥈','Double Ton','200 arrows in a day!'],[300,'🥇','Full Quiver Day','You hit 300 today!']],
+ streak:[[3,'🎩','Hat Trick','Three in a row, and a habit is forming!'],[7,'📅','Full Week','Seven days straight. Huge effort!'],[14,'🌋','Fortnight Fire','Two weeks straight!'],[30,'🛡️','Iron Archer','A whole month of 300s. Legend!']],
+ weekly:[[1000,'🏅','Thousand Club','1,000 arrows this week!'],[2100,'💎','Perfect Week','300 a day, every single day!']]
 };
 window.VOL_NUDGES=["Quality over quantity: check your plan with your coach.","If something hurts, stop and tell your coach or a parent."];
