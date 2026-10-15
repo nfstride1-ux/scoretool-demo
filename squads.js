@@ -2,16 +2,9 @@
    No free text between members: the only interaction is one preset cheer per item. */
 const CHEERS=['👏','🔥','💪','🎯'],AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
-function seedAdults(){const Q=S.squad;if(Q.adultsV==2)return;Q.adultsV=2;Q.adults=[{id:'a-nath',name:'Nathaniel Stride',role:'Admin',tag:'Coach'},{id:'a-p0',name:'Logan Parent',display:'Parent of Logan W.',role:'Parent',child:'m-logan',sample:true},{id:'a-c1',name:'Jordan Hale',role:'Coach',sample:true},{id:'a-p1',name:'Priya Rivers',role:'Parent',child:'m-s1',sample:true},{id:'a-p2',name:'Ben Chen',role:'Parent',child:'m-s2',sample:true}];save()}
-function seedSquad(){if(S.squad)return seedAdults();const day=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');
- S.squad={name:'Gosnells Juniors (SAMPLE)',code:'GJX-4827',admin:'Nathaniel Stride',rawRank:false,cheers:{},
-  members:[{id:'m-logan',name:'Logan Wolfe',avatar:'🦅',u18:true,parent:'linked (SAMPLE)',status:'active'},
-   {id:'m-s1',name:'Sam Rivers',avatar:'🐨',u18:true,parent:'linked',status:'active',sample:true,wk:640,streak:2,badges:7,impr:4.1,last:day(0),goalToday:true,raw:[[day(1),'Australian Indoor 18m',271,'official']]},
-   {id:'m-s2',name:'Mia Chen',avatar:'🦊',u18:true,parent:'linked',status:'active',sample:true,wk:410,streak:0,badges:5,impr:6.8,last:day(2),raw:[[day(2),'Practice 10 ends × 3',248,'keypad']]},
-   {id:'m-s3',name:'Ollie Park',avatar:'🐢',u18:true,parent:'linked',status:'active',sample:true,wk:90,streak:0,badges:3,impr:-1.2,last:day(6),raw:[[day(6),'Short Canberra',702,'plot']]},
-   {id:'m-s4',name:'Ava Brooks',avatar:'🐧',u18:true,parent:'linked',status:'pending',sample:true,wk:0,streak:0,badges:0,impr:0,last:null,raw:[]}]};seedAdults();save()}
+function seedSquad(){if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
-const myAdult=()=>(S.squad.adults||[]).find(a=>a.name==S.profile);
+const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
 /* Logan's numbers come from his real data; sample kids use fixed numbers. */
 function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filter(r=>!r.incomplete);
@@ -31,8 +24,8 @@ function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name);
  if(m.impr>3)F.push({id:m.id+'i',date:m.last||today(),who:m,text:`${n} is ${m.impr}% above their own average`})});return F.sort((a,b)=>a.date<b.date?1:-1)}
 let sqTab='wk';
 function squad(){seedSquad();const Q=S.squad;
- if(!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Ask your coach or parent for the invite code. The squad admin has to approve you, and under-18s need a parent account linked.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234"><button class="btn" id="jb" style="margin-top:8px">Request to join</button><div id="jo"></div></div>${safe()}`;
-  $('#jb').onclick=()=>{$('#jo').innerHTML='<p class="small">Request sent. A parent account must be linked and the admin must approve before you can see the squad. (Demo: not sent anywhere.)</p>'};return}
+ if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Ask your coach or parent for the invite code. The squad admin has to approve you, and under-18s need a parent account linked.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234"><button class="btn" id="jb" style="margin-top:8px">Request to join</button><div id="jo"></div></div>${safe()}`;
+  $('#jb').onclick=()=>{$('#jo').innerHTML='<p class="small">Request sent. A parent account must be linked and the admin must approve before you can see the squad. (Not sent anywhere yet: squads are not live.)</p>'};return}
  const act=Q.members.filter(m=>m.status=='active').map(memberStats),pend=Q.members.filter(m=>m.status=='pending');
  const metrics={wk:['This week\'s arrows',m=>m.wk,v=>v],streak:['Goal streak (days)',m=>m.streak,v=>v],badges:['Badges earned',m=>m.badges,v=>v],impr:['Improvement vs own average',m=>m.impr,v=>(v>0?'+':'')+v+'%']};
  if(Q.rawRank)metrics.raw=['Latest score (admin on)',m=>m.raw&&m.raw[0]?m.raw[0][2]:0,v=>v];

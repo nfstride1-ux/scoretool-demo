@@ -1,8 +1,6 @@
 /* Gear: bow setups with sight marks. Records what the archer sets; gives no gear advice. */
 const SIGHT_DISTS=['18m','20m','30m','40m','50m','60m','70m','90m'];
-function seedBows(){S.bows=S.bows||[];S.bowSel=S.bowSel||{};if(S.bowsSeeded)return;S.bowsSeeded=true;
- S.bows.push({id:'b1',archer:'Nathaniel Stride',name:'Compound (SAMPLE)',extra:[],marks:{'18m':{v:'2.1',h:'0.4'},'50m':{v:'4.3',h:''},'70m':{v:'5.2',h:'0.6'},'90m':{v:'6.6',h:''}},sample:true},
-  {id:'b2',archer:'Logan Wilson',name:'Recurve (SAMPLE)',extra:[],marks:{'18m':{v:'3.0',h:''},'40m':{v:'4.8',h:''}},sample:true});save()}
+function seedBows(){S.bows=S.bows||[];S.bowSel=S.bowSel||{}}
 const myBows=()=>(S.bows||[]).filter(b=>b.archer==S.profile);
 function curBow(){const L=myBows();return L.find(b=>b.id==S.bowSel[S.profile])||L[0]}
 function bowDists(b){const all=[...SIGHT_DISTS,...(b.extra||[])];return all.sort((a,c)=>parseFloat(a)-parseFloat(c)||a.localeCompare(c))}

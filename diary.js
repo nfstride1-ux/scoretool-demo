@@ -31,10 +31,7 @@ function parseSetup(text,date){const items=[];const sentences=(text||'').split(/
    const body=rs?c.slice(0,rs.index):c;items.push({id:'su'+Date.now()+Math.random().toString(36).slice(2,6),archer:S.profile,date,cat:cat||'Other',change:parseChange(body)||body.replace(/^(today\s+)?i\s+/i,''),reason,noticed:'',raw:c})}}
  return items}
 function setupLine(x){return`<b>${esc(x.cat)}:</b> ${esc(x.change)}${x.reason?` (${esc(x.reason)})`:''}.${x.noticed?` Noticed: ${esc(x.noticed)}.`:''}`}
-function seedDiary(){S.setup=S.setup||[];S.diary=S.diary||[];if(S.diarySeeded)return;S.diarySeeded=true;
- S.setup.push({id:'sus1',archer:'Nathaniel Stride',date:'2026-09-20',cat:'Stabilisers',change:'back bar 10in → 12in',reason:'trying to settle the pin',noticed:'pin felt steadier at 70m',sample:true},
-  {id:'sus2',archer:'Nathaniel Stride',date:'2026-10-04',cat:'Points',change:'100gn → 110gn',reason:'testing in the wind',noticed:'arrows drifted a bit less',sample:true});
- S.diary.push({id:'ds1',archer:'Nathaniel Stride',date:'2026-10-09',text:'SAMPLE: Felt relaxed at training, enjoyed shooting with the club.',sample:true});save()}
+function seedDiary(){S.setup=S.setup||[];S.diary=S.diary||[]}
 function setupMarkers(dates){const L=mine(S.setup).slice().sort((a,b)=>a.date<b.date?-1:1),M=[];
  L.forEach(x=>{const i=dates.findIndex(d=>d>=x.date);if(i>=0)M.push({i,t:`⚙️ ${x.date} ${x.cat}: ${x.change}${x.sample?' (sample)':''}`})});return M}
 function currentSetup(){const m={};mine(S.setup).slice().sort((a,b)=>a.date<b.date?-1:1).forEach(x=>m[x.cat]=x);return Object.values(m)}
