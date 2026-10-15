@@ -82,15 +82,16 @@ function badges(){const d=done(),p=pbs(),st=streak(),arr=d.reduce((t,s)=>t+arrow
  ['🎯','Tight group',S.plots.length>=6&&groupStats(S.plots).r<0.25],['🌈','Clean end (no misses)',d.some(s=>s.ends.some(e=>e.every(a=>a!='M')))],['📓','Evidence bank',S.best.length>=1]]}
 
 /* ---------- charts (inline SVG) ---------- */
-function lineChart(series,{h=170,labels=[]}={}){const W=340,P=30;const all=series.flatMap(s=>s.data).filter(v=>v!=null);if(!all.length)return'<p class="muted">Not enough data yet.</p>';
+function lineChart(series,{h=170,labels=[],markers=[]}={}){const W=340,P=30;const all=series.flatMap(s=>s.data).filter(v=>v!=null);if(!all.length)return'<p class="muted">Not enough data yet.</p>';
  let mn=Math.min(...all),mx=Math.max(...all);if(mn==mx){mn-=1;mx+=1}const n=Math.max(...series.map(s=>s.data.length));
  const X=i=>P+(n<2?0:i*(W-P-10)/(n-1)),Y=v=>h-22-(v-mn)/(mx-mn)*(h-40);
  let g=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="chart" width="100%"><line x1="${P}" y1="${h-22}" x2="${W}" y2="${h-22}" stroke="#94a3b8"/>`+
  `<text x="2" y="${Y(mx)+4}" font-size="11" fill="#475569">${Math.round(mx)}</text><text x="2" y="${Y(mn)+4}" font-size="11" fill="#475569">${Math.round(mn)}</text>`;
  for(const s of series){const pts=s.data.map((v,i)=>v==null?null:`${X(i)},${Y(v)}`).filter(Boolean);g+=`<polyline fill="none" stroke="${s.c}" stroke-width="${s.w||2.5}" ${s.dash?'stroke-dasharray="5 4"':''} points="${pts.join(' ')}"/>`;
   if(!s.dash)s.data.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="${s.c}"/>`})}
+markers.forEach(m=>{g+=`<line x1="${X(m.i)}" x2="${X(m.i)}" y1="8" y2="${h-22}" stroke="#7c3aed" stroke-dasharray="3 3"/><text x="${X(m.i)}" y="10" font-size="12" text-anchor="middle">⚙️</text><title>${m.t}</title>`});
  labels.forEach((l,i)=>{if(n<=12||i%Math.ceil(n/6)==0)g+=`<text x="${X(i)}" y="${h-6}" font-size="10" text-anchor="middle" fill="#475569">${l}</text>`});
- return g+'</svg>'+`<div class="small">${series.map(s=>`<span style="color:${s.c};font-weight:800">━</span> ${s.name}`).join(' &nbsp; ')}</div>`}
+ return g+'</svg>'+`<div class="small">${series.map(s=>`<span style="color:${s.c};font-weight:800">━</span> ${s.name}`).join(' &nbsp; ')}${markers.length?' &nbsp; ⚙️ setup change':''}</div>${markers.length?`<ul class="small" style="margin:4px 0 0;padding-left:18px">${markers.map(m=>`<li>${m.t}</li>`).join('')}</ul>`:''}`}
 function bars(vals,labels,c='#1d4ed8',groups){const W=340,h=groups?165:150,mx=Math.max(...vals,1),bw=(W-20)/vals.length;
  return`<svg viewBox="0 0 ${W} ${h}" width="100%" role="img" aria-label="bar chart">${vals.map((v,i)=>`<rect x="${10+i*bw+2}" y="${h-20-v/mx*(h-40)}" width="${bw-4}" height="${v/mx*(h-40)}" rx="3" fill="${c}"/><text x="${10+i*bw+bw/2}" y="${h-24-v/mx*(h-40)}" font-size="10" text-anchor="middle" fill="#0f172a">${Math.round(v*10)/10}</text><text x="${10+i*bw+bw/2}" y="${h-6}" font-size="10" text-anchor="middle" fill="#475569">${labels[i]}</text>${groups&&(i==0||groups[i]!=groups[i-1])?`${i?`<line x1="${10+i*bw}" x2="${10+i*bw}" y1="2" y2="${h-4}" stroke="#94a3b8" stroke-dasharray="3 3"/>`:''}<text x="${10+i*bw+3}" y="11" font-size="11" font-weight="700" fill="#0f172a">${groups[i]}</text>`:''}`).join('')}</svg>`}
 
@@ -122,7 +123,7 @@ function render(){seedNotes();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;if(!S.sessions.length)S.sessions=sampleSessions();save();nav('home')});return}
- ({home,score,plot,stats,me})[view]()}
+ ({home,score,plot,stats,diary,me})[view]()}
 
 /* ---------- latest real shoot ---------- */
 const ld=d=>new Date(d).toLocaleDateString('en-CA');const today=()=>new Date().toLocaleDateString('en-CA');
@@ -176,13 +177,15 @@ function cite(c){return''}
 function tip(t,c){return`<div class="list-item">${t}${cite(c)}</div>`}
 const KID=[['Every arrow you shoot is part of your story. Nice work showing up!',''],['What was your favourite shot today?',''],['Look back a few months and see how far you\'ve come.',''],['Tricky days still count. You kept going!','']];
 function kidLine(){const k=KID[Math.floor(Date.now()/864e5)%KID.length];return`<p style="margin:10px 0 0">💬 ${k[0]}${cite(k[1]+', in simple words')}</p>`}
-function ryTips(sums,good,all,dists,fe,le,EL){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums),f1=x=>x.toFixed(1);
+function roundFacts(sums,good,all,dists,fe,le,EL){const T=[],av=a=>a.reduce((x,y)=>x+y,0)/(a.length||1),m=av(sums),f1=x=>x.toFixed(1);
  if(le.length&&av(fe)-av(le)>=1)T.push(`Your last ${le.length} ends (${EL(sums.length-le.length)} to ${EL(sums.length-1)}) averaged ${f1(av(fe)-av(le))} points lower than your first ${fe.length} (${f1(av(le))} vs ${f1(av(fe))}).`);
  else if(le.length)T.push(`Your last ${le.length} ends averaged ${f1(av(le))}, compared with ${f1(av(fe))} for your first ${fe.length}.`);
  if(sums.length>1)T.push(`Your best end was ${EL(sums.indexOf(Math.max(...sums)))} with ${Math.max(...sums)}. Your lowest was ${EL(sums.indexOf(Math.min(...sums)))} with ${Math.min(...sums)}.`);
  const dv=dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return{d,n:parseFloat(d)||0,v:a.reduce((t,x)=>t+val(x),0)/(a.length||1)}}).sort((a,b)=>b.n-a.n);
  if(dv.length>1)T.push(`Average per arrow: ${dv.map(x=>`${x.d} ${x.v.toFixed(2)}`).join(', ')}.`);
  const ms=all.filter(a=>a=='M').length;if(ms)T.push(`${ms} miss${ms>1?'es':''} this round.`);
+ return T}
+function ryTips(sums,good,all,dists,fe,le,EL){const T=roundFacts(sums,good,all,dists,fe,le,EL);
  return`<h3 style="margin-top:12px">Your round in numbers</h3>${T.map(t=>`<div class="list-item">${t}</div>`).join('')}<p class="small" style="margin-top:6px"><b>Worth a chat with your coach?</b></p>`}
 
 const TAGS=[['😴','Tired',/tired|sleep|exhaust|fatigu/i],['🌬️','Wind/weather',/wind|rain|hot|heat|cold|weather|storm/i],['😬','Nerves',/nerv|anxious|shak|pressure/i],['🔧','Gear change',/new (arrow|bow|sight|string|tab|release)|gear|changed|tuned|equipment/i],['🩹','Injury',/injur|sore|pain|hurt/i],['⏸️','Incomplete',/didn.?t (finish|complete)|incomplete|retired|stopped early/i]];
@@ -260,13 +263,13 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
  app.innerHTML=officialCard()+noteInsights()+plottedCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
- <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5))})}</div>
+ <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(ss.map(s=>s.date)):[]})}</div>
  <div class="card"><h3>Last session, end by end${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Early vs late ends</h3><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${early.toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${late.toFixed(1)}</b>last ${third} ends</div></div>
  <p>${late>=early-0.3?'💪 You hold your score right to the end. Great focus!':`Your last ends average ${(early-late).toFixed(1)} points lower. Worth a chat with your coach?`}</p></div>
  <div class="card"><h3>Personal bests</h3>${Object.entries(pbs()).map(([r,v])=>`<div class="list-item row"><span>${r}</span><span><b>${v.score}</b> ${v.real?'<span class="real">official</span>':v.sample?'<span class="sample">sample</span>':''}</span></div>`).join('')}</div>
- ${real.length?`<div class="card"><h3>Official competition scores</h3>${lineChart([{name:'Official score',data:real.filter(r=>!r.incomplete).map(r=>r.score),c:'#166534'}],{labels:real.filter(r=>!r.incomplete).map(r=>normDate(r.date).slice(5))})}<p class="small muted">Mixed rounds; compare within the same round.</p></div>`:''}
+ ${real.length?`<div class="card"><h3>Official competition scores</h3>${lineChart([{name:'Official score',data:real.filter(r=>!r.incomplete).map(r=>r.score),c:'#166534'}],{labels:real.filter(r=>!r.incomplete).map(r=>normDate(r.date).slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(real.filter(r=>!r.incomplete).map(r=>normDate(r.date))):[]})}<p class="small muted">Mixed rounds; compare within the same round.</p></div>`:''}
  ${estRating(real)}
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
  bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
