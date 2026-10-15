@@ -116,7 +116,7 @@ function pickProfile(){return`<div class="card"><span class="kicker">Welcome</sp
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
-function render(){
+function render(){seedNotes();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
@@ -131,9 +131,9 @@ function home(){const d=done(),last=d[d.length-1],real=findReal(S.profile);
  if(last){h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date} ${last.sample?'<span class="sample">sample</span>':''}</span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}
  <button class="btn ghost" id="bank" style="margin-top:8px">⭐ Save to my evidence bank</button></div>`}
  const lo=offRounds()[0];if(lo){const ge=lo.ends.filter(e=>!e.flag);h+=`<div class="card"><span class="kicker">Wins of the day · ${lo.date} <span class="real">official</span></span><h2>${lo.round}</h2>${winsFor({id:'off',date:lo.date,round:lo.round,ends:ge.map(e=>e.arrows)}).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" onclick="nav('stats')" style="margin-top:8px">See full round analysis</button></div>`}
- h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}</div>`).join(''):csvNote()}</div>`;
- h+=parentNote();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
- $('#go').onclick=()=>nav('score');if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:last.date,text:winsFor(last).map(w=>w[1]).join(' '),total:total(last),round:last.round,sample:!!last.sample});save();$('#bank').textContent='Saved ✓'};bindCB()}
+ h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
+ h+=noteInsights()+parentNote();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
+ $('#go').onclick=()=>nav('score');if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:last.date,text:winsFor(last).map(w=>w[1]).join(' '),total:total(last),round:last.round,sample:!!last.sample});save();$('#bank').textContent='Saved ✓'};bindCB();bindNotes()}
 
 
 function cite(c){return`<span class="small muted" style="display:block">George Ryles, ${c}</span>`}
@@ -154,6 +154,19 @@ function ryTips(sums,good,all,dists,fe,le){const T=[],av=a=>a.reduce((x,y)=>x+y,
  if(dv.length>1&&dv[0].v<av(dv.slice(1).map(x=>x.v))-0.3)T.push(['Weaker at long distance',tip('Train your form, don\'t change your gear.','S2 00:47')+tip('In wind: "keep your eyes in the red until the arrow hits the target"','TAW #23')]);
  if(all.includes('M')||sums.some(x=>x<m*0.75))T.push(['A miss or a blown end',tip('"You don\'t shoot [a big score]. You receive it." So "your job is to just shoot an arrow".','S1 67:24')+tip('Feels wrong at full draw? Let down and reset.','S1 44:15')]);
  return`<h3 style="margin-top:12px">Coach tips for this round</h3>${T.length?T.map(t=>`<p style="margin:8px 0 2px"><b>${t[0]}</b></p>${t[1]}`).join(''):tip('Steady round! Keep doing what works: one good arrow at a time.','S1 67:24, in simple words')}`}
+
+const TAGS=[['😴','Tired',/tired|sleep|exhaust|fatigu/i],['🌬️','Wind/weather',/wind|rain|hot|heat|cold|weather|storm/i],['😬','Nerves',/nerv|anxious|shak|pressure/i],['🔧','Gear change',/new (arrow|bow|sight|string|tab|release)|gear|changed|tuned|equipment/i],['🩹','Injury',/injur|sore|pain|hurt/i],['⏸️','Incomplete',/didn.?t (finish|complete)|incomplete|retired|stopped early/i]];
+function seedNotes(){if(S.notes)return;S.notes={'sample9':'SAMPLE: windy and felt tired','sample5':'SAMPLE: windy afternoon','sample2':'SAMPLE: bad sleep, felt tired','o:2026-10-11|WA 90/1440':"Didn't complete the round"};save()}
+const noteKey=r=>r.id||('o:'+normDate(r.date)+'|'+r.round);
+const tagsOf=t=>TAGS.filter(x=>x[2].test(t||''));
+function chips(t){return tagsOf(t).map(x=>`<span class="sample" style="background:#eef2ff;color:#1e3a8a;margin-right:4px">${x[0]} ${x[1]}</span>`).join('')}
+function noteBox(r){const k=noteKey(r),t=(S.notes||{})[k]||'';return`<label class="small muted" style="display:block;margin-top:6px">How did you shoot? <textarea data-n="${k.replace(/"/g,'&quot;')}" rows="2" style="width:100%;box-sizing:border-box;font:inherit" placeholder="e.g. felt tired, windy, new arrows, didn't finish">${t.replace(/</g,'&lt;')}</textarea></label><div class="chips">${chips(t)}</div>`}
+function bindNotes(){app.querySelectorAll('[data-n]').forEach(el=>el.oninput=()=>{S.notes=S.notes||{};S.notes[el.dataset.n]=el.value;save();el.closest('label').nextElementSibling.innerHTML=chips(el.value)})}
+function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.forEach(x=>(g[x.round]=g[x.round]||[]).push(x));for(const r in g){const a=g[r],m=a.reduce((t,x)=>t+sc(x),0)/a.length;if(m)a.forEach(x=>items.push({pct:(sc(x)/m-1)*100,t:(S.notes||{})[noteKey(x)]}))}};
+ rel(done(),total);rel(findReal(S.profile||'').filter(r=>!r.incomplete),r=>r.score);
+ const out=TAGS.map(([e,n])=>{const w=items.filter(i=>tagsOf(i.t).some(x=>x[1]==n)),o=items.filter(i=>!tagsOf(i.t).some(x=>x[1]==n));if(w.length<2||!o.length)return'';const d=w.reduce((a,b)=>a+b.pct,0)/w.length-o.reduce((a,b)=>a+b.pct,0)/o.length;
+  return`<div class="list-item">${e} On <b>${n.toLowerCase()}</b> days you score <b>${Math.abs(d).toFixed(1)}% ${d<0?'less':'more'}</b> than your usual for that round (${w.length} sessions).</div>`}).filter(Boolean);
+ return`<div class="card"><span class="kicker">From your notes</span><h3>What your notes show</h3>${out.length?out.join('')+'<p class="small muted">Compared with your own average for the same round. Notes starting "SAMPLE" are demo notes.</p>':'<p>Add a note under each score (tired, windy, nerves, new gear, sore, didn\'t finish). Once 2 sessions share a tag, you\'ll see how it affects your scores.</p>'}</div>`}
 function comeback(){const d=done();if(d.length<4)return'';const last=d[d.length-1],prev=d.slice(0,-1).filter(s=>s.round==last.round).slice(-5);if(prev.length<3)return'';
  const avg=prev.reduce((a,s)=>a+total(s),0)/prev.length;if(total(last)>=avg*0.92||S.comebackFor==last.id)return'';
  const ev=S.best.length?S.best[S.best.length-1]:{text:`your best day was ${Math.max(...prev.map(total))} on this round`};
@@ -176,8 +189,8 @@ function score(){if(!cur){app.innerHTML=`<div class="card"><span class="kicker">
  if($('#undo'))$('#undo').onclick=()=>{let l=cur.ends[cur.ends.length-1];if(!l.length&&cur.ends.length>1){cur.ends.pop();l=cur.ends[cur.ends.length-1]}l.pop();save();score()};
  if($('#quit'))$('#quit').onclick=()=>{if(!cur.ends[cur.ends.length-1].length&&cur.ends.length>1)cur.ends.pop();cur=null;save();score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;nav('home')}}
-function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row"><div><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}</div></div>${s.sample?'':`<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button>`}</div>`).join('')}</div>`}
-function bindList(){app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.sessions=S.sessions.filter(s=>s.id!=b.dataset.del);save();score()})}
+function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}</div>${noteBox(s)}</div>${s.sample?'':`<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button>`}</div>`).join('')}</div>`}
+function bindList(){bindNotes();app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.sessions=S.sessions.filter(s=>s.id!=b.dataset.del);save();score()})}
 
 function plot(){const p=S.plots,g=groupStats(p);let hint='Tap at least 3 arrows to see your group.';
  if(p.length>=3){const dx=g.cx,dy=g.cy,off=Math.hypot(dx,dy);
@@ -197,7 +210,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drill
  const nE=Math.max(...ss.map(s=>s.ends.length)),endAvg=[...Array(nE)].map((_,i)=>{const v=ss.map(s=>s.ends[i]?endSum(s.ends[i]):null).filter(x=>x!=null);return v.reduce((a,b)=>a+b,0)/v.length});
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
- app.innerHTML=officialCard()+drillsCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
+ app.innerHTML=officialCard()+noteInsights()+drillsCard()+`<div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>
  <div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:'#16a34a',w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Last session, end by end</h3>${bars(ends,ends.map((_,i)=>i+1))}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#7c3aed'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
@@ -207,7 +220,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+drill
  ${real.length?`<div class="card"><h3>Official competition scores</h3>${lineChart([{name:'Official score',data:real.filter(r=>!r.incomplete).map(r=>r.score),c:'#166534'}],{labels:real.filter(r=>!r.incomplete).map(r=>normDate(r.date).slice(5))})}<p class="small muted">Mixed rounds; compare within the same round.</p></div>`:''}
  ${estRating(real)}
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
- $('#rs').onchange=e=>{window._r=e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
+ bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
  $('#club').onchange=e=>{$('#clubout').innerHTML=e.target.checked?'<p class="small muted">Coming soon: club and division averages worked out from the public Archer\'s Diary results already on archerycalendars.com. Off by default for juniors.</p>':''}}
 function offRounds(){const k=Object.keys(OFF).find(x=>x.toLowerCase()==(S.profile||'').toLowerCase());return k?OFF[k]:[]}
 function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i],good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
@@ -221,7 +234,7 @@ function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.m
  <h3>Arrow values</h3><div class="stats"><div class="stat"><b>${pc(a=>a=='X')}%</b>X</div><div class="stat"><b>${pc(a=>a=='10')}%</b>10</div><div class="stat"><b>${pc(a=>a=='9')}%</b>9</div></div>
  <h3 style="margin-top:12px">Per distance (avg per arrow)</h3>${dists.map(d=>{const a=good.filter(e=>e.dist==d).flatMap(e=>e.arrows);return`<div class="list-item row"><span>${d}</span><b>${(a.reduce((t,x)=>t+val(x),0)/a.length).toFixed(2)}</b></div>`}).join('')}
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px"><div class="stat"><b>${av(fe).toFixed(1)}</b>first ${third} ends</div><div class="stat"><b>${av(le).toFixed(1)}</b>last ${third} ends</div><div class="stat"><b>${sd(sums).toFixed(1)}</b>end spread</div></div>
- ${ryTips(sums,good,all,dists,fe,le)}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
+ ${ryTips(sums,good,all,dists,fe,le)}${noteBox({date:o.date,round:o.round})}<h3 style="margin-top:12px">Wins from this round</h3>${winsFor(fake).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
 function estRating(real){const rr=real.map(r=>({r,m:(r.notes||'').match(/Rating\s*([\d.]+);?\s*([A-Za-z ]+)?/)})).filter(x=>x.m);
  const off=rr.length?`<div class="list-item"><span class="real">official</span> Latest Archer's Diary rating: <b>${rr[rr.length-1].m[1]}</b>${rr[rr.length-1].m[2]?' · '+rr[rr.length-1].m[2].trim():''} <span class="small muted">(${rr[rr.length-1].r.round}, ${rr[rr.length-1].r.date})</span></div>`:'';
  return`<div class="card"><h3>AA rating & classification <span class="est">estimated · placeholder</span></h3>${off}
