@@ -10,11 +10,11 @@ const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7'
 /* Logan's numbers come from his real data; sample kids use fixed numbers. */
 function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filter(r=>!r.incomplete);
  const wkAgo=new Date(Date.now()-7*864e5).toLocaleDateString('en-CA');let wk=0;(OFF[m.name]||[]).forEach(o=>{if(normDate(o.date)>=wkAgo)wk+=o.ends.reduce((t,e)=>t+e.arrows.length,0)});
- if(m.name==S.profile)wk=Object.entries(dayArrows()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
+ if(m.name==S.profile)wk=Object.entries((window.rewardDayArrows||dayArrows)()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
  const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);
  const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
  const last=real[real.length-1];const dm={};(OFF[m.name]||[]).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
- if(m.name==S.profile)Object.assign(dm,dayArrows());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
+ if(m.name==S.profile)Object.assign(dm,(window.rewardDayArrows||dayArrows)());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
  const vbl=earnedBadges(m.name).map(b=>[hexIcon(b,1),b.name,b.on]),vb=vbl.filter(x=>x[2]).length;
  return{...m,wk,streak:st,badges:vb,blist:vbl,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
 const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
@@ -30,9 +30,11 @@ const BULLSEYE=['bullseye','Bullseye','<svg viewBox="0 0 24 24" fill="none" stro
 function cheerRow(f,c){const set=f.pb?[BULLSEYE,...CHEER_SET]:CHEER_SET;return`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px" role="group" aria-label="Cheer">${set.map(([k,l,ic])=>`<button class="cheer ${k=='bullseye'?'gold':''}" data-c="${f.id}" data-e="${k}" aria-pressed="${c.mine==k}">${ic} ${l}${c[k]?' '+c[k]:''}</button>`).join('')}</div>`}
 let sqTab='wk';
 function squad(){seedSquad();const Q=S.squad;
- if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Ask your coach or parent for the invite code. The squad admin has to approve you, and under-18s need a parent account linked.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234"><button class="btn" id="jb" style="margin-top:8px">Request to join</button><div id="jo"></div></div>${safe()}`;
-  $('#jb').onclick=()=>{$('#jo').innerHTML='<p class="small">Request sent. A parent account must be linked and the admin must approve before you can see the squad. (Not sent anywhere yet: squads are not live.)</p>'};return}
- const act=Q.members.filter(m=>m.status=='active').map(memberStats),pend=Q.members.filter(m=>m.status=='pending');
+ if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Got an invite code from your coach or squad mate? Enter it to join.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234" autocapitalize="characters" autocomplete="off"><button class="btn" id="jb" style="margin-top:8px">Join squad</button><div id="jo"></div></div>${safe()}`;
+  $('#jb').onclick=()=>{const c=$('#jc').value.trim().toUpperCase();if(c.length<4){$('#jo').innerHTML='<p class="small">Enter the full invite code.</p>';return}
+   if(!S.squad||S.squad.code!=c)S.squad={name:'Squad '+c,code:c,admin:null,members:[],adults:[],cheers:{}};
+   S.squad.members.push({id:'m'+Date.now(),name:S.profile,status:'active'});save();squad()};return}
+ const act=Q.members.filter(m=>m.status!='pending').map(memberStats);
  const metrics={wk:['This week\'s arrows',m=>m.wk,v=>v],streak:['Goal streak (days)',m=>m.streak,v=>v],badges:['Badges earned',m=>m.badges,v=>v],impr:['Improvement vs own average',m=>m.impr,v=>(v>0?'+':'')+v+'%']};
  if(Q.rawRank)metrics.raw=['Latest score (admin on)',m=>m.raw&&m.raw[0]?m.raw[0][2]:0,v=>v];
  const M=metrics[sqTab]||metrics.wk,rows=act.slice().sort((a,b)=>M[1](b)-M[1](a));
@@ -47,7 +49,6 @@ function squad(){seedSquad();const Q=S.squad;
  ${isAdmin()?`<details style="margin-top:8px"><summary class="small"><b>Add a coach or parent</b></summary><label for="an">First and last name</label><input id="an" autocomplete="off"><label for="ar">Role</label><select id="ar"><option>Coach</option><option>Parent</option></select><label for="ac">Parent of (parents only)</label><select id="ac"><option value="">–</option>${act.map(m=>`<option value="${m.id}">${shortName(m.name)}</option>`).join('')}</select><button class="btn" id="aadd" style="margin-top:6px">Add</button><p class="small muted">They get an invite to an adult account. Parents are linked to their own child only.</p></details>`:''}</div>`;
  if(isAdmin()){const quiet=act.filter(m=>!m.last||(new Date(today())-new Date(m.last))/864e5>=5);
   h+=`<div class="card" style="border:2px dashed #94a3b8"><span class="kicker">Admin only</span><h3>Squad settings</h3><p>Invite code: <b>${Q.code}</b> <span class="small muted">(private; squads can't be searched)</span></p>
-  ${pend.map(m=>`<div class="list-item row"><span>${who(m)} ${shortName(m.name)} wants to join ${m.u18?`· parent ${m.parent?'linked ✓':'not linked'}`:''} ${m.sample?'<span class="sample">sample</span>':''}</span><span><button class="btn" data-ap="${m.id}" style="padding:4px 10px">Approve</button> <button class="btn ghost" data-de="${m.id}" style="padding:4px 10px">Decline</button></span></div>`).join('')}
   ${quiet.map(m=>`<p class="small">🔔 ${shortName(m.name)} hasn't logged for 5+ days. Only you can see this.</p>`).join('')}
   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rr" style="width:auto" ${Q.rawRank?'checked':''}> Show a raw-score leaderboard</label>
   <h3>Members</h3>${act.map(m=>`<div class="list-item row"><span>${who(m)} ${shortName(m.name)}</span>${m.name==S.profile?'':`<button class="btn ghost" data-rm="${m.id}" style="padding:4px 10px">Remove</button>`}</div>`).join('')}</div>`}
@@ -55,14 +56,13 @@ function squad(){seedSquad();const Q=S.squad;
  h+=safe();app.innerHTML=h;
  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sqTab=b.dataset.m;squad()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=Q.cheers[b.dataset.c]=Q.cheers[b.dataset.c]||{};if(c.mine){c[c.mine]--;}if(c.mine==b.dataset.e){c.mine=null}else{c.mine=b.dataset.e;c[b.dataset.e]=(c[b.dataset.e]||0)+1}save();squad()});
- app.querySelectorAll('[data-ap]').forEach(b=>b.onclick=()=>{Q.members.find(m=>m.id==b.dataset.ap).status='active';save();squad()});
- app.querySelectorAll('[data-de],[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.de||b.dataset.rm;if(b.dataset.rm&&!confirm('Remove this member from the squad?'))return;Q.members=Q.members.filter(m=>m.id!=id);save();squad()});
+ app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.rm;if(!confirm('Remove this member from the squad?'))return;Q.members=Q.members.filter(m=>m.id!=id);save();squad()});
  app.querySelectorAll('[data-ra]').forEach(b=>b.onclick=()=>{if(!confirm('Remove this adult from the squad?'))return;Q.adults=Q.adults.filter(x=>x.id!=b.dataset.ra);save();squad()});
  if($('#aadd'))$('#aadd').onclick=()=>{const n=$('#an').value.trim(),r=$('#ar').value,c=$('#ac').value;if(!n||(r=='Parent'&&!c))return alert(r=='Parent'?'Pick which child this parent is linked to.':'Enter a name.');Q.adults.push({id:'a'+Date.now(),name:n,role:r,child:r=='Parent'?c:null});save();squad()};
  if($('#rr'))$('#rr').onchange=e=>{Q.rawRank=e.target.checked;if(!Q.rawRank&&sqTab=='raw')sqTab='wk';save();squad()};
   if($('#lv'))$('#lv').onclick=()=>{if(!confirm('Leave this squad?'))return;Q.members=Q.members.filter(m=>m.name!=S.profile);save();squad()}}
 function safe(){return`<div class="card"><span class="kicker">Safe squads</span><ul class="small" style="padding-left:18px;margin:6px 0">
- <li>Private and invite-only. Squads can't be searched, and the admin approves every join.</li><li>Under-18s need a linked parent account. Parents are linked only to their own child.</li><li>Roles: Admin (the coach or parent who made it), Coach, Parent and Archer. Only the admin adds coaches and parents.</li>
+ <li>Private and invite-only. Squads can't be searched. Anyone with the invite code joins straight away.</li><li>Roles: Admin (the coach or parent who made it), Coach, Parent and Archer. Only the admin adds coaches and parents.</li>
  <li>No chat, comments or photos. Only preset cheers (Dialled, Clutch, On fire, GOAT, Respect, and Bullseye on PB posts).</li><li>Only first name, last initial and a player card (initials, rank, badges) are shown. No photo, club or contact details.</li>
  <li>Leaderboards rank effort and badges, and improvement against your own average. Raw scores stay hidden unless the admin turns them on.</li>
  <li>"Hasn't logged lately" reminders go only to the admin, never to the squad.</li><li>Anyone can leave at any time. Admins can remove members.</li>
