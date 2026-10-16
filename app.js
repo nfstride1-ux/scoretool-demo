@@ -384,12 +384,35 @@ function offRounds(){const me=(S.profile||'').toLowerCase(),nm=x=>{x=x.toLowerCa
   if(m){Object.assign(m,{score:r.score,division:r.division,subs:r.subs,notes:r.notes,url:m.url||r.url})}
   else L.push({key:r.date+'|'+r.round+'|'+r.division,date:r.date,event:r.event,round:r.round,url:r.url,ends:[],score:r.score,division:r.division,subs:r.subs,notes:r.notes,tens:r.tens,xs:r.xs})});
  return L.sort((a,b)=>normDate(a.date)<normDate(b.date)?1:normDate(a.date)>normDate(b.date)?-1:0)}
+/* Arrow counts per round: from the AA rating tables where present, else the standard round definition. */
+const ARROWS_STD={'Perth':90,'Grange':90,'Newcastle':90,'Geelong':90,'Drake':90,'Samford':90,'Launceston':72,'WA 70/720':72,'WA 60/720':72,'WA 50/720':72,'WABB 50/720 (AA 50/720)':72,'AA 40/720':72,'AA 30/720':72,'AA 20/720':72,'Sydney':120,'Double Aus Indoor 18m':60,'WA Field 24Mk Red':72,'WA Field 24Mk Blue':72,'WA Field 24Mk Yellow':72,'WA Field 24Umk Red + WA Field 24Mk Red':144};
+function roundArrows(r){const d=typeof AA_ROUNDS!='undefined'&&AA_ROUNDS[r];if(d&&d.r)return d.r.reduce((t,p)=>t+p[0],0);return ARROWS_STD[r]||null}
+function trendSVG(pts,hi){const W=340,H=110,P=26,v=pts.map(p=>p.s),mn=Math.min(...v),mx=Math.max(...v),sp=mx-mn||1,X=i=>P+(pts.length<2?(W-2*P)/2:i*(W-2*P)/(pts.length-1)),Y=s=>H-22-(s-mn)/sp*(H-44);
+ let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Totals on this round over time">`;
+ if(pts.length>1)g+=`<polyline fill="none" stroke="#64748b" stroke-width="1.5" points="${pts.map((p,i)=>X(i)+','+Y(p.s)).join(' ')}"/>`;
+ pts.forEach((p,i)=>{const h=i==hi;g+=`<circle cx="${X(i)}" cy="${Y(p.s)}" r="${h?6:3.5}" fill="${p.part?'none':h?'#ffd84d':'#60a5fa'}" stroke="${h?'#ffd84d':p.part?'#94a3b8':'#60a5fa'}" stroke-width="${p.part?1.5:1}"><title>${p.d}: ${p.s}${p.part?' (partial)':''}</title></circle>`;
+  if(h||pts.length<=8)g+=`<text x="${X(i)}" y="${Y(p.s)-9}" font-size="9" text-anchor="middle" fill="${h?'#ffd84d':'var(--muted)'}" font-weight="${h?800:400}">${p.s}</text>`});
+ g+=`<text x="${P}" y="${H-6}" font-size="9" fill="#64748b">${pts[0].d.slice(2)}</text><text x="${W-P}" y="${H-6}" font-size="9" text-anchor="end" fill="#64748b">${pts[pts.length-1].d.slice(2)}</text></svg>`;return g}
 function summaryCard(L,i,o){const subs=(o.subs||'').split(';').map(x=>x.split(':')).filter(x=>x.length==2&&x[1]);
+ const part=/incomplete|partial|not shot|didn.?t finish/i.test(o.notes||''),na=roundArrows(o.round),t10=parseInt(o.tens)||0,tx=parseInt(o.xs)||0;
+ const bow=d=>(String(d||'').match(/Compound|Barebow|Recurve|Longbow/i)||[''])[0];
+ const mine=findReal(S.profile||'').filter(r=>r.round==o.round&&bow(r.division)==bow(o.division)).map(r=>({d:normDate(r.date),s:r.score,part:!!r.incomplete})).sort((a,b)=>a.d<b.d?-1:1);
+ const hi=mine.findIndex(p=>p.d==normDate(o.date)&&p.s==o.score),full=mine.filter(p=>!p.part),pb=full.length?Math.max(...full.map(p=>p.s)):null,pbD=pb!=null?full.find(p=>p.s==pb).d:'';
+ const rank=part?null:full.slice().sort((a,b)=>b.s-a.s).findIndex(p=>p.s==o.score)+1;
+ const st=(v,l)=>`<div class="stat"><b>${v}</b>${l}</div>`,cells=[st(o.score,'total')];
+ if(na&&!part)cells.push(st((o.score/na).toFixed(2),`avg arrow (${na})`));
+ if(t10&&na&&!part)cells.push(st(Math.round(t10/na*100)+'%',`10s (${t10})`));else if(t10)cells.push(st(t10,'10s'));
+ if(tx&&na&&!part)cells.push(st(Math.round(tx/na*100)+'%',`Xs (${tx})`));else if(tx)cells.push(st(tx,'Xs'));
+ if(!part&&pb!=null)cells.push(st(o.score>=pb?'PB':'−'+(pb-o.score),o.score>=pb?'best on round':'vs PB '+pb));
+ if(rank)cells.push(st(rank+'/'+full.length,'on this round'));
  return`<div class="card"><span class="kicker">Official round · result <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}${x.ends.length?'':' · '+x.score}${/Recurve/.test(x.division||'')?' (Recurve)':''}</option>`).join('')}</select>
  <p class="small muted">${esc(o.event)} · ${esc(o.division||'')} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
- <div class="stats" style="grid-template-columns:1fr 1fr 1fr"><div class="stat"><b>${o.score}</b>total</div>${o.tens?`<div class="stat"><b>${o.tens}</b>10s</div>`:''}${o.xs?`<div class="stat"><b>${o.xs}</b>Xs</div>`:''}</div>
+ ${part?'<p class="small"><span class="sample">Partial round</span> Not a full round, so it isn\'t averaged, ranked or compared with your PB.</p>':''}
+ <div class="stats" style="grid-template-columns:1fr 1fr 1fr">${cells.join('')}</div>
+ ${!part&&pb!=null&&o.score<pb?`<p class="small muted" style="margin:4px 0 0">PB ${pb} on ${pbD}.</p>`:''}
  ${subs.length?`<h3 style="margin-top:12px">By distance</h3>${subs.map(([d,v])=>`<div class="list-item row"><span>${esc(d)}</span><b>${esc(v)}</b></div>`).join('')}`:''}
- ${o.notes?`<p class="small muted">${esc(o.notes)}</p>`:''}<p class="small muted">End-by-end arrows aren't available for this shoot, so only the result is shown.</p>${noteBox({date:o.date,round:o.round})}</div>`}
+ ${mine.length>1?`<h3 style="margin-top:12px">Your ${esc(o.round)} totals</h3>${trendSVG(mine,hi)}<p class="small muted" style="margin:0">Gold = this shoot.${mine.some(p=>p.part)?' Hollow = partial round.':''} ${full.length} full round${full.length==1?'':'s'}.</p>`:''}
+ ${o.notes?`<p class="small muted">${esc(o.notes)}</p>`:''}<p class="small muted">Result only for this shoot. <b>Add scoresheet to see end by end.</b></p>${noteBox({date:o.date,round:o.round})}</div>`}
 function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i];if(!o.ends.length)return summaryCard(L,i,o);const good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
  const sums=good.map(e=>endSum(e.arrows)),all=good.flatMap(e=>e.arrows),n=all.length||1,pc=f=>Math.round(all.filter(f).length/n*100);
  const dists=[...new Set(good.map(e=>e.dist))],third=Math.max(1,Math.floor(sums.length/3)),fe=sums.slice(0,third),le=sums.slice(-third),av=a=>a.reduce((x,y)=>x+y,0)/a.length;
