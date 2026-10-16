@@ -31,8 +31,8 @@ const isTen=a=>a=='X'||a=='10';
 /* Every end we have for an archer: own scored sessions + official arrows from Archer's Diary. */
 function allEnds(name){const own=name==S.profile;const E=[];
  if(own)(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach(e=>E.push({date:s.date,arrows:e.map(String),src:'session'})));
- (OFF[name]||[]).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official'})}));return E}
-function dayMap(name){if(name==S.profile)return dayArrows();const m={};(OFF[name]||[]).forEach(o=>{const d=normDate(o.date);m[d]=(m[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});return m}
+ offFor(name).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official'})}));return E}
+function dayMap(name){if(name==S.profile)return dayArrows();const m={};offFor(name).forEach(o=>{const d=normDate(o.date);m[d]=(m[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});return m}
 function realFor(name){return name==S.profile?findReal(name):(REAL[name]||findReal(name))}
 /* Weekly practice streak with streak freezes: 1 freeze earned per 4 straight weeks (max 2 banked). A missed week uses a freeze instead of breaking the streak. */
 const wkNo=d=>Math.floor((new Date(d)-new Date('2024-01-01'))/6048e5);
@@ -145,7 +145,7 @@ function meTop(){return profileCard(S.profile,true)}
 const XP_ARROW_CAP=300,XP_ROUND=25,XP_DAY_CAP=350;
 function xpByDay(name){const dm=dayMap(name),rounds={};
  if(name==S.profile)done().filter(s=>!s.sample).forEach(s=>rounds[s.date]=(rounds[s.date]||0)+1);
- (OFF[name]||[]).forEach(o=>{const d=normDate(o.date);rounds[d]=(rounds[d]||0)+1});
+ offFor(name).forEach(o=>{const d=normDate(o.date);rounds[d]=(rounds[d]||0)+1});
  const X={};new Set([...Object.keys(dm),...Object.keys(rounds)]).forEach(d=>{X[d]=Math.min(XP_DAY_CAP,Math.min(XP_ARROW_CAP,dm[d]||0)+XP_ROUND*(rounds[d]||0))});return X}
 const monday=(off=0)=>{const d=new Date(today()+'T00:00');const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k+off*7);return d.toLocaleDateString('en-CA')};
 const sumXP=(X,from,to)=>Object.entries(X).filter(([d])=>d>=from&&d<to).reduce((t,[,v])=>t+v,0);

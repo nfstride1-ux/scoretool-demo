@@ -3,17 +3,23 @@
 const AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const who=m=>window.initDisc?initDisc(m):`<span style="font-size:22px">${m.avatar||''}</span>`;
 const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
-function seedSquad(){if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
+/* Preset squad for the 3 testers. Same code and members on every tester profile; data is still per phone (no server). */
+const PRESET_SQ={preset:'st-testers-1',name:'ScoreTool Testers',code:'STRIDE-3T7',admin:'Nathaniel Stride',rawRank:false,
+ members:[{id:'mN',name:'Nathaniel Stride',status:'active'},{id:'mP',name:'Phill Arthur',status:'active'},{id:'mL',name:'Logan Wolfe',status:'active'}],
+ adults:[{id:'aN',name:'Nathaniel Stride',role:'Admin'}]};
+function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset)return;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
+ S.squad=JSON.parse(JSON.stringify(PRESET_SQ));S.squad.cheers={};save()}
+function seedSquad(){seedPreset();if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
 const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
 /* Logan's numbers come from his real data; sample kids use fixed numbers. */
-function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filter(r=>!r.incomplete);
- const wkAgo=new Date(Date.now()-7*864e5).toLocaleDateString('en-CA');let wk=0;(OFF[m.name]||[]).forEach(o=>{if(normDate(o.date)>=wkAgo)wk+=o.ends.reduce((t,e)=>t+e.arrows.length,0)});
+function memberStats(m){if(m.sample)return m;const real=realFor(m.name).filter(r=>!r.incomplete);
+ const wkAgo=new Date(Date.now()-7*864e5).toLocaleDateString('en-CA');let wk=0;offFor(m.name).forEach(o=>{if(normDate(o.date)>=wkAgo)wk+=o.ends.reduce((t,e)=>t+e.arrows.length,0)});
  if(m.name==S.profile)wk=Object.entries((window.rewardDayArrows||dayArrows)()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
  const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);
  const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
- const last=real[real.length-1];const dm={};(OFF[m.name]||[]).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
+ const last=real[real.length-1];const dm={};offFor(m.name).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
  if(m.name==S.profile)Object.assign(dm,(window.rewardDayArrows||dayArrows)());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
  const vbl=earnedBadges(m.name).map(b=>[hexIcon(b,1),b.name,b.on]),vb=vbl.filter(x=>x[2]).length;
  return{...m,wk,streak:st,badges:vb,blist:vbl,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
@@ -32,14 +38,14 @@ let sqTab='wk';
 function squad(){seedSquad();const Q=S.squad;
  if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Got an invite code from your coach or squad mate? Enter it to join.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234" autocapitalize="characters" autocomplete="off"><button class="btn" id="jb" style="margin-top:8px">Join squad</button><div id="jo"></div></div>${safe()}`;
   $('#jb').onclick=()=>{const c=$('#jc').value.trim().toUpperCase();if(c.length<4){$('#jo').innerHTML='<p class="small">Enter the full invite code.</p>';return}
-   if(!S.squad||S.squad.code!=c)S.squad={name:'Squad '+c,code:c,admin:null,members:[],adults:[],cheers:{}};
+   if(c==PRESET_SQ.code){delete S.squad;seedPreset()}else if(!S.squad||S.squad.code!=c)S.squad={name:'Squad '+c,code:c,admin:null,members:[],adults:[],cheers:{}};
    S.squad.members.push({id:'m'+Date.now(),name:S.profile,status:'active'});save();squad()};return}
  const act=Q.members.filter(m=>m.status!='pending').map(memberStats);
  const metrics={wk:['This week\'s arrows',m=>m.wk,v=>v],streak:['Goal streak (days)',m=>m.streak,v=>v],badges:['Badges earned',m=>m.badges,v=>v],impr:['Improvement vs own average',m=>m.impr,v=>(v>0?'+':'')+v+'%']};
  if(Q.rawRank)metrics.raw=['Latest score (admin on)',m=>m.raw&&m.raw[0]?m.raw[0][2]:0,v=>v];
  const M=metrics[sqTab]||metrics.wk,rows=act.slice().sort((a,b)=>M[1](b)-M[1](a));
  const me=act.find(m=>m.name==S.profile);
- let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${act.length} members · ${(Q.adults||[]).length} adults · no chat, cheers only${myAdult()?' · you are '+(myAdult().role=='Admin'?'the admin':'a '+myAdult().role.toLowerCase()):''}</p></div>
+ let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${act.length} members · ${(Q.adults||[]).length} adults · no chat, cheers only · invite code <b>${esc(Q.code)}</b>${myAdult()?' · you are '+(myAdult().role=='Admin'?'the admin':'a '+myAdult().role.toLowerCase()):''}</p></div>
  ${window.leagueCard?leagueCard():''}<div class="card"><span class="kicker">More boards</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${Object.entries(metrics).map(([k,v])=>`<button class="btn ${k==sqTab?'':'ghost'}" data-m="${k}" style="padding:6px 10px;font-size:13px">${v[0]}</button>`).join('')}</div>
  ${rows.map((m,i)=>`<div class="list-item row"><span>${i+1}. ${who(m)} <b>${shortName(m.name)}</b>${m.sample?' <span class="sample">sample</span>':''}</span>${sqTab=='badges'?`<div style="max-width:55%">${iconRow(m.blist||[],20)}</div>`:`<b>${M[2](M[1](m))}</b>`}</div>`).join('')}
  <p class="small muted">${sqTab=='impr'?'Each archer is compared with their own last 10 rounds, so it\'s fair across ability.':'Ranks effort and badges, not raw scores.'}</p></div>

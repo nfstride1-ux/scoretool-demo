@@ -35,7 +35,7 @@ async function loadArrows(){try{const r=await fetch('data/arrows.csv',{cache:'no
   const L=(OFF[nm]=OFF[nm]||[]);let o=L.find(x=>x.key==key);if(!o){o={key,date:g('date'),event:g('event'),round:g('round'),url:g('results_url'),ends:[]};L.push(o)}
   const ar=g('arrows').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);o.ends.push({dist:g('distance'),arrows:ar,flag:ar.length>0&&ar.every(a=>a=='M')})}
  for(const k in OFF)OFF[k].sort((a,b)=>a.date<b.date?1:-1)}catch(e){}}
-async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const mine=k=>{const a=k.toLowerCase(),[f,l]=TESTER.name.toLowerCase().split(' ');return a.includes(l)&&a.includes(f.slice(0,4))};for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
+async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const is=(k,n)=>{const a=k.toLowerCase(),[f,l]=n.toLowerCase().split(' ');return a.includes(l)&&a.includes(f.slice(0,4))},mine=k=>(typeof TESTERS!='undefined'?TESTERS:[TESTER]).some(t=>t&&t.name&&is(k,t.name));/* keep the 3 testers' data: they share the preset squad */for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
 async function _loadReal(){await loadArrows();
  try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
@@ -49,6 +49,7 @@ async function _loadReal(){await loadArrows();
  }catch(e){csvState='missing'}}
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
 const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
+const aliasKey=(O,n)=>{if(O[n])return n;const[f,...r]=String(n||'').toLowerCase().split(' '),l=r.pop()||'';return l?Object.keys(O).find(x=>{x=x.toLowerCase();return x.includes(l)&&x.includes(f.slice(0,4))}):undefined};const offFor=n=>OFF[aliasKey(OFF,n)]||[];
 const findReal=n=>{const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
 
 
@@ -483,5 +484,5 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  
  <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
 
-loadReal().then(()=>{nav(view)});
+loadReal().then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
 addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav(location.hash=='#plot'?'score':'home')});
