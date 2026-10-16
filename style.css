@@ -99,3 +99,10 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .zb.on{background:#7c3aed;color:#fff;border-color:#7c3aed}
 .zb:disabled{opacity:.4}
 .ad-pad button{touch-action:manipulation}
+.help-btn{margin-left:auto;margin-right:8px;width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);background:transparent;color:var(--gold);font:800 20px var(--disp);cursor:pointer}
+.top .demo-pill{order:3}
+.poster-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 12px 12px}
+.poster{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;color:var(--ink);text-align:left;font:600 13px var(--body);cursor:pointer}
+.poster img{width:100%;border-radius:8px;display:block;margin-bottom:6px}
+.poster-full{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;gap:10px}
+.poster-full img{max-width:100%;max-height:calc(100vh - 80px);object-fit:contain;border-radius:10px}

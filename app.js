@@ -9,7 +9,7 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'Indoor WA 18m':{ends:20,ape:3,face:'40cm',max:600},
  'Practice 10 ends × 3':{ends:10,ape:3,face:'any',max:300},
  'Practice 6 ends × 6':{ends:6,ape:6,face:'any',max:360}};
-const KEY='scoretool.v1';
+const KEY=TESTER&&TESTER.id!='nathe'?'scoretool.v1.'+TESTER.id:'scoretool.v1';
 let S=JSON.parse(localStorage.getItem(KEY)||'null')||{profile:null,unlocked:false,sessions:[],best:[],plots:[]};
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 /* One-time cleanup: remove only items the old demo seeded (flagged sample:true, ids 'sample0-9', notes starting 'SAMPLE', the '(SAMPLE)' squad). Real scores and imports are untouched. */
@@ -19,6 +19,7 @@ const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
  ['diary','setup','bows'].forEach(k=>{if(S[k])S[k]=S[k].filter(x=>!isS(x)&&!/^SAMPLE/i.test(x.text||'')&&!/\(SAMPLE\)/.test(x.name||''))});
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
+if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
@@ -34,7 +35,8 @@ async function loadArrows(){try{const r=await fetch('data/arrows.csv',{cache:'no
   const L=(OFF[nm]=OFF[nm]||[]);let o=L.find(x=>x.key==key);if(!o){o={key,date:g('date'),event:g('event'),round:g('round'),url:g('results_url'),ends:[]};L.push(o)}
   const ar=g('arrows').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);o.ends.push({dist:g('distance'),arrows:ar,flag:ar.length>0&&ar.every(a=>a=='M')})}
  for(const k in OFF)OFF[k].sort((a,b)=>a.date<b.date?1:-1)}catch(e){}}
-async function loadReal(){await loadArrows();
+async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const mine=k=>k.toLowerCase()==TESTER.name.toLowerCase();for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
+async function _loadReal(){await loadArrows();
  try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
@@ -46,7 +48,7 @@ async function loadReal(){await loadArrows();
   csvState=Object.keys(REAL).length?'ok':'empty';
  }catch(e){csvState='missing'}}
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
-const ARCHERS=['Nathaniel Stride','Logan Wolfe'];
+const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
 const findReal=n=>{const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
 
 
@@ -129,10 +131,11 @@ function gate(){return`<div class="card dark gate"><span class="kicker">Members 
 <button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their official results from Archer's Diary.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
-function csvNote(){return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
+function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
 function render(){seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
+ if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
@@ -463,11 +466,11 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  <div class="card" id="coachcard"><span class="kicker">Coach / parent</span><h2>Share with your coach or parent</h2><h3>Read-only live link</h3><p class="small">Send this link to your coach or parent. They'll see progress and effort, but can't change anything.</p><input readonly value="${url}" id="sh" aria-label="share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a>
  <h3 style="margin-top:16px">Summary for a date range</h3><div class="row" style="gap:8px"><label style="flex:1">From<input id="cf" type="date" value="${new Date(Date.now()-30*864e5).toLocaleDateString('en-CA')}"></label><label style="flex:1">To<input id="ct" type="date" value="${today()}"></label></div>
  <button class="btn alt full" id="csend" style="margin-top:8px">📤 Send to my coach</button><div id="cout"></div></div>
- ${window.otherAppsCard?otherAppsCard():''}<div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div><div class="card"><button class="btn ghost" id="sw">Switch archer</button> <button class="btn ghost" id="rs">Reset demo</button></div>`;
+ ${window.helpCards?helpCards():''}${window.otherAppsCard?otherAppsCard():''}<div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div>${testerCard()}<div class="card"><button class="btn ghost" id="rs">Reset my test data</button></div>`;bindTesterPicker(app);
  $('#bmadd').onclick=()=>{const t=$('#bm').value.trim();if(t){S.best.push({date:new Date().toISOString().slice(0,10),text:t,total:'⭐',round:'My note'});save();me()}};
  $('#cp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(url);$('#cp').textContent='Copied ✓'};
  $('#csend').onclick=()=>sendCoach($('#cf').value,$('#ct').value);
- if(window.bindOtherApps)bindOtherApps();$('#sw').onclick=()=>{S.profile=null;save();render()};$('#rs').onclick=()=>{localStorage.removeItem(KEY);location.reload()}}
+ if(window.bindOtherApps)bindOtherApps();$('#rs').onclick=()=>{if(confirm('Clear all of '+(TESTER?TESTER.short:'this')+'\'s test data on this phone?')){localStorage.removeItem(KEY);location.reload()}}}
 function shareData(){const d=done();return{n:S.profile,s:d.slice(-10).map(s=>[s.date,s.round,total(s),arrows(s).length,s.sample?1:0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
  const real=findReal(D.n);
