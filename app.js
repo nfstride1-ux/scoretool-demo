@@ -414,7 +414,7 @@ function offRounds(){const me=(S.profile||'').toLowerCase(),nm=x=>{x=x.toLowerCa
  if(window.applySheets)applySheets(L);
  return L.sort((a,b)=>normDate(a.date)<normDate(b.date)?1:normDate(a.date)>normDate(b.date)?-1:0)}
 /* Arrow counts per round: from the AA rating tables where present, else the standard round definition. */
-const ARROWS_STD={'Perth':90,'Grange':90,'Newcastle':90,'Geelong':90,'Drake':90,'Samford':90,'Launceston':72,'WA 70/720':72,'WA 60/720':72,'WA 50/720':72,'WABB 50/720 (AA 50/720)':72,'AA 40/720':72,'AA 30/720':72,'AA 20/720':72,'Sydney':120,'Double Aus Indoor 18m':60,'WA Field 24Mk Red':72,'WA Field 24Mk Blue':72,'WA Field 24Mk Yellow':72,'WA Field 24Umk Red + WA Field 24Mk Red':144};
+const ARROWS_STD={'Perth':90,'Grange':90,'Newcastle':90,'Geelong':90,'Drake':90,'Samford':90,'Launceston':72,'WA 70/720':72,'WA 60/720':72,'WA 50/720':72,'WABB 50/720 (AA 50/720)':72,'AA 40/720':72,'AA 30/720':72,'AA 20/720':72,'Sydney':120,'Double Aus Indoor 18m':60,'WA Field 24Mk Red':72,'WA Field 24Mk Blue':72,'WA Field 24Mk Yellow':72,'WA Field 24Umk Red':72,'WA Field 24Umk Blue':72,'WA Field 24Umk Yellow':72,'WA Field 24Umk Red + WA Field 24Mk Red':144};
 function roundArrows(r){const d=typeof AA_ROUNDS!='undefined'&&AA_ROUNDS[r];if(d&&d.r)return d.r.reduce((t,p)=>t+p[0],0);return ARROWS_STD[r]||null}
 function trendSVG(pts,hi){const W=340,H=110,P=26,v=pts.map(p=>p.s),mn=Math.min(...v),mx=Math.max(...v),sp=mx-mn||1,X=i=>P+(pts.length<2?(W-2*P)/2:i*(W-2*P)/(pts.length-1)),Y=s=>H-22-(s-mn)/sp*(H-44);
  let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Totals on this round over time">`;
