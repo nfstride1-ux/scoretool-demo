@@ -1,16 +1,16 @@
 /* Help (?) posters + Send a suggestion (FormSubmit -> nfshold@gmail.com, same pattern as archerycalendars.com forms). */
 const HELP_POSTERS=[['01-getting-started','Getting started & picking your tester'],['02-scoring','Scoring a round: plot arrows, zoom'],['03-practice-goal','Practice arrows & daily goal'],
  ['04-stats','Stats: pick a round'],['05-ranks','Ranks, badges, XP & fair play'],['06-squads','Squads: join with a code, cheers'],['07-following','Following other archers'],
- ['08-other-apps','My other apps'],['09-diary','Diary'],['10-suggestion','Sending a suggestion']];
+ ['08-other-apps','My other apps: Precision Cut, Garmin & more'],['09-diary','Diary'],['10-suggestion','Sending a suggestion']];
 const FORM_URL='https://formsubmit.co/nfshold@gmail.com';
 let lastTab='home';
 (function(){const top=document.querySelector('.top');if(top){const b=document.createElement('button');b.className='help-btn';b.setAttribute('aria-label','Help');b.textContent='?';b.onclick=()=>nav('help');top.appendChild(b)}
  const o=window.nav;window.nav=function(v){if(v!='help'&&v!='suggest')lastTab=v;return o(v)}})();
 function helpCards(){return`<div class="card"><span class="kicker">Help</span><h2>How to use ScoreTool</h2><p class="small">Quick picture guides for every part of the app.</p><button class="btn" onclick="nav('help')">Open Help</button> <button class="btn ghost" onclick="nav('suggest')">Send a suggestion</button></div>`}
 function helpView(){app.innerHTML=`<div class="card dark"><span class="kicker">Help</span><h1>How to use ScoreTool</h1><p>Tap a guide to see it full screen.</p></div>
-<div class="poster-grid">${HELP_POSTERS.map(([f,t])=>`<button class="poster" data-f="${f}"><img loading="lazy" src="help/${f}.png?v=20261016b" alt="${t}"><span>${t}</span></button>`).join('')}</div>
+<div class="poster-grid">${HELP_POSTERS.map(([f,t])=>`<button class="poster" data-f="${f}"><img loading="lazy" src="help/${f}.png?v=20261016c" alt="${t}"><span>${t}</span></button>`).join('')}</div>
 <div class="card"><h2>Got an idea or found a bug?</h2><button class="btn full" onclick="nav('suggest')">Send a suggestion</button></div>`;
- app.querySelectorAll('.poster').forEach(b=>b.onclick=()=>{const d=document.createElement('div');d.className='poster-full';d.innerHTML=`<img src="help/${b.dataset.f}.png?v=20261016b" alt=""><button class="btn" aria-label="Close">Close ✕</button>`;d.onclick=()=>d.remove();document.body.appendChild(d)})}
+ app.querySelectorAll('.poster').forEach(b=>b.onclick=()=>{const d=document.createElement('div');d.className='poster-full';d.innerHTML=`<img src="help/${b.dataset.f}.png?v=20261016c" alt=""><button class="btn" aria-label="Close">Close ✕</button>`;d.onclick=()=>d.remove();document.body.appendChild(d)})}
 function suggestView(){const who=TESTER?TESTER.name:'',tabs=['Home','Score','Stats','Ranks','Following','Diary','Me','Squads','Help','Other'],cur=(lastTab||'home');
  app.innerHTML=`<div class="card"><span class="kicker">Testers</span><h1>Send a suggestion</h1><p class="small muted">Goes straight to Nathe by email.</p>
  <form id="sgForm" method="POST" enctype="multipart/form-data" action="${FORM_URL}" target="sgFrame">
