@@ -61,7 +61,7 @@ const total=s=>s.ends.reduce((t,e)=>t+endSum(e),0);
 const arrows=s=>s.ends.flat();
 const avgArrow=s=>{const a=arrows(s);return a.length?total(s)/a.length:0};
 const sd=xs=>{if(xs.length<2)return 0;const m=xs.reduce((a,b)=>a+b)/xs.length;return Math.sqrt(xs.reduce((t,x)=>t+(x-m)**2,0)/(xs.length-1))};
-const col=a=>{const v=val(a);return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
+const col=a=>{const v=val(a);if(typeof cur!='undefined'&&cur&&cur.bugs)return a=='M'?'k-m':v>=5?'k-y':'k-k';return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
 const allSessions=()=>[...S.sessions].sort((a,b)=>a.date<b.date?-1:1);
 const done=()=>allSessions().filter(s=>{const R=ROUNDS[s.round];return R&&s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape)});
 
@@ -259,38 +259,39 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
  const rows=isBug(FR)?[['6','5','4'],['3','2','1'],['M']]:[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
- app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
+ const y0=scrollY;app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
  <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
  <div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
  <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${bcol(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #7c3aed;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
  <button class="ad-small" id="undo" ${e.length&&!fix?'':'disabled'}>↶ Undo</button><button class="ad-small" id="bugface" aria-pressed="${!!cur.bugs}">${cur.bugs?'Face: Bugs Eyes':'Face: WA'}</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
  <p class="small muted" style="margin:2px 12px">${fix?'Tap the face or a score to fix this arrow.':locked?'End complete. Tap an arrow to fix it, or press Next.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
- ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div>${isBug(FR)?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(cur.spot||0)==n?' on':''}" data-spot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}<div id="fwrap" style="position:relative;max-width:${SP?"min(340px,40vh,40dvh)":isBug(FR)?"min(118px,15vh,15dvh)":"min(260px,34vh,34dvh)"};margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
+ ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div>${isBug(FR)?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(cur.spot||0)==n?' on':''}" data-spot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}<div id="fwrap" style="position:relative;max-width:${SP?"min(340px,40vh,40dvh)":isBug(FR)?"min(118px,calc((100vh - 540px)/2.9),calc((100dvh - 540px)/2.9))":"min(260px,34vh,34dvh)"};margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
  <div class="ad-pad">${rows.map(r=>r.map(k=>k?`<button class="${bcol(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`:'<span></span>').join('')).join('')}</div>
  <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fix?'':'disabled'}>Next ›</button></div></div>`;
- {const pd=app.querySelector('.ad-pad'),nv=document.querySelector('nav');if(pd)requestAnimationFrame(()=>{const lim=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,over=pd.getBoundingClientRect().bottom-lim;if(over>0)scrollBy(0,over)})}
+ scrollTo(0,y0);{const pd=app.querySelector('.ad-pad'),nv=document.querySelector('nav'),ak=cur.date+'|'+cur.round+'|'+ei+'|'+(cur.spot||0)+'|'+!!cur.bugs;if(pd&&window._adk!==ak)window._adk=ak,requestAnimationFrame(()=>{const lim=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,over=pd.getBoundingClientRect().bottom-lim;if(over>0)scrollBy(0,over)})}
  app.querySelectorAll('[data-spot]').forEach(x=>x.onclick=()=>{cur.spot=+x.dataset.spot;PZ.k=1;PZ.cx=PZ.cy=0;score()});
  $('#bugface').onclick=()=>{cur.bugs=!cur.bugs;save();score()};
  $('#hideface').onclick=()=>{S.hideFace=!S.hideFace;save();score()};
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
  const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const B=vb.split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
-  const clampZ=()=>{PZ.k=Math.min(4,Math.max(1,PZ.k));const m=B[2]/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));PZ.cy=Math.min(m,Math.max(-m,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
+  const clampZ=()=>{PZ.k=Math.min(4,Math.max(1,PZ.k));const m=B[2]/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));const my=B[3]/2*(1-1/PZ.k);PZ.cy=Math.min(my,Math.max(-my,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
   const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);app.querySelectorAll('[data-z]').forEach(x=>x.classList.toggle('on',PZ.k>1?Math.round(PZ.k)==+x.dataset.z:x.dataset.z=='1'));const r=$('#zreset');if(r)r.disabled=PZ.k==1};
-  f.style.touchAction='none';applyZ();
+  f.style.touchAction='none';W.style.touchAction='none';W.style.overscrollBehavior='contain';let pan=null;applyZ();
   app.querySelectorAll('[data-z]').forEach(x=>x.onclick=()=>{PZ.k=+x.dataset.z;applyZ()});$('#zreset').onclick=()=>{PZ.k=1;applyZ()};
   const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
   const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=(ev.clientX-r.left-55)+'px';L.style.top=(ev.clientY-r.top-140)+'px';const lw=0.24/PZ.k;
    L.innerHTML=faceSVG(shown,'lf',`${q.x-lw/2} ${q.y-lw/2} ${lw} ${lw}`,FR,`<path d="M${q.x-lw/6} ${q.y}h${lw/3}M${q.x} ${q.y-lw/6}v${lw/3}" stroke="#a855f7" stroke-width="${0.006/PZ.k}"/><circle cx="${q.x}" cy="${q.y}" r="${0.012/PZ.k}" fill="none" stroke="#a855f7" stroke-width="${0.004/PZ.k}"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
   const P=new Map();let pin=null;
   const pinchStart=()=>{const [a,b]=[...P.values()];const q1=pt(a),q2=pt(b);pin={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,k:PZ.k,m:{x:(q1.x+q2.x)/2,y:(q1.y+q2.y)/2}}};
-  f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);P.set(ev.pointerId,ev);if(P.size==2){L.hidden=true;pinchStart();return}if(P.size>2||locked)return;show(ev)};
+  f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);P.set(ev.pointerId,ev);if(P.size==2){L.hidden=true;pinchStart();return}if(P.size>2)return;pan={x:ev.clientX,y:ev.clientY,on:false};if(locked)return;show(ev)};
   f.onpointermove=ev=>{if(!P.has(ev.pointerId))return;P.set(ev.pointerId,ev);if(pin&&P.size==2){const [a,b]=[...P.values()];PZ.k=pin.k*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pin.d;applyZ();
      /* keep the SVG point that was under the fingers' midpoint under the new midpoint (zoom + pan) */
      const mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,q=f.createSVGPoint();q.x=mx;q.y=my;const n=q.matrixTransform(f.getScreenCTM().inverse());PZ.cx+=pin.m.x-n.x;PZ.cy+=pin.m.y-n.y;applyZ();return}
+   if(pan&&P.size==1&&PZ.k>1){const dx=ev.clientX-pan.x,dy=ev.clientY-pan.y;if(!pan.on&&Math.hypot(dx,dy)>10){pan.on=true;L.hidden=true}if(pan.on){const s2=(B[2]/PZ.k)/f.getBoundingClientRect().width;PZ.cx-=dx*s2;PZ.cy-=dy*s2;pan.x=ev.clientX;pan.y=ev.clientY;applyZ();return}}
    if(!L.hidden)show(ev)};
   const end=ev=>{P.delete(ev.pointerId);if(pin){if(P.size<2)pin=null;L.hidden=true;return true}return false};
   f.onpointercancel=ev=>{end(ev);L.hidden=true};
-  f.onpointerup=ev=>{if(end(ev)||P.size)return;if(L.hidden)return;L.hidden=true;const q=pt(ev);if(isBug(FR)&&!cur.spot){let bi=0,bd=9;BUGC.forEach(([cx,cy],i)=>{const dd=Math.hypot(q.x-cx,q.y-cy);if(dd<bd){bd=dd;bi=i}});cur.spot=bi+1;PZ.k=1;PZ.cx=PZ.cy=0;score();return}if(isBug(FR)&&cur.spot){cur.spot=cur.spot%3+1;PZ.k=1;PZ.cx=PZ.cy=0}putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
+  f.onpointerup=ev=>{if(end(ev)||P.size)return;if(pan&&pan.on){pan=null;L.hidden=true;return}pan=null;if(L.hidden)return;L.hidden=true;const q=pt(ev);if(isBug(FR)&&!cur.spot){let bi=0,bd=9;BUGC.forEach(([cx,cy],i)=>{const dd=Math.hypot(q.x-cx,q.y-cy);if(dd<bd){bd=dd;bi=i}});cur.spot=bi+1;PZ.k=1;PZ.cx=PZ.cy=0;score();return}if(isBug(FR)&&cur.spot){cur.spot=cur.spot%3+1;PZ.k=1;PZ.cx=PZ.cy=0}putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  $('#undo').onclick=()=>{const l=cur.ends[cur.ends.length-1];if(!l.length)return;l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;justDone=false;save();score()};
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
@@ -302,10 +303,10 @@ var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),xs=arrowsAll.filter(a=>a=='X').length,tens=arrowsAll.filter(a=>a=='X'||a=='10').length;
  app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>
- ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
+ ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(s.bugs?'Bugs Eyes field 3-spot (6-1)'+((/@.*/.exec(sec.k)||[''])[0]?' '+(/@.*/.exec(sec.k)||[''])[0]:''):sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
  ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
  ${secs.length>1?`<div class="ad-sum small">X's: <b>${A.filter(a=>a=='X').length}</b> 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b> <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
- <div class="ad-sum">X's: <b>${xs}</b>&nbsp; 10's/X's: <b>${tens}</b>&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${R.max}</span></div></div>
+ <div class="ad-sum">X's: <b>${xs}</b>&nbsp; 10's/X's: <b>${tens}</b>&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${s.bugs?R.ends*R.ape*6:R.max}</span></div></div>
  ${fin?summaryCard(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
  <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();
