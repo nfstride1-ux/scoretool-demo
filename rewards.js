@@ -111,3 +111,31 @@ function rewardsView(){const p=S.profile;
  app.innerHTML=`${window.profileCard?profileCard(p,true):''}${rankCard(p)}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}${shelf()}`;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
+/* ---------- Profile cards (replace animal avatars) ---------- */
+const BANNERS=[['Navy & gold','#13294b','#ffc629'],['Royal blue','#1d4ed8','#93c5fd'],['Red & black','#b91c1c','#111827'],['Green & gold','#166534','#facc15'],['Purple','#6d28d9','#f0abfc'],['Teal','#0f766e','#5eead4'],['Orange','#c2410c','#fde68a'],['Black & white','#111827','#e5e7eb']];
+const card=()=>{S.card=S.card||{banner:0,featured:[],title:''};return S.card};
+const initials=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+function colourFor(name){if(name==S.profile&&S.card)return BANNERS[S.card.banner||0];let h=0;for(const c of name||'')h=(h*31+c.charCodeAt(0))>>>0;return BANNERS[h%BANNERS.length]}
+function initDisc(m,sz=44){const B=colourFor(m.name);return`<span class="ini" style="width:${sz}px;height:${sz}px;font-size:${sz*.4}px;background:linear-gradient(135deg,${B[2]},${B[1]});color:${['#111827','#13294b','#166534','#b91c1c'].includes(B[1])&&B[2]!='#111827'?'#0b0f17':'#fff'}" aria-hidden="true">${initials(m.name)}</span>`}
+function cardData(name){const mine=name==S.profile,B=earnedBadges(name).filter(b=>b.on),rk=rankFor(name),R=realFor(name),last=R[R.length-1];
+ let feat=mine?card().featured.map(id=>B.find(b=>b.id==id)).filter(Boolean):[];if(!feat.length){const ord=['mythic','legendary','epic','rare','common'];feat=B.slice().sort((a,b)=>ord.indexOf(a.rarity)-ord.indexOf(b.rarity)).slice(0,3)}
+ const title=(mine&&card().title&&B.some(b=>b.name==card().title))?card().title:'';
+ return{B,feat:feat.slice(0,3),rk,title,bow:last?(last.division.match(/compound|recurve|barebow|longbow/i)||[''])[0]:'',club:last?last.club:''}}
+function profileCard(name,link){const d=cardData(name),Bn=colourFor(name),nm=name==S.profile?name:shortName(name);
+ return`<div class="pcard card" style="padding:0"><div class="ban" style="background:linear-gradient(120deg,${Bn[1]} 0 60%,${Bn[2]} 60% 64%,${Bn[1]} 64%)"></div><div class="body"><div class="row" style="align-items:flex-end">${initDisc({name},60)}<span style="margin-left:auto">${emblem(d.rk,54)}</span></div>
+ <h2 style="margin:8px 0 2px">${esc(shortName(name))} ${tierPill(d.rk)}</h2>
+ <div class="small muted">${[d.title?`<b style="color:var(--gold)">"${esc(d.title)}"</b>`:'',d.bow,name==S.profile&&d.club?esc(d.club):''].filter(Boolean).join(' · ')}</div>
+ <div style="display:flex;gap:10px;margin-top:10px;align-items:center">${d.feat.length?d.feat.map(b=>`<span style="text-align:center;font-size:11px;font-weight:700;width:64px">${hexIcon(b,0)}<br>${b.name}</span>`).join(''):'<span class="small muted">Featured badges show here once you unlock some.</span>'}</div>
+ ${link?`<button class="btn ghost" style="margin-top:10px;padding:6px 12px;min-height:36px" onclick="nav('profile')">Edit card</button>`:''}</div></div>`}
+function profileView(){const c=card(),d=cardData(S.profile);
+ app.innerHTML=`${profileCard(S.profile)}<div class="card"><span class="kicker">Customise</span>
+ <label>Banner (pick your club colours)</label><div style="display:flex;flex-wrap:wrap;gap:8px">${BANNERS.map((b,i)=>`<button class="btn ghost" data-ban="${i}" aria-pressed="${i==(c.banner||0)}" style="padding:6px 10px;min-height:36px;${i==(c.banner||0)?'outline:2px solid var(--cyan)':''}"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,${b[1]} 50%,${b[2]} 50%);vertical-align:-2px"></span> ${b[0]}</button>`).join('')}</div>
+ <label for="ttl">Title (earned badges only)</label><select id="ttl"><option value="">No title</option>${d.B.map(b=>`<option ${b.name==c.title?'selected':''}>${b.name}</option>`).join('')}</select>
+ <label>Featured badges (pick up to 3)</label><div style="display:flex;flex-wrap:wrap;gap:6px">${d.B.length?d.B.map(b=>`<label style="font-weight:600;margin:0;display:flex;gap:6px;align-items:center;background:var(--night2);padding:6px 10px;border-radius:10px"><input type="checkbox" data-ft="${b.id}" style="width:auto" ${c.featured.includes(b.id)?'checked':''}> ${b.name}</label>`).join(''):'<span class="small muted">No badges unlocked yet.</span>'}</div>
+ <p class="small muted" style="margin-top:10px">Squad mates only see your initials, first name and last initial, rank, title and badges. No photo, club, age or contact details.</p>
+ <button class="btn ghost" onclick="nav('rewards')">Done</button></div>`;
+ app.querySelectorAll('[data-ban]').forEach(b=>b.onclick=()=>{c.banner=+b.dataset.ban;save();profileView()});
+ $('#ttl').onchange=e=>{c.title=e.target.value;save();profileView()};
+ app.querySelectorAll('[data-ft]').forEach(b=>b.onchange=()=>{const id=b.dataset.ft;c.featured=c.featured.filter(x=>x!=id);if(b.checked){c.featured.push(id);if(c.featured.length>3)c.featured.shift()}save();profileView()})}
+window.EXTRA_VIEWS.profile=profileView;
+function meTop(){return profileCard(S.profile,true)}
