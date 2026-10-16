@@ -39,9 +39,9 @@ async function loadReal(){await loadArrows();
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
    round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowclass','bowtype','class','category']),notes:pick(h,['notes']),
-   club:pick(h,['club']),url:pick(h,['url','resultsurl','source','sourceurl','link']),tens:pick(h,['tens','10s']),xs:pick(h,['xs','x'])};
+   club:pick(h,['club']),url:pick(h,['url','resultsurl','source','sourceurl','link']),tens:pick(h,['tens','10s','tensxcount']),xs:pick(h,['xs','x','xcount']),subs:pick(h,['distancesubtotals','subtotals'])};
   for(const row of rows.slice(1)){const g=k=>ix[k]>=0?(row[ix[k]]||'').trim():'';const sc=parseInt(g('score'));if(!g('name')||isNaN(sc)||sc<=0)continue; /* skip not-entered/0 rows */
-   (REAL[g('name')]=REAL[g('name')]||[]).push({date:g('date'),event:g('event'),round:g('round')||'Unknown round',score:sc,division:g('division'),club:g('club'),url:g('url'),tens:g('tens'),xs:g('xs'),notes:g('notes'),incomplete:/incomplete|partial|not shot/i.test(g('notes'))})}
+   (REAL[g('name')]=REAL[g('name')]||[]).push({date:g('date'),event:g('event'),round:g('round')||'Unknown round',score:sc,division:g('division'),club:g('club'),url:g('url'),tens:g('tens'),xs:g('xs'),subs:g('subs'),notes:g('notes'),incomplete:/incomplete|partial|not shot/i.test(g('notes'))})}
   for(const k in REAL)REAL[k].sort((a,b)=>normDate(a.date)<normDate(b.date)?-1:1);
   csvState=Object.keys(REAL).length?'ok':'empty';
  }catch(e){csvState='missing'}}
@@ -372,12 +372,23 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
  app.querySelectorAll('[data-ev]').forEach(b=>b.onchange=()=>{S.evOver=S.evOver||{};S.evOver[b.dataset.ev]=b.checked?'open':'club';save();const y=scrollY;stats();scrollTo(0,y)});app.querySelectorAll('[data-oc]').forEach(b=>b.onclick=()=>{window._oc=b.dataset.oc;const y=scrollY;stats();scrollTo(0,y)});bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;window._ps=null;stats()};$('#ps').onchange=e=>{window._ps=+e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
  $('#club').onchange=e=>{$('#clubout').innerHTML=e.target.checked?'<p class="small muted">Coming soon: club and division averages worked out from the public Archer\'s Diary results already on archerycalendars.com. Off by default for juniors.</p>':''}}
-function offRounds(){const k=Object.keys(OFF).find(x=>x.toLowerCase()==(S.profile||'').toLowerCase());return k?OFF[k]:[]}
-function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i],good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
+function offRounds(){const me=(S.profile||'').toLowerCase(),k=Object.keys(OFF).find(x=>x.toLowerCase()==me),rk=Object.keys(REAL).find(x=>x.toLowerCase()==me);
+ const L=(k?OFF[k]:[]).map(o=>Object.assign({},o)),yr=String(new Date().getFullYear());
+ (rk?REAL[rk]:[]).filter(r=>normDate(r.date).startsWith(yr)).forEach(r=>{const m=L.find(o=>o.date==r.date&&o.round==r.round&&!o.score);
+  if(m){Object.assign(m,{score:r.score,division:r.division,subs:r.subs,notes:r.notes,url:m.url||r.url})}
+  else L.push({key:r.date+'|'+r.round+'|'+r.division,date:r.date,event:r.event,round:r.round,url:r.url,ends:[],score:r.score,division:r.division,subs:r.subs,notes:r.notes,tens:r.tens,xs:r.xs})});
+ return L.sort((a,b)=>normDate(a.date)<normDate(b.date)?1:normDate(a.date)>normDate(b.date)?-1:0)}
+function summaryCard(L,i,o){const subs=(o.subs||'').split(';').map(x=>x.split(':')).filter(x=>x.length==2&&x[1]);
+ return`<div class="card"><span class="kicker">Official round · result <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}${x.ends.length?'':' · '+x.score}${/Recurve/.test(x.division||'')?' (Recurve)':''}</option>`).join('')}</select>
+ <p class="small muted">${esc(o.event)} · ${esc(o.division||'')} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
+ <div class="stats" style="grid-template-columns:1fr 1fr 1fr"><div class="stat"><b>${o.score}</b>total</div>${o.tens?`<div class="stat"><b>${o.tens}</b>10s</div>`:''}${o.xs?`<div class="stat"><b>${o.xs}</b>Xs</div>`:''}</div>
+ ${subs.length?`<h3 style="margin-top:12px">By distance</h3>${subs.map(([d,v])=>`<div class="list-item row"><span>${esc(d)}</span><b>${esc(v)}</b></div>`).join('')}`:''}
+ ${o.notes?`<p class="small muted">${esc(o.notes)}</p>`:''}<p class="small muted">End-by-end arrows aren't available for this shoot, so only the result is shown.</p>${noteBox({date:o.date,round:o.round})}</div>`}
+function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i];if(!o.ends.length)return summaryCard(L,i,o);const good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
  const sums=good.map(e=>endSum(e.arrows)),all=good.flatMap(e=>e.arrows),n=all.length||1,pc=f=>Math.round(all.filter(f).length/n*100);
  const dists=[...new Set(good.map(e=>e.dist))],third=Math.max(1,Math.floor(sums.length/3)),fe=sums.slice(0,third),le=sums.slice(-third),av=a=>a.reduce((x,y)=>x+y,0)/a.length;
  const fake={id:'off',date:o.date,round:o.round,ends:good.map(e=>e.arrows),dists:good.map(e=>e.dist)};const gl=sums.map((_,j)=>endLabel(fake,j).match(/end (\d+)/)[1]);
- return`<div class="card"><span class="kicker">Official round · real arrows <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}</option>`).join('')}</select>
+ return`<div class="card"><span class="kicker">Official round · real arrows <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}${x.ends.length?'':' · '+x.score}${/Recurve/.test(x.division||'')?' (Recurve)':''}</option>`).join('')}</select>
  <p class="small muted">${o.event} · ${good.length} ends · ${all.length} arrows · total ${sums.reduce((a,b)=>a+b,0)} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
  ${flagged.length?`<p class="small"><span class="sample">Flagged</span> ${flagged.map(e=>e.dist).join(', ')}: ${flagged.length} end(s) with every arrow a miss. That's most likely a scoresheet error, so it's left out of these stats and isn't treated as real form.</p>`:''}
  <h3>End by end${dists.length>1?' (by distance)':' at '+dists[0]}</h3>${endChart(sums,good.map(e=>e.arrows.length),dists.length>1?fake.dists:null)}
