@@ -86,6 +86,6 @@ function view(){const all=shoots();markPB(all);const L=filt(all);
 function render(){app.innerHTML=view();window.scrollTo&&0;const b=$('#back');if(b)b.onclick=()=>nav('stats');
  [['fr','range'],['fk','kind'],['fo','round'],['fb','bow']].forEach(([id,k])=>{const e=$('#'+id);if(e)e.onchange=()=>{AF[k]=e.value;const y=scrollY;render();scrollTo(0,y)}});
  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v=='stats'))}
-window.EXTRA_VIEWS=Object.assign(window.EXTRA_VIEWS||{},{analytics:render});
+window._anShoots=shoots;window.EXTRA_VIEWS=Object.assign(window.EXTRA_VIEWS||{},{analytics:render});
 const _st=stats;stats=function(){_st.apply(this,arguments);if(!document.getElementById('goan'))app.insertAdjacentHTML('afterbegin',`<button class="btn full" id="goan" style="margin:10px 0 4px;background:linear-gradient(90deg,#ffc629,#ffdd73)" onclick="nav('analytics')">📊 Analytics · trends, PBs, consistency</button>`)};
 })();
