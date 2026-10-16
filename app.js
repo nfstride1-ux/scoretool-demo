@@ -383,6 +383,7 @@ function offRounds(){const me=(S.profile||'').toLowerCase(),nm=x=>{x=x.toLowerCa
  (rk?REAL[rk]:[]).filter(r=>normDate(r.date).startsWith(yr)).forEach(r=>{const m=L.find(o=>o.date==r.date&&o.round==r.round&&!o.score);
   if(m){Object.assign(m,{score:r.score,division:r.division,subs:r.subs,notes:r.notes,url:m.url||r.url})}
   else L.push({key:r.date+'|'+r.round+'|'+r.division,date:r.date,event:r.event,round:r.round,url:r.url,ends:[],score:r.score,division:r.division,subs:r.subs,notes:r.notes,tens:r.tens,xs:r.xs})});
+ if(window.applySheets)applySheets(L);
  return L.sort((a,b)=>normDate(a.date)<normDate(b.date)?1:normDate(a.date)>normDate(b.date)?-1:0)}
 /* Arrow counts per round: from the AA rating tables where present, else the standard round definition. */
 const ARROWS_STD={'Perth':90,'Grange':90,'Newcastle':90,'Geelong':90,'Drake':90,'Samford':90,'Launceston':72,'WA 70/720':72,'WA 60/720':72,'WA 50/720':72,'WABB 50/720 (AA 50/720)':72,'AA 40/720':72,'AA 30/720':72,'AA 20/720':72,'Sydney':120,'Double Aus Indoor 18m':60,'WA Field 24Mk Red':72,'WA Field 24Mk Blue':72,'WA Field 24Mk Yellow':72,'WA Field 24Umk Red + WA Field 24Mk Red':144};
@@ -412,7 +413,7 @@ function summaryCard(L,i,o){const subs=(o.subs||'').split(';').map(x=>x.split(':
  ${!part&&pb!=null&&o.score<pb?`<p class="small muted" style="margin:4px 0 0">PB ${pb} on ${pbD}.</p>`:''}
  ${subs.length?`<h3 style="margin-top:12px">By distance</h3>${subs.map(([d,v])=>`<div class="list-item row"><span>${esc(d)}</span><b>${esc(v)}</b></div>`).join('')}`:''}
  ${mine.length>1?`<h3 style="margin-top:12px">Your ${esc(o.round)} totals</h3>${trendSVG(mine,hi)}<p class="small muted" style="margin:0">Gold = this shoot.${mine.some(p=>p.part)?' Hollow = partial round.':''} ${full.length} full round${full.length==1?'':'s'}.</p>`:''}
- ${o.notes?`<p class="small muted">${esc(o.notes)}</p>`:''}<p class="small muted">Result only for this shoot. <b>Add scoresheet to see end by end.</b></p>${noteBox({date:o.date,round:o.round})}</div>`}
+ ${o.notes?`<p class="small muted">${esc(o.notes)}</p>`:''}<p class="small muted">Only the total score was published for this shoot.</p>${window.openSheet?`<button class="btn ghost full" style="margin:6px 0" data-sheet="${esc(JSON.stringify({date:normDate(o.date),round:o.round,event:o.event||'',score:o.score,division:o.division||''}))}">📷 Photo scoresheet · add end by end</button>`:''}${noteBox({date:o.date,round:o.round})}</div>`}
 function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.min(window._o||0,L.length-1),o=L[i];if(!o.ends.length)return summaryCard(L,i,o);const good=o.ends.filter(e=>!e.flag),flagged=o.ends.filter(e=>e.flag);
  const sums=good.map(e=>endSum(e.arrows)),all=good.flatMap(e=>e.arrows),n=all.length||1,pc=f=>Math.round(all.filter(f).length/n*100);
  const dists=[...new Set(good.map(e=>e.dist))],third=Math.max(1,Math.floor(sums.length/3)),fe=sums.slice(0,third),le=sums.slice(-third),av=a=>a.reduce((x,y)=>x+y,0)/a.length;

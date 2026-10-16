@@ -7,7 +7,7 @@ const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,f1=x=>(Math.round(x*10)
 const GOLD='#ffc629',BLUE='#60a5fa',MUT='#9aa7ba';
 function shoots(){const me=S.profile||'',R=findReal(me),O=offFor(me),out=[],used=new Set();
  R.forEach(r=>{const d=normDate(r.date),o=O.find(x=>normDate(x.date)==d&&x.round==r.round&&!used.has(x));if(o)used.add(o);
-  const ends=o?o.ends.filter(e=>!e.flag).map(e=>({dist:e.dist,arrows:e.arrows})):null;
+  let ends=o?o.ends.filter(e=>!e.flag).map(e=>({dist:e.dist,arrows:e.arrows})):null;if((!ends||!ends.length)&&window.sheetEnds){const se=sheetEnds(d,r.round);if(se)ends=se.map(e=>({dist:e.dist,arrows:e.arrows}))}
   out.push({date:d,round:r.round,bow:bowOf(r.division),kind:'comp',score:r.score,part:!!r.incomplete,ends:ends&&ends.length?ends:null,club:r.club||'',event:r.event||'',tens:parseInt(r.tens)||0,xs:parseInt(r.xs)||0})});
  O.filter(o=>!used.has(o)).forEach(o=>{const ends=o.ends.filter(e=>!e.flag);if(!ends.length)return;
   out.push({date:normDate(o.date),round:o.round,bow:bowOf(o.division),kind:'comp',score:ends.reduce((t,e)=>t+endSum(e.arrows),0),part:o.ends.some(e=>e.flag),ends,club:o.club||'',event:o.event||''})});
