@@ -15,7 +15,7 @@ function memberStats(m){if(m.sample)return m;const real=(REAL[m.name]||[]).filte
  const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
  const last=real[real.length-1];const dm={};(OFF[m.name]||[]).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
  if(m.name==S.profile)Object.assign(dm,dayArrows());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
- const vbl=volBadges(dm),vb=vbl.filter(x=>x[2]).length;
+ const vbl=earnedBadges(m.name).map(b=>[hexIcon(b,1),b.name,b.on]),vb=vbl.filter(x=>x[2]).length;
  return{...m,wk,streak:st,badges:vb,blist:vbl,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
 const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
 function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name),R=realFor(m.name).filter(r=>!r.incomplete);
@@ -39,7 +39,7 @@ function squad(){seedSquad();const Q=S.squad;
  const me=act.find(m=>m.name==S.profile);
  let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${act.length} members · ${(Q.adults||[]).length} adults · no chat, cheers only${myAdult()?' · you are '+(myAdult().role=='Admin'?'the admin':'a '+myAdult().role.toLowerCase()):''}</p></div>
  ${window.leagueCard?leagueCard():''}<div class="card"><span class="kicker">More boards</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${Object.entries(metrics).map(([k,v])=>`<button class="btn ${k==sqTab?'':'ghost'}" data-m="${k}" style="padding:6px 10px;font-size:13px">${v[0]}</button>`).join('')}</div>
- ${rows.map((m,i)=>`<div class="list-item row"><span>${i+1}. ${who(m)} <b>${shortName(m.name)}</b>${m.sample?' <span class="sample">sample</span>':''}</span>${sqTab=='badges'?`<div style="max-width:55%">${iconRow(m.blist||(()=>{const L=volBadges({});return L.map((x,i)=>[x[0],x[1],i<m.badges])})(),20)}</div>`:`<b>${M[2](M[1](m))}</b>`}</div>`).join('')}
+ ${rows.map((m,i)=>`<div class="list-item row"><span>${i+1}. ${who(m)} <b>${shortName(m.name)}</b>${m.sample?' <span class="sample">sample</span>':''}</span>${sqTab=='badges'?`<div style="max-width:55%">${iconRow(m.blist||[],20)}</div>`:`<b>${M[2](M[1](m))}</b>`}</div>`).join('')}
  <p class="small muted">${sqTab=='impr'?'Each archer is compared with their own last 10 rounds, so it\'s fair across ability.':'Ranks effort and badges, not raw scores.'}</p></div>
  <div class="card"><span class="kicker">Activity</span>${(()=>{const F=feed(act);return F.length?F.map(f=>{const c=Q.cheers[f.id]||{};return`<div class="feed${f.pb?' pbpost':''}">${who(f.who)}<div style="flex:1;min-width:0"><div>${f.html}</div><div class="small muted">${f.sub||''}${f.ver?' · '+VER[f.ver]:''} · ${f.date}</div>${cheerRow(f,c)}</div></div>`}).join(''):'<p class="small muted">Nothing yet. Shoot a round and it shows up here.</p>'})()}<p class="small muted">Preset cheers only, one per post. No chat or comments.</p></div>`;
  const AD=Q.adults||[],kid=id=>{const m=Q.members.find(x=>x.id==id);return m?shortName(m.name):'?'};
