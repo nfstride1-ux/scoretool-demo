@@ -13,6 +13,17 @@ const cases=[
 ['shoulder sore',['Injury']],
 ["didn't finish the round",['Incomplete']],
 ['hot and windy, tired and sore, new sight',['Tired','Wind/weather','Gear change','Injury']],
+['No wind at all. Was perfect day. And i could hold the bow steady at 90 and 70. At 50 I started to struggle a bit.',[]],
+['not windy, calm and sunny, perfect day',[]],
+["it wasn't windy",[]],
+['without any rain',[]],
+['barely any breeze, hardly a gust',[]],
+['calm day, zero wind',[]],
+['no wind but it rained later',['Wind/weather']],
+['not tired, not nervous, no pain',[]],
+['I never felt sore',[]],
+["didn't finish, no wind",['Incomplete']],
+['no sleep last night',['Tired']],
 ];
 for(const[t,e]of cases)a.deepStrictEqual(n(t),e,t);
 console.log('tags: '+cases.length+' cases ok');

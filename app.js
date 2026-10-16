@@ -211,7 +211,7 @@ function ryTips(sums,good,all,dists,fe,le,EL){const T=roundFacts(sums,good,all,d
 const TAGS=window.NOTE_TAGS.map(x=>[x[2],x[1],x[3]]);
 function seedNotes(){S.notes=S.notes||{}}
 const noteKey=r=>r.id||('o:'+normDate(r.date)+'|'+r.round);
-const tagsOf=t=>TAGS.filter(x=>x[2].test(String(t||'')));
+const tagsOf=t=>{const n=window.noteTagsOf(t).map(x=>x[1]);return TAGS.filter(x=>n.includes(x[1]))};
 function chips(t){return tagsOf(t).map(x=>`<span class="sample" style="background:#eef2ff;color:#1e3a8a;margin-right:4px;display:inline-flex;align-items:center;gap:4px">${x[0]} ${x[1]}</span>`).join('')}
 function noteBox(r){const k=noteKey(r),t=(S.notes||{})[k]||'';return`<label class="small muted" style="display:block;margin-top:6px">How did you shoot? <textarea data-n="${k.replace(/"/g,'&quot;')}" rows="2" style="width:100%;box-sizing:border-box;font:inherit" placeholder="e.g. felt tired, windy, new arrows, didn't finish">${t.replace(/</g,'&lt;')}</textarea></label><div class="chips">${chips(t)}</div>`}
 function bindNotes(){app.querySelectorAll('[data-n]').forEach(el=>el.oninput=()=>{S.notes=S.notes||{};S.notes[el.dataset.n]=el.value;save();el.closest('label').nextElementSibling.innerHTML=chips(el.value)})}
@@ -357,7 +357,7 @@ function plottedCard(s){if(!s||!(s.pos||[]).some(e=>(e||[]).some(Boolean)))retur
 function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}</div>${noteBox(s)}</div>${s.sample?'':`<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button>`}</div>`).join('')||'<p class="small muted">No sessions yet. Pick a round above and tap Start to score your first one.</p>'}</div>`}
 function bindList(){bindNotes();app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.sessions=S.sessions.filter(s=>s.id!=b.dataset.del);save();score()})}
 
-function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div class="card">Score a practice session to see practice stats.</div>';if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
+function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div class="card">Score a practice session to see practice stats.</div>';bindNotes();if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};return}
  const byRound={};d.forEach(s=>(byRound[s.round]=byRound[s.round]||[]).push(s));const rounds=Object.keys(byRound);
  const sel=window._r&&byRound[window._r]?window._r:rounds.sort((a,b)=>byRound[b].length-byRound[a].length)[0],ss=byRound[sel];
  const tot=ss.map(total),roll=tot.map((_,i)=>{const w=tot.slice(Math.max(0,i-2),i+1);return w.reduce((a,b)=>a+b)/w.length});
