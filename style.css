@@ -79,7 +79,7 @@ details summary{cursor:pointer}
 .t-bronze{background:#c07a3a}.t-silver{background:#c9d1dc}.t-gold{background:#ffc629}.t-platinum{background:#38e1ff}.t-diamond{background:#a5f3fc}.t-champion{background:#ff6b6b}.t-elite{background:linear-gradient(90deg,#b57bff,#ff6bcb)}.t-none{background:#334155;color:#e2e8f0}
 .ini{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font:800 18px var(--disp);color:#0b0f17;flex:0 0 auto}
 .bar{height:8px;background:#0e1520;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple))}
-.cheer{display:inline-flex;gap:5px;align-items:center;border:1px solid #2c3a52;background:#0e1520;color:var(--ink);border-radius:99px;padding:6px 11px;font:600 13px var(--body);cursor:pointer;min-height:36px}
+.cheer{display:inline-flex;gap:5px;align-items:center;border:1px solid #2c3a52;background:#0e1520;color:var(--ink);border-radius:99px;padding:5px 9px;font:600 12.5px var(--body);cursor:pointer;min-height:34px}
 .cheer svg{width:15px;height:15px}.cheer[aria-pressed=true]{border-color:var(--cyan);background:#0d2a3a}.cheer.gold{border-color:#c98a00;color:#ffe08a}.cheer.gold[aria-pressed=true]{background:#3a2a05}
 .feed{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.feed:last-child{border:0}
 .pcard{border-radius:18px;overflow:hidden;border:1px solid #33435c;background:var(--card)}.pcard .ban{height:64px}.pcard .body{padding:0 14px 14px;margin-top:-28px}
@@ -88,3 +88,5 @@ details summary{cursor:pointer}
 .lrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px}.lrow.me{background:#1b2740}
 .wrap-slide{border-radius:18px;padding:22px 18px;min-height:220px;background:linear-gradient(150deg,#1a1030,#0b2340);border:1px solid #33435c;margin-bottom:10px}
 .wrap-slide .big{font:800 56px var(--disp);line-height:1;color:var(--cyan)}
+.pbpost{background:linear-gradient(90deg,#2a1f05,transparent);border-left:3px solid var(--gold);padding-left:8px}
+.rt-common{color:var(--r-common)}.rt-rare{color:var(--r-rare)}.rt-epic{color:var(--r-epic)}.rt-legendary{color:var(--r-leg)}.rt-mythic{color:var(--r-myth)}
