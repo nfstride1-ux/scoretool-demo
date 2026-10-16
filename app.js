@@ -24,7 +24,7 @@ let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
 /* ---------- importer for /data/archer_scores.csv (from Archer's Diary) ---------- */
-function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
+function parseCSV(t){const rows=isBug(FR)?[['6','5','4'],['3','2','1'],['M']]:[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
  if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}
  else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=''}else f+=c}
  if(f||r.length){r.push(f);rows.push(r)}return rows.filter(x=>x.some(v=>v.trim()))}
@@ -225,17 +225,17 @@ function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.for
  return`<div class="card"><span class="kicker">From your notes</span><h3>What your notes show</h3>${out.length?out.join('')+'<p class="small muted">Compared with your own average for the same round.</p>':'<p>Add a note under each score (tired, windy, nerves, new gear, sore, didn\'t finish). Once 2 sessions share a tag, you\'ll see how it affects your scores.</p>'}</div>`}
 
 let fix=null;
-const isSix=R=>/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');
-const faceVB=R=>isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
+const isBug=R=>!!(R&&R.bugs);const BUGC=[[0,-0.33],[-0.36,0.3],[0.36,0.3]];const isSix=R=>!isBug(R)&&/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');
+const faceVB=R=>isBug(R)?'-0.7 -0.7 1.4 1.4':isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
 /* face for a given end: custom rounds have distance blocks, each with its own face */
 function faceR(R,ei){if(!R.blocks)return R;let k=0;for(const b of R.blocks){k+=+b.ends;if(ei<k)return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}const b=R.blocks[R.blocks.length-1];return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}
 /* custom practice rounds (practice only, never counted for classification) */
 function regCustom(){(S.customRounds||[]).forEach(c=>{const ends=c.blocks.reduce((t,b)=>t+ +b.ends,0);ROUNDS[c.name]={ends,ape:+c.ape,face:c.blocks.map(b=>`${b.size}cm ${b.type}`).join(' / '),max:ends*c.ape*10,custom:true,practice:true,blocks:c.blocks,xs:c.xs}})}
-function faceSVG(pts,id,vb,R,extra=''){const rings=[['#fff','#333'],['#fff','#333'],['#111','#fff'],['#111','#fff'],['#2563eb','#111'],['#2563eb','#111'],['#d62828','#111'],['#d62828','#111'],['#ffd84d','#111'],['#ffd84d','#111']];
+function faceSVG(pts,id,vb,R,extra=''){if(isBug(R)){let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block;background:#fff" role="img" aria-label="Bugs Eyes field 3-spot face, tap where the arrow landed">`;BUGC.forEach(([cx,cy])=>{for(let i=0;i<6;i++){const blk=i<4;g+=`<circle cx="${cx}" cy="${cy}" r="${0.3-i*0.05}" fill="${blk?'#111':'#fff'}" stroke="${blk?'#fff':'#111'}" stroke-width="0.005"/>`}});pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.02" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.006"/>`);return g+extra+'</svg>'}const rings=[['#fff','#333'],['#fff','#333'],['#111','#fff'],['#111','#fff'],['#2563eb','#111'],['#2563eb','#111'],['#d62828','#111'],['#d62828','#111'],['#ffd84d','#111'],['#ffd84d','#111']];
  let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block" role="img" aria-label="Target face, tap where the arrow landed">`;
  rings.forEach((c,i)=>{if(R&&isSix(R)&&i<4)return;if(R&&isSpot(R)&&i<5)return;g+=`<circle r="${1-i*0.1}" fill="${c[0]}" stroke="${c[1]}" stroke-width="0.006"/>`});g+=`<circle r="0.05" fill="none" stroke="#111" stroke-width="0.005"/>`;
  pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.025" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.008"/>`);return g+extra+'</svg>'}
-function plotScore(x,y,R){const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
+function plotScore(x,y,R){if(isBug(R)){const d=Math.min(...BUGC.map(([cx,cy])=>Math.hypot(x-cx,y-cy)))-0.01;if(d>0.3)return'M';return String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}const d=Math.hypot(x,y)-0.012;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
  if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(fixRet||(sv=='entry'&&i<cur.ends.length-1))sv='sheet';fixRet=false;save();score();return}
@@ -254,7 +254,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&last.length==R.ape,P=cur.pos||[];
  if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
  const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
- const FR=faceR(R,ei),vb=faceVB(FR),d=distOf(FR,cur.round);
+ const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,vb=faceVB(FR),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
  const rows=[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
@@ -263,12 +263,13 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
  <div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
  <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${col(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #7c3aed;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
- <button class="ad-small" id="undo" ${e.length&&!fix?'':'disabled'}>↶ Undo</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
+ <button class="ad-small" id="undo" ${e.length&&!fix?'':'disabled'}>↶ Undo</button><button class="ad-small" id="bugface" aria-pressed="${!!cur.bugs}">${cur.bugs?'Face: Bugs Eyes':'Face: WA'}</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
  <p class="small muted" style="margin:2px 12px">${fix?'Tap the face or a score to fix this arrow.':locked?'End complete. Tap an arrow to fix it, or press Next.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
  ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div><div id="fwrap" style="position:relative;max-width:min(260px,34vh,34dvh);margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
  <div class="ad-pad">${rows.map(r=>r.map(k=>k?`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`:'<span></span>').join('')).join('')}</div>
  <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fix?'':'disabled'}>Next ›</button></div></div>`;
  {const pd=app.querySelector('.ad-pad'),nv=document.querySelector('nav');if(pd)requestAnimationFrame(()=>{const lim=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,over=pd.getBoundingClientRect().bottom-lim;if(over>0)scrollBy(0,over)})}
+ $('#bugface').onclick=()=>{cur.bugs=!cur.bugs;save();score()};
  $('#hideface').onclick=()=>{S.hideFace=!S.hideFace;save();score()};
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
  const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const B=vb.split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
@@ -293,7 +294,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#undo').onclick=()=>{const l=cur.ends[cur.ends.length-1];if(!l.length)return;l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;justDone=false;save();score()};
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
  $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
-const faceName=F=>F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
+const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
