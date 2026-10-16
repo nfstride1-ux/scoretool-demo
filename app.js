@@ -136,7 +136,7 @@ function render(){seedNotes();regCustom();
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
- if(view=='plot'){view='score'}({home,score,stats,diary,me,squad})[view]()}
+ if(view=='plot'){view='score'}({home,score,stats,diary,me,squad,...(window.EXTRA_VIEWS||{})})[view]()}
 
 /* ---------- latest real shoot ---------- */
 const ld=d=>new Date(d).toLocaleDateString('en-CA');const today=()=>new Date().toLocaleDateString('en-CA');
@@ -430,7 +430,7 @@ function estRating(real){if(typeof aaRating!='function')return'';loadNext();cons
  <p class="small"><a href="https://www.archersdiary.com/RatingCalculator.aspx" target="_blank" rel="noopener">Archer's Diary calculator</a> · <a href="https://archery.org.au/wp-content/uploads/2026/07/SHOOTINGRULES-AA-2026-07-01.pdf" target="_blank" rel="noopener">AA Shooting Rules</a></p></details></div>`}
 
 function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(shareData())))));
- app.innerHTML=`<div class="card"><span class="kicker">${S.profile}</span><h2>Badges</h2><div class="badges">${b.map(x=>`<div class="badge ${x[2]?'':'off'}"><i>${x[0]}</i>${x[1]}</div>`).join('')}</div></div>
+ app.innerHTML=`${window.meTop?meTop():''}<div class="card"><div class="row"><span class="kicker">Badges</span><button class="btn ghost" style="padding:6px 12px;min-height:36px" onclick="nav('badges')">View all</button></div>${iconRow(b,30)}</div>
  <div class="card"><span class="kicker">Evidence bank</span><h2>My best moments</h2><p class="small muted">Read these before a big shoot. You've done it before!</p>
  ${S.best.length?S.best.map(e=>`<div class="list-item"><b>${e.total}</b> · ${e.round} · ${e.date} ${e.sample?'<span class="sample">sample</span>':''}<div class="small">${e.text}</div></div>`).join(''):'<p>Nothing saved yet. Tap "Save to my evidence bank" on a good day.</p>'}
  <label for="bm">Add a moment in your own words</label><textarea id="bm" rows="2" placeholder="e.g. Stayed calm in the shoot-off at Kalamunda"></textarea><button class="btn ghost" id="bmadd" style="margin-top:6px">Add</button></div>
@@ -442,7 +442,7 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  $('#cp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(url);$('#cp').textContent='Copied ✓'};
  $('#csend').onclick=()=>sendCoach($('#cf').value,$('#ct').value);
  $('#sw').onclick=()=>{S.profile=null;save();render()};$('#rs').onclick=()=>{localStorage.removeItem(KEY);location.reload()}}
-function shareData(){const d=done();return{n:S.profile,s:d.slice(-10).map(s=>[s.date,s.round,total(s),arrows(s).length,s.sample?1:0]),b:badges().filter(x=>x[2]).map(x=>x[0]+' '+x[1]),st:streak()}}
+function shareData(){const d=done();return{n:S.profile,s:d.slice(-10).map(s=>[s.date,s.round,total(s),arrows(s).length,s.sample?1:0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
  const real=findReal(D.n);
  app.innerHTML=`<div class="card dark"><span class="kicker">Coach / parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
