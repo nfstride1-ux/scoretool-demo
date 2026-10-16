@@ -7,8 +7,16 @@ const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[
 const PRESET_SQ={preset:'st-testers-1',name:'ScoreTool Testers',code:'STRIDE-3T7',admin:'Nathaniel Stride',rawRank:false,
  members:[{id:'mN',name:'Nathaniel Stride',status:'active'},{id:'mP',name:'Phill Arthur',status:'active'},{id:'mL',name:'Logan Wolfe',status:'active'}],
  adults:[{id:'aN',name:'Nathaniel Stride',role:'Admin'}]};
-function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset)return;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
+function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset){S.presetSeeded=PRESET_SQ.preset;return}if(S.presetSeeded==PRESET_SQ.preset)return;S.presetSeeded=PRESET_SQ.preset;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
  S.squad=JSON.parse(JSON.stringify(PRESET_SQ));S.squad.cheers={};save()}
+/* Invite codes: 3 letters + 4 digits (e.g. KTR-4827), no look-alike letters (I, O). Made on the creator's phone; no server. */
+function newCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ',r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n};let c='';for(let i=0;i<3;i++)c+=L[r(L.length)];return c+'-'+String(1000+r(9000))}
+function createCard(){return`<div class="card"><span class="kicker">New squad</span><h2>Create a squad</h2><p class="small">You become the admin. You'll get an invite code to share with your archers.</p><label for="cn">Squad name</label><input id="cn" placeholder="e.g. Tuesday juniors" autocomplete="off" maxlength="40"><button class="btn" id="cb" style="margin-top:8px">Create squad</button><div id="co"></div></div>`}
+function bindCreate(){if(!$('#cb'))return;$('#cb').onclick=()=>{const n=$('#cn').value.trim();if(!n){$('#co').innerHTML='<p class="small">Give your squad a name.</p>';return}
+ if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;const code=newCode();
+ S.squad={name:n,code,admin:S.profile,rawRank:false,members:[{id:'m'+Date.now(),name:S.profile,status:'active'}],adults:[{id:'a'+Date.now(),name:S.profile,role:'Admin'}],cheers:{},created:today()};save();
+ $('#co').innerHTML=`<div class="card dark" style="margin-top:10px"><span class="kicker">Squad created</span><h3>${esc(n)}</h3><p>Invite code</p><p style="font-size:28px;font-weight:800;letter-spacing:2px;margin:4px 0">${code}</p><button class="btn ghost" id="cc">Copy code</button> <button class="btn" id="cgo">Open squad</button><p class="small muted">Share it with your archers. They enter it in Squads → Join a squad.</p></div>`;
+ $('#cc').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(code);$('#cc').textContent='Copied'};$('#cgo').onclick=()=>squad()}}
 function seedSquad(){seedPreset();if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
 const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
@@ -36,7 +44,7 @@ const BULLSEYE=['bullseye','Bullseye','<svg viewBox="0 0 24 24" fill="none" stro
 function cheerRow(f,c){const set=f.pb?[BULLSEYE,...CHEER_SET]:CHEER_SET;return`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px" role="group" aria-label="Cheer">${set.map(([k,l,ic])=>`<button class="cheer ${k=='bullseye'?'gold':''}" data-c="${f.id}" data-e="${k}" aria-pressed="${c.mine==k}">${ic} ${l}${c[k]?' '+c[k]:''}</button>`).join('')}</div>`}
 let sqTab='wk';
 function squad(){seedSquad();const Q=S.squad;
- if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Got an invite code from your coach or squad mate? Enter it to join.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234" autocapitalize="characters" autocomplete="off"><button class="btn" id="jb" style="margin-top:8px">Join squad</button><div id="jo"></div></div>${safe()}`;
+ if(!Q||!Q.members.some(m=>m.name==S.profile)&&!myAdult()){app.innerHTML=`<div class="card"><span class="kicker">Squads</span><h2>Join a squad</h2><p class="small">Got an invite code from your coach or squad mate? Enter it to join.</p><label for="jc">Invite code</label><input id="jc" placeholder="ABC-1234" autocapitalize="characters" autocomplete="off"><button class="btn" id="jb" style="margin-top:8px">Join squad</button><div id="jo"></div></div>${createCard()}${safe()}`;bindCreate();
   $('#jb').onclick=()=>{const c=$('#jc').value.trim().toUpperCase();if(c.length<4){$('#jo').innerHTML='<p class="small">Enter the full invite code.</p>';return}
    if(c==PRESET_SQ.code){delete S.squad;seedPreset()}else if(!S.squad||S.squad.code!=c)S.squad={name:'Squad '+c,code:c,admin:null,members:[],adults:[],cheers:{}};
    S.squad.members.push({id:'m'+Date.now(),name:S.profile,status:'active'});save();squad()};return}
@@ -59,7 +67,7 @@ function squad(){seedSquad();const Q=S.squad;
   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rr" style="width:auto" ${Q.rawRank?'checked':''}> Show a raw-score leaderboard</label>
   <h3>Members</h3>${act.map(m=>`<div class="list-item row"><span>${who(m)} ${shortName(m.name)}</span>${m.name==S.profile?'':`<button class="btn ghost" data-rm="${m.id}" style="padding:4px 10px">Remove</button>`}</div>`).join('')}</div>`}
  if(me){h+=`<div class="card"><h3>Me in this squad</h3><p class="small muted">Squad mates see your player card: initials, ${shortName(me.name)}, rank, title and badges. No photo, club or contact details.</p><button class="btn ghost" onclick="nav('profile')">Edit my card</button> <button class="btn ghost" id="lv">Leave squad</button></div>`}
- h+=safe();app.innerHTML=h;
+ h+=`<details class="card"><summary><b>Create another squad</b></summary>${createCard()}</details>`+safe();app.innerHTML=h;bindCreate();
  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sqTab=b.dataset.m;squad()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=Q.cheers[b.dataset.c]=Q.cheers[b.dataset.c]||{};if(c.mine){c[c.mine]--;}if(c.mine==b.dataset.e){c.mine=null}else{c.mine=b.dataset.e;c[b.dataset.e]=(c[b.dataset.e]||0)+1}save();squad()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.rm;if(!confirm('Remove this member from the squad?'))return;Q.members=Q.members.filter(m=>m.id!=id);save();squad()});
