@@ -24,7 +24,7 @@ let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
 /* ---------- importer for /data/archer_scores.csv (from Archer's Diary) ---------- */
-function parseCSV(t){const rows=isBug(FR)?[['6','5','4'],['3','2','1'],['M']]:[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
+function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
  if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}
  else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=''}else f+=c}
  if(f||r.length){r.push(f);rows.push(r)}return rows.filter(x=>x.some(v=>v.trim()))}
@@ -257,7 +257,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,vb=faceVB(FR),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
- const rows=[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
+ const rows=isBug(FR)?[['6','5','4'],['3','2','1'],['M']]:[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
  app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
  <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
