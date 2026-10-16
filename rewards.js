@@ -214,21 +214,40 @@ function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.creat
 window.EXTRA_VIEWS.recap=recapView;
 /* ---------- My other apps: archer's own links to outside apps. Stored locally. No pre-filled list, no recommendations. ---------- */
 const APP_CATS=['Sight marks','Video','Tuning','Other'];
-function appName(u){try{const h=new URL(u).hostname.replace(/^www\.|^app\.|^m\./,'').split('.')[0];return h.charAt(0).toUpperCase()+h.slice(1)}catch(e){return''}}
-function normUrl(u){u=(u||'').trim();if(u&&!/^https?:\/\//i.test(u))u='https://'+u;try{const x=new URL(u);return/^https?:$/.test(x.protocol)?x.href:''}catch(e){return''}}
+function appKind(u){try{const x=new URL(u);return/apps\.apple\.com$/.test(x.hostname)?'ios':/play\.google\.com$/.test(x.hostname)?'play':'web'}catch(e){return'web'}}
+const titleCase=t=>t.replace(/[-_.]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
+function appName(u){try{const x=new URL(u),k=appKind(u);if(k=='ios'){const m=x.pathname.match(/\/app\/([^/]+)\/id\d+/);if(m)return titleCase(decodeURIComponent(m[1]))}
+ if(k=='play'){const id=x.searchParams.get('id');if(id){const seg=id.split('.').filter(z=>!/^(com|au|net|org|io|app|android|co)$/.test(z));return titleCase(seg[seg.length-1]||id)}}}catch(e){}
+ try{const h=new URL(u).hostname.replace(/^www\.|^app\.|^m\./,'').split('.')[0];return h.charAt(0).toUpperCase()+h.slice(1)}catch(e){return''}}
+function normUrl(u){u=((u||'').match(/(https?:\/\/\S+|[\w-]+(\.[\w-]+)+\/?\S*)/)||[''])[0].replace(/[).,]+$/,'');if(u&&!/^https?:\/\//i.test(u))u='https://'+u;try{const x=new URL(u);return/^https?:$/.test(x.protocol)?x.href:''}catch(e){return''}}
 let appEdit=null;
+const STORE_ICON={ios:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-label="App Store"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3-.8-1.6 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6 0 0-2.5-1-2.5-3.6zM14.1 5.5c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"/></svg>',play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-label="Google Play"><path d="M4 2.5v19l10-9.5zM15.5 13.4l2.6 2.5-11 6.2zM15.5 10.6 7.1 1.9l11 6.2zM19.4 9l2.1 1.2c.8.5.8 1.2 0 1.6L19.4 13l-2.7-2.5z"/></svg>'};
+function appIcon(a){const k=appKind(a.url);if(STORE_ICON[k])return`<span style="display:inline-flex;width:28px;justify-content:center">${STORE_ICON[k]}</span>`;let o='';try{o=new URL(a.url).origin}catch(e){}return`<img src="${esc(o)}/favicon.ico" alt="" width="20" height="20" style="margin:0 4px;vertical-align:-4px;border-radius:4px" onerror="this.style.visibility='hidden'">`}
+/* Sync-ready record (matches a future user_apps table: id uuid, user_id, url, name, category, kind, created_at, updated_at, deleted). */
+function appRec(a,old){const n=new Date().toISOString();return{id:(old&&old.id)||(crypto.randomUUID?crypto.randomUUID():'a'+Date.now()+Math.random().toString(36).slice(2)),url:a.url,name:a.name,cat:a.cat||'',kind:appKind(a.url),created_at:(old&&old.created_at)||n,updated_at:n}}
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
+function addApp(raw,cat){const u=normUrl(raw);if(!u)return false;S.apps=S.apps||[];if(!S.apps.some(a=>a.url==u))S.apps.push(appRec({url:u,name:appName(u)||u,cat:cat||''}));save();return true}
 function otherAppsCard(){const L=S.apps=S.apps||[],e=appEdit!=null?L[appEdit]:null;
  return`<div class="card" id="oapps"><span class="kicker">My other apps</span><h2>My other apps</h2>
- ${L.length?L.map((a,i)=>`<div class="list-item row"><span style="min-width:0"><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(a.name)}</b> ↗</a>${a.cat?` <span class="pill t-none">${esc(a.cat)}</span>`:''}<br><span class="small muted" style="word-break:break-all">${esc(a.url)}</span></span><span style="flex:0 0 auto"><button class="btn ghost" data-ae="${i}" style="padding:4px 10px;min-height:34px">Edit</button> <button class="btn ghost" data-ad="${i}" style="padding:4px 10px;min-height:34px">Delete</button></span></div>`).join(''):'<p class="muted">Add the apps you use for sight marks, video and tuning.</p>'}
- <label for="au">${e?'Edit link':'Add a link'}</label><input id="au" type="url" inputmode="url" placeholder="Paste the app's link" value="${e?esc(e.url):''}">
+ ${L.length?L.map((a,i)=>`<div class="list-item row"><span style="min-width:0">${appIcon(a)}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(a.name)}</b> ↗</a>${a.cat?` <span class="pill t-none">${esc(a.cat)}</span>`:''}<br><span class="small muted" style="word-break:break-all">${esc(a.url)}</span></span><span style="flex:0 0 auto"><button class="btn ghost" data-ae="${i}" style="padding:4px 10px;min-height:34px">Edit</button> <button class="btn ghost" data-ad="${i}" style="padding:4px 10px;min-height:34px">Delete</button></span></div>`).join(''):'<p class="muted">Add the apps you use for sight marks, video and tuning.</p>'}
+ ${e?'':`<button class="btn full" id="apaste" style="margin-top:6px">Paste link</button><p class="small muted" style="margin:6px 0 0">${isIOS()?'Copy the app\'s link (in the App Store tap Share, then Copy Link), then tap Paste.':'Copy the app\'s link, then tap Paste. On Android you can also Share a Play Store or web link straight to ScoreTool once it\'s installed.'}</p>`}
+ <label for="au">${e?'Edit link':'Or type or paste it here'}</label><input id="au" type="url" inputmode="url" placeholder="Paste the app's link" value="${e?esc(e.url):''}">
  <label for="an2">Name</label><input id="an2" placeholder="Filled in from the link" value="${e?esc(e.name):''}">
  <label for="ac2">Category (optional)</label><select id="ac2"><option value="">None</option>${APP_CATS.map(c=>`<option ${e&&e.cat==c?'selected':''}>${c}</option>`).join('')}</select>
  <button class="btn" id="asave" style="margin-top:8px">${e?'Save':'Add'}</button>${e?' <button class="btn ghost" id="acancel" style="margin-top:8px">Cancel</button>':''}<div id="aerr" class="small" style="color:#f87171"></div>
- <p class="small muted">Links open in a new tab. Saved on this device only.</p></div>`}
+ <details style="margin-top:10px"><summary class="small"><b>Find in store</b></summary><label for="afind">App name</label><input id="afind" placeholder="Type the app's name"><div style="display:flex;gap:8px;margin-top:6px"><button class="btn ghost" id="fios">${STORE_ICON.ios} App Store</button><button class="btn ghost" id="fplay">${STORE_ICON.play} Google Play</button></div><p class="small muted">Opens the store's own search. Copy the link from the app's page, then come back and tap Paste.</p></details>
+ <p class="small muted">On a phone, store links open the app if it's installed, or its store page; on a computer they open the store's web page. Saved on this device for now; syncs to your account once sign-in is live.</p></div>`}
 function bindOtherApps(){if(!$('#oapps'))return;const L=S.apps,re=()=>{const c=$('#oapps');c.outerHTML=otherAppsCard();bindOtherApps()};
+ if($('#apaste'))$('#apaste').onclick=async()=>{let t='';try{t=await navigator.clipboard.readText()}catch(x){}if(t&&addApp(t,$('#ac2').value)){re();return}$('#aerr').textContent=t?'That doesn\'t look like a link. Paste it in the box below.':'Couldn\'t read the clipboard. Long-press the box below and choose Paste.';$('#au').focus()};
+ const fs=st=>{const q=$('#afind').value.trim();if(!q)return;open(st=='ios'?'https://apps.apple.com/search?term='+encodeURIComponent(q):'https://play.google.com/store/search?c=apps&q='+encodeURIComponent(q),'_blank','noopener')};$('#fios').onclick=()=>fs('ios');$('#fplay').onclick=()=>fs('play');
  $('#au').oninput=()=>{if(!$('#an2').dataset.t)$('#an2').value=appName(normUrl($('#au').value))};$('#an2').oninput=()=>$('#an2').dataset.t=1;
  $('#asave').onclick=()=>{const u=normUrl($('#au').value);if(!u){$('#aerr').textContent='That link doesn\'t look right.';return}
-  const a={url:u,name:$('#an2').value.trim()||appName(u)||u,cat:$('#ac2').value};if(appEdit!=null)L[appEdit]=a;else L.push(a);appEdit=null;save();re()};
+  const a=appRec({url:u,name:$('#an2').value.trim()||appName(u)||u,cat:$('#ac2').value},appEdit!=null?L[appEdit]:null);if(appEdit!=null)L[appEdit]=a;else L.push(a);appEdit=null;save();re()};
  if($('#acancel'))$('#acancel').onclick=()=>{appEdit=null;re()};
  document.querySelectorAll('[data-ae]').forEach(b=>b.onclick=()=>{appEdit=+b.dataset.ae;re()});
  document.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this link?'))return;L.splice(+b.dataset.ad,1);appEdit=null;save();re()})}
+
+/* Android share target: manifest sends ?share=1&title=&text=&url= ; save the link and open Me. */
+(function(){const q=new URLSearchParams(location.search);if(!q.has('url')&&!q.has('text'))return;const raw=[q.get('url'),q.get('text'),q.get('title')].filter(Boolean).join(' ');
+ const ok=addApp(raw);history.replaceState(null,'',location.pathname);if(ok&&S.unlocked&&S.profile)setTimeout(()=>{nav('me');const c=document.getElementById('oapps');if(c)c.scrollIntoView()},0)})();
+if('serviceWorker' in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
