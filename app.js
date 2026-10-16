@@ -259,16 +259,30 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${col(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #7c3aed;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
  <button class="ad-small" id="undo" ${e.length&&!fix?'':'disabled'}>↶ Undo</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
  <p class="small muted" style="margin:2px 12px">${fix?'Tap the face or a score to fix this arrow.':locked?'End complete. Tap an arrow to fix it, or press Next.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
- ${S.hideFace?'':`<div id="fwrap" style="position:relative;max-width:260px;margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
+ ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div><div id="fwrap" style="position:relative;max-width:min(260px,34vh,34dvh);margin:0 auto">${faceSVG(shown,'pface',vb,FR)}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
  <div class="ad-pad">${rows.map(r=>r.map(k=>k?`<button class="${col(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`:'<span></span>').join('')).join('')}</div>
  <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fix?'':'disabled'}>Next ›</button></div></div>`;
+ {const pd=app.querySelector('.ad-pad'),nv=document.querySelector('nav');if(pd)requestAnimationFrame(()=>{const lim=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,over=pd.getBoundingClientRect().bottom-lim;if(over>0)scrollBy(0,over)})}
  $('#hideface').onclick=()=>{S.hideFace=!S.hideFace;save();score()};
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
- const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
-  const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=(ev.clientX-r.left-55)+'px';L.style.top=(ev.clientY-r.top-140)+'px';
-   L.innerHTML=faceSVG(shown,'lf',`${q.x-0.12} ${q.y-0.12} 0.24 0.24`,FR,`<path d="M${q.x-0.04} ${q.y}h0.08M${q.x} ${q.y-0.04}v0.08" stroke="#a855f7" stroke-width="0.006"/><circle cx="${q.x}" cy="${q.y}" r="0.012" fill="none" stroke="#a855f7" stroke-width="0.004"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
-  f.onpointerdown=ev=>{if(locked)return;f.setPointerCapture(ev.pointerId);show(ev)};f.onpointermove=ev=>{if(!L.hidden)show(ev)};
-  f.onpointercancel=()=>L.hidden=true;f.onpointerup=ev=>{if(L.hidden)return;L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
+ const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const B=vb.split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
+  const clampZ=()=>{PZ.k=Math.min(4,Math.max(1,PZ.k));const m=B[2]/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));PZ.cy=Math.min(m,Math.max(-m,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
+  const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);app.querySelectorAll('[data-z]').forEach(x=>x.classList.toggle('on',PZ.k>1?Math.round(PZ.k)==+x.dataset.z:x.dataset.z=='1'));const r=$('#zreset');if(r)r.disabled=PZ.k==1};
+  f.style.touchAction='none';applyZ();
+  app.querySelectorAll('[data-z]').forEach(x=>x.onclick=()=>{PZ.k=+x.dataset.z;applyZ()});$('#zreset').onclick=()=>{PZ.k=1;applyZ()};
+  const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
+  const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=(ev.clientX-r.left-55)+'px';L.style.top=(ev.clientY-r.top-140)+'px';const lw=0.24/PZ.k;
+   L.innerHTML=faceSVG(shown,'lf',`${q.x-lw/2} ${q.y-lw/2} ${lw} ${lw}`,FR,`<path d="M${q.x-lw/6} ${q.y}h${lw/3}M${q.x} ${q.y-lw/6}v${lw/3}" stroke="#a855f7" stroke-width="${0.006/PZ.k}"/><circle cx="${q.x}" cy="${q.y}" r="${0.012/PZ.k}" fill="none" stroke="#a855f7" stroke-width="${0.004/PZ.k}"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
+  const P=new Map();let pin=null;
+  const pinchStart=()=>{const [a,b]=[...P.values()];const q1=pt(a),q2=pt(b);pin={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,k:PZ.k,m:{x:(q1.x+q2.x)/2,y:(q1.y+q2.y)/2}}};
+  f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);P.set(ev.pointerId,ev);if(P.size==2){L.hidden=true;pinchStart();return}if(P.size>2||locked)return;show(ev)};
+  f.onpointermove=ev=>{if(!P.has(ev.pointerId))return;P.set(ev.pointerId,ev);if(pin&&P.size==2){const [a,b]=[...P.values()];PZ.k=pin.k*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pin.d;applyZ();
+     /* keep the SVG point that was under the fingers' midpoint under the new midpoint (zoom + pan) */
+     const mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,q=f.createSVGPoint();q.x=mx;q.y=my;const n=q.matrixTransform(f.getScreenCTM().inverse());PZ.cx+=pin.m.x-n.x;PZ.cy+=pin.m.y-n.y;applyZ();return}
+   if(!L.hidden)show(ev)};
+  const end=ev=>{P.delete(ev.pointerId);if(pin){if(P.size<2)pin=null;L.hidden=true;return true}return false};
+  f.onpointercancel=ev=>{end(ev);L.hidden=true};
+  f.onpointerup=ev=>{if(end(ev)||P.size)return;if(L.hidden)return;L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  $('#undo').onclick=()=>{const l=cur.ends[cur.ends.length-1];if(!l.length)return;l.pop();const pp=(cur.pos||[])[cur.ends.length-1];if(pp)pp.length=l.length;justDone=false;save();score()};
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
@@ -276,6 +290,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
 const faceName=F=>F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
+var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),xs=arrowsAll.filter(a=>a=='X').length,tens=arrowsAll.filter(a=>a=='X'||a=='10').length;
  app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>

@@ -90,3 +90,12 @@ details summary{cursor:pointer}
 .wrap-slide .big{font:800 56px var(--disp);line-height:1;color:var(--cyan)}
 .pbpost{background:linear-gradient(90deg,#2a1f05,transparent);border-left:3px solid var(--gold);padding-left:8px}
 .rt-common{color:var(--r-common)}.rt-rare{color:var(--r-rare)}.rt-epic{color:var(--r-epic)}.rt-legendary{color:var(--r-leg)}.rt-mythic{color:var(--r-myth)}
+
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+#pface{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#fwrap{overflow:visible}
+.zbar{display:flex;gap:6px;align-items:center;justify-content:center;margin:2px 8px}
+.zb{min-width:36px;padding:4px 8px;border-radius:8px;border:1px solid var(--line,#444);background:transparent;color:inherit;font-weight:600}
+.zb.on{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.zb:disabled{opacity:.4}
+.ad-pad button{touch-action:manipulation}
