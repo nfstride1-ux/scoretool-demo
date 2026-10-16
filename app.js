@@ -7,6 +7,24 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'Short Canberra (50/40/30m)':{ends:15,ape:6,face:'122cm',max:900},
  'Junior Canberra (40/30/20m)':{ends:15,ape:6,face:'80cm',max:900},
  'Indoor WA 18m':{ends:20,ape:3,face:'40cm',max:600},
+ /* Added 2026-10-16. Sources (real specs, not copied from any app):
+    - World Archery Rulebook Book 2 (Events), 2026-01-27 version: 5.3.1.1 (1440 Round 4x36 arrows, 25 m and 18 m 60 arrows), 7.2.2 (122/80/60/40cm faces),
+      4.5.2 (Field Round = 24 targets x 3 arrows; marked, unmarked or one marked + one unmarked 12-target unit; faces 20/40/60/80cm),
+      8.2.1 (field face: yellow 6 and 5, black/teal 4-1; zone diameters 1/10, 2/10, 4/10, 6/10, 8/10, 10/10 of the face; no X ring).
+      https://extranet.worldarchery.sport/documents/index.php/Rules/Rule_Book_versions/2026-01-27/EN-Book_2_-_2026-01-27_Version.pdf
+    - Archery Australia Schedule 9A via Archery SA "Rounds Explained" (https://archerysa.org.au/wp-content/uploads/2024/04/Rounds-Explained.pdf)
+      and Brisbane Archery "Know Your Shoots 2024": WA 90/1440 90,70 (122cm) 50,30 (80cm); WA 70/1440 70,60 (122) 50,30 (80);
+      WA 60/1440 (Fremantle) 60,50 (122) 40,30 (80); WA 60/900 60,50,40 x30 on 122cm; 25m Round WA 60 arrows on 60cm.
+    Note: 1440s are entered as 6-arrow ends throughout (WA events often shoot the 50/30 m in 3-arrow ends; totals and max are the same). */
+ 'WA 90/1440 (90/70/50/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:90,unit:'m',size:122,type:'full',ends:6},{dist:70,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
+ 'WA 70/1440 (70/60/50/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:70,unit:'m',size:122,type:'full',ends:6},{dist:60,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
+ 'WA 60/1440 (60/50/40/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:60,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:122,type:'full',ends:6},{dist:40,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
+ 'WA 60/900 (60/50/40m)':{ends:15,ape:6,face:'122cm',max:900,blocks:[{dist:60,unit:'m',size:122,type:'full',ends:5},{dist:50,unit:'m',size:122,type:'full',ends:5},{dist:40,unit:'m',size:122,type:'full',ends:5}]},
+ 'Indoor WA 25m':{ends:20,ape:3,face:'60cm',max:600,blocks:[{dist:25,unit:'m',size:60,type:'full',ends:20}]},
+ 'Indoor WA Combined 25m + 18m':{ends:40,ape:3,face:'60cm / 40cm',max:1200,blocks:[{dist:25,unit:'m',size:60,type:'full',ends:20},{dist:18,unit:'m',size:40,type:'full',ends:20}]},
+ 'WA Field 24 Marked':{ends:24,ape:3,face:'field 20-80cm',max:432,blocks:[{dist:'Marked',unit:'',size:'20-80',type:'field',ends:24}]},
+ 'WA Field 24 Unmarked':{ends:24,ape:3,face:'field 20-80cm',max:432,blocks:[{dist:'Unmarked',unit:'',size:'20-80',type:'field',ends:24}]},
+ 'WA Field 12 Unmarked + 12 Marked':{ends:24,ape:3,face:'field 20-80cm',max:432,blocks:[{dist:'Unmarked',unit:'',size:'20-80',type:'field',ends:12},{dist:'Marked',unit:'',size:'20-80',type:'field',ends:12}]},
  'Practice 10 ends × 3':{ends:10,ape:3,face:'any',max:300},
  'Practice 6 ends × 6':{ends:6,ape:6,face:'any',max:360}};
 const KEY=TESTER&&TESTER.id!='nathe'?'scoretool.v1.'+TESTER.id:'scoretool.v1';
@@ -61,7 +79,7 @@ const total=s=>s.ends.reduce((t,e)=>t+endSum(e),0);
 const arrows=s=>s.ends.flat();
 const avgArrow=s=>{const a=arrows(s);return a.length?total(s)/a.length:0};
 const sd=xs=>{if(xs.length<2)return 0;const m=xs.reduce((a,b)=>a+b)/xs.length;return Math.sqrt(xs.reduce((t,x)=>t+(x-m)**2,0)/(xs.length-1))};
-const col=a=>{const v=val(a);if(typeof cur!='undefined'&&cur&&cur.bugs)return a=='M'?'k-m':v>=5?'k-y':'k-k';return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
+const col=a=>{const v=val(a);if(typeof cur!='undefined'&&cur&&(cur.bugs||/field/.test((ROUNDS[cur.round]||{}).face||'')))return a=='M'?'k-m':v>=5?'k-y':'k-k';return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
 const allSessions=()=>[...S.sessions].sort((a,b)=>a.date<b.date?-1:1);
 const isDone=s=>{const R=ROUNDS[s.round];return !!R&&((s.finished&&arrowsIn(s)>0)||(s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape)))};
 const done=()=>allSessions().filter(isDone);
@@ -226,17 +244,17 @@ function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.for
  return`<div class="card"><span class="kicker">From your notes</span><h3>What your notes show</h3>${out.length?out.join('')+'<p class="small muted">Compared with your own average for the same round.</p>':'<p>Add a note under each score (tired, windy, nerves, new gear, sore, didn\'t finish). Once 2 sessions share a tag, you\'ll see how it affects your scores.</p>'}</div>`}
 
 let fix=null;
-const isBug=R=>!!(R&&R.bugs);const BUGC=[[0,-0.62],[0,0],[0,0.62]];const isSix=R=>!isBug(R)&&/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');
+const isBug=R=>!!(R&&R.bugs);const BUGC=[[0,-0.62],[0,0],[0,0.62]];const isSix=R=>!isBug(R)&&/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');const isFld=R=>!isBug(R)&&/field/.test((R&&R.face)||'');
 const faceVB=R=>isBug(R)?'-0.31 -0.93 0.62 1.86':isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
 /* face for a given end: custom rounds have distance blocks, each with its own face */
 function faceR(R,ei){if(!R.blocks)return R;let k=0;for(const b of R.blocks){k+=+b.ends;if(ei<k)return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}const b=R.blocks[R.blocks.length-1];return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}
 /* custom practice rounds (practice only, never counted for classification) */
 function regCustom(){(S.customRounds||[]).forEach(c=>{const ends=c.blocks.reduce((t,b)=>t+ +b.ends,0);ROUNDS[c.name]={ends,ape:+c.ape,face:c.blocks.map(b=>`${b.size}cm ${b.type}`).join(' / '),max:ends*c.ape*10,custom:true,practice:true,blocks:c.blocks,xs:c.xs}})}
-function faceSVG(pts,id,vb,R,extra=''){if(isBug(R)){let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block;background:#fff" role="img" aria-label="Bugs Eyes field 3-spot face, tap where the arrow landed">`;BUGC.forEach(([cx,cy])=>{for(let i=0;i<6;i++){const blk=i<4;g+=`<circle cx="${cx}" cy="${cy}" r="${0.3-i*0.05}" fill="${blk?'#111':'#ffd84d'}" stroke="${blk?'#fff':'#111'}" stroke-width="0.005"/>`}});pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.02" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.006"/>`);return g+extra+'</svg>'}const rings=[['#fff','#333'],['#fff','#333'],['#111','#fff'],['#111','#fff'],['#2563eb','#111'],['#2563eb','#111'],['#d62828','#111'],['#d62828','#111'],['#ffd84d','#111'],['#ffd84d','#111']];
+function faceSVG(pts,id,vb,R,extra=''){if(isFld(R)){/* WA field face, Book 2 8.2.1: zone diameters 10/8/6/4/2/1 tenths */let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block;background:#fff" role="img" aria-label="WA field face, tap where the arrow landed">`;[1,.8,.6,.4,.2,.1].forEach((r,i)=>{const y=i>3;g+=`<circle r="${r}" fill="${y?'#ffd84d':'#111'}" stroke="${y?'#111':'#fff'}" stroke-width="0.006"/>`});g+=`<path d="M-.02 0H.02M0 -.02V.02" stroke="#111" stroke-width="0.004"/>`;pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.025" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.008"/>`);return g+extra+'</svg>'}if(isBug(R)){let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block;background:#fff" role="img" aria-label="Bugs Eyes field 3-spot face, tap where the arrow landed">`;BUGC.forEach(([cx,cy])=>{for(let i=0;i<6;i++){const blk=i<4;g+=`<circle cx="${cx}" cy="${cy}" r="${0.3-i*0.05}" fill="${blk?'#111':'#ffd84d'}" stroke="${blk?'#fff':'#111'}" stroke-width="0.005"/>`}});pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.02" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.006"/>`);return g+extra+'</svg>'}const rings=[['#fff','#333'],['#fff','#333'],['#111','#fff'],['#111','#fff'],['#2563eb','#111'],['#2563eb','#111'],['#d62828','#111'],['#d62828','#111'],['#ffd84d','#111'],['#ffd84d','#111']];
  let g=`<svg id="${id}" viewBox="${vb}" width="100%" style="touch-action:none;display:block" role="img" aria-label="Target face, tap where the arrow landed">`;
  rings.forEach((c,i)=>{if(R&&isSix(R)&&i<4)return;if(R&&isSpot(R)&&i<5)return;g+=`<circle r="${1-i*0.1}" fill="${c[0]}" stroke="${c[1]}" stroke-width="0.006"/>`});g+=`<circle r="0.05" fill="none" stroke="#111" stroke-width="0.005"/>`;
  pts.forEach(p=>g+=`<circle cx="${p.x}" cy="${p.y}" r="0.025" fill="${p.sel?'#a855f7':'#22c55e'}" stroke="#000" stroke-width="0.008"/>`);return g+extra+'</svg>'}
-function plotScore(x,y,R){if(isBug(R)){const d=Math.min(...BUGC.map(([cx,cy])=>Math.hypot(x-cx,y-cy)))-0.023;/* dot r 0.02 + half line */if(d>0.3)return'M';return String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}const d=Math.hypot(x,y)-0.028;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
+function plotScore(x,y,R){if(isFld(R)){const d=Math.hypot(x,y)-0.028;/* line cutter */if(d>1)return'M';return d<=.1?'6':d<=.2?'5':d<=.4?'4':d<=.6?'3':d<=.8?'2':'1'}if(isBug(R)){const d=Math.min(...BUGC.map(([cx,cy])=>Math.hypot(x-cx,y-cy)))-0.023;/* dot r 0.02 + half line */if(d>0.3)return'M';return String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}const d=Math.hypot(x,y)-0.028;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
  if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(fixRet)sv='sheet';fixRet=false;save();score();return}
@@ -255,10 +273,10 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur),P=cur.pos||[];
  if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
  const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
- const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,SP=isBug(FR)&&cur.spot?BUGC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
+ const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,SP=isBug(FR)&&cur.spot?BUGC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
- const rows=isBug(FR)?[['6','5','4'],['3','2','1'],['M']]:[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
+ const rows=isBug(FR)||isFld(FR)?[['6','5','4'],['3','2','1'],['M']]:[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
  const y0=scrollY;app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
  <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
@@ -300,7 +318,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  if($('#delarrow'))$('#delarrow').onclick=()=>{const[i,j]=fix;cur.ends[i].splice(j,1);if(cur.pos&&cur.pos[i])cur.pos[i].splice(j,1);fix=null;if(i==cur.ends.length-1)justDone=false;save();score()};
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
  $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
-const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ (6-ring|3-spot)/,' ($1)')}`;
+const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':/field/.test(F.face||'')?'WA field face 20-80cm (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ full$/,'').replace(/ (6-ring|3-spot)/,' ($1)')}`;
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
@@ -321,9 +339,9 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
-const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m'};
+const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)'};
 function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
- const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,aa=AA_MAP[s.round];
+ const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,R0=ROUNDS[s.round],aa=R0&&s.ends.length==R0.ends&&s.ends.every(e=>e.length==R0.ape)?AA_MAP[s.round]:null;/* no AA rating for a round finished early */
  const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
  const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
  const pb=best?(sc>total(best)?`🎉 New practice PB for this round, beating ${total(best)}.`:sc==total(best)?'Equal to your practice best for this round.':''):'First time you have scored this round here.';
