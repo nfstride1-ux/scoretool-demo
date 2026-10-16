@@ -35,7 +35,7 @@ async function loadArrows(){try{const r=await fetch('data/arrows.csv',{cache:'no
   const L=(OFF[nm]=OFF[nm]||[]);let o=L.find(x=>x.key==key);if(!o){o={key,date:g('date'),event:g('event'),round:g('round'),url:g('results_url'),ends:[]};L.push(o)}
   const ar=g('arrows').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);o.ends.push({dist:g('distance'),arrows:ar,flag:ar.length>0&&ar.every(a=>a=='M')})}
  for(const k in OFF)OFF[k].sort((a,b)=>a.date<b.date?1:-1)}catch(e){}}
-async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const mine=k=>k.toLowerCase()==TESTER.name.toLowerCase();for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
+async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const mine=k=>{const a=k.toLowerCase(),[f,l]=TESTER.name.toLowerCase().split(' ');return a.includes(l)&&a.includes(f.slice(0,4))};for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
 async function _loadReal(){await loadArrows();
  try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
@@ -70,7 +70,7 @@ function pbs(){const m={};for(const s of done()){const t=total(s);if(!m[s.round]
 function streak(){const wk=d=>Math.floor((new Date(d)-new Date('2024-01-01'))/6048e5);const w=[...new Set(allSessions().map(s=>wk(s.date)))].sort((a,b)=>b-a);if(!w.length)return 0;
  let n=1;for(let i=1;i<w.length;i++){if(w[i-1]-w[i]==1)n++;else break}return n} // weeks-with-practice style streak
 function endLabel(s,i){if(s.dists&&s.dists[i]){const d=s.dists[i];return`end ${s.dists.slice(0,i+1).filter(x=>x==d).length} at ${d}`}const m=(s.round||'').match(/(\d+m)/);return`end ${i+1}${m?' at '+m[1]:''}`}
-function winsFor(s){const W=[],prev=done().filter(x=>x.round==s.round&&x.id!=s.id&&x.date<=s.date);const t=total(s);
+function winsFor(s){if(!s||!s.ends||!s.ends.length||!s.ends.some(e=>e&&e.length))return[];const W=[],prev=done().filter(x=>x.round==s.round&&x.id!=s.id&&x.date<=s.date);const t=total(s);
  const ends=s.ends.map(endSum),best=Math.max(...ends),bi=ends.indexOf(best);
  W.push(['⭐',`Your best end was ${endLabel(s,bi)}: ${best} points (${s.ends[bi].join(' ')}).`]);
  const gold=arrows(s).filter(a=>val(a)>=9).length;if(gold)W.push(['🟡',`${gold} arrows in the gold. That's ${Math.round(gold/arrows(s).length*100)}% of your shots.`]);
@@ -375,7 +375,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  <div class="card"><h3>Compare</h3><p>Default: <b>you vs. you</b>. This season's average is ${(tot.reduce((a,b)=>a+b)/tot.length).toFixed(0)}, and your first ${Math.min(3,tot.length)} sessions averaged ${(tot.slice(0,3).reduce((a,b)=>a+b)/Math.min(3,tot.length)).toFixed(0)}.</p><label><input type="checkbox" id="club" style="width:auto"> Show club & division averages (opt-in)</label><div id="clubout"></div></div>`;
  app.querySelectorAll('[data-ev]').forEach(b=>b.onchange=()=>{S.evOver=S.evOver||{};S.evOver[b.dataset.ev]=b.checked?'open':'club';save();const y=scrollY;stats();scrollTo(0,y)});app.querySelectorAll('[data-oc]').forEach(b=>b.onclick=()=>{window._oc=b.dataset.oc;const y=scrollY;stats();scrollTo(0,y)});bindNotes();$('#rs').onchange=e=>{window._r=e.target.value;window._ps=null;stats()};$('#ps').onchange=e=>{window._ps=+e.target.value;stats()};if($('#os'))$('#os').onchange=e=>{window._o=+e.target.value;stats()};
  $('#club').onchange=e=>{$('#clubout').innerHTML=e.target.checked?'<p class="small muted">Coming soon: club and division averages worked out from the public Archer\'s Diary results already on archerycalendars.com. Off by default for juniors.</p>':''}}
-function offRounds(){const me=(S.profile||'').toLowerCase(),k=Object.keys(OFF).find(x=>x.toLowerCase()==me),rk=Object.keys(REAL).find(x=>x.toLowerCase()==me);
+function offRounds(){const me=(S.profile||'').toLowerCase(),nm=x=>{x=x.toLowerCase();if(x==me)return true;const[f,...r]=me.split(' '),l=r.pop()||'';return !!l&&x.includes(l)&&x.includes(f.slice(0,4))},k=Object.keys(OFF).find(nm),rk=Object.keys(REAL).find(nm);
  const L=(k?OFF[k]:[]).map(o=>Object.assign({},o)),yr=String(new Date().getFullYear());
  (rk?REAL[rk]:[]).filter(r=>normDate(r.date).startsWith(yr)).forEach(r=>{const m=L.find(o=>o.date==r.date&&o.round==r.round&&!o.score);
   if(m){Object.assign(m,{score:r.score,division:r.division,subs:r.subs,notes:r.notes,url:m.url||r.url})}
