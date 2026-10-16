@@ -86,7 +86,7 @@ details summary{cursor:pointer}
 .crown{color:var(--gold)}.up{color:#4ade80}.dn{color:#f87171}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .lrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px}.lrow.me{background:#1b2740}
-.wrap-slide{border-radius:18px;padding:22px 18px;min-height:220px;background:linear-gradient(150deg,#1a1030,#0b2340);border:1px solid #33435c;margin-bottom:10px}
+.wrap-slide{border-radius:18px;padding:22px 18px;min-height:150px;background:linear-gradient(150deg,#1a1030,#0b2340);border:1px solid #33435c;margin-bottom:10px}
 .wrap-slide .big{font:800 56px var(--disp);line-height:1;color:var(--cyan)}
 .pbpost{background:linear-gradient(90deg,#2a1f05,transparent);border-left:3px solid var(--gold);padding-left:8px}
 .rt-common{color:var(--r-common)}.rt-rare{color:var(--r-rare)}.rt-epic{color:var(--r-epic)}.rt-legendary{color:var(--r-leg)}.rt-mythic{color:var(--r-myth)}

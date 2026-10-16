@@ -171,3 +171,44 @@ function seasonCard(){const s=seasonOf(today()),xp=sumXP(xpByDay(S.profile),s.st
  <p class="small muted" style="margin:8px 0 0">${nx?`${nx[0]-xp} XP to <b>${nx[2]}</b>. `:'Track complete! '}Free reward track, cosmetic only. Nothing to buy and nothing that helps your score. Peak rank so far: ${rk.state=='ranked'?rk.tier+' '+rk.div:'unranked'} (saved as a season badge when the season ends).</p></div>`}
 /* Season titles join badge titles in the card editor */
 function seasonTitles(){const s=seasonOf(today()),xp=sumXP(xpByDay(S.profile),s.start,s.end);return TRACK.filter(t=>t[1]=='Title'&&xp>=t[0]).map(t=>t[2])}
+/* ---------- Monthly "Wrapped"-style recap. Stats only, no advice. Share card has no name, club or other personal details. ---------- */
+let recapMonth=null;
+function monthStats(name,ym){const inM=d=>normDate(d).slice(0,7)==ym,dm=dayMap(name),E=allEnds(name).filter(e=>inM(e.date));
+ const arrowsN=Object.entries(dm).filter(([d])=>inM(d)).reduce((t,[,n])=>t+n,0),days=Object.entries(dm).filter(([d,n])=>inM(d)&&n>0).length;
+ const ends=E.filter(e=>e.arrows.length);const bestEnd=ends.reduce((b,e)=>{const s=e.arrows.reduce((t,a)=>t+val(a),0);return!b||s>b.s||(s==b.s&&e.arrows.length<b.n)?{s,n:e.arrows.length,a:e.arrows}:b},null);
+ const xs=E.reduce((t,e)=>t+e.arrows.filter(a=>a=='X').length,0),tens=E.reduce((t,e)=>t+e.arrows.filter(isTen).length,0),scored=E.reduce((t,e)=>t+e.arrows.length,0);
+ const R=realFor(name).filter(r=>!r.incomplete),pbs=[],best={};R.forEach(r=>{const k=r.round+'|'+r.division;if(best[k]!=null&&r.score>best[k]&&inM(r.date))pbs.push(r);best[k]=Math.max(best[k]||0,r.score)});
+ const rc={};R.filter(r=>inM(r.date)).forEach(r=>rc[r.round]=(rc[r.round]||0)+1);if(name==S.profile)done().filter(s=>inM(s.date)).forEach(s=>rc[s.round]=(rc[s.round]||0)+1);
+ const top=Object.entries(rc).sort((a,b)=>b[1]-a[1])[0],rounds=Object.values(rc).reduce((a,b)=>a+b,0);
+ const prevYm=(()=>{const d=new Date(ym+'-15');d.setMonth(d.getMonth()-1);return d.toLocaleDateString('en-CA').slice(0,7)})();
+ const avgRt=m=>{const v=ratedRounds(name,null).filter(r=>normDate(r.date).slice(0,7)==m&&r.rating!=null).map(r=>r.rating);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+ const a1=avgRt(ym),a0=avgRt(prevYm);
+ const type=arrowsN>=2000?['The Grinder','Put the most work in. Arrows on arrows.']:scored>=60&&xs/scored>=.25?['Sniper','X after X after X.']:pbs.length?['Ceiling Breaker','New personal bests this month.']:a1!=null&&a0!=null&&a1>a0?['Comeback Kid','Ratings up on last month.']:rounds>=4?['Comp Beast','Round after round after round.']:arrowsN>0?['The Steady One','Turned up and did the work.']:null;
+ return{ym,arrowsN,days,bestEnd,xs,tens,scored,pbs,top,rounds,type}}
+function recapMonths(){const set=new Set();Object.keys(dayMap(S.profile)).forEach(d=>set.add(d.slice(0,7)));realFor(S.profile).forEach(r=>set.add(normDate(r.date).slice(0,7)));return[...set].sort().reverse()}
+const monthName=ym=>new Date(ym+'-15').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+function recapTeaser(){const M=recapMonths();return`<div class="card"><span class="kicker">Recap</span><div class="row"><span><b>Your month, wrapped</b><br><span class="small muted">${M.length?monthName(M[0])+' is ready':'Log some arrows to unlock your first recap'}</span></span><button class="btn" onclick="nav('recap')" ${M.length?'':'disabled'}>Open</button></div></div>`}
+function recapView(){const M=recapMonths();if(!M.length){app.innerHTML=`<div class="card dark"><span class="kicker">Recap</span><h1>Nothing to wrap yet</h1><p>Your monthly recap builds itself from your real arrows and official results. Log a session to get started.</p></div>`;return}
+ if(!M.includes(recapMonth))recapMonth=M[0];const st=monthStats(S.profile,recapMonth),mn=monthName(recapMonth);
+ const slides=[[`Your ${mn.split(' ')[0]}`,`<div class="big">${st.arrowsN.toLocaleString()}</div><p>arrows across ${st.days} day${st.days==1?'':'s'}</p>`],
+  ['Rounds',`<div class="big">${st.rounds}</div><p>${st.top?`Most shot: <b>${esc(st.top[0])}</b> (${st.top[1]}×)`:'No rounds logged this month'}</p>`],
+  ['Best end',st.bestEnd?`<div class="big">${st.bestEnd.s}</div><p>${st.bestEnd.a.join(' · ')}</p>`:'<p>No scored ends this month.</p>'],
+  ['X count',`<div class="big">${st.xs}</div><p>X's · ${st.tens} tens or better from ${st.scored} scored arrows</p>`],
+  ['New ceilings',st.pbs.length?`<div class="big">${st.pbs.length}</div><p>${st.pbs.map(r=>`${r.score} · ${esc(r.round)}`).join('<br>')}</p>`:'<p>No new PBs this month.</p>']];
+ let aw='';const Q=S.squad,mem=leagueMembers();if(mem.length>1){const ms=mem.map(m=>({m,s:monthStats(m.name,recapMonth)}));const best=(f,l)=>{const w=ms.slice().sort((a,b)=>f(b.s)-f(a.s))[0];return f(w.s)>0?`<div class="row list-item"><span>${l}</span><b>${esc(shortName(w.m.name))}</b></div>`:''};
+  aw=`<div class="card"><span class="kicker">Squad awards · ${mn}</span>${best(s=>s.arrowsN,'Most arrows')}${best(s=>s.xs,'Most X\'s')}${best(s=>s.pbs.length,'Most PBs')}${best(s=>s.rounds,'Most rounds')}<p class="small muted">Private to your squad. Never on share cards.</p></div>`}
+ app.innerHTML=`<div class="card"><label for="rm">Month</label><select id="rm">${M.map(m=>`<option value="${m}" ${m==recapMonth?'selected':''}>${monthName(m)}</option>`).join('')}</select></div>
+ ${slides.map(([k,b])=>`<div class="wrap-slide"><span class="kicker">${k}</span>${b}</div>`).join('')}
+ <div class="wrap-slide" style="background:linear-gradient(150deg,#3b0764,#0b2340)"><span class="kicker">Your archer type</span>${st.type?`<div class="big" style="font-size:44px;color:var(--gold)">${st.type[0]}</div><p>${st.type[1]}</p>`:'<p>Not enough arrows this month.</p>'}</div>
+ ${aw}<div class="card"><span class="kicker">Share</span><canvas id="rcv" width="1080" height="1350" style="width:100%;border-radius:14px" aria-label="Shareable recap card"></canvas>
+ <p class="small muted">No name, club, age or photo on the card. Just your stats.</p><button class="btn" id="rsave">Save card</button> <button class="btn ghost" id="rshare">Share</button></div>`;
+ $('#rm').onchange=e=>{recapMonth=e.target.value;recapView()};drawRecap(st,mn);
+ $('#rsave').onclick=()=>{const a=document.createElement('a');a.href=$('#rcv').toDataURL('image/png');a.download='scoretool-recap-'+recapMonth+'.png';a.click()};
+ $('#rshare').onclick=()=>$('#rcv').toBlob(b=>{const f=new File([b],'scoretool-recap.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else $('#rsave').click()})}
+function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#1a1030');g.addColorStop(1,'#0b2340');x.fillStyle=g;x.fillRect(0,0,1080,1350);
+ x.fillStyle='#38e1ff';x.font='700 40px "Barlow Condensed",sans-serif';x.fillText('MY MONTH IN ARCHERY · '+mn.toUpperCase(),70,110);
+ x.fillStyle='#ffc629';x.font='italic 800 110px "Barlow Condensed",sans-serif';x.fillText((st.type?st.type[0]:'Wrapped').toUpperCase(),70,250);
+ const T=[['ARROWS',st.arrowsN.toLocaleString()],['ROUNDS',st.rounds],['BEST END',st.bestEnd?st.bestEnd.s:'–'],["X'S",st.xs],['NEW PBS',st.pbs.length],['DAYS',st.days]];
+ T.forEach(([k,v],i)=>{const cx=70+(i%2)*480,cy=380+Math.floor(i/2)*260;x.fillStyle='rgba(255,255,255,.06)';x.fillRect(cx,cy,440,220);x.fillStyle='#9aa7ba';x.font='700 36px Inter,sans-serif';x.fillText(k,cx+30,cy+60);x.fillStyle='#eef2f8';x.font='800 120px "Barlow Condensed",sans-serif';x.fillText(String(v),cx+30,cy+180)});
+ x.fillStyle='#eef2f8';x.font='800 48px "Barlow Condensed",sans-serif';x.fillText('SCORE',70,1280);const w1=x.measureText('SCORE').width;x.fillStyle='#ffc629';x.fillText('TOOL',70+w1,1280);const w2=x.measureText('TOOL').width;x.fillStyle='#9aa7ba';x.font='500 30px Inter,sans-serif';x.fillText('archery calendars',90+w1+w2,1278)}
+window.EXTRA_VIEWS.recap=recapView;
