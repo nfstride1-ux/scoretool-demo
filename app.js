@@ -63,7 +63,8 @@ const avgArrow=s=>{const a=arrows(s);return a.length?total(s)/a.length:0};
 const sd=xs=>{if(xs.length<2)return 0;const m=xs.reduce((a,b)=>a+b)/xs.length;return Math.sqrt(xs.reduce((t,x)=>t+(x-m)**2,0)/(xs.length-1))};
 const col=a=>{const v=val(a);if(typeof cur!='undefined'&&cur&&cur.bugs)return a=='M'?'k-m':v>=5?'k-y':'k-k';return v>=9?'k-y':v>=7?'k-r':v>=5?'k-b':v>=3?'k-k':v>=1?'k-w':'k-m'};
 const allSessions=()=>[...S.sessions].sort((a,b)=>a.date<b.date?-1:1);
-const done=()=>allSessions().filter(s=>{const R=ROUNDS[s.round];return R&&s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape)});
+const isDone=s=>{const R=ROUNDS[s.round];return !!R&&((s.finished&&arrowsIn(s)>0)||(s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape)))};
+const done=()=>allSessions().filter(isDone);
 
 /* ---------- PBs, streaks, badges, wins ---------- */
 function pbs(){const m={};for(const s of done()){const t=total(s);if(!m[s.round]||t>m[s.round].score)m[s.round]={score:t,date:s.date,sample:s.sample}}
@@ -184,7 +185,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  if(W){h+=`<div class="card"><span class="kicker">Wins of the day · ${L.date} <span class="real">${L.kind}</span></span><h2>${W.label}</h2>${winsFor(W.s).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}<button class="btn ghost" id="bank" style="margin-top:8px">⭐ Save to my evidence bank</button></div>`}
  else if(L){h+=`<div class="card"><span class="kicker">Wins of the day · ${L.date} <span class="real">${L.kind}</span></span><h2>${L.round}: ${L.score}</h2><p class="small muted">No arrow-by-arrow data for this shoot yet, so end-by-end wins aren't available.</p></div>`}
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date}</span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
- const dr=S.sessions.filter(x=>!x.sample&&ROUNDS[x.round]&&!(x.ends.length==ROUNDS[x.round].ends&&x.ends[x.ends.length-1].length==ROUNDS[x.round].ape)&&arrowsIn(x)>0);if(dr.length)h+=`<div class="card" style="border:2px solid #2563eb"><span class="kicker">Unfinished rounds</span>${dr.map(x=>`<div class="list-item row"><span><b>${esc(x.round)}</b><span class="small muted"> · ${fmtD(x.date)} · ${total(x)} so far (${arrowsIn(x)} arrows)</span></span><button class="btn" data-resume="${x.id}" style="padding:4px 10px">Resume</button></div>`).join('')}</div>`;h+=volCard()+shelf();
+ const dr=S.sessions.filter(x=>!x.sample&&ROUNDS[x.round]&&!isDone(x)&&arrowsIn(x)>0);if(dr.length)h+=`<div class="card" style="border:2px solid #2563eb"><span class="kicker">Unfinished rounds</span>${dr.map(x=>`<div class="list-item row"><span><b>${esc(x.round)}</b><span class="small muted"> · ${fmtD(x.date)} · ${total(x)} so far (${arrowsIn(x)} arrows)</span></span><button class="btn" data-resume="${x.id}" style="padding:4px 10px">Resume</button></div>`).join('')}</div>`;h+=volCard()+shelf();
  h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
  h+=(window.rankCard?rankCard(S.profile):"");h+=`<button class="btn ghost full" onclick="nav('squad')" style="margin-bottom:8px">👥 My squad</button>`;h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
@@ -251,7 +252,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  app.querySelectorAll('[data-ce]').forEach(b=>b.onclick=()=>{crEdit={i:+b.dataset.ce};score()});
  app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const c=S.customRounds[+b.dataset.cd];if(!confirm(`Delete "${c.name}"? Sessions already shot keep their scores.`))return;S.customRounds.splice(+b.dataset.cd,1);save();score()});
  $('#st').onclick=()=>{if($('#rd').value=='__new')return;S.lastRound=$('#rd').value;sv='entry';justDone=false;cur={id:'s'+Date.now(),date:$('#dt').value,round:$('#rd').value,ends:[[]],pos:[[]],note:''};S.sessions.push(cur);save();history.pushState({scoring:1},'');score()};bindList();return}
- const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=cur.ends.length==R.ends&&last.length==R.ape,P=cur.pos||[];
+ const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur),P=cur.pos||[];
  if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
  const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
  const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,SP=isBug(FR)&&cur.spot?BUGC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
@@ -303,22 +304,25 @@ const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':F.face=='any'?'Full 10-r
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
+function hiStats(A,s){const isB=s.bugs||A.some(a=>a=='6')&&!A.some(a=>a=='X'||+a>6);if(isB)return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>`}
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
- const arrowsAll=s.ends.flat(),xs=arrowsAll.filter(a=>a=='X').length,tens=arrowsAll.filter(a=>a=='X'||a=='10').length;
+ const arrowsAll=s.ends.flat(),fullMax=s.bugs?R.ends*R.ape*6:R.max,per=fullMax/(R.ends*R.ape),early=s.finished&&!(s.ends.length==R.ends&&s.ends.every(e=>e.length==R.ape));
  app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>
  ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(s.bugs?'Bugs Eyes field 3-spot (6-1)'+((/@.*/.exec(sec.k)||[''])[0]?' '+(/@.*/.exec(sec.k)||[''])[0]:''):sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
  ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
- ${secs.length>1?`<div class="ad-sum small">X's: <b>${A.filter(a=>a=='X').length}</b> 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b> <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
- <div class="ad-sum">X's: <b>${xs}</b>&nbsp; 10's/X's: <b>${tens}</b>&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${s.bugs?R.ends*R.ape*6:R.max}</span></div></div>
- ${fin?summaryCard(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
- <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
+ ${secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
+ <div class="ad-sum">${hiStats(arrowsAll,s)}&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${early?arrowsIn(s)*per+' <span class="small">('+arrowsIn(s)+' arrows shot)</span>':fullMax}</span></div></div>
+ ${fin?roundSummary(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
+ <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';score()});
  if($('#addsc'))$('#addsc').onclick=()=>{sv='entry';score()};
+ if($('#finnow'))$('#finnow').onclick=()=>{if(!confirm(`Finish round now? ${arrowsIn(s)} arrows, ${total(s)} points.`))return;while(s.ends.length>1&&!s.ends[s.ends.length-1].length){s.ends.pop();if(s.pos)s.pos.length=Math.min(s.pos.length,s.ends.length)}s.finished=true;fix=null;justDone=false;sv='sheet';save();score()};
+ if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
 const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m'};
-function summaryCard(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
+function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
  const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,aa=AA_MAP[s.round];
  const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
  const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
