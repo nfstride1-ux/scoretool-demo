@@ -11,7 +11,7 @@ let fq='';
 function followView(){const s=soc(),me={id:'me',name:S.profile},q=fq.trim().toLowerCase();
  const hits=q?DIRECTORY().filter(a=>a.name.toLowerCase().includes(q)):[],meHit=q&&(S.profile||'').toLowerCase().includes(q);
  const F=s.following.filter(f=>f.status=='active'),items=window.feed?feed(F.map(f=>({...f,name:f.name}))):[];
- app.innerHTML=`<div class="card dark"><span class="kicker">Following</span><h1>Your feed</h1><p class="small muted" style="margin:0">${F.length} following · ${s.followers.length} followers · preset cheers only, no chat</p></div>
+ app.innerHTML=`<div class="card dark"><span class="kicker">Following</span><h1>Your feed</h1><p class="small muted" style="margin:0">${F.length} following · ${s.followers.length} followers · preset cheers only, no chat</p></div>${window.squadMini?squadMini():''}
  <div class="card"><label for="fs">Find archers by name</label><input id="fs" type="search" placeholder="e.g. first and last name" value="${esc(fq)}" autocomplete="off">
  <div id="fr" style="margin-top:8px">${!q?'<p class="small muted">Search anyone on the app, including pro archers, and follow their progress.</p>':
   (meHit?`<div class="list-item row"><span>${initDisc(me,32)} <b>${esc(S.profile)}</b> <span class="small muted">(you · ${s.privacy=='public'?'Public':'Friends only'})</span></span><button class="btn ghost" onclick="nav('profile')" style="padding:4px 10px">View</button></div>`:'')+

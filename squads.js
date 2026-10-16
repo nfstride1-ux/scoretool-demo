@@ -67,7 +67,7 @@ function squad(){seedSquad();const Q=S.squad;
   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rr" style="width:auto" ${Q.rawRank?'checked':''}> Show a raw-score leaderboard</label>
   <h3>Members</h3>${act.map(m=>`<div class="list-item row"><span>${who(m)} ${shortName(m.name)}</span>${m.name==S.profile?'':`<button class="btn ghost" data-rm="${m.id}" style="padding:4px 10px">Remove</button>`}</div>`).join('')}</div>`}
  if(me){h+=`<div class="card"><h3>Me in this squad</h3><p class="small muted">Squad mates see your player card: initials, ${shortName(me.name)}, rank, title and badges. No photo, club or contact details.</p><button class="btn ghost" onclick="nav('profile')">Edit my card</button> <button class="btn ghost" id="lv">Leave squad</button></div>`}
- h+=`<details class="card"><summary><b>Create another squad</b></summary>${createCard()}</details>`+safe();app.innerHTML=h;bindCreate();
+ h+=`<details class="card" id="sqcd" ${window._sqCreate?'open':''}><summary><b>Create another squad</b></summary>${createCard()}</details>`+safe();app.innerHTML=h;bindCreate();if(window._sqCreate){window._sqCreate=0;setTimeout(()=>{const d=$('#sqcd');if(d)d.scrollIntoView({block:'start'})},50)}
  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sqTab=b.dataset.m;squad()});
  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const c=Q.cheers[b.dataset.c]=Q.cheers[b.dataset.c]||{};if(c.mine){c[c.mine]--;}if(c.mine==b.dataset.e){c.mine=null}else{c.mine=b.dataset.e;c[b.dataset.e]=(c[b.dataset.e]||0)+1}save();squad()});
  app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const id=b.dataset.rm;if(!confirm('Remove this member from the squad?'))return;Q.members=Q.members.filter(m=>m.id!=id);save();squad()});
@@ -81,3 +81,13 @@ function safe(){return`<div class="card"><span class="kicker">Safe squads</span>
  <li>Leaderboards rank effort and badges, and improvement against your own average. Raw scores stay hidden unless the admin turns them on.</li>
  <li>"Hasn't logged lately" reminders go only to the admin, never to the squad.</li><li>Anyone can leave at any time. Admins can remove members.</li>
  <li>✓ verified means the score came from Archer's Diary or was plotted arrow by arrow; keypad-only practice shows as self-logged.</li></ul></div>`}
+
+/* Squads section for the Following tab: squad card(s) with a mini top 3 (this week's arrows, effort not scores). */
+window.squadMini=function(){seedSquad();const Q=S.squad,ins=Q&&(Q.members.some(m=>m.name==S.profile)||myAdult());
+ let h=`<div class="card"><span class="kicker">Squads</span>`;
+ if(ins){const act=Q.members.filter(m=>m.status!='pending').map(memberStats).sort((a,b)=>b.wk-a.wk).slice(0,3);
+  h+=`<div class="list-item" style="display:block"><div class="row"><b>${esc(Q.name)}</b><span class="small muted">${Q.members.filter(m=>m.status!='pending').length} members</span></div>
+  <div class="small muted" style="margin:4px 0 2px">Top 3 · this week's arrows</div>${act.map((m,i)=>`<div class="row small"><span>${i+1}. ${who(m)} ${m.name==S.profile?'<b>You</b>':esc(shortName(m.name))}</span><b>${m.wk}</b></div>`).join('')}
+  <button class="btn ghost" style="margin-top:8px;padding:6px 12px" onclick="nav('squad')">Open squad ›</button></div>`}
+ else h+=`<p class="small muted">You're not in a squad yet.</p>`;
+ return h+`<button class="btn ghost full" style="margin-top:8px" onclick="window._sqCreate=1;nav('squad')">Create or join a squad</button></div>`};
