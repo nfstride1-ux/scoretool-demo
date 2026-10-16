@@ -212,3 +212,23 @@ function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.creat
  T.forEach(([k,v],i)=>{const cx=70+(i%2)*480,cy=380+Math.floor(i/2)*260;x.fillStyle='rgba(255,255,255,.06)';x.fillRect(cx,cy,440,220);x.fillStyle='#9aa7ba';x.font='700 36px Inter,sans-serif';x.fillText(k,cx+30,cy+60);x.fillStyle='#eef2f8';x.font='800 120px "Barlow Condensed",sans-serif';x.fillText(String(v),cx+30,cy+180)});
  x.fillStyle='#eef2f8';x.font='800 48px "Barlow Condensed",sans-serif';x.fillText('SCORE',70,1280);const w1=x.measureText('SCORE').width;x.fillStyle='#ffc629';x.fillText('TOOL',70+w1,1280);const w2=x.measureText('TOOL').width;x.fillStyle='#9aa7ba';x.font='500 30px Inter,sans-serif';x.fillText('archery calendars',90+w1+w2,1278)}
 window.EXTRA_VIEWS.recap=recapView;
+/* ---------- My other apps: archer's own links to outside apps. Stored locally. No pre-filled list, no recommendations. ---------- */
+const APP_CATS=['Sight marks','Video','Tuning','Other'];
+function appName(u){try{const h=new URL(u).hostname.replace(/^www\.|^app\.|^m\./,'').split('.')[0];return h.charAt(0).toUpperCase()+h.slice(1)}catch(e){return''}}
+function normUrl(u){u=(u||'').trim();if(u&&!/^https?:\/\//i.test(u))u='https://'+u;try{const x=new URL(u);return/^https?:$/.test(x.protocol)?x.href:''}catch(e){return''}}
+let appEdit=null;
+function otherAppsCard(){const L=S.apps=S.apps||[],e=appEdit!=null?L[appEdit]:null;
+ return`<div class="card" id="oapps"><span class="kicker">My other apps</span><h2>My other apps</h2>
+ ${L.length?L.map((a,i)=>`<div class="list-item row"><span style="min-width:0"><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(a.name)}</b> ↗</a>${a.cat?` <span class="pill t-none">${esc(a.cat)}</span>`:''}<br><span class="small muted" style="word-break:break-all">${esc(a.url)}</span></span><span style="flex:0 0 auto"><button class="btn ghost" data-ae="${i}" style="padding:4px 10px;min-height:34px">Edit</button> <button class="btn ghost" data-ad="${i}" style="padding:4px 10px;min-height:34px">Delete</button></span></div>`).join(''):'<p class="muted">Add the apps you use for sight marks, video and tuning.</p>'}
+ <label for="au">${e?'Edit link':'Add a link'}</label><input id="au" type="url" inputmode="url" placeholder="Paste the app's link" value="${e?esc(e.url):''}">
+ <label for="an2">Name</label><input id="an2" placeholder="Filled in from the link" value="${e?esc(e.name):''}">
+ <label for="ac2">Category (optional)</label><select id="ac2"><option value="">None</option>${APP_CATS.map(c=>`<option ${e&&e.cat==c?'selected':''}>${c}</option>`).join('')}</select>
+ <button class="btn" id="asave" style="margin-top:8px">${e?'Save':'Add'}</button>${e?' <button class="btn ghost" id="acancel" style="margin-top:8px">Cancel</button>':''}<div id="aerr" class="small" style="color:#f87171"></div>
+ <p class="small muted">Links open in a new tab. Saved on this device only.</p></div>`}
+function bindOtherApps(){if(!$('#oapps'))return;const L=S.apps,re=()=>{const c=$('#oapps');c.outerHTML=otherAppsCard();bindOtherApps()};
+ $('#au').oninput=()=>{if(!$('#an2').dataset.t)$('#an2').value=appName(normUrl($('#au').value))};$('#an2').oninput=()=>$('#an2').dataset.t=1;
+ $('#asave').onclick=()=>{const u=normUrl($('#au').value);if(!u){$('#aerr').textContent='That link doesn\'t look right.';return}
+  const a={url:u,name:$('#an2').value.trim()||appName(u)||u,cat:$('#ac2').value};if(appEdit!=null)L[appEdit]=a;else L.push(a);appEdit=null;save();re()};
+ if($('#acancel'))$('#acancel').onclick=()=>{appEdit=null;re()};
+ document.querySelectorAll('[data-ae]').forEach(b=>b.onclick=()=>{appEdit=+b.dataset.ae;re()});
+ document.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this link?'))return;L.splice(+b.dataset.ad,1);appEdit=null;save();re()})}
