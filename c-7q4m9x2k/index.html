@@ -73,6 +73,12 @@ main{max-width:none;padding:20px 28px 110px}
 .gb{display:flex;flex-direction:column;gap:8px}.gbr{display:flex;gap:8px;align-items:center}.gbl{width:74px;font-size:12px;color:var(--ink2);flex:none}.gbb{flex:1;display:flex;flex-direction:column;gap:3px}
 .gbbar{display:flex;align-items:center;gap:6px;font:700 12px var(--body)}.gbbar i{display:block;height:12px;border-radius:4px;transition:width .3s}.gbbar span{color:var(--ink2)}
 @media(min-width:1024px){#out{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}}
+
+.mini-grid{display:grid;grid-template-columns:1fr;gap:10px}.mini{background:var(--card2);border-radius:12px;padding:8px}.mt{font:700 13px var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin-bottom:2px}
+.phil-head{border-color:#1e3a8a;background:linear-gradient(160deg,#10254d,var(--card))}
+@media(min-width:600px){.mini-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){#out>.phil-head{grid-column:1/-1}#out>.card.wide2{grid-column:1/-1}.mini-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+@media(min-width:1024px){#out>.card:has(.mini-grid){grid-column:1/-1}}
 </style></head><body>
 <header class="top"><div class="logo">Score<span>Tool</span></div><div class="mode"><span>Competitor</span><b>Coach</b></div></header>
 <div class="vo-bar">👁 View-only coach mode · playground · real squad scores</div>
@@ -147,6 +153,27 @@ function groups(rs,s=S){if(!s.split)return[{k:'all',name:'Combined',c:'#38bdf8',
 
 const sdp=v=>{const m=av(v);return Math.sqrt(av(v.map(x=>(x-m)*(x-m))))};
 const dsort=(x,y)=>(parseInt(y)||0)-(parseInt(x)||0)||(x<y?-1:x>y?1:0);
+
+const roll3=v=>v.map((x,i)=>i<2||v.slice(i-2,i+1).some(y=>y==null)?null:(v[i-2]+v[i-1]+v[i])/3);
+function philShoot(r,s){const E=endsOf(r,s);if(!E.length)return null;const n=E.length,h=Math.floor(n/2);const F1=E.slice(0,h),F2=E.slice(n-h);
+ const sumE=L=>L.reduce((a,e)=>a+(e.t||0),0),cnt=(L,f)=>L.reduce((a,e)=>a+e.ar.filter(x=>f(x.toUpperCase())).length,0);
+ const fl=L=>({sc:sumE(L),x:cnt(L,x=>x==='X'),t10:cnt(L,x=>x==='10'),n9:cnt(L,x=>x==='9'),n8:cnt(L,x=>x==='8'),n7:cnt(L,x=>x==='7')});
+ const ar=E.flatMap(e=>e.ar.map(aval)).filter(x=>x!=null),mx=(r.disc==='Field'||r.disc==='3D'?6:10);
+ const blocks=[];for(let i=0;i+3<=n;i+=3)blocks.push(sumE(E.slice(i,i+3)));
+ const ec={max:0,m1:0,m2:0,other:0};E.forEach(e=>{if(e.t==null||!e.ar.length)return;const top=e.ar.length*mx;const k=e.t===top?'max':e.t===top-1?'m1':e.t===top-2?'m2':'other';ec[k]++});
+ return{r,n,h,f1:fl(F1),f2:fl(F2),tot:sumE(E),arrAvg:ar.length?ar.reduce((a,b)=>a+b,0)/ar.length:null,nArr:ar.length,blocks,pos1:F1.map(e=>e.t),pos2:F2.map(e=>e.t),ec}}
+function philFig(s,G){return G.map(g=>{const sh=g.rs.map(r=>philShoot(r,s)).filter(Boolean);const ser=k=>sh.map(k);
+ const f1=ser(x=>x.f1.sc),f2=ser(x=>x.f2.sc),tot=ser(x=>x.tot),aa=ser(x=>x.arrAvg);const dif=v=>v.map((x,i)=>i?x-v[i-1]:null);
+ const nb=Math.max(0,...sh.map(x=>x.blocks.length)),np=Math.max(0,...sh.map(x=>x.h));
+ const blocks=[...Array(nb)].map((_,b)=>ser(x=>x.blocks[b]??null)),p1=[...Array(np)].map((_,i)=>ser(x=>x.pos1[i]??null)),p2=[...Array(np)].map((_,i)=>ser(x=>x.pos2[i]??null));
+ const last3=sh.slice(-3),pAvg=(k,i)=>{const v=last3.map(x=>x[k][i]).filter(y=>y!=null);return v.length===3?(v[0]+v[1]+v[2])/3:null};
+ const pot1=[...Array(np)].map((_,i)=>pAvg('pos1',i)),pot2=[...Array(np)].map((_,i)=>pAvg('pos2',i));const okP=last3.length===3&&pot1.every(v=>v!=null)&&pot2.every(v=>v!=null);
+ const six=ago(6),s6=sh.filter(x=>x.r.dt>=six),m=v=>v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
+ const ec={max:0,m1:0,m2:0,other:0};sh.forEach(x=>Object.keys(ec).forEach(k=>ec[k]+=x.ec[k]));
+ return{g,sh,f1,f2,tot,d1:dif(f1),d2:dif(f2),dt:dif(tot),cnt:{x1:ser(x=>x.f1.x),t1:ser(x=>x.f1.t10),xt1:ser(x=>x.f1.x+x.f1.t10),n91:ser(x=>x.f1.n9),x2:ser(x=>x.f2.x),t2:ser(x=>x.f2.t10),xt2:ser(x=>x.f2.x+x.f2.t10),n92:ser(x=>x.f2.n9)},
+  r1:roll3(f1),r2:roll3(f2),rt:roll3(tot),aa,raa:roll3(aa),blocks,rblocks:blocks.map(roll3),p1,p2,rp1:p1.map(roll3),rp2:p2.map(roll3),
+  pot:okP?{f1:pot1.reduce((a,b)=>a+b,0),f2:pot2.reduce((a,b)=>a+b,0)}:null,six:{n:s6.length,f1:m(s6.map(x=>x.f1.sc)),f2:m(s6.map(x=>x.f2.sc)),tot:m(s6.map(x=>x.tot))},
+  avgF:{f1:m(f1),f2:m(f2),tot:m(tot)},ec,rat:g.rs.filter(r=>r.rt!=null).map(r=>({r,y:r.rt}))}})}
 function figures(s){const rs=sel(s),sub=!!(s.dist.length||s.end.length),E=rs.flatMap(r=>endsOf(r,s)),G=groups(rs,s);
  const eg=g=>s.split?E.filter(e=>e.r.m===g.k):E;
  const tot=rs.map(r=>r.t).filter(v=>v!=null),ea=E.map(e=>e.t).filter(v=>v!=null),aa=E.flatMap(e=>e.ar.map(aval)).filter(v=>v!=null);
@@ -164,8 +191,43 @@ function figures(s){const rs=sel(s),sub=!!(s.dist.length||s.end.length),E=rs.fla
  const pbs=[];G.forEach(g=>{const best={};g.rs.forEach(r=>{if(r.t==null)return;const k=r.m+'|'+r.r;if(best[k]!=null&&r.t>best[k])pbs.push({g,r,from:best[k]});if(best[k]==null||r.t>best[k])best[k]=r.t})});
  const rg={};rs.forEach(r=>(rg[r.r]=rg[r.r]||[]).push(r));
  const perRound=Object.entries(rg).map(([k,v])=>{const t=v.map(r=>r.t).filter(x=>x!=null);return{r:k,n:v.length,avg:av(t),best:t.length?Math.max(...t):null}}).sort((a,b)=>b.n-a.n||(a.r<b.r?-1:1));
- return{rs,sub,E,G,tot,ea,aa,sum,dls,perDist,byDistArrow,ph,cons,rate,roll,pbs,perRound}}
+ return{rs,sub,E,G,tot,ea,aa,sum,dls,perDist,byDistArrow,ph,cons,rate,roll,pbs,perRound,phil:philFig(s,G)}}
 function squadFig(id){const rs=R.filter(r=>r.m===id),best={};rs.forEach(r=>{if(r.t!=null&&(!best[r.r]||r.t>best[r.r].t||(r.t===best[r.r].t&&r.dt<best[r.r].dt)))best[r.r]=r});return{rs,last:rs[rs.length-1],trend:trendOf(rs),best}}
+
+function colSvg(P,key,{avg=true,line=false,zero=false}={}){const W=wide()?420:340,H=wide()?170:150,Pd={l:32,r:6,t:8,b:20};
+ const pts=P.map(p=>({g:p.g,v:(typeof key==='function'?key(p):p[key]).map((y,i)=>y==null?null:{x:+new Date(p.sh[i].r.dt),y,r:p.sh[i].r}).filter(Boolean)}));const all=pts.flatMap(p=>p.v);
+ if(!all.length)return'<div class="muted small">No data.</div>';let x0=Math.min(...all.map(p=>p.x)),x1=Math.max(...all.map(p=>p.x));if(x0===x1){x0-=864e5;x1+=864e5}
+ let lo=Math.min(...all.map(p=>p.y)),hi=Math.max(...all.map(p=>p.y));if(zero||lo>=0&&lo<hi*.35)lo=Math.min(0,lo);const pad=(hi-lo)*.08||1;hi+=pad;if(lo<0||!zero)lo-=lo===0?0:pad;
+ const X=x=>Pd.l+8+(W-Pd.l-Pd.r-16)*(x-x0)/(x1-x0),Y=y=>H-Pd.b-(H-Pd.t-Pd.b)*(y-lo)/(hi-lo),bw=Math.max(1.5,Math.min(8,(W-Pd.l-Pd.r)/all.length*.8));
+ let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,Pd,lo,hi)}`;const y0=Y(Math.max(lo,Math.min(0,hi)));
+ pts.forEach(({g,v})=>{if(line){if(v.length>1)s+=`<polyline fill="none" stroke="${g.c}" stroke-width="2" points="${v.map(q=>X(q.x).toFixed(1)+','+Y(q.y).toFixed(1)).join(' ')}"/>`;v.forEach(q=>s+=`<circle cx="${X(q.x).toFixed(1)}" cy="${Y(q.y).toFixed(1)}" r="2.6" fill="${g.c}"><title>${esc(q.r.r)} ${fmt(q.r.dt)}: ${Math.round(q.y*100)/100}</title></circle>`)}
+  else v.forEach(q=>{const y=Y(q.y),top=Math.min(y,y0),h=Math.max(1,Math.abs(y0-y));s+=`<rect x="${(X(q.x)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${g.c}"><title>${esc(q.r.r)} ${fmt(q.r.dt)}: ${Math.round(q.y*100)/100}</title></rect>`});
+  if(avg&&v.length){const m=v.reduce((a,q)=>a+q.y,0)/v.length;s+=`<line x1="${Pd.l}" x2="${W-Pd.r}" y1="${Y(m).toFixed(1)}" y2="${Y(m).toFixed(1)}" stroke="${P.length>1?g.c:'#e2e8f0'}" stroke-dasharray="4 3" stroke-width="1.3"/><text x="${W-Pd.r}" y="${(Y(m)-3).toFixed(1)}" text-anchor="end" style="fill:#e2e8f0">avg ${Math.round(m*10)/10}</text>`}});
+ return s+'</svg>'}
+const mini=(t,b)=>`<div class="mini"><div class="mt">${t}</div>${b}</div>`;
+const ordn=i=>['1st','2nd','3rd'][i]||(i+1)+'th';
+function philCards(F){const P=F.phil;if(!P.some(p=>p.sh.length))return card2("Phil's charts",'Needs scores with end-by-end sheets','<div class="muted small">No end-by-end sheets in this selection.</div>');
+ const lg=legend(P.map(p=>p.g)),mixed=new Set(F.rs.map(r=>r.r)).size>1;
+ let h=`<div class="card phil-head"><span class="kicker">Phil's charts</span><h2>Flights &amp; ends — Phil's sheet</h2><div class="muted tiny">1st Flight = first half of each score's ends, 2nd Flight = second half (odd middle end left out). Built for 72-arrow rounds like WA 50/720.${mixed?' <b style="color:#ffcf7a">Mixed rounds ticked — pick one round to compare like with like.</b>':''}</div>${lg}</div>`;
+ h+=card2('Flights and Total','Average 1st Flight, 2nd Flight and Total Score per shoot',gbars(['1st Flight','2nd Flight','Total Score'],P.map(p=>({g:p.g,v:[p.avgF.f1,p.avgF.f2,p.avgF.tot]}))));
+ h+=card2('Diff. 1st Flight · Diff. 2nd Flight · Diff. Total','Change from the previous shoot',`<div class="mini-grid">${mini('Diff. 1st Flight',colSvg(P,'d1',{avg:false}))}${mini('Diff. 2nd Flight',colSvg(P,'d2',{avg:false}))}${mini('Diff. Total',colSvg(P,'dt',{avg:false}))}</div>`);
+ h+=card2('1st Flight · 2nd Flight · Total Score','Score per shoot',`<div class="mini-grid">${mini('1st Flight',colSvg(P,'f1'))}${mini('2nd Flight',colSvg(P,'f2'))}${mini('Total Score',colSvg(P,'tot'))}</div>`);
+ const C=[['x1',"1st Flight x's"],['t1',"1st Flight 10's"],['xt1',"1st Flight x's and 10's"],['n91',"1st Flight 9's"],['x2',"2nd Flight x's"],['t2',"2nd Flight 10's"],['xt2',"2nd Flight x's and 10's"],['n92',"2nd Flight 9's"]];
+ h+=card2("X's, 10's and 9's per flight",'Count per shoot, dashed line = average',`<div class="mini-grid">${C.map(([k,t])=>mini(t,colSvg(P,p=>p.cnt[k],{zero:true}))).join('')}</div>`);
+ h+=card2('Rolling av. (3 shoots)','Average of each shoot and the 2 before it',`<div class="mini-grid">${mini('Rolling av. 1st Flight',colSvg(P,'r1',{line:true,avg:false}))}${mini('Rolling av. 2nd Flight',colSvg(P,'r2',{line:true,avg:false}))}${mini('Rolling av. Total',colSvg(P,'rt',{line:true,avg:false}))}${mini('Total Score',colSvg(P,'tot',{line:true}))}</div>`);
+ h+=card2('Arrow av. per shoot · Rolling Arrow av. (3 shoots)','Average arrow value (X=10, M=0)',`<div class="mini-grid">${mini('Arrow av. per shoot',colSvg(P,'aa',{line:true}))}${mini('Rolling Arrow av. (3 shoots)',colSvg(P,'raa',{line:true,avg:false}))}</div>`);
+ const nb=Math.max(...P.map(p=>p.blocks.length));
+ if(nb)h+=card2('3-end blocks','Score of each block of 3 ends, and its rolling av. (3 shoots)',`<div class="mini-grid">${[...Array(nb)].map((_,b)=>mini(`${ordn(b)} 3 ends`,colSvg(P,p=>p.blocks[b]||[]))).join('')}${[...Array(nb)].map((_,b)=>mini(`Rolling av (3 shoots) ${ordn(b)} 3 ends`,colSvg(P,p=>p.rblocks[b]||[],{line:true,avg:false}))).join('')}</div>`);
+ const np=Math.max(...P.map(p=>p.p1.length));
+ if(np){h+=card2('Flight end by end','Each end position per shoot, dashed line = average',`<div class="mini-grid">${[1,2].map(f=>[...Array(np)].map((_,i)=>mini(`${ordn(f-1)} Flight ${ordn(i)} end`,colSvg(P,p=>(f===1?p.p1:p.p2)[i]||[])))).flat().join('')}</div>`);
+  h+=card2('Rolling av. (3 shoots) per end','Rolling average for each flight end position',`<div class="mini-grid">${[1,2].map(f=>[...Array(np)].map((_,i)=>mini(`Rolling av. (3 shoots) ${ordn(f-1)} and ${ordn(i)}`,colSvg(P,p=>(f===1?p.rp1:p.rp2)[i]||[],{line:true,avg:false})))).flat().join('')}</div>`)}
+ h+=card2('Potential score from averages','Sum of each end position\'s average over the last 3 shoots',`<table><tr><th></th><th>1st Flight</th><th>2nd Flight</th><th>Total</th></tr>${P.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td>${p.pot?`<td>${f1(p.pot.f1)}</td><td>${f1(p.pot.f2)}</td><td><b>${f1(p.pot.f1+p.pot.f2)}</b></td>`:'<td colspan="3" class="muted tiny">Needs the last 3 shoots with the same ends — tick one round</td>'}</tr>`).join('')}</table>`);
+ h+=card2('6-month av.','Average of shoots dated in the last 6 months',`<table><tr><th></th><th>Shoots</th><th>1st</th><th>2nd</th><th>Total</th></tr>${P.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.six.n}</td><td>${f1(p.six.f1)}</td><td>${f1(p.six.f2)}</td><td><b>${f1(p.six.tot)}</b></td></tr>`).join('')}</table>`);
+ h+=card2('End scores: max, max−1, max−2, Other','How many ends hit the maximum (60 for 6 arrows), one or two below, or lower',`<table><tr><th></th><th>Max</th><th>−1</th><th>−2</th><th>Other</th></tr>${P.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.ec.max}</td><td>${p.ec.m1}</td><td>${p.ec.m2}</td><td>${p.ec.other}</td></tr>`).join('')}</table>`);
+ const obj=+localStorage.getItem('coachObjective')||null;
+ h+=card2('All ratings · objective setting','AA rating for every rated score; set an objective line',`${colSvg(P.map(p=>({g:p.g,sh:p.rat.map(x=>({r:x.r})),rat:p.rat.map(x=>x.y)})),'rat',{line:true})}<div class="row" style="margin-top:6px"><span class="small muted">Objective</span><input type="text" inputmode="decimal" id="obj" value="${obj??''}" placeholder="e.g. 115" style="width:110px">${obj?`<span class="small">${P.map(p=>{const v=p.rat.slice(-3).map(x=>x.y);return v.length?`<span style="color:${p.g.c}">${(v.reduce((a,b)=>a+b,0)/v.length-obj>=0?'+':'')}${f1(v.reduce((a,b)=>a+b,0)/v.length-obj)}</span>`:''}).join(' ')} <span class="muted">last-3 vs objective</span></span>`:''}</div>`);
+ h+=card2('Arrow plots','',`<div class="note">🎯 Phil's plot-based views fill in from rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>`);
+ return h}
 function out(){
  const rs=sel(),o=$('#out');if(!rs.length){o.innerHTML='<div class="card muted">Nothing matches — clear a filter.</div>';return}
  const F=figures(S),{sub,E,G}=F,{tot,ea,aa}=F;
@@ -188,10 +250,12 @@ function out(){
  }else h+=`<div class="card note">These scores have no end-by-end sheet saved, so only totals are shown.</div>`;
  h+=card2('Rolling averages','Average end score from scores dated on/after today minus 3, 5, 6 months (other ticks apply)',`<table><tr><th></th><th>3 mo</th><th>5 mo</th><th>6 mo</th></tr>${G.map((g,i)=>`<tr><td style="color:${g.c}">${esc(g.name)}</td>${[3,5,6].map(m=>`<td>${f1(F.roll[m][i])}</td>`).join('')}</tr>`).join('')}</table>`);
  h+=card2('PB progression','Each time a score was strictly higher than the previous best on the same round',F.pbs.length?`<table>${F.pbs.slice().reverse().slice(0,12).map(p=>`<tr><td><span style="color:${p.g.c}">●</span> ${esc(p.r.r)}<div class="tiny muted">${esc(byId[p.r.m].name)} · ${fmt(p.r.dt)}</div></td><td><b>${p.r.t}</b><div class="tiny" style="color:#6ee7a0">+${p.r.t-p.from}</div></td></tr>`).join('')}</table>`:'<div class="muted small">No PB improvements in this selection.</div>');
+ h+=philCards(F);
  h+=`<div class="card"><h2>Per round</h2><table><tr><th>Round</th><th>#</th><th>Avg</th><th>Best</th></tr>${F.perRound.map(x=>`<tr class="click" data-round="${esc(x.r)}"><td>${esc(x.r)}</td><td>${x.n}</td><td>${f1(x.avg)}</td><td><b>${x.best??'–'}</b></td></tr>`).join('')}</table><div class="muted tiny" style="margin-top:4px">Tap a round to tick just that round</div></div>`;
  // sessions
  h+=`<div class="card"><h2>Scores</h2><table>${rs.slice().reverse().slice(0,80).map(r=>`<tr class="click" data-aid="${r.a}"><td><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${byId[r.m].c};margin-right:6px"></span>${esc(r.r)}<div class="tiny muted">${esc(byId[r.m].name)} · ${fmt(r.dt)} · ${esc(r.ev)}</div></td><td><b>${r.t??'–'}</b>${r.ds.length?'<div class="tiny" style="color:var(--sky)">ends ›</div>':''}</td></tr>`).join('')}</table>${rs.length>80?`<div class="muted tiny">Showing latest 80 of ${rs.length}. Narrow the dates to see older.</div>`:''}</div>`;
  o.innerHTML=h;
+ const ob=o.querySelector('#obj');if(ob)ob.onchange=e=>{const v=parseFloat(e.target.value);if(v>0)localStorage.setItem('coachObjective',v);else localStorage.removeItem('coachObjective');out()};
  o.querySelectorAll('[data-m]').forEach(el=>el.onclick=()=>{S.metric=el.dataset.m;out()});
  o.querySelectorAll('[data-round]').forEach(el=>el.onclick=()=>{S.r=[el.dataset.round];S.dist=[];S.end=[];mix();scrollTo(0,0)});
  o.querySelectorAll('[data-aid]').forEach(el=>el.onclick=()=>sheet(R.find(r=>r.a==el.dataset.aid)));
@@ -283,7 +347,7 @@ function about(){app.innerHTML=`<div class="card"><span class="kicker">Playgroun
  <li><b>Date presets</b> (Last 3/6/12 months) start on the same calendar day that many months before today, on this device's local date.</li>
  <li><b>Overlay vs Combine:</b> Overlay works each archer out separately; Combine pools all their ends or totals together.</li>
  <li><b>Rankings</b> list only archers on that official AA top-10 list. They're sorted by best score on the chosen round, highest first; ties go to the earlier date, then name.</li></ul></div>`}
-window.__CC={figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
+window.__CC={philShoot,philFig,roll3,figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
 if(!window.__NORENDER)render();
 })();
 </script></body></html>
