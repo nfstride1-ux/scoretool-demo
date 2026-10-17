@@ -5,7 +5,7 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'WA 720 (60m)':{ends:12,ape:6,face:'122cm',max:720},
  'WA 720 (50m Compound)':{ends:12,ape:6,face:'80cm 6-ring',max:720},
  'Short Canberra (50/40/30m)':{ends:15,ape:6,face:'122cm',max:900},
- 'Junior Canberra (40/30/20m)':{ends:15,ape:6,face:'80cm',max:900},
+ 'Junior Canberra (40/30/20m)':{ends:15,ape:6,face:'122cm',max:900},/* AA Schedule 9A: all Canberra rounds on 122cm (was wrongly 80cm) */
  'Indoor WA 18m':{ends:20,ape:3,face:'40cm',max:600},
  /* Added 2026-10-16. Sources (real specs, not copied from any app):
     - World Archery Rulebook Book 2 (Events), 2026-01-27 version: 5.3.1.1 (1440 Round 4x36 arrows, 25 m and 18 m 60 arrows), 7.2.2 (122/80/60/40cm faces),
@@ -19,6 +19,7 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'WA 90/1440 (90/70/50/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:90,unit:'m',size:122,type:'full',ends:6},{dist:70,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
  'WA 70/1440 (70/60/50/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:70,unit:'m',size:122,type:'full',ends:6},{dist:60,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
  'WA 60/1440 (60/50/40/30m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:60,unit:'m',size:122,type:'full',ends:6},{dist:50,unit:'m',size:122,type:'full',ends:6},{dist:40,unit:'m',size:80,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6}]},
+ 'AA 50/1440 (50/40/30/20m)':{ends:24,ape:6,face:'122cm / 80cm',max:1440,blocks:[{dist:50,unit:'m',size:122,type:'full',ends:6},{dist:40,unit:'m',size:122,type:'full',ends:6},{dist:30,unit:'m',size:80,type:'full',ends:6},{dist:20,unit:'m',size:80,type:'full',ends:6}]},
  'WA 60/900 (60/50/40m)':{ends:15,ape:6,face:'122cm',max:900,blocks:[{dist:60,unit:'m',size:122,type:'full',ends:5},{dist:50,unit:'m',size:122,type:'full',ends:5},{dist:40,unit:'m',size:122,type:'full',ends:5}]},
  'Indoor WA 25m':{ends:20,ape:3,face:'60cm',max:600,blocks:[{dist:25,unit:'m',size:60,type:'full',ends:20}]},
  'Indoor WA Combined 25m + 18m':{ends:40,ape:3,face:'60cm / 40cm',max:1200,blocks:[{dist:25,unit:'m',size:60,type:'full',ends:20},{dist:18,unit:'m',size:40,type:'full',ends:20}]},
@@ -276,7 +277,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const FR0=faceR(R,ei),FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FR0,SP=isBug(FR)&&cur.spot?BUGC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
- const rows=isBug(FR)||isFld(FR)?[['6','5','4'],['3','2','1'],['M']]:[['9','10',R.xs===false?'':'X'],['6','7','8'],...(isSpot(FR)?[['M']]:isSix(FR)?[['M','5']]:[['3','4','5'],['M','1','2']])];
+ /* score keys in one or two compact rows, low to high (M 1 2 ... 10 X) */const xk=R.xs===false?[]:['X'],keys=isBug(FR)||isFld(FR)?['M','1','2','3','4','5','6']:['M',...(isSpot(FR)?['6','7','8','9','10']:isSix(FR)?['5','6','7','8','9','10']:['1','2','3','4','5','6','7','8','9','10']),...xk],kcols=keys.length>8?Math.ceil(keys.length/2):keys.length;
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
  const y0=scrollY;app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
  <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row"><b>End ${ei+1}</b><b>${esc(d||'')}</b></div><div>${esc(faceName(FR))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
@@ -284,8 +285,8 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${bcol(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #7c3aed;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
  <button class="ad-small" id="undo" ${cur.ends.some(x=>x.length)&&!fix?'':'disabled'}>↶ Undo</button>${ei>0&&!fix?`<button class="ad-small" id="prevend">‹ End ${ei}</button>`:''}${fix?`<button class="ad-small" id="delarrow">✕ Delete arrow</button><button class="ad-small" id="fixcancel">Done</button>`:''}<button class="ad-small" id="bugface" aria-pressed="${!!cur.bugs}">${cur.bugs?'Face: Bugs Eyes':'Face: WA'}</button><button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
  <p class="small muted" style="margin:2px 12px">${fix?'Tap the face or a score to fix this arrow.':locked?'End complete. Tap an arrow to fix it, or press Next.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
- ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div>${isBug(FR)?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(cur.spot||0)==n?' on':''}" data-spot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}<div id="fwrap" style="position:relative;width:100%;height:${SP?"min(340px,40vh,40dvh)":isBug(FR)?"min(320px,calc(100vh - 530px),calc(100dvh - 530px))":"min(260px,34vh,34dvh)"};margin:0 auto;overflow:hidden;touch-action:none;border-radius:8px">${faceSVG(shown,'pface',vb,FR).replace('width="100%"','width="100%" height="100%"')}<div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
- <div class="ad-pad">${rows.map(r=>r.map(k=>k?`<button class="${bcol(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`:'<span></span>').join('')).join('')}</div>
+ ${S.hideFace?'':`<div class="zbar" role="group" aria-label="Target zoom">${[1,2,3].map(k=>`<button class="zb${Math.round(PZ.k)==k&&(k>1||PZ.k==1)?' on':''}" data-z="${k}" aria-label="Zoom ${k}x">${k}x</button>`).join('')}<button class="zb" id="zreset" ${PZ.k==1?'disabled':''}>Reset zoom</button><span class="small muted">or pinch target</span></div>${isBug(FR)?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(cur.spot||0)==n?' on':''}" data-spot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}<div id="fwrap" style="position:relative;width:100%;height:${SP?"min(340px,40vh,40dvh)":isBug(FR)?"min(320px,calc(100vh - 530px),calc(100dvh - 530px))":"min(290px,36vh,36dvh)"};margin:0 auto;overflow:hidden;touch-action:none;border-radius:8px">${faceSVG(shown,'pface',vb,FR).replace('width="100%"','width="100%" height="100%"')}<div class="facetag" id="facetag" aria-hidden="true">${esc(faceTag(FR,d))}</div><div id="loupe" hidden style="position:absolute;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`}
+ <div class="ad-pad" style="--cols:${kcols}">${keys.map(k=>`<button class="${bcol(k)}" data-k="${k}" aria-label="score ${k}" ${locked?'disabled':''}>${k}</button>`).join('')}</div>
  <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fix?'':'disabled'}>Next ›</button></div></div>`;
  scrollTo(0,y0);{const pd=app.querySelector('.ad-pad'),nv=document.querySelector('nav'),ak=cur.date+'|'+cur.round+'|'+ei+'|'+(cur.spot||0)+'|'+!!cur.bugs;if(pd){const fw0=$('#fwrap'),ch0=app.querySelector('.ad-chips'),hd0=(document.querySelector('header.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom+4,lim0=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,need0=pd.getBoundingClientRect().bottom-ch0.getBoundingClientRect().top;if(fw0&&need0>lim0-hd0)fw0.style.height=Math.max(180,fw0.offsetHeight-(need0-(lim0-hd0)))+'px'}if(pd&&window._adk!==ak)window._adk=ak,requestAnimationFrame(()=>{const lim=innerHeight-(nv?nv.getBoundingClientRect().height:0)-8,hd=(document.querySelector('header.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom+4,ch=app.querySelector('.ad-chips'),fw=$('#fwrap');let need=pd.getBoundingClientRect().bottom-ch.getBoundingClientRect().top,av=lim-hd;if(need>av&&fw){fw.style.height=Math.max(180,fw.offsetHeight-(need-av))+'px'}const over=Math.min(pd.getBoundingClientRect().bottom-lim,ch.getBoundingClientRect().top-hd);if(over>0)scrollBy(0,over)})}
  app.querySelectorAll('[data-spot]').forEach(x=>x.onclick=()=>{cur.spot=+x.dataset.spot;PZ.k=1;PZ.cx=PZ.cy=0;score()});
@@ -302,15 +303,27 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
    L.innerHTML=faceSVG(shown,'lf',`${q.x-lw/2} ${q.y-lw/2} ${lw} ${lw}`,FR,`<path d="M${q.x-lw/6} ${q.y}h${lw/3}M${q.x} ${q.y-lw/6}v${lw/3}" stroke="#a855f7" stroke-width="${0.006/PZ.k}"/><circle cx="${q.x}" cy="${q.y}" r="${0.012/PZ.k}" fill="none" stroke="#a855f7" stroke-width="${0.004/PZ.k}"/>`)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${plotScore(q.x,q.y,Object.assign({xs:R.xs},FR))}</b>`};
   const P=new Map();let pin=null;
   const pinchStart=()=>{const [a,b]=[...P.values()];const q1=pt(a),q2=pt(b);pin={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,k:PZ.k,m:{x:(q1.x+q2.x)/2,y:(q1.y+q2.y)/2}}};
-  f.onpointerdown=ev=>{f.setPointerCapture(ev.pointerId);P.set(ev.pointerId,ev);if(P.size==2){L.hidden=true;pinchStart();return}if(P.size>2)return;pan={x:ev.clientX,y:ev.clientY,on:false};if(locked)return;show(ev)};
+  /* Gestures: a real tap (moved <10px, under 300ms, one finger) plots. Holding still 300ms opens the loupe to aim; lifting then plots.
+     A drag before that scrolls the page (or pans when zoomed); a pinch zooms. Drags and pinches never plot. */
+  const TAP_PX=10,TAP_MS=300;let hold=null;const clrHold=()=>{if(hold){clearTimeout(hold);hold=null}};
+  const plotAt=ev=>{L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})};
+  f.onpointerdown=ev=>{try{f.setPointerCapture(ev.pointerId)}catch(e){}P.set(ev.pointerId,ev);if(P.size>=2){clrHold();L.hidden=true;if(pan)pan.multi=true;if(P.size==2)pinchStart();return}
+   pan={x0:ev.clientX,y0:ev.clientY,x:ev.clientX,y:ev.clientY,t:performance.now(),mode:null,multi:false,last:ev};
+   clrHold();if(!locked)hold=setTimeout(()=>{hold=null;if(pan&&!pan.mode&&!pan.multi&&P.size==1){pan.mode='aim';show(pan.last)}},TAP_MS)};
   f.onpointermove=ev=>{if(!P.has(ev.pointerId))return;P.set(ev.pointerId,ev);if(pin&&P.size==2){const [a,b]=[...P.values()];PZ.k=pin.k*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pin.d;applyZ();
      /* keep the SVG point that was under the fingers' midpoint under the new midpoint (zoom + pan) */
      const mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,q=f.createSVGPoint();q.x=mx;q.y=my;const n=q.matrixTransform(f.getScreenCTM().inverse());PZ.cx+=pin.m.x-n.x;PZ.cy+=pin.m.y-n.y;applyZ();return}
-   if(pan&&P.size==1&&PZ.k>1){const dx=ev.clientX-pan.x,dy=ev.clientY-pan.y;if(!pan.on&&Math.hypot(dx,dy)>10){pan.on=true;L.hidden=true}if(pan.on){const s2=1/f.getScreenCTM().a;PZ.cx-=dx*s2;PZ.cy-=dy*s2;pan.x=ev.clientX;pan.y=ev.clientY;applyZ();return}}
-   if(!L.hidden)show(ev)};
+   if(!pan||P.size!=1)return;pan.last=ev;
+   if(!pan.mode&&Math.hypot(ev.clientX-pan.x0,ev.clientY-pan.y0)>TAP_PX){clrHold();pan.mode=PZ.k>1?'pan':'scroll'}
+   if(pan.mode=='pan'){const dx=ev.clientX-pan.x,dy=ev.clientY-pan.y,s2=1/f.getScreenCTM().a;PZ.cx-=dx*s2;PZ.cy-=dy*s2;applyZ()}
+   else if(pan.mode=='scroll'){scrollBy(0,pan.y-ev.clientY)}
+   else if(pan.mode=='aim')show(ev);
+   pan.x=ev.clientX;pan.y=ev.clientY};
   const end=ev=>{P.delete(ev.pointerId);if(pin){if(P.size<2)pin=null;L.hidden=true;return true}return false};
-  f.onpointercancel=ev=>{end(ev);L.hidden=true};
-  f.onpointerup=ev=>{if(end(ev)||P.size)return;if(pan&&pan.on){pan=null;L.hidden=true;return}pan=null;if(L.hidden)return;L.hidden=true;const q=pt(ev);putArrow(plotScore(q.x,q.y,Object.assign({xs:R.xs},FR)),{x:+q.x.toFixed(3),y:+q.y.toFixed(3)})}}
+  f.onpointercancel=ev=>{clrHold();end(ev);L.hidden=true;if(!P.size)pan=null};
+  f.onpointerup=ev=>{clrHold();const pinched=end(ev);if(P.size)return;const g=pan;pan=null;L.hidden=true;if(pinched||!g||g.multi||locked)return;
+   if(g.mode=='aim')return plotAt(ev);
+   if(!g.mode&&performance.now()-g.t<TAP_MS&&Math.hypot(ev.clientX-g.x0,ev.clientY-g.y0)<TAP_PX)plotAt(ev)}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  $('#undo').onclick=()=>{while(cur.ends.length>1&&!cur.ends[cur.ends.length-1].length)cur.ends.pop();const n=cur.ends.length-1,l=cur.ends[n];if(!l||!l.length)return;l.pop();const pp=(cur.pos||[])[n];if(pp)pp.length=l.length;justDone=false;save();score()};
  if($('#prevend'))$('#prevend').onclick=()=>{const pe=cur.ends[ei-1]||[];fix=[ei-1,Math.max(0,pe.length-1)];score()};
@@ -319,6 +332,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
  $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
 const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':/field/.test(F.face||'')?'WA field face 20-80cm (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ full$/,'').replace(/ (6-ring|3-spot)/,' ($1)')}`;
+const faceTag=(F,d)=>(F.bugs?'Bugs Eyes':/field/.test(F.face||'')?'Field face':F.face=='any'?'Full face':(((F.face||'').match(/(\d+)cm/)||[])[1]?(F.face.match(/(\d+)cm/)[1]+'cm face'):'Full face'))+(d?' · '+d:'');
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),k=faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
@@ -339,7 +353,7 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
-const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)'};
+const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)','AA 50/1440 (50/40/30/20m)':'AA 50/1440'};
 function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
  const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,R0=ROUNDS[s.round],aa=R0&&s.ends.length==R0.ends&&s.ends.every(e=>e.length==R0.ape)?AA_MAP[s.round]:null;/* no AA rating for a round finished early */
  const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
@@ -521,10 +535,11 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  <div class="card" id="coachcard"><span class="kicker">Coach / parent</span><h2>Share with your coach or parent</h2><h3>Read-only live link</h3><p class="small">Send this link to your coach or parent. They'll see progress and effort, but can't change anything.</p><input readonly value="${url}" id="sh" aria-label="share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a>
  <h3 style="margin-top:16px">Summary for a date range</h3><div class="row" style="gap:8px"><label style="flex:1">From<input id="cf" type="date" value="${new Date(Date.now()-30*864e5).toLocaleDateString('en-CA')}"></label><label style="flex:1">To<input id="ct" type="date" value="${today()}"></label></div>
  <button class="btn alt full" id="csend" style="margin-top:8px">📤 Send to my coach</button><div id="cout"></div></div>
- ${window.helpCards?helpCards():''}${window.otherAppsCard?otherAppsCard():''}<div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div>${testerCard()}<div class="card"><button class="btn ghost" id="rs">Reset my test data</button></div>`;bindTesterPicker(app);
+ ${window.helpCards?helpCards():''}${window.otherAppsCard?otherAppsCard():''}<div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div><div class="card" id="settingscard"><span class="kicker">Settings</span><h2>Settings</h2><label for="sbside">Scroll bar side</label><select id="sbside"><option value="right" ${S.sbarSide!='left'?'selected':''}>Right (default)</option><option value="left" ${S.sbarSide=='left'?'selected':''}>Left</option></select><p class="small muted">Where the slim scroll bar sits on the scoring screen, so you can scroll without touching the target.</p></div>${testerCard()}<div class="card"><button class="btn ghost" id="rs">Reset my test data</button></div>`;bindTesterPicker(app);
  $('#bmadd').onclick=()=>{const t=$('#bm').value.trim();if(t){S.best.push({date:new Date().toISOString().slice(0,10),text:t,total:'⭐',round:'My note'});save();me()}};
  $('#cp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(url);$('#cp').textContent='Copied ✓'};
  $('#csend').onclick=()=>sendCoach($('#cf').value,$('#ct').value);
+ $('#sbside').onchange=e=>{S.sbarSide=e.target.value=='left'?'left':'right';save();sbarSync()};
  if(window.bindOtherApps)bindOtherApps();$('#rs').onclick=()=>{if(confirm('Clear all of '+(TESTER?TESTER.short:'this')+'\'s test data on this phone?')){localStorage.removeItem(KEY);location.reload()}}}
 function shareData(){const d=done();return{n:S.profile,s:d.slice(-10).map(s=>[s.date,s.round,total(s),arrows(s).length,s.sample?1:0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
@@ -538,3 +553,17 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
 
 loadReal().then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
 addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav(location.hash=='#plot'?'score':'home')});
+
+/* ---------- scoring screen scroll bar (custom, so it shows on iOS too) ---------- */
+function sbarSync(){let b=document.getElementById('sbar');const on=!!app.querySelector('.ad-pad');
+ if(!b){b=document.createElement('div');b.id='sbar';b.setAttribute('role','scrollbar');b.setAttribute('aria-label','Scroll the scoring screen');b.setAttribute('aria-orientation','vertical');b.innerHTML='<div class="sb-track"></div><div class="sb-thumb"></div>';document.body.appendChild(b);
+  const th=b.querySelector('.sb-thumb');let drag=null;
+  const geo=()=>{const r=b.getBoundingClientRect(),H=document.documentElement.scrollHeight,max=Math.max(0,H-innerHeight),tH=Math.max(44,r.height*Math.min(1,innerHeight/H));return{r,max,tH}};
+  b.onpointerdown=ev=>{ev.preventDefault();try{b.setPointerCapture(ev.pointerId)}catch(e){}const g=geo(),tr=th.getBoundingClientRect();if(ev.clientY<tr.top||ev.clientY>tr.bottom){/* tap the track: jump there */const f=(ev.clientY-g.r.top-g.tH/2)/Math.max(1,g.r.height-g.tH);scrollTo(0,Math.max(0,Math.min(1,f))*g.max)}drag={y:ev.clientY,s:scrollY};b.classList.add('on')};
+  b.onpointermove=ev=>{if(!drag)return;const g=geo();scrollTo(0,drag.s+(ev.clientY-drag.y)*g.max/Math.max(1,g.r.height-g.tH))};
+  b.onpointerup=b.onpointercancel=()=>{drag=null;b.classList.remove('on')};
+  addEventListener('scroll',sbarPos,{passive:true});addEventListener('resize',sbarSync);new MutationObserver(()=>sbarSync()).observe(app,{childList:true})}
+ const left=S&&S.sbarSide=='left';b.hidden=!on;b.classList.toggle('left',left);document.body.classList.toggle('sbar-l',on&&left);document.body.classList.toggle('sbar-r',on&&!left);
+ if(on){const hd=document.querySelector('header.top'),nv=document.querySelector('nav.tabs');b.style.top=((hd?hd.getBoundingClientRect().bottom:0)+6)+'px';b.style.bottom=((nv&&!nv.hidden?nv.getBoundingClientRect().height:0)+6)+'px';sbarPos()}}
+function sbarPos(){const b=document.getElementById('sbar');if(!b||b.hidden)return;const th=b.querySelector('.sb-thumb'),H=document.documentElement.scrollHeight,max=Math.max(0,H-innerHeight),h=b.clientHeight,tH=Math.max(44,h*Math.min(1,innerHeight/H));th.style.height=tH+'px';th.style.transform=`translateY(${max?scrollY/max*(h-tH):0}px)`;b.classList.toggle('idle',!max);b.setAttribute('aria-valuenow',max?Math.round(scrollY/max*100):0)}
+sbarSync();
