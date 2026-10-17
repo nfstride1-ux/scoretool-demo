@@ -131,17 +131,18 @@ const _rs=renderShare;renderShare=function(){_rs.apply(this,arguments);let D;try
  <h3 style="margin:8px 0 4px;font-size:16px">Possible form and timing causes</h3><ul class="gp-ul">${c.f.map(x=>`<li>${x}</li>`).join('')}</ul><h3 style="margin:8px 0 4px;font-size:16px">Possible tuning causes</h3><ul class="gp-ul">${c.t.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
  if(a)a.insertAdjacentHTML('beforebegin',html);else app.insertAdjacentHTML('beforeend',html)};
 /* ---------- Ghost match ---------- */
-const GM={last:'Last round',best:'My best',avg:'My average'};
-function ghostFor(round,mode,excl){const R=ROUNDS[round];const ss=done().filter(s=>s.round==round&&s!==excl&&!s.finished&&s.ends.length);if(!ss.length||!R)return null;
+const GM={last:'Last round',best:'My best',avg:'My average',off:'Best official'};
+function ghostFor(round,mode,excl){if(mode=='off')return window.offGhost?window.offGhost(round):null;const R=ROUNDS[round];const ss=done().filter(s=>s.round==round&&s!==excl&&!s.finished&&s.ends.length);if(!ss.length||!R)return null;
  if(mode=='avg'){const n=R.ends,e=[...Array(n)].map((_,i)=>{const v=ss.filter(s=>s.ends[i]).map(s=>endSum(s.ends[i]));return v.length?Math.round(mean(v)):0});return{mode,src:'avg',n:ss.length,ends:e,pos:null,date:''}}
  const s=mode=='best'?ss.reduce((a,b)=>total(b)>total(a)?b:a):ss[ss.length-1];return{mode,src:s.id,ends:s.ends.map(endSum),pos:(s.pos||[]).map(e=>(e||[]).filter(Boolean)),date:s.date,ar:s.ends.map(e=>e.slice())}}
 function gRes(s){const g=s.ghost;if(!g)return null;const R=ROUNDS[s.round]||{},full=s.ends.filter(e=>e.length==R.ape).length,n=Math.min(full,g.ends.length,s.finished||isDone(s)?99:(g.rev||0));
  let me=0,gh=0,w=0,l=0;for(let i=0;i<n;i++){const a=endSum(s.ends[i]),b=g.ends[i];me+=a;gh+=b;if(a>b)w++;else if(b>a)l++}return{n,me,gh,w,l,gap:me-gh,res:me>gh?'win':me<gh?'loss':'draw'}}
 function gStreak(){let k=0;const L=done().filter(s=>s.ghost).sort((a,b)=>(a.date+a.id)<(b.date+b.id)?-1:1);for(const s of L){const r=gRes(s);if(!r||!r.n)continue;if(r.res=='win')k++;else if(r.res=='loss')k=0}return k}
 window.ghostResult=gRes;
-function ghostPick(){const rd=$('#rd');if(!rd||$('#ghwrap'))return;const r=rd.value,ok=r!='__new'&&ghostFor(r,'last');
+function ghostPick(){const rd=$('#rd');if(!rd||$('#ghwrap'))return;const r=rd.value,av=r=='__new'?[]:Object.keys(GM).filter(k=>ghostFor(r,k)),ok=av.length>0;
+ if(ok&&!av.includes(window._ghM))window._ghM=av[0];const og=ok&&av.includes('off')?ghostFor(r,'off'):null;
  rd.insertAdjacentHTML('afterend',`<div id="ghwrap" class="gh-pick"><label style="display:flex;gap:8px;align-items:center;margin:10px 0 0"><input type="checkbox" id="ghon" style="width:auto" ${ok?'':'disabled'} ${ok&&window._ghOn?'checked':''}> <b>👻 Ghost match</b></label>
- ${ok?`<div id="ghopts" ${window._ghOn?'':'hidden'}><div class="gh-seg">${Object.entries(GM).map(([k,v])=>`<button type="button" data-gm="${k}" class="${(window._ghM||'last')==k?'on':''}">${v}</button>`).join('')}</div><p class="small muted" style="margin:4px 0 0">Shoot against your own past ${esc(r)}. The ghost's end shows after you press Next.</p></div>`:'<p class="small muted" style="margin:2px 0 0">Score this round once to unlock a ghost match against yourself.</p>'}</div>`);
+ ${ok?`<div id="ghopts" ${window._ghOn?'':'hidden'}><div class="gh-seg">${av.map(k=>`<button type="button" data-gm="${k}" class="${window._ghM==k?'on':''}">${GM[k]}</button>`).join('')}</div><p class="small muted" style="margin:4px 0 0">Shoot against your own past ${esc(r)}. The ghost's end shows after you press Next.${og?` Best official: ${og.ends.reduce((a,b)=>a+b,0)} on ${esc(og.date)} (Archer's Diary).`:''}</p></div>`:'<p class="small muted" style="margin:2px 0 0">Score this round once to unlock a ghost match against yourself.</p>'}</div>`);
  rd.addEventListener('change',()=>{const w=$('#ghwrap');if(w)w.remove();ghostPick()});
  const on=$('#ghon');if(on)on.onchange=()=>{window._ghOn=on.checked;$('#ghopts').hidden=!on.checked};
  app.querySelectorAll('[data-gm]').forEach(b=>b.onclick=()=>{window._ghM=b.dataset.gm;app.querySelectorAll('[data-gm]').forEach(x=>x.classList.toggle('on',x==b))});
@@ -158,7 +159,7 @@ function ghostSheet(){const g=cur.ghost,r=gRes(cur),R=ROUNDS[cur.round],fin=isDo
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr">${stat(r.me,'you',G)}${stat(r.gh,'ghost',P)}${stat((r.gap>0?'+':'')+r.gap,'gap')}${stat(r.w+'–'+r.l,'ends won')}${stat(k,'win streak 🔥')}${stat(r.n,'ends compared')}</div>
  ${cur.finished&&r.n<g.ends.length?`<p class="small muted">Finished early: compared the ${r.n} full end${r.n==1?'':'s'} you shot.</p>`:''}${row}<p class="small muted" style="margin:4px 0 0">Counts toward your PBs and stats like a normal round. Draws keep your streak.</p></div>`}
 const _sc=score;score=function(){
- if(cur&&window._ghPend!==undefined){const m=window._ghPend;window._ghPend=undefined;if(m&&!arrowsIn(cur)){const g=ghostFor(cur.round,m,cur);if(g){g.rev=0;cur.ghost=g;save()}}}
+ if(cur&&window._ghPend!==undefined){const m=window._ghPend;window._ghPend=undefined;if(m&&!arrowsIn(cur)){const g=ghostFor(cur.round,m,cur);if(g){g.rev=0;cur.ghost=g;save()}window._bsGhost=null}}
  _sc.apply(this,arguments);
  if(!cur){ghostPick();return}
  if(!cur.ghost)return;const g=cur.ghost,R=ROUNDS[cur.round];
