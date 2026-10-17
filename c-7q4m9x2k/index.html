@@ -91,6 +91,7 @@ main{max-width:none;padding:20px 28px 130px}
 @media(min-width:1024px){#out>.sumbar{grid-column:1/-1;top:64px;margin:0}}
 .mode .dis{cursor:not-allowed;opacity:.6}
 .inc{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;background:#3a2a05;color:#ffc629;margin-left:4px;vertical-align:middle}
+.fld .a-x,.fld .a-6,.fld .a-5{background:#ffd84d;color:#000;border:0}.fld .a-4,.fld .a-3,.fld .a-2,.fld .a-1{background:#111;color:#fff;border:1px solid #f1f5f9}.fld .a-m{background:#334155;color:#fff}
 </style></head><body>
 <header class="top"><div class="logo">Score<span>Tool</span></div></header>
 <div class="vo-bar">👁 View-only coach mode · playground · real squad scores</div>
@@ -331,7 +332,7 @@ function out(){
  ${multiRound&&S.metric==='t'&&!sub?'<div class="muted tiny">Mixed rounds — pick one round or use Rating for a fair trend.</div>':''}${trendSvg(G,sub)}${legend(G)}</div>`;
  if(E.length){h+=`<div class="card"><h2>Average per end</h2><div class="muted tiny">Across every ticked score, by end number</div>${perEndSvg(G)}${legend(G)}</div>`;
   h+=`<div class="card"><h2>Per distance</h2><div style="overflow-x:auto"><table style="min-width:${120+G.length*62}px"><tr><th>Distance</th>${G.map(g=>`<th style="color:${g.c}">${esc(g.name.split(' ')[0])}</th>`).join('')}</tr>${F.dls.map(dl=>`<tr><td>${esc(dl)}</td>${F.perDist[dl].map(c=>`<td>${c.n?f1(c.avg):'–'}<div class="tiny muted">${c.n} ends</div></td>`).join('')}</tr>`).join('')}</table></div><div class="muted tiny" style="margin-top:4px">Average end score at each distance</div></div>`;
-  h+=`<div class="card"><h2>Arrow values</h2>${distSvg(G,E)}${legend(G)}</div>`;
+  h+=`<div class="card"><h2>Arrow values</h2>${arrowCharts(G,E)}${legend(G)}</div>`;
   h+=card2('Half split','First half vs second half of each score\'s ends (avg end; odd middle end left out)',gbars(['1st half','2nd half'],F.ph.map(p=>({g:p.g,v:p.h}))));
   h+=card2('Round phase','First, middle and last third of each score\'s ends (avg end)',gbars(['First','Middle','Last'],F.ph.map(p=>({g:p.g,v:p.t}))));
   h+=card2('Weakest end','Lowest average end number (needs 2+ ends)',`<table>${F.ph.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.we?'End '+p.we[0]+' · <b>'+f1(p.we[1])+'</b>':'–'}</td></tr>`).join('')}</table>`);
@@ -378,15 +379,18 @@ function perEndSvg(G){const W=wide()?520:340,H=wide()?260:170,P={l:30,r:6,t:10,b
  const bw=(W-P.l-P.r)/ns.length,Y=y=>H-P.b-(H-P.t-P.b)*(y-lo)/(hi-lo);let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,P,lo,hi)}`;
  ns.forEach((n,i)=>{const x=P.l+i*bw;if(ns.length<=24||i%2===0)s+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${n}</text>`;const w=bw*.8/ser.length;ser.forEach((q,j)=>{const v=q.m[n];if(!v)return;const a=av(v);s+=`<rect x="${(x+bw*.1+j*w).toFixed(1)}" y="${Y(a).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${(H-P.b-Y(a)).toFixed(1)}" rx="2" fill="${q.g.c}"><title>End ${n}: ${f1(a)} (${v.length})</title></rect>`})});
  return s+'</svg>'}
-function distSvg(G,E){const keys=['X','10','9','8','7','6','5','4','3','2','1','M'];const ser=G.map(g=>{const c={};let n=0;E.filter(e=>!S.split||e.r.m===g.k).forEach(e=>e.ar.forEach(a=>{a=a.toUpperCase();c[a]=(c[a]||0)+1;n++}));return{g,c,n}});
+const isFld=r=>r.disc==='Field'||r.disc==='3D';const FKEYS=['6','5','4','3','2','1','M'],WKEYS=['X','10','9','8','7','6','5','4','3','2','1','M'];
+const zcol=(k,f)=>f?(k==='6'||k==='5'||k==='X'?'#ffd84d':k==='M'?'#64748b':'#111'):({X:'#ffd84d','10':'#ffd84d','9':'#ffd84d','8':'#d62828','7':'#d62828','6':'#1d4ed8','5':'#1d4ed8','4':'#111','3':'#111','2':'#f1f5f9','1':'#f1f5f9',M:'#64748b'})[k];
+function arrowCharts(G,E){const f=E.filter(e=>isFld(e.r)),w=E.filter(e=>!isFld(e.r));if(f.length&&w.length)return`<div class="flab"><span>Target rounds</span></div>${distSvg(G,w)}<div class="flab" style="margin-top:10px"><span>Field / 3D rounds (field face: X counts as 6)</span></div>${distSvg(G,f,true)}`;return distSvg(G,E,!!f.length)}
+function distSvg(G,E,fld){const keys=fld?FKEYS:WKEYS;const ser=G.map(g=>{const c={};let n=0;E.filter(e=>!S.split||e.r.m===g.k).forEach(e=>e.ar.forEach(a=>{a=a.toUpperCase();if(fld&&a==='X')a='6';c[a]=(c[a]||0)+1;n++}));return{g,c,n}});
  const ks=keys.filter(k=>ser.some(s=>s.c[k]));const W=wide()?520:340,H=wide()?240:150,P={l:30,r:6,t:10,b:22};const mx=Math.max(...ser.flatMap(s=>ks.map(k=>s.n?(s.c[k]||0)/s.n*100:0)),1);
  const bw=(W-P.l-P.r)/ks.length,Y=v=>H-P.b-(H-P.t-P.b)*v/mx;let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,P,0,mx)}`;
- ks.forEach((k,i)=>{const x=P.l+i*bw;s+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${k}</text>`;const w=bw*.8/ser.length;ser.forEach((q,j)=>{const v=q.n?(q.c[k]||0)/q.n*100:0;s+=`<rect x="${(x+bw*.1+j*w).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${(H-P.b-Y(v)).toFixed(1)}" rx="2" fill="${q.g.c}"><title>${k}: ${v.toFixed(1)}% (${q.c[k]||0})</title></rect>`+(ser.length<=3&&q.c[k]?`<text x="${(x+bw*.1+j*w+w/2).toFixed(1)}" y="${(Y(v)-2).toFixed(1)}" text-anchor="middle" style="font-size:${ser.length>1?7:9}px;fill:#e2e8f0">${q.c[k]}</text>`:'')})});
+ ks.forEach((k,i)=>{const x=P.l+i*bw;s+=`<rect class="zc" data-z="${k}" x="${x+bw*.15}" y="${H-P.b+2}" width="${bw*.7}" height="4" rx="1" fill="${zcol(k,fld)}" stroke="${fld&&zcol(k,fld)==='#111'?'#fff':'none'}" stroke-width=".5"/><text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${k}</text>`;const w=bw*.8/ser.length;ser.forEach((q,j)=>{const v=q.n?(q.c[k]||0)/q.n*100:0;s+=`<rect x="${(x+bw*.1+j*w).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${(H-P.b-Y(v)).toFixed(1)}" rx="2" fill="${q.g.c}"><title>${k}: ${v.toFixed(1)}% (${q.c[k]||0})</title></rect>`+(ser.length<=3&&q.c[k]?`<text x="${(x+bw*.1+j*w+w/2).toFixed(1)}" y="${(Y(v)-2).toFixed(1)}" text-anchor="middle" style="font-size:${ser.length>1?7:9}px;fill:#e2e8f0">${q.c[k]}</text>`:'')})});
  return s+'</svg><div class="muted tiny">% of arrows by value · number above bar = arrow count</div>'}
 // ---------- end-by-end sheet ----------
 function sheet(r){const sh=$('#sheet');const a=byId[r.m];
  sh.innerHTML=`<div class="pane"><div class="row"><div class="av" style="background:${a.c}">${a.ini}</div><div class="sp"><h2 style="margin:0">${esc(r.r)}</h2><div class="muted tiny">${esc(a.name)} · ${fmt(r.dt)} · ${esc(r.ev)}${r.rt!=null?' · rating '+r.rt:''}</div></div><div class="big">${r.t??'–'}</div></div>
- ${r.ds.length?r.ds.map(d=>`<div class="flab" style="margin-top:14px"><span>${esc(distLab(d,r))}${d.f?' · '+esc(d.f):''}</span><span style="color:var(--ink)">${d.t??''}</span></div><table class="ends">${d.e.map(e=>`<tr><td class="muted">${e[0]}</td><td>${arrows(e[1]).map(x=>`<span class="arrow a-${esc(x.toLowerCase())}">${esc(x)}</span>`).join('')}</td><td><b>${e[2]??''}</b></td></tr>`).join('')}</table>`).join(''):'<div class="note" style="margin-top:12px">No end-by-end sheet saved for this score.</div>'}
+ ${r.ds.length?r.ds.map(d=>`<div class="flab" style="margin-top:14px"><span>${esc(distLab(d,r))}${d.f?' · '+esc(d.f):''}</span><span style="color:var(--ink)">${d.t??''}</span></div><table class="ends${isFld(r)?' fld':''}">${d.e.map(e=>`<tr><td class="muted">${e[0]}</td><td>${arrows(e[1]).map(x=>`<span class="arrow a-${esc(x.toLowerCase())}">${esc(x)}</span>`).join('')}</td><td><b>${e[2]??''}</b></td></tr>`).join('')}</table>`).join(''):'<div class="note" style="margin-top:12px">No end-by-end sheet saved for this score.</div>'}
  <div class="note" style="margin-top:12px">🎯 Arrow plots appear here for rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>
  <button class="btn full" style="width:100%;margin-top:12px" id="close">Close</button></div>`;
  sh.classList.remove('hidden');$('#close').onclick=()=>sh.classList.add('hidden');sh.onclick=e=>{if(e.target===sh)sh.classList.add('hidden')}}
@@ -444,7 +448,7 @@ function about(){app.innerHTML=`<div class="card"><span class="kicker">Playgroun
  <li><b>Date presets</b> (Last 3/6/12 months) start on the same calendar day that many months before today, on this device's local date.</li>
  <li><b>Overlay vs Combine:</b> Overlay works each archer out separately; Combine pools all their ends or totals together.</li>
  <li><b>Rankings</b> list only archers on that official AA top-10 list. They're sorted by best score on the chosen round, highest first; ties go to the earlier date, then name.</li></ul></div>`}
-window.__CC={isInc,nEnds,EXPECT,COL,sumBar,setS:x=>{S={...S,...x}},getS:()=>S,mix,setSample:v=>{SAMPLE_ON=v},sampleFig,get SAMPLE(){return SAMPLE},plotCards,makeSample,detect,causesFor,setPat:p=>{SPAT=p;SAMPLE=makeSample(p)},setHand:h=>{SHAND=h},setView:v=>{SVIEW=v},PATS,OFF_T,LOOSE_T,philShoot,philFig,roll3,figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
+window.__CC={distSvg,arrowCharts,isFld,zcol,isInc,nEnds,EXPECT,COL,sumBar,setS:x=>{S={...S,...x}},getS:()=>S,mix,setSample:v=>{SAMPLE_ON=v},sampleFig,get SAMPLE(){return SAMPLE},plotCards,makeSample,detect,causesFor,setPat:p=>{SPAT=p;SAMPLE=makeSample(p)},setHand:h=>{SHAND=h},setView:v=>{SVIEW=v},PATS,OFF_T,LOOSE_T,philShoot,philFig,roll3,figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
 if(!window.__NORENDER)render();
 })();
 </script></body></html>
