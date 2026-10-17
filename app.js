@@ -629,3 +629,13 @@ function renderCoachLanding(){$('#tabs').hidden=true;let D=null;try{D=JSON.parse
  if(!D||!D.n){app.innerHTML='<div class="card">This coach link is invalid.</div>';return}
  app.innerHTML=`<div class="card dark" id="coachlanding"><span class="kicker">Coach view · view only</span><h1>${esc(D.n)}</h1><p>This link is for coaches. It opens a view-only look at ${esc(D.n.split(' ')[0])}'s scores and stats.</p></div>
  <div class="card"><h2>You need a coach membership</h2><p>Sign in with a ScoreTool coach membership to see this archer. Coaches will see full score stats for their squad. They can't change anything.</p><p class="small muted">Coach memberships and the coach view are coming soon. Nothing about this archer is shown until then.</p><button class="btn" disabled>Coach sign-in (coming soon)</button></div>`}
+
+/* iOS Safari / home-screen app: keep the tab bar on the real bottom. While a text field has the keyboard up the bar is hidden; when the
+   keyboard closes iOS can leave the layout viewport shifted, so nudge the scroll to make it re-measure, and if the visual viewport
+   still ends below the layout viewport, push the bar down by that gap. */
+(function(){const nav=document.getElementById('tabs'),vv=window.visualViewport;if(!nav)return;
+ const touch=matchMedia('(pointer:coarse)').matches,isField=el=>touch&&el&&(/^(INPUT|TEXTAREA)$/.test(el.tagName)&&!/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type||''))||touch&&el&&el.isContentEditable;
+ const pin=()=>{if(!vv){nav.style.transform='';return}const gap=Math.round(vv.offsetTop+vv.height-innerHeight);nav.style.transform=gap>1&&!document.body.classList.contains('kb-open')?`translateY(${gap}px)`:''};
+ document.addEventListener('focusin',e=>{if(isField(e.target))document.body.classList.add('kb-open')});
+ document.addEventListener('focusout',()=>setTimeout(()=>{if(isField(document.activeElement))return;document.body.classList.remove('kb-open');const y=scrollY;window.scrollTo(scrollX,y+1);window.scrollTo(scrollX,y);pin()},60));
+ if(vv){vv.addEventListener('resize',pin);vv.addEventListener('scroll',pin)}addEventListener('orientationchange',()=>setTimeout(pin,300));addEventListener('pageshow',pin)})();
