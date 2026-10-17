@@ -79,6 +79,8 @@ main{max-width:none;padding:20px 28px 110px}
 @media(min-width:600px){.mini-grid{grid-template-columns:1fr 1fr}}
 @media(min-width:1024px){#out>.phil-head{grid-column:1/-1}#out>.card.wide2{grid-column:1/-1}.mini-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
 @media(min-width:1024px){#out>.card:has(.mini-grid){grid-column:1/-1}}
+.sample-badge{display:inline-block;background:#3a2a10;color:#ffcf7a;border:1px dashed #ffcf7a;font:800 11px var(--body);padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}.sample-card{border:1px dashed #ffcf7a}
+@media(min-width:1024px){#out>.sample-card{grid-column:1/-1}}
 </style></head><body>
 <header class="top"><div class="logo">Score<span>Tool</span></div><div class="mode"><span>Competitor</span><b>Coach</b></div></header>
 <div class="vo-bar">👁 View-only coach mode · playground · real squad scores</div>
@@ -206,6 +208,54 @@ function colSvg(P,key,{avg=true,line=false,zero=false}={}){const W=wide()?420:34
  return s+'</svg>'}
 const mini=(t,b)=>`<div class="mini"><div class="mt">${t}</div>${b}</div>`;
 const ordn=i=>['1st','2nd','3rd'][i]||(i+1)+'th';
+
+// ---- SAMPLE plotted round (demo only, never part of real data) ----
+let SAMPLE_ON=localStorage.getItem('coachSample')==='1',SPAT='lowleft',SHAND='R',SVIEW='coach';
+const PATS=[['centre','Centred'],['left','Left'],['right','Right'],['high','High'],['low','Low'],['lowleft','Low-left'],['lowright','Low-right'],['highleft','High-left'],['highright','High-right'],['loose','Scattered / loose']];
+const PVEC={centre:[0,0],left:[-1,0],right:[1,0],high:[0,1],low:[0,-1],lowleft:[-.7071,-.7071],lowright:[.7071,-.7071],highleft:[-.7071,.7071],highright:[.7071,.7071],loose:[0,0]};
+const OFF_T=3,LOOSE_T=6;// cm on an 80 cm face: centre offset >= 3 cm = off-centre; average spread > 6 cm = loose
+function makeSample(pat){let z=20261017+pat.length*7919;const rnd=()=>(z=(z*48271)%2147483647)/2147483647,gs=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+ const [vx,vy]=PVEC[pat],sd=pat==='loose'?8:1.6,ends=[];let A=[];for(let e=0;e<12;e++){const E=[];for(let i=0;i<6;i++)E.push({x:vx*8+gs()*sd,y:vy*8+gs()*sd});ends.push(E);A=A.concat(E)}
+ const m=v=>v.reduce((p,q)=>p+q,0)/v.length,cx=m(A.map(q=>q.x)),cy=m(A.map(q=>q.y));// re-centre so the group centre sits exactly on the intended spot
+ ends.forEach(E=>E.forEach(q=>{q.x=+(q.x-cx+vx*8).toFixed(2);q.y=+(q.y-cy+vy*8).toFixed(2);const d=Math.hypot(q.x,q.y);q.v=d<=2?'X':d>=40?'M':String(10-Math.floor(d/4))}));
+ return{label:'Sample - not real data',round:'WA 50/720 (sample)',pattern:pat,ends}}
+let SAMPLE=makeSample(SPAT);
+function detect(A){const m=v=>v.reduce((p,q)=>p+q,0)/v.length,cx=m(A.map(q=>q.x)),cy=m(A.map(q=>q.y)),off=Math.hypot(cx,cy),spread=m(A.map(q=>Math.hypot(q.x-cx,q.y-cy)));
+ if(spread>LOOSE_T&&off<OFF_T)return{pat:'loose',cx,cy,off,spread};if(off<OFF_T)return{pat:'centre',cx,cy,off,spread};
+ const k=((Math.round(Math.atan2(cy,cx)/(Math.PI/4))%8)+8)%8;return{pat:['right','highright','high','highleft','left','lowleft','low','lowright'][k],cx,cy,off,spread}}
+const MIRROR={left:'right',right:'left',lowleft:'lowright',lowright:'lowleft',highleft:'highright',highright:'highleft'};
+// Possible causes, written in our own words, for a RIGHT-handed archer; left-handers use the mirror image.
+const CAUSE_R={left:['Holding the bow handle too firmly','Head leaning over onto the string','String hand drifting away from the face at release','Aiming with the non-dominant eye'],
+ lowleft:['Bow arm sagging as the arrow leaves','Bow tilted (canted) to the left','String brushing the chest or clothing'],
+ high:['Bow tilting upward at full draw','Anchor sitting too far back (overdrawing)','Bow arm lifting during the release','Drawing elbow set too low','String hand dragging downward on release'],
+ low:['Arrow nocked above the nocking point','Upper body leaning toward the target','Anchor sitting too far forward','Bow arm dropping during the release','Head pushed forward','Bow arm giving way (collapsing)'],
+ right:['Holding the bow handle too firmly','Head leaning over onto the string'],
+ lowright:['Bow arm sagging as the arrow leaves','Bow tilted (canted) to the right','String brushing the chest or clothing']};
+CAUSE_R.highleft=[...CAUSE_R.high.slice(0,3),...CAUSE_R.left.slice(0,2)];CAUSE_R.highright=[...CAUSE_R.high.slice(0,3),...CAUSE_R.right];
+CAUSE_R.loose=['Shot routine changing from arrow to arrow','Tiredness or rushing the shot','Equipment needing a tune or check'];
+function causesFor(pat,hand){if(pat==='centre')return[];const k=hand==='L'?(MIRROR[pat]||pat):pat;return CAUSE_R[k]||[]}
+function sampleFig(){const A=SAMPLE.ends.flat(),m=v=>v.reduce((a,b)=>a+b,0)/v.length,D=detect(A);
+ const gsize=SAMPLE.ends.map(E=>{const ex=m(E.map(a=>a.x)),ey=m(E.map(a=>a.y));return m(E.map(a=>Math.hypot(a.x-ex,a.y-ey)))});
+ return{A,cx:D.cx,cy:D.cy,gsize,off:D.off,dir:D.pat,spread:D.spread,total:A.reduce((t,a)=>t+aval(a.v),0),causes:causesFor(D.pat,SHAND)}}
+function targetSvg(A,cx,cy){const R=40,S=260,k=S/2/R,c=S/2;let s=`<svg viewBox="0 0 ${S} ${S}" class="tgt">`;
+ const col=['#fff','#fff','#222','#222','#1d4ed8','#1d4ed8','#d62828','#d62828','#ffd84d','#ffd84d'];
+ for(let i=0;i<10;i++)s+=`<circle cx="${c}" cy="${c}" r="${(R-i*4)*k}" fill="${col[i]}" stroke="${i<2?'#999':'#555'}" stroke-width=".6"/>`;
+ s+=`<circle cx="${c}" cy="${c}" r="${2*k}" fill="none" stroke="#555" stroke-width=".6"/>`;
+ A.forEach(a=>s+=`<circle cx="${(c+a.x*k).toFixed(1)}" cy="${(c-a.y*k).toFixed(1)}" r="3.4" fill="#39ff14" stroke="#04130a" stroke-width="1.2"/>`);
+ s+=`<path d="M${c+cx*k-7} ${c-cy*k}h14M${c+cx*k} ${c-cy*k-7}v14" stroke="#38bdf8" stroke-width="2.4"/>`;return s+'</svg>'}
+function plotCards(){const tg=`<label class="row small" style="gap:8px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="smp" ${SAMPLE_ON?'checked':''} style="width:20px;height:20px">Show 1 sample plotted score (to test group patterns)</label>`;
+ if(!SAMPLE_ON)return card2('Arrow plots','Arrow heatmap · Group size · Group pattern',tg+`<div class="note">🎯 These fill in from rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>`);
+ const F=sampleFig(),badge='<span class="sample-badge">Sample - not real data</span>',name=p=>(PATS.find(x=>x[0]===p)||[0,p])[1];
+ const showCauses=SVIEW==='coach';
+ return`<div class="card sample-card">${badge}<h2 style="margin-top:6px">Arrow plots</h2>${tg}
+ <div class="flab"><span>Place the sample group</span></div><div class="chips wrap">${PATS.map(([k,l])=>`<button class="chip ${SPAT===k?'on':''}" data-spat="${k}">${l}</button>`).join('')}</div>
+ <div class="row wrap" style="margin-top:6px"><div class="seg" style="min-width:200px"><button data-hand="R" class="${SHAND==='R'?'on':''}">Right-handed</button><button data-hand="L" class="${SHAND==='L'?'on':''}">Left-handed</button></div>
+ <div class="seg" style="min-width:240px"><button data-sview="coach" class="${SVIEW==='coach'?'on':''}">Coach view</button><button data-sview="u16" class="${SVIEW==='u16'?'on':''}">Archer under 16 view</button></div></div>
+ <div class="muted tiny" style="margin-top:6px">${SAMPLE.round} · 72 made-up arrows · never counted in stats, bests, totals or rankings · off-centre when the group centre is ${OFF_T} cm (30 mm) or more from the middle; loose when average spread is over ${LOOSE_T} cm and the centre is within ${OFF_T} cm</div>
+ <div class="mini-grid" style="margin-top:8px">${mini('Arrow heatmap '+badge,targetSvg(F.A,F.cx,F.cy))}
+ ${mini('Group size '+badge,colSvg([{g:{c:'#38bdf8'},sh:SAMPLE.ends.map((_,i)=>({r:{dt:iso(new Date(2026,0,1+i)),r:'End '+(i+1)}})),v:F.gsize}],'v',{line:true})+'<div class="tiny muted">Avg distance (cm) of each end\'s arrows from that end\'s group centre, ends 1–12</div>')}
+ ${mini('Group pattern '+badge,`<div class="big" style="font-size:26px">${F.dir==='centre'?'Centred':F.dir==='loose'?'Scattered / loose':name(F.dir)+' · '+(F.off*10).toFixed(0)+' mm'}</div><div class="small muted">Group centre x ${F.cx.toFixed(1)} cm, y ${F.cy.toFixed(1)} cm · average spread ${F.spread.toFixed(1)} cm · ${SHAND==='R'?'right':'left'}-handed</div>
+  ${showCauses?(F.causes.length?`<div class="flab" style="margin-top:8px"><span>Possible causes</span></div><ul class="small" style="margin:0;padding-left:18px">${F.causes.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:'<div class="small" style="margin-top:8px;color:#6ee7a0">No pattern to fix: the group is centred.</div>'):'<div class="note" style="margin-top:8px">Under 16: the archer sees their pattern only. Possible causes go to their coach.</div>'}`)}</div></div>`}
 function philCards(F){const P=F.phil;if(!P.some(p=>p.sh.length))return card2("Phil's charts",'Needs scores with end-by-end sheets','<div class="muted small">No end-by-end sheets in this selection.</div>');
  const lg=legend(P.map(p=>p.g)),mixed=new Set(F.rs.map(r=>r.r)).size>1;
  let h=`<div class="card phil-head"><span class="kicker">Phil's charts</span><h2>Flights &amp; ends — Phil's sheet</h2><div class="muted tiny">1st Flight = first half of each score's ends, 2nd Flight = second half (odd middle end left out). Built for 72-arrow rounds like WA 50/720.${mixed?' <b style="color:#ffcf7a">Mixed rounds ticked — pick one round to compare like with like.</b>':''}</div>${lg}</div>`;
@@ -226,7 +276,6 @@ function philCards(F){const P=F.phil;if(!P.some(p=>p.sh.length))return card2("Ph
  h+=card2('End scores: max, max−1, max−2, Other','How many ends hit the maximum (60 for 6 arrows), one or two below, or lower',`<table><tr><th></th><th>Max</th><th>−1</th><th>−2</th><th>Other</th></tr>${P.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.ec.max}</td><td>${p.ec.m1}</td><td>${p.ec.m2}</td><td>${p.ec.other}</td></tr>`).join('')}</table>`);
  const obj=+localStorage.getItem('coachObjective')||null;
  h+=card2('All ratings · objective setting','AA rating for every rated score; set an objective line',`${colSvg(P.map(p=>({g:p.g,sh:p.rat.map(x=>({r:x.r})),rat:p.rat.map(x=>x.y)})),'rat',{line:true})}<div class="row" style="margin-top:6px"><span class="small muted">Objective</span><input type="text" inputmode="decimal" id="obj" value="${obj??''}" placeholder="e.g. 115" style="width:110px">${obj?`<span class="small">${P.map(p=>{const v=p.rat.slice(-3).map(x=>x.y);return v.length?`<span style="color:${p.g.c}">${(v.reduce((a,b)=>a+b,0)/v.length-obj>=0?'+':'')}${f1(v.reduce((a,b)=>a+b,0)/v.length-obj)}</span>`:''}).join(' ')} <span class="muted">last-3 vs objective</span></span>`:''}</div>`);
- h+=card2('Arrow plots','',`<div class="note">🎯 Phil's plot-based views fill in from rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>`);
  return h}
 function out(){
  const rs=sel(),o=$('#out');if(!rs.length){o.innerHTML='<div class="card muted">Nothing matches — clear a filter.</div>';return}
@@ -250,11 +299,13 @@ function out(){
  }else h+=`<div class="card note">These scores have no end-by-end sheet saved, so only totals are shown.</div>`;
  h+=card2('Rolling averages','Average end score from scores dated on/after today minus 3, 5, 6 months (other ticks apply)',`<table><tr><th></th><th>3 mo</th><th>5 mo</th><th>6 mo</th></tr>${G.map((g,i)=>`<tr><td style="color:${g.c}">${esc(g.name)}</td>${[3,5,6].map(m=>`<td>${f1(F.roll[m][i])}</td>`).join('')}</tr>`).join('')}</table>`);
  h+=card2('PB progression','Each time a score was strictly higher than the previous best on the same round',F.pbs.length?`<table>${F.pbs.slice().reverse().slice(0,12).map(p=>`<tr><td><span style="color:${p.g.c}">●</span> ${esc(p.r.r)}<div class="tiny muted">${esc(byId[p.r.m].name)} · ${fmt(p.r.dt)}</div></td><td><b>${p.r.t}</b><div class="tiny" style="color:#6ee7a0">+${p.r.t-p.from}</div></td></tr>`).join('')}</table>`:'<div class="muted small">No PB improvements in this selection.</div>');
- h+=philCards(F);
+ h+=philCards(F);h+=plotCards();
  h+=`<div class="card"><h2>Per round</h2><table><tr><th>Round</th><th>#</th><th>Avg</th><th>Best</th></tr>${F.perRound.map(x=>`<tr class="click" data-round="${esc(x.r)}"><td>${esc(x.r)}</td><td>${x.n}</td><td>${f1(x.avg)}</td><td><b>${x.best??'–'}</b></td></tr>`).join('')}</table><div class="muted tiny" style="margin-top:4px">Tap a round to tick just that round</div></div>`;
  // sessions
  h+=`<div class="card"><h2>Scores</h2><table>${rs.slice().reverse().slice(0,80).map(r=>`<tr class="click" data-aid="${r.a}"><td><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${byId[r.m].c};margin-right:6px"></span>${esc(r.r)}<div class="tiny muted">${esc(byId[r.m].name)} · ${fmt(r.dt)} · ${esc(r.ev)}</div></td><td><b>${r.t??'–'}</b>${r.ds.length?'<div class="tiny" style="color:var(--sky)">ends ›</div>':''}</td></tr>`).join('')}</table>${rs.length>80?`<div class="muted tiny">Showing latest 80 of ${rs.length}. Narrow the dates to see older.</div>`:''}</div>`;
  o.innerHTML=h;
+ o.querySelectorAll('[data-spat]').forEach(el=>el.onclick=()=>{SPAT=el.dataset.spat;SAMPLE=makeSample(SPAT);out()});o.querySelectorAll('[data-hand]').forEach(el=>el.onclick=()=>{SHAND=el.dataset.hand;out()});o.querySelectorAll('[data-sview]').forEach(el=>el.onclick=()=>{SVIEW=el.dataset.sview;out()});
+ const sm=o.querySelector('#smp');if(sm)sm.onchange=e=>{SAMPLE_ON=e.target.checked;localStorage.setItem('coachSample',SAMPLE_ON?'1':'0');out()};
  const ob=o.querySelector('#obj');if(ob)ob.onchange=e=>{const v=parseFloat(e.target.value);if(v>0)localStorage.setItem('coachObjective',v);else localStorage.removeItem('coachObjective');out()};
  o.querySelectorAll('[data-m]').forEach(el=>el.onclick=()=>{S.metric=el.dataset.m;out()});
  o.querySelectorAll('[data-round]').forEach(el=>el.onclick=()=>{S.r=[el.dataset.round];S.dist=[];S.end=[];mix();scrollTo(0,0)});
@@ -347,7 +398,7 @@ function about(){app.innerHTML=`<div class="card"><span class="kicker">Playgroun
  <li><b>Date presets</b> (Last 3/6/12 months) start on the same calendar day that many months before today, on this device's local date.</li>
  <li><b>Overlay vs Combine:</b> Overlay works each archer out separately; Combine pools all their ends or totals together.</li>
  <li><b>Rankings</b> list only archers on that official AA top-10 list. They're sorted by best score on the chosen round, highest first; ties go to the earlier date, then name.</li></ul></div>`}
-window.__CC={philShoot,philFig,roll3,figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
+window.__CC={setSample:v=>{SAMPLE_ON=v},sampleFig,get SAMPLE(){return SAMPLE},plotCards,makeSample,detect,causesFor,setPat:p=>{SPAT=p;SAMPLE=makeSample(p)},setHand:h=>{SHAND=h},setView:v=>{SVIEW=v},PATS,OFF_T,LOOSE_T,philShoot,philFig,roll3,figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
 if(!window.__NORENDER)render();
 })();
 </script></body></html>
