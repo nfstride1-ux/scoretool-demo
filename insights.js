@@ -20,7 +20,7 @@ window.bindProfileExtra=function(after){const a=$('#pxby'),h=$('#pxh');if(a)a.on
 const _me=me;me=function(){_me.apply(this,arguments);const c=$('#coachcard');if(c&&!$('#pxcard')){c.insertAdjacentHTML('beforebegin',profileExtraCard());bindProfileExtra()}};
 /* ---------- shared helpers ---------- */
 const keysFor=r=>/field|bugs/i.test(r)?['6','5','4','3']:['X','10','9','8','7'];
-function faceMM(s){const R=ROUNDS[s.round]||{};const F=faceR(R,0)||{};const m=String(F.face||R.face||'').match(/(\d+)cm/);return m&&!/field/i.test(F.face||'')?{mm:+m[1]*5,known:true,size:+m[1]}:{mm:610,known:false,size:122}}
+function faceMM(s){const R=ROUNDS[s.round]||{};const ff=(s.ff||[]).find(Boolean);if(ff&&!s.bugs)return{mm:ff.f*5,known:true,size:ff.f};const F=faceR(R,0)||{};const m=String(F.face||R.face||'').match(/(\d+)cm/);return m&&!/field/i.test(F.face||'')?{mm:+m[1]*5,known:true,size:+m[1]}:{mm:610,known:false,size:122}}
 function plotted(s){if(s.bugs)return[];return(s.pos||[]).flat().filter(p=>p&&isFinite(p.x)&&isFinite(p.y))}
 function ellipse(p){const c=groupStats(p);let xx=0,yy=0,xy=0;p.forEach(q=>{const dx=q.x-c.cx,dy=q.y-c.cy;xx+=dx*dx;yy+=dy*dy;xy+=dx*dy});const n=Math.max(1,p.length-1);xx/=n;yy/=n;xy/=n;
  const tr=xx+yy,dt=xx*yy-xy*xy,l1=tr/2+Math.sqrt(Math.max(0,tr*tr/4-dt)),l2=tr/2-Math.sqrt(Math.max(0,tr*tr/4-dt)),ang=Math.atan2(l1-xx,xy||1e-9)*180/Math.PI;
