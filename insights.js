@@ -2,7 +2,7 @@
    Describes numbers. Group-pattern "possible causes" are general, factual archery knowledge written in our own words; shown to 16+ only,
    under-16s see "Pattern shared with your coach" and the full pattern goes in the coach data. */
 (function(){
-const G='#ffc629',B='#5ab0ff',P='#b57bff',M='#9aa7ba',GR='#6ee7a0',RD='#ff4d5e';
+const G='#ffc629',B='#5ab0ff',P='#5ab0ff'/* ghost accent: blue (was purple) */,PF='#b57bff'/* group-centre marker drawn on the target face */,M='#9aa7ba',GR='#6ee7a0',RD='#ff4d5e';
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,f1=x=>(Math.round(x*10)/10).toFixed(1),f2=x=>x.toFixed(2),sg=x=>(x>0?'+':x<0?'−':'±')+Math.abs(Math.round(x*10)/10);
 const card=(k,t,b)=>`<div class="card st-card"><span class="kicker" style="color:${G}">${k}</span>${t?`<h3 style="margin:2px 0 8px">${t}</h3>`:''}${b}</div>`;
 const stat=(v,l,c)=>`<div class="stat"><b${c?` style="color:${c}"`:''}>${v}</b>${l}</div>`;
@@ -50,7 +50,7 @@ window.STCauses=causes;
 function patternData(){const ses=done().filter(s=>plotted(s).length>=6);if(!ses.length)return null;
  const rows=ses.map(s=>{const p=plotted(s),e=ellipse(p),fm=faceMM(s);return{s,p,e,fm,dir:dirOf(e),off:Math.hypot(e.cx,e.cy)*fm.mm}});return rows}
 function patternSVG(r){const e=r.e,R=ROUNDS[r.s.round]||{},fr=faceR(R,0);
- const pts=r.p.map(q=>({x:q.x,y:q.y}));const ex=`<ellipse cx="${e.cx}" cy="${e.cy}" rx="${Math.max(e.a,0.03)}" ry="${Math.max(e.b,0.03)}" transform="rotate(${-e.ang} ${e.cx} ${e.cy})" fill="${G}33" stroke="${G}" stroke-width="0.012" stroke-dasharray="0.03 0.02"/><path d="M0 0L${e.cx} ${e.cy}" stroke="${P}" stroke-width="0.012"/><circle cx="${e.cx}" cy="${e.cy}" r="0.03" fill="${P}" stroke="#fff" stroke-width="0.01"/>`;
+ const pts=r.p.map(q=>({x:q.x,y:q.y}));const ex=`<ellipse cx="${e.cx}" cy="${e.cy}" rx="${Math.max(e.a,0.03)}" ry="${Math.max(e.b,0.03)}" transform="rotate(${-e.ang} ${e.cx} ${e.cy})" fill="${G}33" stroke="${G}" stroke-width="0.012" stroke-dasharray="0.03 0.02"/><path d="M0 0L${e.cx} ${e.cy}" stroke="${PF}" stroke-width="0.012"/><circle cx="${e.cx}" cy="${e.cy}" r="0.03" fill="${PF}" stroke="#fff" stroke-width="0.01"/>`;
  return faceSVG(pts,'gpface','-1.05 -1.05 2.1 2.1',fr,ex).replace('style="touch-action:none;','style="max-width:300px;margin:auto;')}
 function patternCard(opt={}){const rows=patternData();
  if(!rows)return card('Group pattern','Where your group sits',empty('Plot at least 6 arrows on the target in a practice round to see your group pattern. Official results don\'t include arrow positions.'));
