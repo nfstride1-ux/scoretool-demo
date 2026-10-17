@@ -1,0 +1,92 @@
+{
+ "phill": {
+  "name": "Phill Arthur",
+  "ad": "George Philip Arthur",
+  "member_id": 7467,
+  "club": "Benara Bowmen Archery Club Inc",
+  "n": 91,
+  "sum": 67419,
+  "by_div": {
+   "Compound": 91
+  },
+  "cls": "60+",
+  "junior": false,
+  "loaded": true
+ },
+ "logan": {
+  "name": "Logan Wolfe",
+  "ad": "Logan Wolfe",
+  "member_id": 25601,
+  "club": "Gosnells Archers Inc",
+  "n": 555,
+  "sum": 229756,
+  "by_div": {
+   "Compound": 555
+  },
+  "cls": "Under 16",
+  "junior": true,
+  "loaded": true
+ },
+ "steven": {
+  "name": "Steven Snook",
+  "ad": "Steven Snook",
+  "member_id": 24236,
+  "club": "Northern Archers WA",
+  "n": 76,
+  "sum": 50288,
+  "by_div": {
+   "Compound": 76
+  },
+  "cls": "Open",
+  "junior": false,
+  "loaded": true
+ },
+ "joseph": {
+  "name": "Joseph Snook",
+  "ad": "Joseph Snook",
+  "member_id": 25053,
+  "club": "Northern Archers WA",
+  "n": 89,
+  "sum": 56709,
+  "by_div": {
+   "Compound": 89
+  },
+  "cls": "Under 16",
+  "junior": true,
+  "loaded": true
+ },
+ "michael": {
+  "name": "Michael Choong",
+  "ad": "Michael Choong",
+  "member_id": 16922,
+  "club": "Benara Bowmen Archery Club Inc",
+  "n": 53,
+  "sum": 41356,
+  "by_div": {
+   "Compound": 49,
+   "Recurve": 4
+  },
+  "cls": "Open",
+  "junior": false,
+  "loaded": true
+ },
+ "tahuri": {
+  "name": "Tahuri Burney",
+  "ad": "Tahuri Engelen-Burney",
+  "member_id": 31687,
+  "club": "Gosnells Archers Inc",
+  "n": 181,
+  "sum": 84830,
+  "by_div": {
+   "Compound": 181
+  },
+  "cls": "Under 16",
+  "junior": true,
+  "loaded": true
+ },
+ "dana": {
+  "name": "Dana Matete",
+  "loaded": false,
+  "note": "no Archer's Diary match for Dana Matete (only Dana Chapman-Bureny, Gosnells, unconfirmed)"
+ }
+}

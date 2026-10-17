@@ -61,7 +61,12 @@ function figures(s){const rs=sel(s),sub=!!(s.dist.length||s.end.length),E=rs.fla
  const perRound=Object.entries(rg).map(([k,v])=>{const t=v.map(r=>r.t).filter(x=>x!=null);return{r:k,n:v.length,avg:av(t),best:t.length?Math.max(...t):null}}).sort((a,b)=>b.n-a.n||(a.r<b.r?-1:1));
  return{rs,sub,E,G,tot,ea,aa,sum,dls,perDist,byDistArrow,ph,cons,rate,roll,pbs,perRound,phil:philFig(s,G)}}
 /* ---- end verbatim ---- */
-const load=()=>AD?Promise.resolve(AD):fetch('data/nathe_ad.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j){AD=j;R=j.rounds.map(r=>({...r,m:ME})).sort((a,b)=>a.dt<b.dt?-1:1);EXPECT=j.expect||{}}return AD}).catch(()=>null);
+/* Ranks data: Nathe from data/nathe_ad.json, every other tester with data from data/ad_<id>.json (built from scores.db).
+   Coach's read stays Nathe-only (isMe). Juniors (under 18) see where they sit, never other juniors' names. */
+const TID=()=>typeof TESTER!='undefined'&&TESTER?TESTER.id:'nathe';
+const hasAD=()=>isMe()||(typeof TESTER!='undefined'&&TESTER&&TESTER.data&&TESTER.id!='nathe');
+const adFile=()=>isMe()?'data/nathe_ad.json':'data/ad_'+TID()+'.json';
+const load=()=>AD?Promise.resolve(AD):fetch(adFile(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j){AD=j;AD.rank=AD.rank||{};AD.aa=AD.aa||{pos:[]};R=(j.rounds||[]).map(r=>({...r,m:ME})).sort((a,b)=>a.dt<b.dt?-1:1);EXPECT=j.expect||{}}return AD}).catch(()=>null);
 const isFldR=r=>r.disc==='Field'||r.disc==='3D';
 /* ---------- Coach's read (Stats) ---------- */
 let CR={r:'',p:'12',inc:false};
@@ -117,18 +122,26 @@ function rankTable(round){const all=rankRows(round),show=all.filter(r=>r.rank<=1
  show.forEach(r=>{const i=all.indexOf(r),hid=all.slice(prev+1,i);if(hid.length)out.push(gapRow(hid));out.push(`<tr${r.me?' style="background:#13294b"':''}><td>${(r.eq?'=':'')+r.rank}</td><td style="text-align:left">${escH(r.n)}${r.me?' <b style="color:var(--blue)">you</b>':''}<div class="small muted">${escH(r.c||'')} · ${fmt(r.dt)}</div></td><td><b>${r.s}</b>${r.rt!=null?`<div class="small muted">rating ${r.rt}</div>`:''}</td></tr>`);prev=i});
  if(prev<all.length-1)out.push(gapRow(all.slice(prev+1)));return{all,html:out.join('')}}
 const DISC={outdoor:'Outdoor target',indoor:'Indoor',field:'Field',clout:'Clout'};
-function realRankCard(){if(!AD)return'<div class="card" id="realrank"><p class="small muted">Loading your rankings…</p></div>';
- const rounds=Object.keys(AD.rank).sort((a,b)=>AD.rank[b].length-AD.rank[a].length||(a<b?-1:1));if(!RR||!AD.rank[RR])RR=rounds[0];
- const T=rankTable(RR),me=T.all.find(r=>r.me),nat=(typeof window._natRank!='undefined'?window._natRank:[]).filter(x=>/compound/i.test(x.division));
+function juniorRankCard(){const A=AD.rankAnon||{},rs=Object.keys(A).sort((a,b)=>A[b].of-A[a].of||(a<b?-1:1)),nat=(AD.nat||[]).filter(x=>/compound/i.test(x.division));
  const pos=(AD.aa.pos||[]).map(p=>{const m=p.match(/^(.*) #(\d+)$/);return m?`<b>#${m[2]}</b> ${escH(m[1])}`:escH(p)});
  return`<div class="card" id="realrank"><span class="kicker">Real rankings · Archery Australia · compound</span><h2 style="margin:4px 0">Where you stand</h2>
- ${pos.length?`<p style="margin:4px 0">Official AA top-10 list: ${pos.join(', ')}</p>`:''}
- ${nat.length?`<div class="small" style="margin:6px 0 2px"><b>National rankings</b> (Archer's Diary, ${escH(window._natAsOf?fmt(window._natAsOf):'')})</div>${nat.map(x=>`<div class="list-item row"><span>${DISC[x.discipline]||escH(x.discipline)} · ${escH(x.age_class+' '+x.gender)}</span><span><b>#${x.class_rank}</b> <span class="small muted">of ${x.class_size}</span></span></div>`).join('')}`:''}
+ ${pos.length?`<p style="margin:4px 0">Official AA top-30 lists: ${pos.join(', ')}</p>`:''}
+ ${nat.length?`<div class="small" style="margin:6px 0 2px"><b>National rankings</b> (Archer's Diary, ${escH(fmt(AD.generated?AD.generated.slice(0,10):''))})</div>${nat.map(x=>`<div class="list-item row"><span>${DISC[x.discipline]||escH(x.discipline)} · ${escH(x.age_class+' '+x.gender)}</span><span><b>#${x.class_rank}</b></span></div>`).join('')}`:''}
+ <h3 style="margin:14px 0 4px">Best score per round</h3><p class="small muted" style="margin:0 0 6px">Your best on each round since ${fmt(AD.window_from)}, and where it sits among the ranked junior compound archers who shot that round. Only your own scores are shown.</p>
+ ${rs.length?rs.map(r=>`<div class="list-item row"><span>${escH((typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[r])||r)}<div class="small muted">${fmt(A[r].dt)}</div></span><span><b>${A[r].best}</b> <span class="small muted">#${A[r].place} of ${A[r].of}</span></span></div>`).join(''):'<p class="small muted">No complete official rounds in this window yet.</p>'}</div>`}
+function realRankCard(){if(!AD)return'<div class="card" id="realrank"><p class="small muted">Loading your rankings…</p></div>';
+ if(AD.junior)return juniorRankCard();
+ const rounds=Object.keys(AD.rank).sort((a,b)=>AD.rank[b].length-AD.rank[a].length||(a<b?-1:1));if(!RR||!AD.rank[RR])RR=rounds[0];
+ const T=rankTable(RR),me=T.all.find(r=>r.me),nat=(isMe()?(typeof window._natRank!='undefined'?window._natRank:[]):(AD.nat||[])).filter(x=>/compound/i.test(x.division));
+ const pos=(AD.aa.pos||[]).map(p=>{const m=p.match(/^(.*) #(\d+)$/);return m?`<b>#${m[2]}</b> ${escH(m[1])}`:escH(p)});
+ return`<div class="card" id="realrank"><span class="kicker">Real rankings · Archery Australia · compound</span><h2 style="margin:4px 0">Where you stand</h2>
+ ${pos.length?`<p style="margin:4px 0">Official AA ${isMe()?'top-10 list':'top-30 lists'}: ${pos.join(', ')}</p>`:''}
+ ${nat.length?`<div class="small" style="margin:6px 0 2px"><b>National rankings</b> (Archer's Diary, ${escH(isMe()?(window._natAsOf?fmt(window._natAsOf):''):fmt(AD.generated?AD.generated.slice(0,10):''))})</div>${nat.map(x=>`<div class="list-item row"><span>${DISC[x.discipline]||escH(x.discipline)} · ${escH(x.age_class+' '+x.gender)}</span><span><b>#${x.class_rank}</b>${x.class_size?` <span class="small muted">of ${x.class_size}</span>`:''}</span></div>`).join('')}`:''}
  ${(()=>{const rk=typeof rankFor=='function'?rankFor(S.profile):null;return rk&&rk.state=='ranked'?`<div class="list-item row"><span>AA classification ${today().slice(0,4)} · ${escH(rk.disc)}</span><span><b>${escH(rk.aa)}</b>${rk.prov?' <span class="est" title="Master Bowman and above also need rounds at an open tournament or Qualifying &amp; Ranking Event (QRE)">provisional</span>':''}</span></div>`:''})()}<h3 style="margin:14px 0 4px">Best score per round</h3><p class="small muted" style="margin:0 0 6px">Your best on the chosen round since ${fmt(AD.window_from)}, against archers on the official AA Open compound top-10 lists. Equal scores share a rank.</p>
  <select id="rrsel" aria-label="Round">${rounds.map(r=>`<option value="${escH(r)}" ${r===RR?'selected':''}>${escH((typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[r])||r)}</option>`).join('')}</select>
  ${me?`<p style="margin:8px 0 4px">You're <b>${me.eq?'=':''}#${me.rank}</b> of ${T.all.length} on ${escH((typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[RR])||RR)}.</p>`:''}
  <table class="small" style="width:100%;border-collapse:collapse"><tr><th>#</th><th style="text-align:left">Archer</th><th>Best</th></tr>${T.html}</table></div>`}
-const _rw=window.EXTRA_VIEWS.rewards;window.EXTRA_VIEWS.rewards=function(){_rw.apply(this,arguments);if(!isMe())return;const put=()=>{const old=$('#rankcard'),cur=$('#realrank');const h=realRankCard();if(cur)cur.outerHTML=h;else if(old)old.insertAdjacentHTML('beforebegin',h);else app.insertAdjacentHTML('afterbegin',h);if(old)old.remove();const rk=typeof rankFor=='function'?rankFor(S.profile):null,pl=document.querySelector('.pcard .pill');if(pl&&rk&&rk.state=='ranked'){pl.textContent=rk.aa;pl.className='pill t-none';pl.title='Archery Australia classification '+today().slice(0,4)+(rk.prov?' (provisional)':'')}const s=$('#rrsel');if(s)s.onchange=e=>{RR=e.target.value;put()}};
- Promise.all([load(),window._natRank?null:fetch('data/rankings.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j){window._natRank=(j.archers||{})['Nathaniel Stride']||[];window._natAsOf=j.as_of}}).catch(()=>{})]).then(()=>{if(typeof view!='undefined'&&view!='rewards')return;put()});put()};
+const _rw=window.EXTRA_VIEWS.rewards;window.EXTRA_VIEWS.rewards=function(){_rw.apply(this,arguments);if(!hasAD())return;const put=()=>{const old=$('#rankcard'),cur=$('#realrank');const h=realRankCard();if(cur)cur.outerHTML=h;else if(old)old.insertAdjacentHTML('beforebegin',h);else app.insertAdjacentHTML('afterbegin',h);if(old)old.remove();const rk=typeof rankFor=='function'?rankFor(S.profile):null,pl=document.querySelector('.pcard .pill');if(pl&&rk&&rk.state=='ranked'){pl.textContent=rk.aa;pl.className='pill t-none';pl.title='Archery Australia classification '+today().slice(0,4)+(rk.prov?' (provisional)':'')}const s=$('#rrsel');if(s)s.onchange=e=>{RR=e.target.value;put()}};
+ Promise.all([load(),window._natRank||!isMe()?null:fetch('data/rankings.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j){window._natRank=(j.archers||{})['Nathaniel Stride']||[];window._natAsOf=j.as_of}}).catch(()=>{})]).then(()=>{if(typeof view!='undefined'&&view!='rewards')return;put()});put()};
 window.__REAL={load,readFig,rankRows,get R(){return R},get EXPECT(){return EXPECT},figures,trendOf,philFig,isInc,setCR:o=>Object.assign(CR,o)};
 })();

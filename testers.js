@@ -1,6 +1,16 @@
 /* Tester profiles. Each tester's data lives in its own localStorage key so testing never mixes.
-   Nathe keeps the original key (his real built-in data). Phill and Logan start EMPTY: no built-in or sample data. Names only, no contact details. */
-const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe'},{id:'phill',name:'Phill Arthur',short:'Phill'},{id:'logan',name:'Logan Wolfe',short:'Logan'}];
+   Nathe keeps the original key. Every tester with data:true gets his own real Archer's Diary history (data/sheets_<id>.json,
+   data/ad_<id>.json, built from scores.db); bow = the only bow that feeds his stats (other bows are kept in the file, left out).
+   ad = the archer's name on Archer's Diary when it differs. data:false = no confirmed Archer's Diary match yet, so the profile starts empty.
+   Names only, no contact details. */
+const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',data:true},
+ {id:'phill',name:'Phill Arthur',short:'Phill',ad:'George Philip Arthur',bow:'Compound',data:true},
+ {id:'logan',name:'Logan Wolfe',short:'Logan',bow:'Compound',data:true,junior:true},
+ {id:'steven',name:'Steven Snook',short:'Steven',bow:'Compound',data:true},
+ {id:'joseph',name:'Joseph Snook',short:'Joseph',bow:'Compound',data:true,junior:true},
+ {id:'michael',name:'Michael Choong',short:'Michael',bow:'Compound',data:true},
+ {id:'dana',name:'Dana Matete',short:'Dana',bow:'Compound',data:false},
+ {id:'tahuri',name:'Tahuri Burney',short:'Tahuri',ad:'Tahuri Engelen-Burney',bow:'Compound',data:true,junior:true}];
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';
  if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else id=localStorage.getItem('scoretool.tester');

@@ -80,6 +80,9 @@ try:
   chk('3 tick switches shoot card to the 1060',l1=='1060' and l0!='1060')
   chk('3 trend changes with the tick',t0!=t1 and f'averaged {a}' in t1 and 'incomplete' in t1)
   inc(False);P=E("statPool().map(s=>s.score)");chk('3 trend without tick uses complete shoots',f'averaged {round(sum(P[-3:])/3)}' in pg.inner_text('#c-trend'))
+  # polish (d): best-ends card explains why the tick changes nothing, like the PB card
+  rnd('Holt');inc(True);chk('d best-ends note with tick',"doesn't change this card" in pg.inner_text('#potnote') and "doesn't change this card" in pg.inner_text('#pbnote'))
+  inc(False);chk('d no tick wording without tick',"doesn't change" not in pg.inner_text('#potnote'))
   # 4 early/late text from its numbers (every 90/1440 shoot, plus others)
   def late_ok(lbl):
     e1=float(pg.inner_text('#e1'));e2=float(pg.inner_text('#e2'));tx=pg.inner_text('#latetxt');d=e2-e1

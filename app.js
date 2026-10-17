@@ -58,20 +58,24 @@ async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const
 /* Nathe's official scores come from ONE source: his Archer's Diary scoresheets (data/my_scoresheets.json), compound only.
    His Archer's Diary account also lists entries in the Recurve (2020-26) and Longbow (2023-25) divisions under his name; those are
    kept in the file but left out here (see window._excluded). Sheet round names are mapped to the AA names the app's rating tables use. */
-const SHEET_ALIAS={'2014 AWA Field Course Red':'WA Field 24Mk Red','Field 24Mk Red':'WA Field 24Mk Red','Field Red 24t MK':'WA Field 24Mk Red','AWA Unmarked Field Course Red':'WA Field 24Umk Red','BBMC C3 50/300 50m (80cm, 6 Ring) (3 x 10)':'BBMC C3 50/300 50m (80cm, 6 Ring)'};
+const SHEET_ALIAS={'2014 AWA Field Course Red':'WA Field 24Mk Red','Field 24Mk Red':'WA Field 24Mk Red','Field Red 24t MK':'WA Field 24Mk Red','AWA Unmarked Field Course Red':'WA Field 24Umk Red','BBMC C3 50/300 50m (80cm, 6 Ring) (3 x 10)':'BBMC C3 50/300 50m (80cm, 6 Ring)',
+ '2014 AWA Field Course Blue':'WA Field 24Mk Blue','Field 24Mk Blue':'WA Field 24Mk Blue','Field Blue 24t MK':'WA Field 24Mk Blue','WA Field 24T Mkd Blue':'WA Field 24Mk Blue',
+ '2014 AWA Field Course Yellow':'WA Field 24Mk Yellow','Field Yellow 24t MK':'WA Field 24Mk Yellow','WA Field 24T Mkd Yellow':'WA Field 24Mk Yellow','AWA Unmarked Field Course Yellow':'WA Field 24Umk Yellow'};
 const isNatheName=n=>{n=String(n||'').toLowerCase();return n.includes('stride')&&n.includes('nath')};
-async function loadSheets(){if(TESTER&&TESTER.id!='nathe')return;let j;try{const r=await fetch('data/my_scoresheets.json',{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
- const nm=Object.keys(REAL).find(isNatheName)||'Nathaniel Stride',csv=REAL[nm]||[],ex={};const okBow=d=>/compound/i.test(d||'');
+/* Every tester with data loads his own sheets the same way (data/sheets_<id>.json, built from scores.db); only his main bow feeds stats. */
+const sheetFile=id=>id=='nathe'?'data/my_scoresheets.json':'data/sheets_'+id+'.json';
+async function loadSheets(){const T=TESTER||{id:'nathe',bow:'Compound',data:true};if(!T.data)return;let j;try{const r=await fetch(sheetFile(T.id),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
+ const adn=j.archer||T.ad||T.name,nm=T.id=='nathe'?(Object.keys(REAL).find(isNatheName)||'Nathaniel Stride'):(Object.keys(REAL).find(k=>k.toLowerCase()==adn.toLowerCase())||adn),csv=REAL[nm]||[],ex={};const bw=new RegExp('^'+(T.bow||'Compound')+'$','i'),okBow=d=>bw.test(String(d||'').replace(/^.*\b(Male|Female)\s+/i,'').trim())||bw.test(d||'');
  csv.filter(r=>!okBow(r.division)).forEach(r=>{ex['csv '+(r.division||'?')]=(ex['csv '+(r.division||'?')]||0)+1});
  const RL=[],OL=[];(j.sheets||[]).forEach(x=>{if(!okBow(x.div)){ex[x.div]=(ex[x.div]||0)+1;return}if(!(x.sc>0))return;
   const round=SHEET_ALIAS[x.rd]||x.rd,c=csv.find(r=>okBow(r.division)&&normDate(r.date)==x.d&&r.score==x.sc);
   const ends=[];(x.ds||[]).forEach(d=>d.e.forEach(e=>{if(!e.some(Boolean))return;const ar=e.map(a=>String(a||'M').toUpperCase());ends.push({dist:d.dist||'',arrows:ar,flag:ar.every(a=>a=='M')})}));
-  const rt=parseFloat(x.rt);RL.push({date:x.d,event:x.ev,round,score:x.sc,division:(x.cls||'Open')+' Male '+x.div,club:x.club,url:x.url,tens:c?c.tens:'',xs:c?c.xs:'',subs:c?c.subs:'',notes:c?c.notes:'',rating:isFinite(rt)&&rt>0?rt:null,incomplete:!!x.part||!!(c&&c.incomplete),sheet:1});
-  if(ends.length)OL.push({key:x.d+'|'+round+'|'+x.ev,date:x.d,event:x.ev,round,url:x.url,ends,score:x.sc,club:x.club,division:(x.cls||'Open')+' Male '+x.div})});
+  const rt=parseFloat(x.rt);RL.push({date:x.d,event:x.ev,round,score:x.sc,division:(x.cls||'Open')+' '+(x.g||'Male')+' '+x.div,club:x.club,url:x.url,tens:c?c.tens:'',xs:c?c.xs:'',subs:c?c.subs:'',notes:c?c.notes:'',rating:isFinite(rt)&&rt>0?rt:null,incomplete:!!x.part||!!(c&&c.incomplete),sheet:1});
+  if(ends.length)OL.push({key:x.d+'|'+round+'|'+x.ev,date:x.d,event:x.ev,round,url:x.url,ends,score:x.sc,club:x.club,division:(x.cls||'Open')+' '+(x.g||'Male')+' '+x.div})});
  /* keep any compound csv result the sheets don't have */
  csv.filter(r=>okBow(r.division)&&!RL.some(x=>x.date==normDate(r.date)&&x.score==r.score)).forEach(r=>RL.push(r));
  RL.sort((a,b)=>normDate(a.date)<normDate(b.date)?-1:1);OL.sort((a,b)=>a.date<b.date?1:-1);
- REAL[nm]=RL;const ok=Object.keys(OFF).find(isNatheName);if(ok)delete OFF[ok];OFF[nm]=OL;window._excluded=ex;csvState='ok'}
+ REAL[nm]=RL;const ok=T.id=='nathe'?Object.keys(OFF).find(isNatheName):aliasKey(OFF,T.name)||aliasKey(OFF,adn);if(ok)delete OFF[ok];OFF[nm]=OL;window._excluded=ex;window._sheetsFor=nm;csvState=RL.length?'ok':csvState}
 async function _loadReal(){await __loadReal();await loadSheets()}
 async function __loadReal(){await loadArrows();
  try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
