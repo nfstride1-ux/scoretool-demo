@@ -588,7 +588,7 @@ function sbarSync(){let b=document.getElementById('sbar');const on=!!app.querySe
  if(!b){b=document.createElement('div');b.id='sbar';b.setAttribute('role','scrollbar');b.setAttribute('aria-label','Scroll the scoring screen');b.setAttribute('aria-orientation','vertical');b.innerHTML='<div class="sb-track"></div><div class="sb-thumb"></div>';document.body.appendChild(b);
   const th=b.querySelector('.sb-thumb');
   b.onpointerdown=ev=>{ev.preventDefault();try{b.setPointerCapture(ev.pointerId)}catch(e){}
-   const r=b.getBoundingClientRect(),max=Math.max(0,document.documentElement.scrollHeight-innerHeight),span=Math.max(1,r.height-SB.TH),thTop=r.top+(max?scrollY/max:0)*span;
+   const r=b.getBoundingClientRect(),max=Math.max(0,(window.__scroller?__scroller.scrollHeight-__scroller.clientHeight:document.documentElement.scrollHeight-innerHeight)),span=Math.max(1,r.height-SB.TH),thTop=r.top+(max?scrollY/max:0)*span;
    /* on the thumb: keep the grab point; on the track: centre the thumb under the finger (one jump) */
    const off=ev.clientY>=thTop&&ev.clientY<=thTop+SB.TH?ev.clientY-thTop:SB.TH/2;
    SB.drag={id:ev.pointerId,top:r.top,span,max,off,y:ev.clientY,th,last:Math.round(scrollY)};b.classList.add('on');if(!SB.raf)SB.raf=requestAnimationFrame(sbFrame)};
@@ -598,7 +598,7 @@ function sbarSync(){let b=document.getElementById('sbar');const on=!!app.querySe
  const left=S&&S.sbarSide=='left';b.hidden=!on;b.classList.toggle('left',left);document.body.classList.toggle('sbar-l',on&&left);document.body.classList.toggle('sbar-r',on&&!left);
  if(on&&!SB.drag){const hd=document.querySelector('header.top'),nv=document.querySelector('nav.tabs');b.style.top=((hd?hd.getBoundingClientRect().bottom:0)+10)+'px';b.style.bottom=((nv&&!nv.hidden?nv.getBoundingClientRect().height:0)+10)+'px';sbarPos()}}
 /* thumb follows normal scrolling (finger, momentum, wheel) once per frame; never while the thumb is being dragged */
-function sbarPos(){if(SB.drag||SB.praf)return;SB.praf=requestAnimationFrame(()=>{SB.praf=0;const b=document.getElementById('sbar');if(!b||b.hidden||SB.drag)return;const th=b.querySelector('.sb-thumb'),max=Math.max(0,document.documentElement.scrollHeight-innerHeight),span=Math.max(0,b.clientHeight-SB.TH),f=max?Math.min(1,scrollY/max):0;
+function sbarPos(){if(SB.drag||SB.praf)return;SB.praf=requestAnimationFrame(()=>{SB.praf=0;const b=document.getElementById('sbar');if(!b||b.hidden||SB.drag)return;const th=b.querySelector('.sb-thumb'),max=Math.max(0,(window.__scroller?__scroller.scrollHeight-__scroller.clientHeight:document.documentElement.scrollHeight-innerHeight)),span=Math.max(0,b.clientHeight-SB.TH),f=max?Math.min(1,scrollY/max):0;
  th.style.transform=`translateY(${(f*span).toFixed(1)}px)`;b.classList.toggle('idle',!max);b.setAttribute('aria-valuenow',Math.round(f*100))})}
 sbarSync();
 
@@ -630,12 +630,7 @@ function renderCoachLanding(){$('#tabs').hidden=true;let D=null;try{D=JSON.parse
  app.innerHTML=`<div class="card dark" id="coachlanding"><span class="kicker">Coach view · view only</span><h1>${esc(D.n)}</h1><p>This link is for coaches. It opens a view-only look at ${esc(D.n.split(' ')[0])}'s scores and stats.</p></div>
  <div class="card"><h2>You need a coach membership</h2><p>Sign in with a ScoreTool coach membership to see this archer. Coaches will see full score stats for their squad. They can't change anything.</p><p class="small muted">Coach memberships and the coach view are coming soon. Nothing about this archer is shown until then.</p><button class="btn" disabled>Coach sign-in (coming soon)</button></div>`}
 
-/* iOS Safari / home-screen app: keep the tab bar on the real bottom. While a text field has the keyboard up the bar is hidden; when the
-   keyboard closes iOS can leave the layout viewport shifted, so nudge the scroll to make it re-measure, and if the visual viewport
-   still ends below the layout viewport, push the bar down by that gap. */
-(function(){const nav=document.getElementById('tabs'),vv=window.visualViewport;if(!nav)return;
- const touch=matchMedia('(pointer:coarse)').matches,isField=el=>touch&&el&&(/^(INPUT|TEXTAREA)$/.test(el.tagName)&&!/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type||''))||touch&&el&&el.isContentEditable;
- const pin=()=>{if(!vv){nav.style.transform='';return}const gap=Math.round(vv.offsetTop+vv.height-innerHeight);nav.style.transform=gap>1&&!document.body.classList.contains('kb-open')?`translateY(${gap}px)`:''};
+/* Hide the tab bar while a text field has the on-screen keyboard up (touch screens only), so it never sits on top of the keyboard. */
+(function(){const touch=matchMedia('(pointer:coarse)').matches;if(!touch)return;const isField=el=>el&&(/^(INPUT|TEXTAREA)$/.test(el.tagName)&&!/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type||'')||el.isContentEditable);
  document.addEventListener('focusin',e=>{if(isField(e.target))document.body.classList.add('kb-open')});
- document.addEventListener('focusout',()=>setTimeout(()=>{if(isField(document.activeElement))return;document.body.classList.remove('kb-open');const y=scrollY;window.scrollTo(scrollX,y+1);window.scrollTo(scrollX,y);pin()},60));
- if(vv){vv.addEventListener('resize',pin);vv.addEventListener('scroll',pin)}addEventListener('orientationchange',()=>setTimeout(pin,300));addEventListener('pageshow',pin)})();
+ document.addEventListener('focusout',()=>setTimeout(()=>{if(!isField(document.activeElement))document.body.classList.remove('kb-open')},60))})();

@@ -2,7 +2,7 @@
 @font-face{font-family:"Barlow Condensed";src:url(fonts/BarlowCondensed-Bold.woff2) format("woff2");font-weight:700}
 @font-face{font-family:"Barlow Condensed";src:url(fonts/BarlowCondensed-ExtraBold.woff2) format("woff2");font-weight:800}
 :root{color-scheme:dark;--ink:#eef2f8;--ink2:#cbd5e1;--muted:#9aa7ba;--line:#243042;--bg:#0b0f17;--card:#131a26;--night:#070a10;--night2:#1b2433;--gold:#ffc629;--blue:#5ab0ff;--blue-bg:#1a2a44;--amber:#ffcf7a;--amber-bg:#3a2a10;--green:#6ee7a0;--green-bg:#0f3324;--cyan:#38e1ff;--purple:#5ab0ff;--r-common:#9aa7ba;--r-rare:#3b9bff;--r-epic:#5ab0ff;--r-leg:#ffc629;--r-myth:#ff4d5e;--r:16px;--disp:"Barlow Condensed","Arial Narrow",sans-serif;--body:Inter,system-ui,sans-serif}
-*{box-sizing:border-box}html{overscroll-behavior-y:none}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);padding-bottom:calc(84px + env(safe-area-inset-bottom));overscroll-behavior-y:none}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--body)}
 h1,h2,h3{font-family:var(--disp);text-transform:uppercase;line-height:1.05;margin:0 0 8px}h1{font-size:34px}h2{font-size:24px}h3{font-size:19px}
 .top{background:var(--night);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;position:sticky;top:0;z-index:5}
 .logo{font-family:var(--disp);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.04em}.logo span{color:var(--gold)}
@@ -26,7 +26,7 @@ label{font-weight:700;display:block;margin:10px 0 4px}
 .k-y{background:#ffd84d;color:#000}.k-r{background:#d62828;color:#fff}.k-b{background:#1d4ed8;color:#fff}.k-k{background:#111;color:#fff}.k-w{background:#fff;color:#000;border:2px solid #333!important}.k-m{background:#64748b;color:#fff}.k-u{background:var(--blue-bg);color:var(--blue)}
 .ends{width:100%;border-collapse:collapse;font-size:15px}.ends td,.ends th{padding:6px;border-bottom:1px solid var(--line);text-align:center}
 .arrow{display:inline-block;min-width:26px;padding:2px 4px;border-radius:6px;font-weight:800;margin:1px}
-.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--night);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
+.tabs{position:relative;flex:none;background:var(--night);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
 .tabs button{background:none;border:0;color:#cbd5e1;font-size:20px;display:flex;flex-direction:column;align-items:center;min-width:54px;min-height:48px;cursor:pointer}
 .tabs button span{font:700 12px var(--body)}.tabs button[aria-current=true]{color:var(--gold)}
 .badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.badge{text-align:center;padding:10px 4px;border-radius:12px;background:var(--bg);font-size:13px;font-weight:700}.badge i{display:block;font-style:normal;font-size:28px}.badge.off{opacity:.45;filter:grayscale(1)}
@@ -151,4 +151,9 @@ body.sbar-r #app .ad{margin-right:32px}body.sbar-l #app .ad{margin-left:32px}
 
 /* iOS: hide the tab bar while the keyboard is up (iOS pins fixed bars to the keyboard top and can leave them mid-screen after it closes) */
 body.kb-open .tabs{display:none}
-.tabs{transform:translateZ(0)}
+/* App shell: header, scrolling content and tab bar stacked in one full-height column. The page never scrolls the window, so iOS can't
+   leave a fixed bar stranded mid-screen. */
+html,body{height:100%;overflow:hidden}
+#shell{height:100vh;height:-webkit-fill-available;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#shell>.top{flex:none;position:relative}
+#scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
