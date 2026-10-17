@@ -39,6 +39,8 @@ const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
 if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
+/* a tester renamed to his Archer's Diary name (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
+if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 

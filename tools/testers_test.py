@@ -32,8 +32,10 @@ try:
   # picker lists every tester, Nate Evans / Danie Oosthuizen left out
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();pg.goto('http://localhost:8774/');pg.wait_for_timeout(1200)
   names=pg.locator('[data-tester]').all_inner_texts()
-  chk('picker lists all 8 testers',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Matete','Tahuri Burney'])
-  chk('no Nate Evans / Danie Oosthuizen','Nate Evans' not in TJ and 'Oosthuizen' not in TJ)
+  chk('picker lists all 9 testers',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Chapman-Bureny','Tahuri Burney','Nate Evans'])
+  chk('Nate Evans is a tester (confirmed 18 Oct), Danie Oosthuizen is not',"id:'nate',name:'Nate Evans'" in TJ and 'Oosthuizen' not in TJ)
+  CP=open(os.path.join(ROOT,'c-7q4m9x2k','index.html'),encoding='utf-8').read()
+  chk('Phil coach group page unchanged: Nate still left out there','Choong' in CP and not re.search(r'nate evans|20536',CP,re.I))
   ctx.close()
   for tid in LOADED:
     j,S,main,other=src(tid);d=DB[tid];ctx,pg=open_as(tid);E=pg.evaluate
@@ -82,6 +84,11 @@ try:
     pg.click('nav [data-v=stats]');pg.wait_for_timeout(900);chk(f'{tid}: Stats says no scores yet','No scores yet' in pg.text_content('#app'))
     pg.click('nav [data-v=rewards]');pg.wait_for_timeout(900);chk(f'{tid}: no real rankings',pg.locator('#realrank').count()==0)
     ctx.close()
+  ctx,pg=open_as('dana');pg.evaluate("S.profile='Dana Matete';save()");pg.reload();pg.wait_for_timeout(2500)
+  chk('dana: old saved name moves to his AD name and keeps his data',pg.evaluate('S.profile')=='Dana Chapman-Bureny' and pg.evaluate('findReal(S.profile).length')==205)
+  ctx.close()
+  # everyone else unchanged by adding Nate: same counts as scores.db
+  chk('Nate has no data file yet (nothing invented)',not os.path.exists(os.path.join(ROOT,'data','sheets_nate.json')) and not os.path.exists(os.path.join(ROOT,'data','ad_nate.json')))
   # Nathe unaffected
   ctx,pg=open_as('nathe');E=pg.evaluate
   chk('Nathe: same exclusions as before',E("window._excluded.Recurve")==130 and E("window._excluded.Longbow")==5)

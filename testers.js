@@ -9,8 +9,11 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
  {id:'steven',name:'Steven Snook',short:'Steven',bow:'Compound',data:true},
  {id:'joseph',name:'Joseph Snook',short:'Joseph',bow:'Compound',data:true,junior:true},
  {id:'michael',name:'Michael Choong',short:'Michael',bow:'Compound',data:true},
- {id:'dana',name:'Dana Matete',short:'Dana',bow:'Compound',data:false},
- {id:'tahuri',name:'Tahuri Burney',short:'Tahuri',ad:'Tahuri Engelen-Burney',bow:'Compound',data:true,junior:true}];
+ /* Dana: listed as 'Dana Matete' in Phil's group; Archer's Diary has him as Dana Chapman-Bureny (Gosnells, male, compound, member 32545), the only Dana at Gosnells. */
+ {id:'dana',name:'Dana Chapman-Bureny',short:'Dana',bow:'Compound',data:true},
+ {id:'tahuri',name:'Tahuri Burney',short:'Tahuri',ad:'Tahuri Engelen-Burney',bow:'Compound',data:true,junior:true},
+ /* Nate Evans (Kalamunda, AD member 20536): confirmed tester 18 Oct 2026. His scores were removed from scores.db at his earlier request, so his profile stays empty until they are pulled again. */
+ {id:'nate',name:'Nate Evans',short:'Nate',bow:'Compound',data:false}];
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';
  if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else id=localStorage.getItem('scoretool.tester');

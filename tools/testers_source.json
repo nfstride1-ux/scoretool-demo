@@ -85,8 +85,24 @@
   "loaded": true
  },
  "dana": {
-  "name": "Dana Matete",
+  "name": "Dana Chapman-Bureny",
+  "ad": "Dana Chapman-Bureny",
+  "member_id": 32545,
+  "club": "Gosnells Archers Inc",
+  "n": 205,
+  "sum": 90089,
+  "by_div": {
+   "Compound": 205
+  },
+  "cls": "Open",
+  "junior": false,
+  "loaded": true
+ },
+ "nate": {
+  "name": "Nate Evans",
+  "member_id": 20536,
+  "club": "Kalamunda Governor Stirling Archers",
   "loaded": false,
-  "note": "no Archer's Diary match for Dana Matete (only Dana Chapman-Bureny, Gosnells, unconfirmed)"
+  "note": "scores removed from scores.db at his request (exclude.py); not on the box; needs a new Archer's Diary pull"
  }
 }
