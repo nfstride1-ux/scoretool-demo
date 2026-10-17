@@ -90,7 +90,7 @@ function rankFor(name,disc){if(!disc){const o=rankFor(name,'Outdoor'),i=rankFor(
  else if(i>0)next={need:L[i-1],pts:+(L[i-1]-r3).toFixed(1),label:TIER_OF[AA_LEVELS[i-1]]+' '+FIXED_DIV[AA_LEVELS[i-1]],p:(r3-L[i])/(L[i-1]-L[i])};
  return{...base,state:'ranked',prov:i<=4,lvl,aa:AA_NAME[lvl]||lvl,tier,div,r3,next,date:normDate(R.map(r=>r.date).sort()[R.length-1])}}
 /* One rank name everywhere: the real Archery Australia classification (e.g. Grand Master Bowman, provisional). */
-const aaLabel=rk=>rk&&rk.state=='ranked'?rk.aa+(rk.prov?' (provisional)':''):rk&&rk.state=='placement'?'Placement':'Unranked';window.aaLabel=aaLabel;
+const aaLabel=rk=>rk&&rk.state=='ranked'?rk.aa+(rk.prov?' (provisional)':''):rk&&rk.state=='placement'?'Not rated yet':'Unranked';window.aaLabel=aaLabel;
 const tierPill=rk=>`<span class="pill t-none">${esc(aaLabel(rk))}</span>`;
 function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase():'none',C={bronze:'#c07a3a',silver:'#c9d1dc',gold:'#ffc629',platinum:'#38e1ff',diamond:'#a5f3fc',champion:'#ff6b6b',elite:'#60a5fa',none:'#475569'}[t];
  const pips=rk&&rk.state=='ranked'?({I:3,II:2,III:1}[rk.div]):0;
@@ -98,20 +98,20 @@ function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase()
 function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
  if(rk.state=='none')body=`<p><b>Unranked.</b> Your AA classification comes from official scores in Archer's Diary. Shoot a round at a registered club or tournament shoot and it'll count.</p>`;
  else if(rk.state=='provisional')body=`<p><span class="est">Provisional</span> ${esc(rk.why)}</p>`;
- else if(rk.state=='placement')body=`<p><b>Placement rounds: ${rk.n} of 3</b> in ${yr}.</p><div class="bar"><i style="width:${rk.n/3*100}%"></i></div><p class="small muted">Archery Australia needs three official rounds in the calendar year to set a classification, so it shows after round 3.${rk.best!=null?` Best rating so far: ${rk.best}.`:''}</p>`;
+ else if(rk.state=='placement')body=`<p><b>Rounds towards your first rating: ${rk.n} of 3</b> in ${yr}.</p><div class="bar"><i style="width:${rk.n/3*100}%"></i></div><p class="small muted">Archery Australia needs three official rounds in the calendar year to set a classification, so it shows after round 3.${rk.best!=null?` Best rating so far: ${rk.best}.`:''}</p>`;
  else if(rk.state=='below')body=`<p><b>Unranked</b> · ${rk.toWhite} rating points to <b>White</b>.</p>`;
  else{const L=AA_CLASS[rk.bow][rk.cls],k=AA_LEVELS.indexOf(rk.lvl),nx=k>0?{name:AA_NAME[AA_LEVELS[k-1]]||AA_LEVELS[k-1],pts:+(L[k-1]-rk.r3).toFixed(1),p:(rk.r3-L[k])/(L[k-1]-L[k])}:null;
   body=`<h2 style="margin:0">${esc(rk.aa)}</h2><div class="small muted">${rk.disc} · Archery Australia classification · ${rk.bow} · ${rk.cls}</div>${rk.prov?'<span class="est">Provisional</span>':''}
   ${rk.prov?'<p class="small muted" style="margin:6px 0 0">Archery Australia only confirms Master Bowman and above once some of those rounds are at an open tournament or a Qualifying &amp; Ranking Event (QRE). ScoreTool can\'t check that yet, so it says provisional until your club confirms it.</p>':''}
   ${nx?`<div class="bar" style="margin-top:10px"><i style="width:${Math.round(Math.max(.03,Math.min(1,nx.p))*100)}%"></i></div><p class="small" style="margin:6px 0 0">${nx.pts} rating points to <b>${nx.name}</b> (on your 3rd-best round)</p>`:'<p class="small">Top level.</p>'}`}
- const oth=rk.other;const othTxt=oth&&oth.state=='ranked'?`${oth.disc}: <b>${esc(aaLabel(oth))}</b>`:oth&&oth.state=='placement'?`${oth.disc}: placement ${oth.n}/3`:oth&&oth.state=='below'?`${oth.disc}: unranked`:'';
+ const oth=rk.other;const othTxt=oth&&oth.state=='ranked'?`${oth.disc}: <b>${esc(aaLabel(oth))}</b>`:oth&&oth.state=='placement'?`${oth.disc}: ${oth.n} of 3 rounds towards a rating`:oth&&oth.state=='below'?`${oth.disc}: unranked`:'';
  return`<div class="card" id="rankcard"><span class="kicker">AA classification · ${yr} · official scores only</span>${body}${othTxt?`<p class="small muted" style="margin:8px 0 0">Also ${othTxt}. Outdoor and indoor are separate classifications.</p>`:''}
  <details style="margin-top:8px"><summary class="small"><b>How this works</b></summary><p class="small muted">This is your Archery Australia classification for ${yr}: your <b>third-best</b> rating from official rounds this calendar year, by bow type and age class, with outdoor and indoor counted separately (AA Shooting Rules v7.2, Schedule 4A.1). Practice and self-logged scores never count. A rating puts every round on the same scale, so different rounds can be compared.</p>
  <p class="small muted">Levels, lowest to highest: ${['White','Black','Blue','Red','Gold','Master','Grand Master','Elite Bronze','Elite Silver','Elite Gold'].map(l=>AA_NAME[l]||l).join(', ')}.</p>
  <p class="small muted">I–III inside Bronze to Diamond splits each AA band into thirds by rating. That split is ScoreTool's, not Archery Australia's. Barebow and Longbow tables aren't loaded yet, so those show as provisional.${rk.unrated?` ${rk.unrated} of your rounds this year use a round ScoreTool can't rate yet.`:''}</p></details></div>`}
 function rankFeed(m,n){const rk=rankFor(m.name);return rk.state=='ranked'?[{id:m.id+'r'+rk.lvl,date:rk.date,who:m,html:`<b>${esc(n)}</b>: Archery Australia <b style="color:var(--cyan)">${esc(aaLabel(rk))}</b>`,sub:'Archery Australia '+rk.aa+' · verified',ver:'official'}]:[]}
 function rewardsView(){const p=S.profile;
- app.innerHTML=`${rankCard(p)}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}`;
+ app.innerHTML=`${rankCard(p)}${typeof estRating=='function'?`<div class="card" id="c-class">${estRating(findReal(p||'')).replace('<div class="card">','<div>')}</div>`:''}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}`;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
 /* ---------- Profile cards (replace animal avatars) ---------- */
@@ -159,7 +159,7 @@ function leagueTable(){const w0=monday(),w1=monday(1),p0=monday(-1);const rows=l
  rows.sort((a,b)=>b.xp-a.xp);rows.forEach((r,i)=>r.move=rows.length>1?r.lastPos-i:0);return rows}
 function leagueCard(){const rows=leagueTable(),solo=rows.length<2,me=rows.find(r=>r.m.name==S.profile),cap=Math.min(XP_DAY_CAP,(xpByDay(S.profile)[today()]||0));
  return`<div class="card"><span class="kicker">${S.squad&&!solo?esc(S.squad.name)+' · ':''}Weekly league</span><h2>This week's league</h2>
- ${rows.map((r,i)=>`<div class="lrow ${r.m.name==S.profile?'me':''}"><b style="width:26px">${r.crown?`<span class="crown">${CROWN}</span>`:''}${i+1}</b>${initDisc(r.m,32)}<span style="flex:1"><b>${r.m.name==S.profile?'You':esc(shortName(r.m.name))}</b> ${tierPill(rankFor(r.m.name))}</span><b>${r.xp} XP</b>${solo?'':`<span class="small ${r.move>0?'up':r.move<0?'dn':'muted'}" style="width:28px;text-align:right">${r.move>0?'▲'+r.move:r.move<0?'▼'+(-r.move):'–'}</span>`}</div>`).join('')}
+ ${rows.map((r,i)=>`<div class="lrow ${r.m.name==S.profile?'me':''}"><b style="width:26px">${r.crown?`<span class="crown">${CROWN}</span>`:''}${i+1}</b>${initDisc(r.m,32)}<span style="flex:1"><b>${r.m.name==S.profile?'You':esc(shortName(r.m.name))}</b></span><b>${r.xp} XP</b>${solo?'':`<span class="small ${r.move>0?'up':r.move<0?'dn':'muted'}" style="width:28px;text-align:right">${r.move>0?'▲'+r.move:r.move<0?'▼'+(-r.move):'–'}</span>`}</div>`).join('')}
  ${solo?`<div class="list-item"><p style="margin:0"><b>Invite your squad</b> to make it a race. Leagues are private squads only.</p><button class="btn ghost" style="margin-top:6px;padding:6px 12px;min-height:36px" onclick="nav('squad')">Squads</button></div>`:''}
  <p class="small muted" style="margin:8px 0 0">Today: ${cap}/${XP_DAY_CAP} XP (activity points). 1 XP per arrow (up to ${XP_ARROW_CAP} a day) + ${XP_ROUND} per finished round, capped at ${XP_DAY_CAP} a day. Resets Monday · no demotions · top 3 wear a crown next week.</p></div>`}
 const SEASONS=[[2,4,'Autumn'],[5,7,'Winter'],[8,10,'Spring'],[11,1,'Summer']];

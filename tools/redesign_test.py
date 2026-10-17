@@ -33,7 +33,7 @@ try:
   chk('4 front cards only',[pg.locator(x).is_visible() for x in ['#c-last','#c-trend','#c-pb','#c-hist']]==[True]*4 and pg.locator('#app > .card:visible').count()==5)
   chk('More detail hidden by default',pg.locator('#more').is_hidden() and pg.locator('#moredet').is_visible())
   more(True)
-  for x in ['#c-half','#c-spread','#c-pot','#c-early','#c-rating','#c-compare','#c-class','#coachread','#goan2']:chk('More detail has '+x,pg.locator('#more '+x).count()==1)
+  for x in ['#c-half','#c-spread','#c-pot','#c-early','#c-rating','#c-compare','#coachread','#goan2']:chk('More detail has '+x,pg.locator('#more '+x).count()==1)
   chk('still one round/shoot picker with detail open',pg.locator('#app select').count()==2)
   for r in ['Holt','WA 90/1440','WA Field 24Mk Red','WA 50/720','WA 60/900 (Canberra)']:
     rnd(r);sync(r)
@@ -46,7 +46,7 @@ try:
   txt=pg.inner_text('#app')
   for w in ['(SD)','end spread','End spread','rolling average','Rolling average','Potential','Flights','Round phase','Half split','AA rule 4.1','Evidence bank','localStorage','Elite III','8.41']:chk('Stats has no "'+w+'"',w not in txt)
   chk('Stats has no Champion tier',not re.search(r'Champion(?!ship)',txt,re.I))
-  chk('QRE explained on Stats','Qualifying' in txt)
+  chk('QRE explained on Stats wherever shown',('QRE' not in txt) or 'Qualifying' in txt)
   home=T('home');score=T('score');ranks=T('rewards');me=T('me');fol=T('follow')
   for nm,t in [('Home',home),('Score',score),('Ranks',ranks),('Me',me),('Following',fol)]:
     for w in ['localStorage','Evidence bank','AA rule 4.1','Elite III','Bronze III','Diamond','Platinum','Peak rank']:chk(f'{nm} has no "{w}"',w not in t)
@@ -112,13 +112,13 @@ try:
   chk('B5 excluded, not deleted',E("JSON.stringify(window._excluded)")==json.dumps({'Recurve':130,'Longbow':5,'csv Open Male Recurve':6},separators=(',',':')) or (E("window._excluded.Recurve")==130 and E("window._excluded.Longbow")==5))
   # rank title
   T('rewards');lbl=E("aaLabel(rankFor(S.profile))");pills=pg.eval_on_selector_all('.lrow.me .pill','e=>e.map(x=>x.textContent)')
-  chk('B7 one rank name (Ranks + league)',lbl=='Grand Master Bowman (provisional)' and pills==[lbl] and 'Grand Master Bowman' in pg.inner_text('#realrank'))
+  chk('B7 one rank name (Ranks; league shows no rank)',lbl=='Grand Master Bowman (provisional)' and pills==[] and 'Grand Master Bowman' in pg.inner_text('#realrank'))
   # arrow counts
   T('home');wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
   chk("B8 Today's arrows = shared count",int(pg.locator('#volring text').first.text_content())==E('arrowDays()[today()]||0'))
   ft=T('follow');m=re.search(r'NS You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
   # 782 / compare grammar / season
-  st();rnd('ABA Interclub (3A + 1A, 40 targets)');more(True);c=pg.inner_text('#c-compare')
+  st();rnd('ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)');more(True);c=pg.inner_text('#c-compare')
   chk('B9 Compare grammar + season','first shoot of this round was' in c and 'sessions' not in c and 'No complete shoots of this round in 2026' in c)
   chk('B9 782 is a competition (paper sheet)','Competition · paper sheet' in pg.text_content('#c-last') and 'Practice' not in pg.text_content('#c-last'))
   # potential

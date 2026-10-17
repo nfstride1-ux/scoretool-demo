@@ -1,11 +1,11 @@
-# ABA Interclub (3A + 1A) scorer, score sheet view, seeded 17 May 2025 round. 390x844 Chrome.
+# ABA Interclub (first half 3-arrow, second half 1-arrow) scorer, score sheet view, seeded 17 May 2025 round. 390x844 Chrome.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 srv=subprocess.Popen([sys.executable,'-m','http.server','8771'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
-IC='ABA Interclub (3A + 1A, 40 targets)'
+IC='ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)';OLD='ABA Interclub (3A + 1A, 40 targets)'
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']);pg=b.new_page(viewport={'width':390,'height':844})
@@ -29,25 +29,52 @@ try:
   chk('sheet header fields',all(x in t for x in ['ABA INTERCLUB','Name','ABA #','Date','Grade','Division','Target','63268','TBA']))
   chk('sheet half totals + round total',pg.inner_text('#abahalf3A')=='392' and pg.inner_text('#abahalf1A')=='390' and pg.inner_text('#abaround')=='782')
   chk('points table',pg.locator('.aba-pts td').all_inner_texts()==['20','18','16','14','12','10','8','6','4'])
+  chk('sheet shows hit codes (arrow + zone)',pg.locator('#abapaper .aba-p td:nth-child(2)').all_inner_texts()[:2]==['1A','1A'])
+  chk('sheet: first half = 3-arrow, second = 1-arrow','First half · 3-arrow half (3A) · targets 1-20' in t and 'Second half · 1-arrow half (1A) · targets 21-40' in t)
+  chk('seed note kept, no stale wording','3-arrow half' in (s['abaNote'] or ''))
+  E("cur=null;sv='sheet';score()");pg.wait_for_timeout(300)
+  opts=pg.eval_on_selector_all('#rd option','o=>o.map(x=>x.textContent)')
+  chk('one ABA round in the picker, no 1-/2-arrow rounds',[o for o in opts if 'ABA' in o]==[IC])
+  chk('round max 800, 20 a target',E(f"ROUNDS['{IC}'].max")==800 and E(f"ROUNDS['{IC}'].ends")==40)
+  chk('rule 13 values',E("[1,2,3].map(k=>['A','B','C'].map(z=>abaPts(3,k,z)))")==[[20,18,16],[14,12,10],[8,6,4]])
+  # old round name migrates, total kept
+  E(f"S.sessions.push({{id:'oldaba',date:'2025-01-01',round:'{OLD}',ends:[['20'],['18']],pos:[],aba:[{{m:0,k:1,z:'A'}},{{m:0,k:1,z:'B'}}],finished:true,src:'practice'}});abaMigrate()")
+  chk('old-name session migrates, total kept',E("S.sessions.find(s=>s.id=='oldaba').round")==IC and E("total(S.sessions.find(s=>s.id=='oldaba'))")==38)
+  E("S.sessions=S.sessions.filter(s=>s.id!='oldaba');save()")
+  chk('782 still 782 on the new round',E("(x=>x.round)(S.sessions.find(s=>s.id=='aba20250517'))")==IC and E("total(S.sessions.find(s=>s.id=='aba20250517'))")==782)
+  # Exit round: keep for later / discard
+  pg.select_option('#rd',IC);pg.click('#st');pg.wait_for_timeout(400);pg.click('[data-z=A]');pg.click('#abaexit');pg.wait_for_timeout(300)
+  chk('Exit opens leave dialog',pg.locator('#leaveov').count()==1 and 'Keep this round for later' in pg.inner_text('#leaveov') and 'Discard' in pg.inner_text('#leaveov') and '1 target scored so far' in pg.inner_text('#leaveov'))
+  pg.click('#lkeep');pg.wait_for_timeout(300);sid=E("S.sessions[S.sessions.length-1].id")
+  chk('Keep for later saves progress and leaves',E('cur')==None and pg.locator('#rd').count()==1 and E(f"total(S.sessions.find(s=>s.id=='{sid}'))")==20)
+  E(f"cur=S.sessions.find(s=>s.id=='{sid}');score()");pg.wait_for_timeout(300)
+  pg.on('dialog',lambda d:d.accept());pg.click('#abaexit');pg.wait_for_timeout(200);pg.click('#ldisc');pg.wait_for_timeout(300)
+  chk('Discard removes it',E(f"!S.sessions.some(s=>s.id=='{sid}')") and E('cur')==None)
   E("cur=null;sv='sheet';score()");pg.wait_for_timeout(300)
   # new interclub round
   pg.select_option('#rd',IC);pg.click('#st');pg.wait_for_timeout(500)
-  chk('starts 3A target 1/20',pg.inner_text('#abatg')=='1 / 20' and '3A' in pg.text_content('#abacard'))
+  chk('starts on the 3-arrow half, target 1/20',pg.inner_text('#abatg')=='1 / 20' and pg.text_content('#abahalf')=='First half · 3-arrow half · target' and 'first arrow to hit scores' in pg.inner_text('#abarule'))
+  chk('start never says first arrow only','first arrow only' not in pg.inner_text('#abacard') and 'one arrow only' not in pg.inner_text('#abacard') and 'Arrow 1 of 3' in pg.inner_text('#abaarrow'))
+  chk('exit button visible while scoring',pg.locator('#abaexit').is_visible())
   z=lambda:pg.locator('[data-z]').all_inner_texts()
   chk('arrow 1 buttons 20/18/16',[x.split('\n')[0] for x in z()][:3]==['20','18','16'])
-  pg.click('[data-z=M]');chk('after miss arrow 2 = 14/12/10',[x.split('\n')[0] for x in z()][:3]==['14','12','10'] and 'Arrow 2' in pg.inner_text('#abaarrow'))
+  pg.click('[data-z=M]');chk('after miss arrow 2 = 14/12/10',[x.split('\n')[0] for x in z()][:3]==['14','12','10'] and 'Arrow 2 of 3' in pg.inner_text('#abaarrow') and pg.inner_text('#abatg')=='1 / 20')
   pg.click('[data-z=M]');chk('after 2 misses arrow 3 = 8/6/4',[x.split('\n')[0] for x in z()][:3]==['8','6','4'])
-  pg.click('[data-z=B]');chk('arrow 3 B = 6',pg.inner_text('#abatot')=='6' and pg.inner_text('#abatg')=='2 / 20')
+  pg.click('[data-z=B]');chk('3B coded on the target',E("abaHitCode(cur.aba[0])")=='3B');chk('arrow 3 B = 6',pg.inner_text('#abatot')=='6' and pg.inner_text('#abatg')=='2 / 20')
   pg.click('#abaundo');chk('undo back to target 1',pg.inner_text('#abatg')=='1 / 20' and pg.inner_text('#abatot')=='0')
   pg.click('[data-z=A]');pg.click('[data-z=M]');pg.click('[data-z=M]');pg.click('[data-z=M]')
   chk('3 misses = 0, next target',pg.inner_text('#abatg')=='3 / 20' and pg.inner_text('#abatot')=='20')
   for _ in range(18):pg.click('[data-z=A]')
-  chk('1A half starts at target 21',pg.inner_text('#abatg')=='1 / 20' and '1A' in pg.text_content('#abacard') and 'first arrow only' in pg.inner_text('#abaarrow'))
+  chk('second half (1-arrow) starts at target 21',pg.inner_text('#abatg')=='1 / 20' and pg.text_content('#abahalf')=='Second half · 1-arrow half · target' and 'target 21 of 40' in pg.inner_text('#abacard') and 'a miss scores 0' in pg.inner_text('#abaarrow') and 'Arrow 1 of 1' in pg.inner_text('#abaarrow'))
+  chk('second half shows first-half total','First half done: 380' in pg.inner_text('#abarule'))
   pg.click('[data-z=M]');chk('1A miss = 0, moves on (no arrow 2)',pg.inner_text('#abatg')=='2 / 20' and pg.inner_text('#abatot')=='380')
-  chk('half totals line',('3A: 380' in pg.inner_text('#abahalves')) and '1A: 0' in pg.inner_text('#abahalves'))
+  chk('half totals line',('3 arrow: 380' in pg.inner_text('#abahalves')) and '1 arrow: 0' in pg.inner_text('#abahalves'))
+  chk('max possible = 20 a target left',pg.inner_text('#abamax')=='max possible '+str(380+19*20)+' of 800')
   for _ in range(19):pg.click('[data-z=C]')
   chk('round done 380+304',pg.inner_text('#abatot')=='684')
   pg.click('[data-abv=sheet]');pg.wait_for_timeout(200)
+  codes=pg.locator('#abapaper .aba-p td:nth-child(2)').all_inner_texts();codes=[c for c in codes if not c.isdigit()]
+  chk('sheet hit codes: 1A, M after 3 misses, M + 1C in 1-arrow half',codes[0]=='1A' and codes[1]=='M' and codes[2]=='1A' and codes[20]=='M' and codes[21]=='1C')
   chk('sheet view 3A/1A totals',pg.inner_text('#abahalf3A')=='380' and pg.inner_text('#abahalf1A')=='304' and pg.inner_text('#abaround')=='684')
   chk('no horizontal overflow',E('document.querySelector("#scroller").scrollWidth<=390'))
   pg.screenshot(path='/workspace/aba_sheet.png',full_page=True)
