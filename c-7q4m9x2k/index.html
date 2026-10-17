@@ -93,8 +93,8 @@ const distLab=(d,r)=>d.d?d.d:(r.disc==='Field'||r.disc==='3D'?'Field':'')+' D'+d
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('show'),1800)};
 function trendOf(rs){const v=rs.filter(r=>r.rt!=null).slice(-10);if(v.length<4)return['flat','Not enough'];const h=v.length>>1,a=av(v.slice(0,h).map(r=>r.rt)),b=av(v.slice(h).map(r=>r.rt)),d=b-a;return d>1?['up','▲ Up']:d<-1?['down','▼ Down']:['flat','● Steady']}
 // ---------- state ----------
-const today=new Date().toISOString().slice(0,10);
-const ago=m=>{const d=new Date();d.setMonth(d.getMonth()-m);return d.toISOString().slice(0,10)};
+let NOW=()=>new Date();const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const ago=m=>{const n=NOW(),d=new Date(n.getFullYear(),n.getMonth()-m,1),last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(n.getDate(),last));return iso(d)};
 let S={a:[],r:[],from:ago(6),to:'',dist:[],end:[],split:true,metric:'t'};
 let tab=['squad','mix','saved','rank','about'].includes(location.hash.slice(1))?location.hash.slice(1):'squad';
 const LS='coachCombos.v1',combos=()=>JSON.parse(localStorage.getItem(LS)||'[]'),saveC=c=>localStorage.setItem(LS,JSON.stringify(c));
@@ -106,8 +106,7 @@ function render(){nav();app.className='t-'+tab;({squad,mix,saved,rank,about})[ta
 // ---------- squad ----------
 function squad(){
  app.innerHTML=`<div class="card"><span class="kicker">Phil's squad · compound</span><h1>Squad overview</h1><div class="muted small">${R.length} scores since 2024 · tap an archer to analyse</div></div><div class="grid">`+SQ.map(a=>{
-  const rs=R.filter(r=>r.m===a.id),last=rs[rs.length-1],[tc,tl]=trendOf(rs),best={};
-  rs.forEach(r=>{if(r.t!=null&&(!best[r.r]||r.t>best[r.r].t))best[r.r]=r});
+  const Q=squadFig(a.id),rs=Q.rs,last=Q.last,[tc,tl]=Q.trend,best=Q.best;
   const bl=Object.values(best).sort((x,y)=>y.dt<x.dt?-1:1);
   return`<div class="card arch" data-a="${a.id}"><div class="row"><div class="av" style="background:${a.c}">${a.ini}</div><div class="sp"><h3 style="margin:0">${esc(a.name)}</h3><div class="muted tiny">${esc(a.club)} · ${rs.length} scores</div></div><span class="trend ${tc}">${tl}</span></div>
   ${last?`<div class="row" style="margin-top:10px"><div class="sp"><div class="muted tiny">LATEST · ${fmt(last.dt)}</div><div class="small">${esc(last.r)}</div></div><div class="big">${last.t??'–'}</div></div>`:'<div class="muted small">No compound scores yet</div>'}
@@ -115,9 +114,9 @@ function squad(){
  app.querySelectorAll('.arch').forEach(el=>el.onclick=()=>{S={...S,a:[+el.dataset.a],r:[],dist:[],end:[],from:'',to:''};tab='mix';render();scrollTo(0,0)});
 }
 // ---------- filtering ----------
-function base(){return R.filter(r=>(!S.a.length||S.a.includes(r.m))&&(!S.from||r.dt>=S.from)&&(!S.to||r.dt<=S.to))}
-function sel(){return base().filter(r=>!S.r.length||S.r.includes(r.r))}
-function endsOf(r){const out=[];r.ds.forEach(d=>{const dl=distLab(d,r);if(S.dist.length&&!S.dist.includes(dl))return;d.e.forEach(e=>{if(S.end.length&&!S.end.includes(+e[0]))return;out.push({r,dl,n:+e[0],ar:arrows(e[1]),t:e[2]})})});return out}
+function base(s=S){return R.filter(r=>(!s.a.length||s.a.includes(r.m))&&(!s.from||r.dt>=s.from)&&(!s.to||r.dt<=s.to))}
+function sel(s=S){return base(s).filter(r=>!s.r.length||s.r.includes(r.r))}
+function endsOf(r,s=S){const out=[];r.ds.forEach(d=>{const dl=distLab(d,r);if(s.dist.length&&!s.dist.includes(dl))return;d.e.forEach(e=>{if(s.end.length&&!s.end.includes(+e[0]))return;out.push({r,dl,n:+e[0],ar:arrows(e[1]),t:e[2]})})});return out}
 const tog=(arr,v)=>arr.includes(v)?arr.filter(x=>x!==v):[...arr,v];
 function chips(key,items,lab,colorOf){return`<div class="flab"><span>${lab}</span><a data-clear="${key}">${S[key].length?'Clear':'All'}</a></div><div class="chips ${items.length<9?'wrap':''}">${items.map(v=>`<button class="chip ${S[key].includes(v.v)?'on':''}" data-k="${key}" data-v="${esc(v.v)}">${colorOf?`<span class="dot" style="background:${colorOf(v.v)}"></span>`:''}${esc(v.l)}${v.n!=null?` <span class="tiny" style="opacity:.7">${v.n}</span>`:''}</button>`).join('')}</div>`}
 // ---------- mix & match ----------
@@ -144,52 +143,51 @@ function mix(){
  $('#from').onchange=e=>{S.from=e.target.value;mix()};$('#to').onchange=e=>{S.to=e.target.value;mix()};
  $('#save').onclick=saveCombo;app.querySelectorAll('[data-ci]').forEach(el=>el.onclick=()=>{const x=combos()[+el.dataset.ci].s;S={...x};if(x.rel)S.from=ago(x.rel);delete S.rel;mix()});out();
 }
-function groups(rs){if(!S.split)return[{k:'all',name:'Combined',c:'#38bdf8',rs}];const ids=[...new Set(rs.map(r=>r.m))];return ids.map(id=>({k:id,name:byId[id].name,c:byId[id].c,rs:rs.filter(r=>r.m===id)}))}
+function groups(rs,s=S){if(!s.split)return[{k:'all',name:'Combined',c:'#38bdf8',rs}];const ids=[...new Set(rs.map(r=>r.m))];return ids.map(id=>({k:id,name:byId[id].name,c:byId[id].c,rs:rs.filter(r=>r.m===id)}))}
+
+const sdp=v=>{const m=av(v);return Math.sqrt(av(v.map(x=>(x-m)*(x-m))))};
+const dsort=(x,y)=>(parseInt(y)||0)-(parseInt(x)||0)||(x<y?-1:x>y?1:0);
+function figures(s){const rs=sel(s),sub=!!(s.dist.length||s.end.length),E=rs.flatMap(r=>endsOf(r,s)),G=groups(rs,s);
+ const eg=g=>s.split?E.filter(e=>e.r.m===g.k):E;
+ const tot=rs.map(r=>r.t).filter(v=>v!=null),ea=E.map(e=>e.t).filter(v=>v!=null),aa=E.flatMap(e=>e.ar.map(aval)).filter(v=>v!=null);
+ const sum={avgMain:sub?av(ea):av(tot),bestMain:sub?(ea.length?Math.max(...ea):null):(tot.length?Math.max(...tot):null),avgEnd:av(ea),avgArrow:av(aa)};
+ const dls=[...new Set(E.map(e=>e.dl))].sort(dsort),perDist={};
+ dls.forEach(dl=>perDist[dl]=G.map(g=>{const v=eg(g).filter(e=>e.dl===dl).map(e=>e.t).filter(x=>x!=null);return{n:v.length,avg:av(v)}}));
+ const byDistArrow=G.map(g=>({g,v:dls.map(d=>av(eg(g).filter(e=>e.dl===d).flatMap(e=>e.ar.map(aval)).filter(x=>x!=null)))}));
+ const ph=G.map(g=>{const h=[[],[]],t=[[],[],[]],per={};eg(g).forEach(e=>(per[e.r.a]=per[e.r.a]||[]).push(e));
+  Object.values(per).forEach(L=>{const n=L.length,odd=n%2;L.forEach((e,i)=>{if(e.t==null)return;if(!(odd&&i===(n-1)/2))h[i<n/2?0:1].push(e.t);t[Math.floor(i*3/n)].push(e.t)})});
+  const pm={};eg(g).forEach(e=>{if(e.t!=null)(pm[e.n]=pm[e.n]||[]).push(e.t)});
+  const we=Object.entries(pm).filter(x=>x[1].length>=2).map(([n,v])=>[+n,av(v)]).sort((a,b)=>a[1]-b[1]||a[0]-b[0])[0];return{g,h:h.map(av),t:t.map(av),we}});
+ const cons=G.map(g=>{const et=eg(g).map(e=>e.t).filter(x=>x!=null),aw=eg(g).flatMap(e=>e.ar.map(aval)).filter(x=>x!=null);return{g,n:et.length,esd:et.length>1?sdp(et):null,asd:aw.length>1?sdp(aw):null}});
+ const rate=G.map(g=>({g,p:g.rs.map(r=>{const a=endsOf(r,s).flatMap(e=>e.ar.map(x=>x.toUpperCase()));return a.length?{x:+new Date(r.dt),y:100*a.filter(x=>x==='X'||x==='10').length/a.length,r}:null}).filter(Boolean)}));
+ const roll={};[3,5,6].forEach(m=>{const f=ago(m);roll[m]=G.map(g=>{const v=g.rs.filter(r=>r.dt>=f).flatMap(r=>endsOf(r,s)).map(e=>e.t).filter(x=>x!=null);return v.length?av(v):null})});
+ const pbs=[];G.forEach(g=>{const best={};g.rs.forEach(r=>{if(r.t==null)return;const k=r.m+'|'+r.r;if(best[k]!=null&&r.t>best[k])pbs.push({g,r,from:best[k]});if(best[k]==null||r.t>best[k])best[k]=r.t})});
+ const rg={};rs.forEach(r=>(rg[r.r]=rg[r.r]||[]).push(r));
+ const perRound=Object.entries(rg).map(([k,v])=>{const t=v.map(r=>r.t).filter(x=>x!=null);return{r:k,n:v.length,avg:av(t),best:t.length?Math.max(...t):null}}).sort((a,b)=>b.n-a.n||(a.r<b.r?-1:1));
+ return{rs,sub,E,G,tot,ea,aa,sum,dls,perDist,byDistArrow,ph,cons,rate,roll,pbs,perRound}}
+function squadFig(id){const rs=R.filter(r=>r.m===id),best={};rs.forEach(r=>{if(r.t!=null&&(!best[r.r]||r.t>best[r.r].t||(r.t===best[r.r].t&&r.dt<best[r.r].dt)))best[r.r]=r});return{rs,last:rs[rs.length-1],trend:trendOf(rs),best}}
 function out(){
  const rs=sel(),o=$('#out');if(!rs.length){o.innerHTML='<div class="card muted">Nothing matches — clear a filter.</div>';return}
- const sub=S.dist.length||S.end.length,E=rs.flatMap(endsOf),G=groups(rs);
- const tot=sub?null:rs.map(r=>r.t).filter(v=>v!=null),ea=E.map(e=>e.t).filter(v=>v!=null),aa=E.flatMap(e=>e.ar.map(aval)).filter(v=>v!=null);
+ const F=figures(S),{sub,E,G}=F,{tot,ea,aa}=F;
  let h=`<div class="card"><span class="kicker">${rs.length} scores · ${E.length} ends · ${aa.length} arrows</span><div class="stats">
- <div class="stat"><b>${sub?f1(av(ea)):f1(av(tot))}</b><span>${sub?'Avg end':'Avg total'}</span></div><div class="stat"><b>${sub?(ea.length?Math.max(...ea):'–'):(tot.length?Math.max(...tot):'–')}</b><span>${sub?'Best end':'Best total'}</span></div>
- <div class="stat"><b>${f1(av(ea))}</b><span>Avg / end</span></div><div class="stat"><b>${aa.length?(av(aa)).toFixed(2):'–'}</b><span>Avg / arrow</span></div></div>
+ <div class="stat"><b>${f1(F.sum.avgMain)}</b><span>${sub?'Avg end':'Avg total'}</span></div><div class="stat"><b>${F.sum.bestMain??'–'}</b><span>${sub?'Best end':'Best total'}</span></div>
+ <div class="stat"><b>${f1(F.sum.avgEnd)}</b><span>Avg / end</span></div><div class="stat"><b>${F.sum.avgArrow==null?'–':F.sum.avgArrow.toFixed(2)}</b><span>Avg / arrow</span></div></div>
  ${sub?'<div class="muted tiny" style="margin-top:6px">Distance/end filters on: stats use only the ticked ends.</div>':''}</div>`;
- // trend
  const multiRound=new Set(rs.map(r=>r.r)).size>1;
  h+=`<div class="card"><div class="row"><h2 class="sp">Trend</h2><div class="seg" style="width:180px"><button data-m="t" class="${S.metric==='t'?'on':''}">${sub?'Avg end':'Score'}</button><button data-m="rt" class="${S.metric==='rt'?'on':''}">Rating</button></div></div>
  ${multiRound&&S.metric==='t'&&!sub?'<div class="muted tiny">Mixed rounds — pick one round or use Rating for a fair trend.</div>':''}${trendSvg(G,sub)}${legend(G)}</div>`;
- // per end
  if(E.length){h+=`<div class="card"><h2>Average per end</h2><div class="muted tiny">Across every ticked score, by end number</div>${perEndSvg(G)}${legend(G)}</div>`;
-  const dg={};E.forEach(e=>{(dg[e.dl]=dg[e.dl]||[]).push(e)});
-  h+=`<div class="card"><h2>Per distance</h2><div style="overflow-x:auto"><table style="min-width:${120+G.length*62}px"><tr><th>Distance</th>${G.map(g=>`<th style="color:${g.c}">${esc(g.name.split(' ')[0])}</th>`).join('')}</tr>${Object.keys(dg).sort((x,y)=>(parseInt(y)||0)-(parseInt(x)||0)).map(dl=>`<tr><td>${esc(dl)}</td>${G.map(g=>{const v=dg[dl].filter(e=>S.split?e.r.m===g.k:1).map(e=>e.t).filter(x=>x!=null);return`<td>${v.length?f1(av(v)):'–'}<div class="tiny muted">${v.length} ends</div></td>`}).join('')}</tr>`).join('')}</table></div><div class="muted tiny" style="margin-top:4px">Average end score at each distance</div></div>`;
-  h+=`<div class="card"><h2>Arrow values</h2>${distSvg(G,E)}${legend(G)}</div>`}
- else h+=`<div class="card note">These scores have no end-by-end sheet saved, so only totals are shown.</div>`;
-
- if(E.length){const GE=G.map(g=>({g,E:E.filter(e=>!S.split||e.r.m===g.k)}));
-  const sd=v=>{const m=av(v);return Math.sqrt(av(v.map(x=>(x-m)*(x-m))))};
-  // half split + round phase + weakest end
-  const ph=GE.map(({g,E})=>{const h=[[],[]],t=[[],[],[]];const per={};E.forEach(e=>(per[e.r.a]=per[e.r.a]||[]).push(e));Object.values(per).forEach(L=>{L.forEach((e,i)=>{if(e.t==null)return;h[i<L.length/2?0:1].push(e.t);t[Math.min(2,Math.floor(i*3/L.length))].push(e.t)})});
-   const pm={};E.forEach(e=>{if(e.t!=null)(pm[e.n]=pm[e.n]||[]).push(e.t)});const we=Object.entries(pm).filter(x=>x[1].length>=2).map(([n,v])=>[n,av(v)]).sort((a,b)=>a[1]-b[1])[0];
-   return{g,h:h.map(av),t:t.map(av),we}});
-  h+=card2('Half split','First half vs second half of each score (avg end)',gbars(['1st half','2nd half'],ph.map(p=>({g:p.g,v:p.h}))));
-  h+=card2('Round phase','First, middle and last third of ends (avg end)',gbars(['First','Middle','Last'],ph.map(p=>({g:p.g,v:p.t}))));
-  h+=card2('Weakest end','Lowest average end number (2+ ends)',`<table>${ph.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.we?'End '+p.we[0]+' · <b>'+f1(p.we[1])+'</b>':'–'}</td></tr>`).join('')}</table>`);
-  // consistency
-  h+=card2('Consistency','Spread of end scores and arrows (lower = tighter)',`<table><tr><th></th><th>End SD</th><th>Arrow SD</th><th>Ends</th></tr>${GE.map(({g,E})=>{const et=E.map(e=>e.t).filter(x=>x!=null),aw=E.flatMap(e=>e.ar.map(aval)).filter(x=>x!=null);return`<tr><td style="color:${g.c}">${esc(g.name)}</td><td>${et.length>1?sd(et).toFixed(2):'–'}</td><td>${aw.length>1?sd(aw).toFixed(2):'–'}</td><td>${et.length}</td></tr>`}).join('')}</table>`);
-  // by distance chart
-  const dls=[...new Set(E.map(e=>e.dl))].sort((x,y)=>(parseInt(y)||0)-(parseInt(x)||0));
-  h+=card2('By distance','Average arrow at each distance',gbars(dls,GE.map(({g,E})=>({g,v:dls.map(d=>av(E.filter(e=>e.dl===d).flatMap(e=>e.ar.map(aval)).filter(x=>x!=null)))})),2));
-  // 10+X rate per shoot
-  const rate=G.map(g=>({g,p:g.rs.map(r=>{const a=endsOf(r).flatMap(e=>e.ar.map(x=>x.toUpperCase()));return a.length?{x:+new Date(r.dt),y:100*a.filter(x=>x==='X'||x==='10').length/a.length,r}:null}).filter(Boolean)}));
-  h+=card2('10 + X rate per shoot','% of arrows scoring 10 or X',lineSvg(rate,v=>Math.round(v)+'%'));
- }
- // rolling averages
- {const roll=m=>{const f=ago(m);return G.map(g=>{const v=g.rs.filter(r=>r.dt>=f).flatMap(endsOf).map(e=>e.t).filter(x=>x!=null);return v.length?av(v):null})};const r3=roll(3),r5=roll(5),r6=roll(6);
-  h+=card2('Rolling averages','Average end score over the last 3, 5 and 6 months (ticked rounds)',`<table><tr><th></th><th>3 mo</th><th>5 mo</th><th>6 mo</th></tr>${G.map((g,i)=>`<tr><td style="color:${g.c}">${esc(g.name)}</td><td>${f1(r3[i])}</td><td>${f1(r5[i])}</td><td>${f1(r6[i])}</td></tr>`).join('')}</table>`)}
- // PB progression
- {const pbs=[];G.forEach(g=>{const best={};g.rs.forEach(r=>{if(r.t==null)return;if(best[r.r]!=null&&r.t>best[r.r])pbs.push({g,r,from:best[r.r]});if(best[r.r]==null||r.t>best[r.r])best[r.r]=r.t})});
-  h+=card2('PB progression','Each time a score beat the previous best on that round',pbs.length?`<table>${pbs.reverse().slice(0,12).map(p=>`<tr><td><span style="color:${p.g.c}">●</span> ${esc(p.r.r)}<div class="tiny muted">${esc(byId[p.r.m].name)} · ${fmt(p.r.dt)}</div></td><td><b>${p.r.t}</b><div class="tiny" style="color:#6ee7a0">+${p.r.t-p.from}</div></td></tr>`).join('')}</table>`:'<div class="muted small">No PB improvements in this selection.</div>')}
- // per round
- const rg={};rs.forEach(r=>(rg[r.r]=rg[r.r]||[]).push(r));
+  h+=`<div class="card"><h2>Per distance</h2><div style="overflow-x:auto"><table style="min-width:${120+G.length*62}px"><tr><th>Distance</th>${G.map(g=>`<th style="color:${g.c}">${esc(g.name.split(' ')[0])}</th>`).join('')}</tr>${F.dls.map(dl=>`<tr><td>${esc(dl)}</td>${F.perDist[dl].map(c=>`<td>${c.n?f1(c.avg):'–'}<div class="tiny muted">${c.n} ends</div></td>`).join('')}</tr>`).join('')}</table></div><div class="muted tiny" style="margin-top:4px">Average end score at each distance</div></div>`;
+  h+=`<div class="card"><h2>Arrow values</h2>${distSvg(G,E)}${legend(G)}</div>`;
+  h+=card2('Half split','First half vs second half of each score\'s ends (avg end; odd middle end left out)',gbars(['1st half','2nd half'],F.ph.map(p=>({g:p.g,v:p.h}))));
+  h+=card2('Round phase','First, middle and last third of each score\'s ends (avg end)',gbars(['First','Middle','Last'],F.ph.map(p=>({g:p.g,v:p.t}))));
+  h+=card2('Weakest end','Lowest average end number (needs 2+ ends)',`<table>${F.ph.map(p=>`<tr><td style="color:${p.g.c}">${esc(p.g.name)}</td><td>${p.we?'End '+p.we[0]+' · <b>'+f1(p.we[1])+'</b>':'–'}</td></tr>`).join('')}</table>`);
+  h+=card2('Consistency','Standard deviation of end scores and arrow values (lower = tighter)',`<table><tr><th></th><th>End SD</th><th>Arrow SD</th><th>Ends</th></tr>${F.cons.map(c=>`<tr><td style="color:${c.g.c}">${esc(c.g.name)}</td><td>${c.esd==null?'–':c.esd.toFixed(2)}</td><td>${c.asd==null?'–':c.asd.toFixed(2)}</td><td>${c.n}</td></tr>`).join('')}</table>`);
+  h+=card2('By distance','Average arrow at each distance',gbars(F.dls,F.byDistArrow,2));
+  h+=card2('10 + X rate per shoot','% of arrows shot scoring 10 or X',lineSvg(F.rate,v=>Math.round(v)+'%'));
+ }else h+=`<div class="card note">These scores have no end-by-end sheet saved, so only totals are shown.</div>`;
+ h+=card2('Rolling averages','Average end score from scores dated on/after today minus 3, 5, 6 months (other ticks apply)',`<table><tr><th></th><th>3 mo</th><th>5 mo</th><th>6 mo</th></tr>${G.map((g,i)=>`<tr><td style="color:${g.c}">${esc(g.name)}</td>${[3,5,6].map(m=>`<td>${f1(F.roll[m][i])}</td>`).join('')}</tr>`).join('')}</table>`);
+ h+=card2('PB progression','Each time a score was strictly higher than the previous best on the same round',F.pbs.length?`<table>${F.pbs.slice().reverse().slice(0,12).map(p=>`<tr><td><span style="color:${p.g.c}">●</span> ${esc(p.r.r)}<div class="tiny muted">${esc(byId[p.r.m].name)} · ${fmt(p.r.dt)}</div></td><td><b>${p.r.t}</b><div class="tiny" style="color:#6ee7a0">+${p.r.t-p.from}</div></td></tr>`).join('')}</table>`:'<div class="muted small">No PB improvements in this selection.</div>');
  h+=`<div class="card"><h2>Per round</h2><table><tr><th>Round</th><th>#</th><th>Avg</th><th>Best</th></tr>${Object.entries(rg).sort((a,b)=>b[1].length-a[1].length).map(([k,v])=>{const t=v.map(r=>r.t).filter(x=>x!=null);return`<tr class="click" data-round="${esc(k)}"><td>${esc(k)}</td><td>${v.length}</td><td>${f1(av(t))}</td><td><b>${t.length?Math.max(...t):'–'}</b></td></tr>`}).join('')}</table><div class="muted tiny" style="margin-top:4px">Tap a round to tick just that round</div></div>`;
  // sessions
  h+=`<div class="card"><h2>Scores</h2><table>${rs.slice().reverse().slice(0,80).map(r=>`<tr class="click" data-aid="${r.a}"><td><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${byId[r.m].c};margin-right:6px"></span>${esc(r.r)}<div class="tiny muted">${esc(byId[r.m].name)} · ${fmt(r.dt)} · ${esc(r.ev)}</div></td><td><b>${r.t??'–'}</b>${r.ds.length?'<div class="tiny" style="color:var(--sky)">ends ›</div>':''}</td></tr>`).join('')}</table>${rs.length>80?`<div class="muted tiny">Showing latest 80 of ${rs.length}. Narrow the dates to see older.</div>`:''}</div>`;
@@ -248,13 +246,13 @@ function saved(){const c=combos();
  app.querySelectorAll('[data-q]').forEach(el=>el.onclick=()=>{const q=el.dataset.q;S={a:q==='all'?[]:[+q],r:[],from:ago(q==='all'?6:3),to:'',dist:[],end:[],split:true,metric:'t'};tab='mix';render();scrollTo(0,0)});
 }
 // ---------- rankings ----------
-let RL='top10_open';const RRm={};const wide=()=>matchMedia('(min-width:1024px)').matches;
+let RL='top10_open';const RANKROWS={};const RRm={};const wide=()=>matchMedia('(min-width:1024px)').matches;
 function rankCol(L){const list=D.ranked.filter(a=>a.lists.includes(L));const rc={};list.forEach(a=>Object.keys(a.best).forEach(k=>rc[k]=(rc[k]||0)+1));
  const sqBest={};R.filter(r=>r.dt>=D.window_from&&r.t!=null).forEach(r=>{const k=r.m+'|'+r.r;if(!sqBest[k]||r.t>sqBest[k].t)sqBest[k]=r});
  const rounds=Object.keys(rc).sort((a,b)=>rc[b]-rc[a]);let RR=RRm[L];if(!RR||!rounds.includes(RR))RR=RRm[L]=rounds[0]||'';
- let rows=list.filter(a=>a.best[RR]).map(a=>({name:a.name,club:a.club,s:a.best[RR].s,dt:a.best[RR].dt,rt:a.best[RR].rt,sq:a.sq,pos:a.pos}));
- rows.sort((a,b)=>b.s-a.s);
- return`<div class="rcol"><div class="card"><span class="kicker">${L==='top10_open'?'Top 10 Open':'Top 10 Under 16'} · compare on round</span><select data-rr="${L}">${rounds.map(r=>`<option ${r===RR?'selected':''}>${esc(r)}</option>`).join('')}</select></div>
+ RANKROWS[L]=null;let rows=list.filter(a=>a.best[RR]).map(a=>({name:a.name,club:a.club,s:a.best[RR].s,dt:a.best[RR].dt,rt:a.best[RR].rt,sq:a.sq,pos:a.pos}));
+ rows.sort((a,b)=>b.s-a.s||(a.dt<b.dt?-1:a.dt>b.dt?1:0)||(a.name<b.name?-1:1));
+ RANKROWS[L]={RR,rows,rounds};return`<div class="rcol"><div class="card"><span class="kicker">${L==='top10_open'?'Top 10 Open':'Top 10 Under 16'} · compare on round</span><select data-rr="${L}">${rounds.map(r=>`<option ${r===RR?'selected':''}>${esc(r)}</option>`).join('')}</select></div>
  <div class="card"><table><tr><th>#</th><th style="text-align:left">Archer</th><th>Best</th></tr>${rows.map((r,i)=>`<tr class="${r.sq?'sq':''}"><td>${i+1}</td><td style="text-align:left">${esc(r.name)}<div class="tiny muted">${esc(r.club)} · ${fmt(r.dt)}${r.pos.length?' · '+esc(r.pos.join(', ')):''}</div></td><td><b>${r.s}</b>${r.rt!=null?`<div class="tiny muted">${r.rt}</div>`:''}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">No scores on this round</td></tr>'}</table>
  <div class="muted tiny" style="margin-top:8px">Squad rows highlighted blue. Only archers whose Archer's Diary scores were collected are listed (${list.filter(a=>Object.keys(a.best).length).length} of ${list.length} on this list so far).</div></div>
  <div class="card"><h3>Who's on the list</h3><div class="muted tiny" style="margin-bottom:6px">From the official AA national rankings</div><table>${list.map(a=>`<tr class="${a.sq?'sq':''}"><td>${esc(a.name)}<div class="tiny muted">${esc(a.club)}${a.state?', '+esc(a.state):''}</div></td><td class="tiny muted">${esc(a.pos.join(', '))}</td></tr>`).join('')}</table></div></div>`}
@@ -267,7 +265,25 @@ function rank(){const W=wide();
 let _w=wide();addEventListener('resize',()=>{if(wide()!==_w){_w=wide();render()}});
 function about(){app.innerHTML=`<div class="card"><span class="kicker">Playground</span><h1>Coach mode</h1><p>This is a try-out of Phil's view-only coach mode, built from the squad's real Archer's Diary scores (compound, from 2024).</p>
  <div class="note">🎯 <b>Group patterns &amp; arrow plots</b> come later, from rounds the testers shoot in ScoreTool. Archer's Diary history has arrow values per end, not where each arrow landed.</div>
- <p class="small muted">Data built ${esc(D.generated)} · ${R.length} squad scores · rankings window from ${fmt(D.window_from)}. View-only: no edits, no exports. Saved combos stay on this device.</p></div>`}
-render();
+ <p class="small muted">Data built ${esc(D.generated)} · ${R.length} squad scores · rankings window from ${fmt(D.window_from)}. View-only: no edits, no exports. Saved combos stay on this device.</p></div>
+ <div class="card"><h2>How these numbers are worked out</h2><ul class="small" style="padding-left:18px;margin:6px 0;line-height:1.6">
+ <li><b>Scores</b> are the official totals from Archer's Diary. Each scoresheet's ends are checked against its total when the page is built.</li>
+ <li><b>Arrow values:</b> X counts as 10, M (miss) counts as 0, and every other value counts as its number. Averages per arrow use every arrow shot, misses included.</li>
+ <li><b>Latest</b> is the most recent date. <b>Best per round</b> is the highest total on that exact round name; if two are equal, the earlier one is shown.</li>
+ <li><b>Trend</b> (Squad page): the last 10 scores that have an AA rating are split into an older half and a newer half. Up means the newer half's average rating is more than 1 point higher, Down means more than 1 lower, otherwise Steady. It needs 4+ rated scores.</li>
+ <li><b>Avg total / Best total</b> use whole-round totals. When a distance or end is ticked, they switch to end scores (Avg end / Best end).</li>
+ <li><b>Avg per end, per distance and per round</b> are plain averages of the ticked ends or totals. Per round counts every score of that round.</li>
+ <li><b>Half split:</b> each score's ends, in order, split into a first and second half. With an odd number of ends the middle end is left out. Then the ends are averaged across all ticked scores.</li>
+ <li><b>Round phase:</b> each score's ends split into thirds by position (end i of n goes to third ⌊3i/n⌋), then averaged.</li>
+ <li><b>Weakest end</b> is the end number with the lowest average, counting only end numbers shot at least twice. Ties go to the lower end number. End numbers are as printed on the sheet.</li>
+ <li><b>Consistency</b> is the standard deviation (population: √(average of (value − mean)²)) of end scores and of arrow values.</li>
+ <li><b>10 + X rate</b> is 10s and Xs divided by all arrows shot in that score (misses included) × 100.</li>
+ <li><b>Rolling averages</b> are the average end score from scores dated on or after today minus 3, 5 or 6 calendar months. The other ticks still apply.</li>
+ <li><b>PB progression</b> lists a score only when it is strictly higher than that archer's previous best on the same round. Equal scores don't count.</li>
+ <li><b>Date presets</b> (Last 3/6/12 months) start on the same calendar day that many months before today, on this device's local date.</li>
+ <li><b>Overlay vs Combine:</b> Overlay works each archer out separately; Combine pools all their ends or totals together.</li>
+ <li><b>Rankings</b> list only archers on that official AA top-10 list. They're sorted by best score on the chosen round, highest first; ties go to the earlier date, then name.</li></ul></div>`}
+window.__CC={figures,squadFig,rankCol,RANKROWS,RRm,ago,setNow:f=>{NOW=f},R,SQ,trendOf,aval,distLab};
+if(!window.__NORENDER)render();
 })();
 </script></body></html>
