@@ -23,12 +23,10 @@ const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
 /* Logan's numbers come from his real data; sample kids use fixed numbers. */
 function memberStats(m){if(m.sample)return m;const real=realFor(m.name).filter(r=>!r.incomplete);
- const wkAgo=new Date(Date.now()-7*864e5).toLocaleDateString('en-CA');let wk=0;offFor(m.name).forEach(o=>{if(normDate(o.date)>=wkAgo)wk+=o.ends.reduce((t,e)=>t+e.arrows.length,0)});
- if(m.name==S.profile)wk=Object.entries((window.rewardDayArrows||dayArrows)()).filter(([d])=>d>=wkAgo).reduce((t,[,n])=>t+n,0);
+ const wk=weekArrows(m.name);
  const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);
  const lastR=rts[rts.length-1],prev=rts.slice(-11,-1),avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:null;
- const last=real[real.length-1];const dm={};offFor(m.name).forEach(o=>{const d=normDate(o.date);dm[d]=(dm[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});
- if(m.name==S.profile)Object.assign(dm,(window.rewardDayArrows||dayArrows)());const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
+ const last=real[real.length-1];const dm=arrowDays(m.name);const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
  const vbl=earnedBadges(m.name).map(b=>[hexIcon(b,1),b.name,b.on]),vb=vbl.filter(x=>x[2]).length;
  return{...m,wk,streak:st,badges:vb,blist:vbl,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
 const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};

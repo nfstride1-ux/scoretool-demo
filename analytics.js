@@ -5,17 +5,19 @@ const AF=window._af=window._af||{range:'season',round:'all',bow:'all',kind:'all'
 const bowOf=d=>((String(d||'').match(/Compound|Barebow|Recurve|Longbow/i)||['Other'])[0]);
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,f1=x=>(Math.round(x*10)/10).toFixed(1),f2=x=>x.toFixed(2);
 const GOLD='#ffc629',BLUE='#60a5fa',MUT='#9aa7ba';
+const myBow=()=>{const r=findReal(S.profile||'').filter(x=>x.division).slice(-1)[0];return r?bowOf(r.division):(S.bow||'Compound')};
 function shoots(){const me=S.profile||'',R=findReal(me),O=offFor(me),out=[],used=new Set();
  R.forEach(r=>{const d=normDate(r.date),o=O.find(x=>normDate(x.date)==d&&x.round==r.round&&!used.has(x));if(o)used.add(o);
   let ends=o?o.ends.filter(e=>!e.flag).map(e=>({dist:e.dist,arrows:e.arrows})):null;if((!ends||!ends.length)&&window.sheetEnds){const se=sheetEnds(d,r.round);if(se)ends=se.map(e=>({dist:e.dist,arrows:e.arrows}))}
   out.push({date:d,round:r.round,bow:bowOf(r.division),kind:'comp',score:r.score,part:!!r.incomplete,ends:ends&&ends.length?ends:null,club:r.club||'',event:r.event||'',tens:parseInt(r.tens)||0,xs:parseInt(r.xs)||0})});
  O.filter(o=>!used.has(o)).forEach(o=>{const ends=o.ends.filter(e=>!e.flag);if(!ends.length)return;
   out.push({date:normDate(o.date),round:o.round,bow:bowOf(o.division),kind:'comp',score:ends.reduce((t,e)=>t+endSum(e.arrows),0),part:o.ends.some(e=>e.flag),ends,club:o.club||'',event:o.event||''})});
- done().filter(s=>!s.sample).forEach(s=>out.push({date:s.date,round:s.round,bow:'Practice',kind:'practice',score:total(s),part:false,ends:s.ends.map((e,j)=>({dist:(s.dists||[])[j]||'',arrows:e.map(String)})),pos:(s.pos||[]).flat().filter(Boolean),club:'',event:'Practice'}));
+ /* app sessions: bow = the archer's bow (from their official division), never 'Practice'; a paper sheet is a competition; fewer ends than the round = incomplete */
+ S.sessions.filter(s=>!s.sample&&ROUNDS[s.round]&&arrowsIn(s)>0).forEach(s=>out.push({date:s.date,round:window.canonRound?canonRound(s.round):s.round,bow:myBow(),kind:s.src=='paper'?'comp':'practice',score:total(s),part:!isDone(s),ends:s.ends.map((e,j)=>({dist:(s.dists||[])[j]||'',arrows:e.map(String)})),pos:(s.pos||[]).flat().filter(Boolean),club:'',event:'Practice'}));
  out.forEach(s=>{s.field=/field/i.test(s.round);s.na=s.ends?s.ends.reduce((t,e)=>t+e.arrows.length,0):(s.part?null:roundArrows(s.round));s.pts=s.ends?s.ends.reduce((t,e)=>t+endSum(e.arrows),0):s.score});
  return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
 function filt(all){const now=today(),yr=now.slice(0,4),d90=new Date(Date.now()-90*864e5).toLocaleDateString('en-CA');
- return all.filter(s=>(AF.range=='all'||(AF.range=='season'?s.date.startsWith(yr):s.date>=d90))&&(AF.round=='all'||s.round==AF.round)&&(AF.bow=='all'||s.bow==AF.bow)&&(AF.kind=='all'||s.kind==AF.kind))}
+ return all.filter(s=>(S.incInc||!s.part)&&(AF.range=='all'||(AF.range=='season'?s.date.startsWith(yr):s.date>=d90))&&(AF.round=='all'||s.round==AF.round)&&(AF.bow=='all'||s.bow==AF.bow)&&(AF.kind=='all'||s.kind==AF.kind))}
 /* PB flags per round+bow, chronological, full rounds only */
 function markPB(all){const best={};all.forEach(s=>{s.pb=false;if(s.part)return;const k=s.round+'|'+s.bow;if(best[k]==null||s.score>best[k]){s.pb=best[k]!=null;s.first=best[k]==null;s.prev=best[k];best[k]=s.score}})}
 function line(pts,o={}){if(!pts.length)return'';const W=340,H=o.h||130,P=28,ys=pts.map(p=>p.y).concat((o.y2||[]).filter(v=>v!=null)),mn=Math.min(...ys),mx=Math.max(...ys),sp=mx-mn||1,
@@ -37,13 +39,13 @@ function view(){const all=shoots();markPB(all);const L=filt(all);
  const full=L.filter(s=>!s.part),allF=L.every(s=>s.field),known=full.filter(s=>s.na&&(allF?s.field&&s.pts/s.na<=6:!s.field&&s.pts/s.na<=10)),arr=L.reduce((t,s)=>t+(s.na||0),0),avg=known.reduce((t,s)=>t+s.pts,0)/(known.reduce((t,s)=>t+s.na,0)||1);
  const byAvg=known.map(s=>({...s,a:s.pts/s.na})).sort((a,b)=>b.a-a.a),pbs=L.filter(s=>s.pb);
  // 1 overview
- h+=card('Season overview','',`<div class="stats" style="grid-template-columns:1fr 1fr 1fr">${stat(L.length,'shoots')}${stat(arr,'arrows')}${stat(known.length?f2(avg):'–','avg arrow')}${stat(pbs.length,'PBs set')}${stat(byAvg[0]?f2(byAvg[0].a):'–','best avg')}${stat(byAvg.length?f2(byAvg[byAvg.length-1].a):'–','lowest avg')}</div>
+ h+=card((AF.range=='season'?new Date().getFullYear()+' season':AF.range=='90'?'Last 90 days':'All time')+' overview','',`<div class="stats" style="grid-template-columns:1fr 1fr 1fr">${stat(L.length,'shoots')}${stat(arr,'arrows')}${stat(known.length?f2(avg):'–','avg arrow')}${stat(pbs.length,'PBs set')}${stat(byAvg[0]?f2(byAvg[0].a):'–','best avg')}${stat(byAvg.length?f2(byAvg[byAvg.length-1].a):'–','lowest avg')}</div>
   ${byAvg[0]?`<p class="small muted" style="margin:6px 0 0">Best: ${byAvg[0].score} ${esc(byAvg[0].round)} on ${byAvg[0].date}. Lowest: ${byAvg[byAvg.length-1].score} ${esc(byAvg[byAvg.length-1].round)} on ${byAvg[byAvg.length-1].date}. Averages use full rounds with a known arrow count${L.length-known.length?` (${L.length-known.length} shoot${L.length-known.length>1?'s':''} left out: partial, unknown round length${allF?'':', or field rounds, which score 1–6; pick a field round above to see field averages'})`:''}.</p>`:''}`,true);
  // 2 trend per round
  const cnt={};full.forEach(s=>cnt[s.round+'|'+s.bow]=(cnt[s.round+'|'+s.bow]||0)+1);const tk=AF.round!='all'?Object.keys(cnt).filter(k=>k.startsWith(AF.round+'|')).sort((a,b)=>cnt[b]-cnt[a])[0]:Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
  if(tk){const T=L.filter(s=>s.round+'|'+s.bow==tk),fullT=T.filter(s=>!s.part),roll=T.map((s,i)=>{const w=T.slice(0,i+1).filter(x=>!x.part).slice(-3);return s.part||w.length<2?null:mean(w.map(x=>x.score))});
   h+=card('Trend',`${esc(tk.replace('|',' · '))}`,`${line(T.map(s=>({y:s.score,d:s.date.slice(2),pb:s.pb,hollow:s.part,t:`${s.date}: ${s.score}${s.part?' (partial)':''}`})),{y2:roll,label:'Totals over time'})}
-  <p class="small muted" style="margin:0">Blue = total, gold dashes = rolling average of the last 3 full rounds, ★ = new PB, hollow = partial. ${fullT.length} full round${fullT.length==1?'':'s'}, best ${Math.max(...fullT.map(s=>s.score),0)}.${AF.round=='all'?' Showing your most-shot round; pick a round above to change it.':''}</p>`)}
+  <p class="small muted" style="margin:0">Blue = total, gold dashes = average of your last 3 full rounds, ★ = new PB, hollow = partial. ${fullT.length} full round${fullT.length==1?'':'s'}, best ${Math.max(...fullT.map(s=>s.score),0)}.${AF.round=='all'?' Showing your most-shot round; pick a round above to change it.':''}</p>`)}
  // 3 PB timeline
  const firsts=L.filter(s=>s.first),ups=L.filter(s=>s.pb);
  h+=card('PB progression','',ups.length||firsts.length?`<div>${ups.map(s=>`<div class="list-item row"><span><b style="color:${GOLD}">★ ${s.score}</b> ${esc(s.round)} <span class="small muted">${s.bow}</span></span><span class="small">+${s.score-s.prev} · ${s.date.slice(5)}</span></div>`).reverse().join('')||'<p class="small muted">No PB was beaten in this period.</p>'}</div><p class="small muted" style="margin:6px 0 0">${firsts.length} round${firsts.length==1?'':'s'} shot for the first time in this period (first score sets the mark).</p>`:'<p class="small muted">No full rounds in this period.</p>');
@@ -51,7 +53,7 @@ function view(){const all=shoots();markPB(all);const L=filt(all);
  const grp={};full.forEach(s=>(grp[s.round+'|'+s.bow]=grp[s.round+'|'+s.bow]||[]).push(s.score));const cons=Object.entries(grp).filter(([,v])=>v.length>=2);
  const EA=L.filter(s=>s.ends).flatMap(s=>s.ends.filter(e=>e.arrows.length).map(e=>endSum(e.arrows)/e.arrows.length));
  h+=card('Consistency','',`${cons.length?hbars(cons.map(([k,v])=>[k.split('|')[0]+(new Set(cons.map(c=>c[0].split('|')[0])).size<cons.length?' · '+k.split('|')[1].slice(0,4):''),sd(v),`${v.length} rounds · spread ${Math.max(...v)-Math.min(...v)} (${Math.min(...v)}–${Math.max(...v)})`]),f1):'<p class="small muted">Needs 2+ full rounds of the same round.</p>'}
-  <p class="small muted" style="margin:4px 0 0">Bars = standard deviation of totals on each round (lower = more even).</p>${EA.length>1?`<div class="stats" style="grid-template-columns:1fr 1fr;margin-top:8px">${stat(f2(sd(EA)),'end avg-arrow SD')}${stat(EA.length,'ends with arrows')}</div><p class="small muted" style="margin:4px 0 0">End spread uses each end's average arrow so 3- and 6-arrow ends compare fairly.</p>`:''}`);
+  <p class="small muted" style="margin:4px 0 0">Bars = standard deviation of totals on each round (lower = more even).</p>${EA.length>1?`<div class="stats" style="grid-template-columns:1fr 1fr;margin-top:8px">${stat(f2(sd(EA)),'spread of ends, per arrow')}${stat(EA.length,'ends with arrows')}</div><p class="small muted" style="margin:4px 0 0">Spread = how far your ends usually are from your average end, worked out per arrow so 3- and 6-arrow ends compare fairly. Smaller means steadier.</p>`:''}`);
  // arrow-level
  const AL=L.filter(s=>s.ends),skip=L.length-AL.length,note=skip?`<p class="small muted" style="margin:6px 0 0">${skip} total-only shoot${skip>1?'s':''} left out (no end-by-end arrows).</p>`:'';
  if(AL.length){
@@ -60,7 +62,7 @@ function view(){const all=shoots();markPB(all);const L=filt(all);
   h+=card('By distance','Average arrow at each distance',hbars(ds.map(d=>[d,mean(dm[d].map(val)),`${dm[d].length} arrows`]),f2)+note);
   // 6 round phase
   const ph=[[],[],[]];AL.filter(s=>s.ends.length>=6).forEach(s=>{const n=s.ends.length,t=Math.floor(n/3);s.ends.forEach((e,i)=>{const k=i<t?0:i>=n-t?2:1;ph[k].push(...e.arrows.map(val))})});
-  if(ph[0].length){const m=ph.map(mean),dl=m[2]-m[0];h+=card('Round phase','First, middle and last ends',hbars([['First third',m[0]],['Middle third',m[1]],['Last third',m[2]]],f2)+`<p class="small" style="margin:6px 0 0">Your last third averages <b>${f2(Math.abs(dl))} ${dl<0?'lower':'higher'}</b> per arrow than your first third (${ph[0].length+ph[1].length+ph[2].length} arrows, rounds of 6+ ends).</p>`+note)}
+  if(ph[0].length){const m=ph.map(mean),dl=m[2]-m[0];h+=card('Early, middle and late ends','Average per arrow in each third of the round',hbars([['First third',m[0]],['Middle third',m[1]],['Last third',m[2]]],f2)+`<p class="small" style="margin:6px 0 0">Your last third averages <b>${f2(Math.abs(dl))} ${dl<0?'lower':'higher'}</b> per arrow than your first third (${ph[0].length+ph[1].length+ph[2].length} arrows, rounds of 6+ ends).</p>`+note)}
   // 7 distribution
   const keys=['X','10','9','8','7','6','5','4','3','2','1','M'],A=AL.flatMap(s=>s.ends.flatMap(e=>e.arrows)),c=keys.map(k=>A.filter(a=>a==k).length),sh=keys.map((k,i)=>[k,c[i]]).filter(x=>x[1]);
   const rate=L.filter(s=>s.ends||(s.tens&&s.na)).map(s=>{const a=s.ends?s.ends.flatMap(e=>e.arrows):null;return{y:Math.round((a?a.filter(x=>x=='X'||x=='10').length/a.length:s.tens/s.na)*100),d:s.date.slice(2),t:`${s.date} ${s.round}`}});

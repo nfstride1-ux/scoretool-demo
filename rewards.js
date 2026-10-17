@@ -32,7 +32,7 @@ const isTen=a=>a=='X'||a=='10';
 function allEnds(name){const own=name==S.profile;const E=[];
  if(own)(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach(e=>E.push({date:s.date,arrows:e.map(String),src:'session'})));
  offFor(name).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official'})}));return E}
-function dayMap(name){if(name==S.profile)return dayArrows();const m={};offFor(name).forEach(o=>{const d=normDate(o.date);m[d]=(m[d]||0)+o.ends.reduce((t,e)=>t+e.arrows.length,0)});return m}
+function dayMap(name){return arrowDays(name)}
 function realFor(name){return name==S.profile?findReal(name):(REAL[name]||findReal(name))}
 /* Weekly practice streak with streak freezes: 1 freeze earned per 4 straight weeks (max 2 banked). A missed week uses a freeze instead of breaking the streak. */
 const wkNo=d=>Math.floor((new Date(d)-new Date('2024-01-01'))/6048e5);
@@ -79,7 +79,7 @@ function rankFor(name,disc){if(!disc){const o=rankFor(name,'Outdoor'),i=rankFor(
  const yr=today().slice(0,4),all=ratedRounds(name,yr,disc),latest=realFor(name).filter(r=>!r.incomplete&&(disc=='Indoor')==isIndoor(r)).slice(-1)[0];
  const bowTxt=latest?(latest.division.match(/compound|recurve|barebow|longbow/i)||['?'])[0]:null;
  if(!latest)return{state:'none',disc};const cat=aaCategory(latest.division);
- if(!cat)return{state:'provisional',disc,bow:bowTxt,why:`Rank tiers for ${bowTxt} aren't loaded yet. ScoreTool currently has Archery Australia's Recurve and Compound tables. Treat any rank here as provisional.`};
+ if(!cat)return{state:'provisional',disc,bow:bowTxt,why:`Archery Australia classification tables for ${bowTxt} aren't loaded yet. ScoreTool currently has Archery Australia's Recurve and Compound tables. Treat any rank here as provisional.`};
  const R=all.filter(r=>r.cat&&r.cat.bow==cat.bow&&r.cat.key==cat.key&&r.rating!=null).sort((a,b)=>b.rating-a.rating),unrated=all.filter(r=>r.rating==null).length;
  const L=AA_CLASS[cat.bow][cat.key];if(!L)return{state:'provisional',bow:bowTxt,why:'No Archery Australia table for this age class yet.'};
  const base={disc,bow:cat.bow,cls:cat.key,n:R.length,unrated,rounds:R};
@@ -89,26 +89,29 @@ function rankFor(name,disc){if(!disc){const o=rankFor(name,'Outdoor'),i=rankFor(
  if(!div){const lo=L[i],hi=L[i-1],step=(hi-lo)/3,k=Math.min(2,Math.floor((r3-lo)/step));div=['III','II','I'][k];const nxtNeed=k<2?lo+step*(k+1):hi;next={need:nxtNeed,pts:+(nxtNeed-r3).toFixed(1),label:k<2?tier+' '+['III','II','I'][k+1]:TIER_OF[AA_LEVELS[i-1]]+' '+(FIXED_DIV[AA_LEVELS[i-1]]||'III'),p:(r3-lo)/(hi-lo)}}
  else if(i>0)next={need:L[i-1],pts:+(L[i-1]-r3).toFixed(1),label:TIER_OF[AA_LEVELS[i-1]]+' '+FIXED_DIV[AA_LEVELS[i-1]],p:(r3-L[i])/(L[i-1]-L[i])};
  return{...base,state:'ranked',prov:i<=4,lvl,aa:AA_NAME[lvl]||lvl,tier,div,r3,next,date:normDate(R.map(r=>r.date).sort()[R.length-1])}}
-const tierPill=rk=>rk&&rk.state=='ranked'?`<span class="pill t-${rk.tier.toLowerCase()}">${rk.tier} ${rk.div}</span>`:`<span class="pill t-none">${rk&&rk.state=='placement'?'Placement':'Unranked'}</span>`;
+/* One rank name everywhere: the real Archery Australia classification (e.g. Grand Master Bowman, provisional). */
+const aaLabel=rk=>rk&&rk.state=='ranked'?rk.aa+(rk.prov?' (provisional)':''):rk&&rk.state=='placement'?'Placement':'Unranked';window.aaLabel=aaLabel;
+const tierPill=rk=>`<span class="pill t-none">${esc(aaLabel(rk))}</span>`;
 function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase():'none',C={bronze:'#c07a3a',silver:'#c9d1dc',gold:'#ffc629',platinum:'#38e1ff',diamond:'#a5f3fc',champion:'#ff6b6b',elite:'#60a5fa',none:'#475569'}[t];
  const pips=rk&&rk.state=='ranked'?({I:3,II:2,III:1}[rk.div]):0;
  return`<svg width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="${rk&&rk.state=='ranked'?rk.tier+' '+rk.div:'Unranked'}"><defs><linearGradient id="eg${t}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C}"/><stop offset="1" stop-color="${C}" stop-opacity=".35"/></linearGradient></defs><path d="M32 3 57 15v18c0 14-11 24-25 28C18 57 7 47 7 33V15z" fill="url(#eg${t})" stroke="${C}" stroke-width="2"/><circle cx="32" cy="29" r="11" fill="none" stroke="#0b0f17" stroke-width="3"/><circle cx="32" cy="29" r="4" fill="#0b0f17"/>${[...Array(pips)].map((_,k)=>`<rect x="${32-(pips*8-3)/2+k*8}" y="46" width="5" height="5" fill="#0b0f17" transform="rotate(45 ${32-(pips*8-3)/2+k*8+2.5} 48.5)"/>`).join('')}</svg>`}
 function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
- if(rk.state=='none')body=`<p><b>Unranked.</b> Rank tiers come from official scores in Archer's Diary. Shoot a round at a registered club or tournament shoot and it'll count.</p>`;
+ if(rk.state=='none')body=`<p><b>Unranked.</b> Your AA classification comes from official scores in Archer's Diary. Shoot a round at a registered club or tournament shoot and it'll count.</p>`;
  else if(rk.state=='provisional')body=`<p><span class="est">Provisional</span> ${esc(rk.why)}</p>`;
- else if(rk.state=='placement')body=`<p><b>Placement rounds: ${rk.n} of 3</b> in ${yr}.</p><div class="bar"><i style="width:${rk.n/3*100}%"></i></div><p class="small muted">Archery Australia needs three official rounds in the calendar year to set a classification, so your tier unlocks after round 3.${rk.best!=null?` Best rating so far: ${rk.best}.`:''}</p>`;
- else if(rk.state=='below')body=`<p><b>Unranked</b> · ${rk.toWhite} rating points to <b>Bronze III</b>.</p>`;
- else body=`<div class="row" style="justify-content:flex-start;gap:12px">${emblem(rk,72)}<div><h2 style="margin:0">${rk.tier} ${rk.div}</h2><div class="small muted">${rk.disc} · Archery Australia <b>${rk.aa}</b> · ${rk.bow} · ${rk.cls}</div>${rk.prov?'<span class="est" title="Not checked by ScoreTool">Provisional</span>':''}</div></div>
-  ${rk.prov?'<p class="small muted" style="margin:6px 0 0">Master Bowman and above also need rounds at an open tournament or QRE (AA rule 4.1). ScoreTool can\'t check that yet, so this tier is provisional until your club confirms it.</p>':''}
-  ${rk.next?`<div class="bar" style="margin-top:10px"><i style="width:${Math.round(Math.max(.03,Math.min(1,rk.next.p))*100)}%"></i></div><p class="small" style="margin:6px 0 0">${rk.next.pts} rating points to <b>${rk.next.label}</b> (on your 3rd-best round)</p>`:'<p class="small">Top of the ladder.</p>'}`;
- const oth=rk.other;const othTxt=oth&&oth.state=='ranked'?`${oth.disc}: <b>${oth.tier} ${oth.div}</b> (${oth.aa})`:oth&&oth.state=='placement'?`${oth.disc}: placement ${oth.n}/3`:oth&&oth.state=='below'?`${oth.disc}: unranked`:'';
- return`<div class="card" id="rankcard"><span class="kicker">Rank · ${yr} · verified scores only</span>${body}${othTxt?`<p class="small muted" style="margin:8px 0 0">Also ${othTxt}. Outdoor and indoor are separate classifications.</p>`:''}
- <details style="margin-top:8px"><summary class="small"><b>How ranks work</b></summary><p class="small muted">Your tier is your Archery Australia classification for ${yr}: your <b>third-best</b> rating from official rounds this calendar year, by bow type and age class, with outdoor and indoor counted separately (AA Shooting Rules v7.2, Schedule 4A.1). Practice and self-logged scores never count, so nobody can grind or buy a rank.</p>
- <table class="small" style="width:100%;border-collapse:collapse">${['White','Black','Blue','Red','Gold','Master','Grand Master','Elite Bronze','Elite Silver','Elite Gold'].map(l=>`<tr><td style="padding:2px 0">${AA_NAME[l]||l}</td><td style="text-align:right"><span class="pill t-${TIER_OF[l].toLowerCase()}">${TIER_OF[l]}${FIXED_DIV[l]?' '+FIXED_DIV[l]:' III–I'}</span></td></tr>`).join('')}</table>
+ else if(rk.state=='placement')body=`<p><b>Placement rounds: ${rk.n} of 3</b> in ${yr}.</p><div class="bar"><i style="width:${rk.n/3*100}%"></i></div><p class="small muted">Archery Australia needs three official rounds in the calendar year to set a classification, so it shows after round 3.${rk.best!=null?` Best rating so far: ${rk.best}.`:''}</p>`;
+ else if(rk.state=='below')body=`<p><b>Unranked</b> · ${rk.toWhite} rating points to <b>White</b>.</p>`;
+ else{const L=AA_CLASS[rk.bow][rk.cls],k=AA_LEVELS.indexOf(rk.lvl),nx=k>0?{name:AA_NAME[AA_LEVELS[k-1]]||AA_LEVELS[k-1],pts:+(L[k-1]-rk.r3).toFixed(1),p:(rk.r3-L[k])/(L[k-1]-L[k])}:null;
+  body=`<h2 style="margin:0">${esc(rk.aa)}</h2><div class="small muted">${rk.disc} · Archery Australia classification · ${rk.bow} · ${rk.cls}</div>${rk.prov?'<span class="est">Provisional</span>':''}
+  ${rk.prov?'<p class="small muted" style="margin:6px 0 0">Archery Australia only confirms Master Bowman and above once some of those rounds are at an open tournament or a Qualifying &amp; Ranking Event (QRE). ScoreTool can\'t check that yet, so it says provisional until your club confirms it.</p>':''}
+  ${nx?`<div class="bar" style="margin-top:10px"><i style="width:${Math.round(Math.max(.03,Math.min(1,nx.p))*100)}%"></i></div><p class="small" style="margin:6px 0 0">${nx.pts} rating points to <b>${nx.name}</b> (on your 3rd-best round)</p>`:'<p class="small">Top level.</p>'}`}
+ const oth=rk.other;const othTxt=oth&&oth.state=='ranked'?`${oth.disc}: <b>${esc(aaLabel(oth))}</b>`:oth&&oth.state=='placement'?`${oth.disc}: placement ${oth.n}/3`:oth&&oth.state=='below'?`${oth.disc}: unranked`:'';
+ return`<div class="card" id="rankcard"><span class="kicker">AA classification · ${yr} · official scores only</span>${body}${othTxt?`<p class="small muted" style="margin:8px 0 0">Also ${othTxt}. Outdoor and indoor are separate classifications.</p>`:''}
+ <details style="margin-top:8px"><summary class="small"><b>How this works</b></summary><p class="small muted">This is your Archery Australia classification for ${yr}: your <b>third-best</b> rating from official rounds this calendar year, by bow type and age class, with outdoor and indoor counted separately (AA Shooting Rules v7.2, Schedule 4A.1). Practice and self-logged scores never count. A rating puts every round on the same scale, so different rounds can be compared.</p>
+ <p class="small muted">Levels, lowest to highest: ${['White','Black','Blue','Red','Gold','Master','Grand Master','Elite Bronze','Elite Silver','Elite Gold'].map(l=>AA_NAME[l]||l).join(', ')}.</p>
  <p class="small muted">I–III inside Bronze to Diamond splits each AA band into thirds by rating. That split is ScoreTool's, not Archery Australia's. Barebow and Longbow tables aren't loaded yet, so those show as provisional.${rk.unrated?` ${rk.unrated} of your rounds this year use a round ScoreTool can't rate yet.`:''}</p></details></div>`}
-function rankFeed(m,n){const rk=rankFor(m.name);return rk.state=='ranked'?[{id:m.id+'r'+rk.tier+rk.div,date:rk.date,who:m,html:`<b>${esc(n)}</b> ranked <b style="color:var(--cyan)">${rk.tier} ${rk.div}</b>`,sub:'Archery Australia '+rk.aa+' · verified',ver:'official'}]:[]}
+function rankFeed(m,n){const rk=rankFor(m.name);return rk.state=='ranked'?[{id:m.id+'r'+rk.lvl,date:rk.date,who:m,html:`<b>${esc(n)}</b>: Archery Australia <b style="color:var(--cyan)">${esc(aaLabel(rk))}</b>`,sub:'Archery Australia '+rk.aa+' · verified',ver:'official'}]:[]}
 function rewardsView(){const p=S.profile;
- app.innerHTML=`${window.profileCard?profileCard(p,true):''}${rankCard(p)}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}${shelf()}`;
+ app.innerHTML=`${rankCard(p)}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}`;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
 /* ---------- Profile cards (replace animal avatars) ---------- */
@@ -122,8 +125,8 @@ function cardData(name){const mine=name==S.profile,B=earnedBadges(name).filter(b
  const title=(mine&&card().title&&(B.some(b=>b.name==card().title)||seasonTitles().includes(card().title)))?card().title:'';
  return{B,feat:feat.slice(0,3),rk,title,bow:last?(last.division.match(/compound|recurve|barebow|longbow/i)||[''])[0]:'',club:last?last.club:''}}
 function profileCard(name,link){const d=cardData(name),Bn=colourFor(name),nm=name==S.profile?name:shortName(name);
- return`<div class="pcard card" style="padding:0"><div class="ban" style="background:linear-gradient(120deg,${Bn[1]} 0 60%,${Bn[2]} 60% 64%,${Bn[1]} 64%)"></div><div class="body"><div class="row" style="align-items:flex-end">${initDisc({name},60)}<span style="margin-left:auto">${emblem(d.rk,54)}</span></div>
- <h2 style="margin:8px 0 2px">${esc(shortName(name))} ${tierPill(d.rk)}</h2>
+ return`<div class="pcard card" style="padding:0"><div class="ban" style="background:linear-gradient(120deg,${Bn[1]} 0 60%,${Bn[2]} 60% 64%,${Bn[1]} 64%)"></div><div class="body"><div class="row" style="align-items:flex-end">${initDisc({name},60)}</div>
+ <h2 style="margin:8px 0 2px">${esc(shortName(name))}</h2>
  <div class="small muted">${[d.title?`<b style="color:var(--gold)">"${esc(d.title)}"</b>`:'',d.bow,name==S.profile&&d.club?esc(d.club):''].filter(Boolean).join(' · ')}</div>
  <div style="display:flex;gap:10px;margin-top:10px;align-items:center">${d.feat.length?d.feat.map(b=>`<span style="text-align:center;font-size:11px;font-weight:700;width:64px">${hexIcon(b,0)}<br>${b.name}</span>`).join(''):'<span class="small muted">Featured badges show here once you unlock some.</span>'}</div>
  ${link?`<button class="btn ghost" style="margin-top:10px;padding:6px 12px;min-height:36px" onclick="nav('profile')">Edit card</button>`:''}</div></div>`}
@@ -132,7 +135,7 @@ function profileView(){const c=card(),d=cardData(S.profile);
  <label>Banner (pick your club colours)</label><div style="display:flex;flex-wrap:wrap;gap:8px">${BANNERS.map((b,i)=>`<button class="btn ghost" data-ban="${i}" aria-pressed="${i==(c.banner||0)}" style="padding:6px 10px;min-height:36px;${i==(c.banner||0)?'outline:2px solid var(--cyan)':''}"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,${b[1]} 50%,${b[2]} 50%);vertical-align:-2px"></span> ${b[0]}</button>`).join('')}</div>
  <label for="ttl">Title (earned badges and season rewards only)</label><select id="ttl"><option value="">No title</option>${[...d.B.map(b=>b.name),...seasonTitles()].map(n=>`<option ${n==c.title?'selected':''}>${n}</option>`).join('')}</select>
  <label>Featured badges (pick up to 3)</label><div style="display:flex;flex-wrap:wrap;gap:6px">${d.B.length?d.B.map(b=>`<label style="font-weight:600;margin:0;display:flex;gap:6px;align-items:center;background:var(--night2);padding:6px 10px;border-radius:10px"><input type="checkbox" data-ft="${b.id}" style="width:auto" ${c.featured.includes(b.id)?'checked':''}> ${b.name}</label>`).join(''):'<span class="small muted">No badges unlocked yet.</span>'}</div>
- <p class="small muted" style="margin-top:10px">Squad mates only see your initials, first name and last initial, rank, title and badges. No photo, club, age or contact details.</p>
+ <p class="small muted" style="margin-top:10px">Squad mates only see your initials, first name and last initial, AA classification, title and badges. No photo, club, age or contact details.</p>
  <button class="btn ghost" onclick="nav('rewards')">Done</button></div>`;
  app.querySelectorAll('[data-ban]').forEach(b=>b.onclick=()=>{c.banner=+b.dataset.ban;save();profileView()});
  $('#ttl').onchange=e=>{c.title=e.target.value;save();profileView()};
@@ -158,7 +161,7 @@ function leagueCard(){const rows=leagueTable(),solo=rows.length<2,me=rows.find(r
  return`<div class="card"><span class="kicker">${S.squad&&!solo?esc(S.squad.name)+' · ':''}Weekly league</span><h2>This week's league</h2>
  ${rows.map((r,i)=>`<div class="lrow ${r.m.name==S.profile?'me':''}"><b style="width:26px">${r.crown?`<span class="crown">${CROWN}</span>`:''}${i+1}</b>${initDisc(r.m,32)}<span style="flex:1"><b>${r.m.name==S.profile?'You':esc(shortName(r.m.name))}</b> ${tierPill(rankFor(r.m.name))}</span><b>${r.xp} XP</b>${solo?'':`<span class="small ${r.move>0?'up':r.move<0?'dn':'muted'}" style="width:28px;text-align:right">${r.move>0?'▲'+r.move:r.move<0?'▼'+(-r.move):'–'}</span>`}</div>`).join('')}
  ${solo?`<div class="list-item"><p style="margin:0"><b>Invite your squad</b> to make it a race. Leagues are private squads only.</p><button class="btn ghost" style="margin-top:6px;padding:6px 12px;min-height:36px" onclick="nav('squad')">Squads</button></div>`:''}
- <p class="small muted" style="margin:8px 0 0">Today: ${cap}/${XP_DAY_CAP} XP. 1 XP per arrow (up to ${XP_ARROW_CAP} a day) + ${XP_ROUND} per finished round, capped at ${XP_DAY_CAP} a day. Resets Monday · no demotions · top 3 wear a crown next week.</p></div>`}
+ <p class="small muted" style="margin:8px 0 0">Today: ${cap}/${XP_DAY_CAP} XP (activity points). 1 XP per arrow (up to ${XP_ARROW_CAP} a day) + ${XP_ROUND} per finished round, capped at ${XP_DAY_CAP} a day. Resets Monday · no demotions · top 3 wear a crown next week.</p></div>`}
 const SEASONS=[[2,4,'Autumn'],[5,7,'Winter'],[8,10,'Spring'],[11,1,'Summer']];
 function seasonOf(dt){const d=new Date(dt+'T00:00'),m=d.getMonth(),y=d.getFullYear();const s=SEASONS.find(x=>x[0]<=x[1]?m>=x[0]&&m<=x[1]:m>=x[0]||m<=x[1]);
  const sy=s[2]=='Summer'&&m<=1?y-1:y,start=new Date(sy,s[0],1),end=new Date(sy,s[0]+3,1);return{name:s[2]+' '+(s[2]=='Summer'?sy+'/'+String(sy+1).slice(2):sy),start:start.toLocaleDateString('en-CA'),end:end.toLocaleDateString('en-CA')}}
@@ -168,7 +171,7 @@ function seasonCard(){const s=seasonOf(today()),xp=sumXP(xpByDay(S.profile),s.st
  return`<div class="card dark"><span class="kicker">Season · ${s.name}</span><div class="row"><h2 style="margin:0">${xp} XP</h2><span class="small muted">${days} days left</span></div>
  <div class="bar" style="margin:8px 0"><i style="width:${Math.min(100,xp/TRACK[TRACK.length-1][0]*100)}%"></i></div>
  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">${TRACK.map(t=>`<div class="stat" style="padding:6px;${xp>=t[0]?'outline:1px solid var(--cyan)':'opacity:.55'}"><span style="display:block;font-weight:800;font-size:12px;line-height:1.2">${t[2]}</span><span class="small muted" style="font-size:11px">${t[1]} · ${t[0]}</span></div>`).join('')}</div>
- <p class="small muted" style="margin:8px 0 0">${nx?`${nx[0]-xp} XP to <b>${nx[2]}</b>. `:'Track complete! '}Free reward track, cosmetic only. Nothing to buy and nothing that helps your score. Peak rank so far: ${rk.state=='ranked'?rk.tier+' '+rk.div:'unranked'} (saved as a season badge when the season ends).</p></div>`}
+ <p class="small muted" style="margin:8px 0 0">${nx?`${nx[0]-xp} XP to <b>${nx[2]}</b>. `:'Track complete! '}Free reward track, cosmetic only. Nothing to buy and nothing that helps your score. XP = activity points: 1 for every arrow you shoot (up to 300 a day) and 25 for each finished round. Season stripe, Neon night = banner designs for your profile card; Grinder, Season Legend = titles; Season frame = a border.</p></div>`}
 /* Season titles join badge titles in the card editor */
 function seasonTitles(){const s=seasonOf(today()),xp=sumXP(xpByDay(S.profile),s.start,s.end);return TRACK.filter(t=>t[1]=='Title'&&xp>=t[0]).map(t=>t[2])}
 /* ---------- Monthly "Wrapped"-style recap. Stats only, no advice. Share card has no name, club or other personal details. ---------- */
@@ -205,7 +208,7 @@ function recapView(){const M=recapMonths();if(!M.length){app.innerHTML=`<div cla
  $('#rm').onchange=e=>{recapMonth=e.target.value;recapView()};drawRecap(st,mn);
  $('#rsave').onclick=()=>{const a=document.createElement('a');a.href=$('#rcv').toDataURL('image/png');a.download='scoretool-recap-'+recapMonth+'.png';a.click()};
  $('#rshare').onclick=()=>$('#rcv').toBlob(b=>{const f=new File([b],'scoretool-recap.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else $('#rsave').click()})}
-function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#1a1030');g.addColorStop(1,'#0b2340');x.fillStyle=g;x.fillRect(0,0,1080,1350);
+function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#0b1a3a');g.addColorStop(1,'#0b2340');x.fillStyle=g;x.fillRect(0,0,1080,1350);
  x.fillStyle='#38e1ff';x.font='700 40px "Barlow Condensed",sans-serif';x.fillText('MY MONTH IN ARCHERY · '+mn.toUpperCase(),70,110);
  x.fillStyle='#ffc629';x.font='italic 800 110px "Barlow Condensed",sans-serif';x.fillText((st.type?st.type[0]:'Wrapped').toUpperCase(),70,250);
  const T=[['ARROWS',st.arrowsN.toLocaleString()],['ROUNDS',st.rounds],['BEST END',st.bestEnd?st.bestEnd.s:'–'],["X'S",st.xs],['NEW PBS',st.pbs.length],['DAYS',st.days]];

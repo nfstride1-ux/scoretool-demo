@@ -60,7 +60,7 @@ a{color:var(--blue)}.dark a{color:var(--gold)}
 
 /* ---- dark sporty theme (teen redesign) ---- */
 .card{border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35)}
-.dark{background:linear-gradient(135deg,#101a2c,#1a1030);border-color:#2e3a55}
+.dark{background:linear-gradient(135deg,#101a2c,#0b1a3a);border-color:#2e3a55}
 .kicker{color:var(--cyan)}h1,h2{font-style:italic;letter-spacing:.01em}
 .btn.ghost{background:var(--night2);color:var(--ink);border:1px solid #2c3a52}.btn.alt{background:#2563eb}
 select,input,textarea{background:#0e1520;color:var(--ink);border-color:#33435c}
@@ -87,7 +87,7 @@ details summary{cursor:pointer}
 .crown{color:var(--gold)}.up{color:#4ade80}.dn{color:#f87171}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .lrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px}.lrow.me{background:#1b2740}
-.wrap-slide{border-radius:18px;padding:22px 18px;min-height:150px;background:linear-gradient(150deg,#1a1030,#0b2340);border:1px solid #33435c;margin-bottom:10px}
+.wrap-slide{border-radius:18px;padding:22px 18px;min-height:150px;background:linear-gradient(150deg,#0b1a3a,#0b2340);border:1px solid #33435c;margin-bottom:10px}
 .wrap-slide .big{font:800 56px var(--disp);line-height:1;color:var(--cyan)}
 .pbpost{background:linear-gradient(90deg,#2a1f05,transparent);border-left:3px solid var(--gold);padding-left:8px}
 .rt-common{color:var(--r-common)}.rt-rare{color:var(--r-rare)}.rt-epic{color:var(--r-epic)}.rt-legendary{color:var(--r-leg)}.rt-mythic{color:var(--r-myth)}

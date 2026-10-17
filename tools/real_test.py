@@ -44,14 +44,15 @@ try:
   # gap lines: every rank between shown rows is covered by a 'not shown' line
   rows=ap.eval_on_selector_all('#realrank tr','t=>t.map(x=>x.innerText)')
   chk('gap lines present when ranks skipped',all(('not shown' in r) or r.split('\t')[0].lstrip('=').isdigit() for r in rows[1:]))
-  # UI: Stats
+  # UI: Stats (Coach's read now lives behind More detail and follows the one Stats round/shoot picker)
   ap.click('nav [data-v=stats]');ap.wait_for_timeout(1200)
-  chk('coach read on stats',ap.locator('#coachread').count()==1 and ap.locator('#adlist').count()==1)
-  before=ap.inner_text('#coachread');ap.click('[data-crp="all"]');ap.wait_for_timeout(300);chk('period button changes read',ap.inner_text('#coachread')!=before)
-  ap.select_option('#crr',index=1);ap.wait_for_timeout(300);chk('round select works',ap.locator('#coachread').count()==1)
-  ap.select_option('#crr',label=[o for o in ap.eval_on_selector_all('#crr option','o=>o.map(x=>x.textContent)') if o.startswith('WA 90/1440 (')][0]);ap.wait_for_timeout(300)
-  b4=ap.inner_text('#coachread');ap.check('#crinc');ap.wait_for_timeout(300);chk('incomplete tick changes count',ap.inner_text('#coachread')!=b4)
-  chk('incomplete tagged in list','Incomplete' in ap.text_content('#adlist'))
+  if not ap.evaluate('!!S.statsMore'):ap.click('#moredet');ap.wait_for_timeout(500)
+  ap.select_option('#srd','WA 90/1440');ap.wait_for_timeout(500)
+  chk('coach read on stats, behind More detail',ap.locator('#more #coachread').count()==1 and ap.locator('#adlist').count()==0)
+  chk('coach read follows the round picker',ap.get_attribute('#coachread','data-round')=='WA 90/1440')
+  b4=ap.inner_text('#coachread');ap.check('#incinc');ap.wait_for_timeout(500);chk('incomplete tick changes count',ap.inner_text('#coachread')!=b4)
+  chk('incomplete tagged in shoot picker','Incomplete' in ap.text_content('#ssh'))
+  ap.uncheck('#incinc');ap.wait_for_timeout(300)
   chk('no horizontal overflow',ap.evaluate('document.documentElement.scrollWidth')<=390)
   # another tester sees none of it
   ap.evaluate("S.profile='Logan Wolfe'");ap.click('nav [data-v=rewards]');ap.wait_for_timeout(600);ap.click('nav [data-v=stats]');ap.wait_for_timeout(600)
