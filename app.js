@@ -149,7 +149,7 @@ let view=/^#plot/.test(location.hash)?'score':'home',cur=null;
 function nav(v){if(v=='plot')v='score';view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
 function gate(){return`<div class="card dark gate"><span class="kicker">Members only</span><h1>Unlock ScoreTool</h1><p>Track every arrow, see your progress, and celebrate your wins.</p>
-<ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with group centre</li><li>Coach/parent share link</li></ul>
+<ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with group centre</li><li>Coach squad invites and a parent share link</li></ul>
 <p class="small muted">Payments aren't switched on in this demo. Card, Apple Pay and Google Pay via Stripe will come later.</p>
 <button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their official results from Archer's Diary.</p>
@@ -158,6 +158,7 @@ function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
 function render(){seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
+ if(location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
  if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
@@ -533,19 +534,17 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  <div class="card"><span class="kicker">Evidence bank</span><h2>My best moments</h2><p class="small muted">Read these before a big shoot. You've done it before!</p>
  ${S.best.length?S.best.map(e=>`<div class="list-item"><b>${e.total}</b> · ${e.round} · ${e.date} ${e.sample?'<span class="sample">sample</span>':''}<div class="small">${e.text}</div></div>`).join(''):'<p>Nothing saved yet. Tap "Save to my evidence bank" on a good day.</p>'}
  <label for="bm">Add a moment in your own words</label><textarea id="bm" rows="2" placeholder="e.g. Stayed calm in the shoot-off at Kalamunda"></textarea><button class="btn ghost" id="bmadd" style="margin-top:6px">Add</button></div>
- <div class="card" id="coachcard"><span class="kicker">Coach / parent</span><h2>Share with your coach or parent</h2><h3>Read-only live link</h3><p class="small">Send this link to your coach or parent. They'll see progress and effort, but can't change anything.</p><input readonly value="${url}" id="sh" aria-label="share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a>
- <h3 style="margin-top:16px">Summary for a date range</h3><div class="row" style="gap:8px"><label style="flex:1">From<input id="cf" type="date" value="${new Date(Date.now()-30*864e5).toLocaleDateString('en-CA')}"></label><label style="flex:1">To<input id="ct" type="date" value="${today()}"></label></div>
- <button class="btn alt full" id="csend" style="margin-top:8px">📤 Send to my coach</button><div id="cout"></div></div>
+ ${coachCards(url)}
  ${window.helpCards?helpCards():''}${window.otherAppsCard?otherAppsCard():''}<div class="card"><span class="kicker">Squads</span><h2>My squad</h2><p class="small">A private, chat-free group to cheer each other on.</p><button class="btn" onclick="nav('squad')">Open squads</button></div><div class="card" id="settingscard"><span class="kicker">Settings</span><h2>Settings</h2><label for="sbside">Scroll bar side</label><select id="sbside"><option value="right" ${S.sbarSide!='left'?'selected':''}>Right (default)</option><option value="left" ${S.sbarSide=='left'?'selected':''}>Left</option></select><p class="small muted">Where the slim scroll bar sits on the scoring screen, so you can scroll without touching the target.</p></div>${testerCard()}<div class="card"><button class="btn ghost" id="rs">Reset my test data</button></div>`;bindTesterPicker(app);
  $('#bmadd').onclick=()=>{const t=$('#bm').value.trim();if(t){S.best.push({date:new Date().toISOString().slice(0,10),text:t,total:'⭐',round:'My note'});save();me()}};
  $('#cp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(url);$('#cp').textContent='Copied ✓'};
- $('#csend').onclick=()=>sendCoach($('#cf').value,$('#ct').value);
+ bindCoachCards();
  $('#sbside').onchange=e=>{S.sbarSide=e.target.value=='left'?'left':'right';save();sbarSync()};
  if(window.bindOtherApps)bindOtherApps();$('#rs').onclick=()=>{if(confirm('Clear all of '+(TESTER?TESTER.short:'this')+'\'s test data on this phone?')){localStorage.removeItem(KEY);location.reload()}}}
 function shareData(){const d=done();return{n:S.profile,s:d.slice(-10).map(s=>[s.date,s.round,total(s),arrows(s).length,s.sample?1:0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
  const real=findReal(D.n);
- app.innerHTML=`<div class="card dark"><span class="kicker">Coach / parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
+ app.innerHTML=`<div class="card dark"><span class="kicker">Parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
  <div class="card"><h3>Progress</h3>${lineChart([{name:'Session score',data:D.s.map(x=>x[2]),c:'#1d4ed8'}],{labels:D.s.map(x=>x[0].slice(5))})}${D.s.some(x=>x[4])?'<p class="small"><span class="sample">Includes sample data</span></p>':''}</div>
  <div class="card"><h3>Badges earned</h3><p>${D.b.join(' · ')||'None yet'}</p></div>
  ${real.length?`<div class="card"><h3>Official results</h3>${real.slice(-5).reverse().map(r=>`<div class="list-item"><b>${r.score}</b> · ${r.round} · ${r.date}</div>`).join('')}</div>`:''}
@@ -553,7 +552,7 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
 
 loadReal().then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
-addEventListener('hashchange',()=>{if(location.hash.startsWith('#share='))render();else nav(location.hash=='#plot'?'score':'home')});
+addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach='))render();else nav(location.hash=='#plot'?'score':'home')});
 
 /* ---------- scoring screen scroll bar (custom, so it shows on iOS too) ---------- */
 function sbarSync(){let b=document.getElementById('sbar');const on=!!app.querySelector('.ad-pad');
@@ -568,3 +567,31 @@ function sbarSync(){let b=document.getElementById('sbar');const on=!!app.querySe
  if(on){const hd=document.querySelector('header.top'),nv=document.querySelector('nav.tabs');b.style.top=((hd?hd.getBoundingClientRect().bottom:0)+6)+'px';b.style.bottom=((nv&&!nv.hidden?nv.getBoundingClientRect().height:0)+6)+'px';sbarPos()}}
 function sbarPos(){const b=document.getElementById('sbar');if(!b||b.hidden)return;const th=b.querySelector('.sb-thumb'),H=document.documentElement.scrollHeight,max=Math.max(0,H-innerHeight),h=b.clientHeight,tH=Math.max(44,h*Math.min(1,innerHeight/H));th.style.height=tH+'px';th.style.transform=`translateY(${max?scrollY/max*(h-tH):0}px)`;b.classList.toggle('idle',!max);b.setAttribute('aria-valuenow',max?Math.round(scrollY/max*100):0)}
 sbarSync();
+
+/* ---------- Coaches and parents (Me tab) ----------
+   Demo only, everything lives in this phone's localStorage like the rest of the tester data. There is no server yet, so:
+   - coach invites are seeded here for the demo (a real invite would come from the coach's app through a backend),
+   - Accept / Decline / Remove only change this phone,
+   - the coach view link opens a landing page; the real view needs a coach membership and the coach app (later build).
+   Phill is the coach in the demo. His squad is Steven Snook, Michael Choong, Nathe, Dana, Tahuri Engelen-Burney, Danie Oosthuizen and Joseph Snook;
+   of those, only Nathe is a tester profile in this app, so only Nathe's profile gets the pending invite. Everyone else sees the empty state. */
+const COACH_SEED={id:'ci-phill-2026-10',coach:'Phill Arthur',squad:"Phill's compound squad",sent:'2026-10-17',for:['nathe']};
+function seedCoach(){S.coachInvites=S.coachInvites||[];S.coaches=S.coaches||[];
+ if(S.coachSeeded==COACH_SEED.id)return;S.coachSeeded=COACH_SEED.id;
+ if(TESTER&&COACH_SEED.for.includes(TESTER.id)&&!S.coaches.some(c=>c.id==COACH_SEED.id))S.coachInvites.push({id:COACH_SEED.id,coach:COACH_SEED.coach,squad:COACH_SEED.squad,sent:COACH_SEED.sent});save()}
+const coachLink=()=>location.origin+location.pathname+'#coach='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({n:S.profile,t:TESTER?TESTER.id:''})))));
+function coachCards(url){seedCoach();const I=S.coachInvites,C=S.coaches;
+ return`<div class="card" id="coachcard"><span class="kicker">Coach</span><h2>My coaches</h2>
+ <h3>Coach invites</h3>${I.length?I.map(x=>`<div class="list-item"><b>${esc(x.coach)}</b> invited you to <b>${esc(x.squad)}</b><div class="small muted">Sent ${esc(x.sent)}. If you accept, they can see your scores and stats. They can't change anything.</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-ciacc="${esc(x.id)}">Accept</button><button class="btn ghost" data-cidec="${esc(x.id)}">Decline</button></div></div>`).join(''):'<p class="small muted" id="noinv">No invites right now. When a coach invites you to their squad, it shows up here.</p>'}
+ <h3 style="margin-top:14px">Coaches who can see my scores</h3>${C.length?C.map(c=>`<div class="list-item row"><span><b>${esc(c.coach)}</b><br><span class="small muted">${esc(c.squad)} · since ${esc(c.since)}</span></span><button class="btn ghost" data-crm="${esc(c.id)}" style="padding:6px 12px;min-height:36px">Remove</button></div>`).join(''):'<p class="small muted" id="nocoach">No coaches yet.</p>'}
+ <h3 style="margin-top:14px">Coach view link</h3><p class="small">Coaches with a ScoreTool coach membership can open this link for a view-only look at your scores and stats.</p><input readonly value="${coachLink()}" id="clink" aria-label="coach view link"><button class="btn ghost" id="clcp" style="margin-top:6px">Copy coach link</button></div>
+ <div class="card" id="parentcard"><span class="kicker">Parent</span><h2>Share with a parent</h2><p class="small">A view-only link for a parent. It shows your last 10 sessions, streak and badges as they are right now. They can't change anything. Copy a new link any time to update it.</p><input readonly value="${url}" id="sh" aria-label="parent share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a></div>`}
+function bindCoachCards(){const find=(L,id)=>L.findIndex(x=>x.id==id);
+ app.querySelectorAll('[data-ciacc]').forEach(b=>b.onclick=()=>{const i=find(S.coachInvites,b.dataset.ciacc);if(i<0)return;const x=S.coachInvites.splice(i,1)[0];S.coaches.push({id:x.id,coach:x.coach,squad:x.squad,since:today()});save();me()});
+ app.querySelectorAll('[data-cidec]').forEach(b=>b.onclick=()=>{const i=find(S.coachInvites,b.dataset.cidec);if(i<0)return;S.coachInvites.splice(i,1);save();me()});
+ app.querySelectorAll('[data-crm]').forEach(b=>b.onclick=()=>{const i=find(S.coaches,b.dataset.crm);if(i<0)return;if(!confirm(`Remove ${S.coaches[i].coach}? They won't see your scores any more.`))return;S.coaches.splice(i,1);save();me()});
+ const cl=$('#clcp');if(cl)cl.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#clink').value);cl.textContent='Copied'}}
+function renderCoachLanding(){$('#tabs').hidden=true;let D=null;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){}
+ if(!D||!D.n){app.innerHTML='<div class="card">This coach link is invalid.</div>';return}
+ app.innerHTML=`<div class="card dark" id="coachlanding"><span class="kicker">Coach view · view only</span><h1>${esc(D.n)}</h1><p>This link is for coaches. It opens a view-only look at ${esc(D.n.split(' ')[0])}'s scores and stats.</p></div>
+ <div class="card"><h2>You need a coach membership</h2><p>Sign in with a ScoreTool coach membership to see this archer. Coaches will see full score stats for their squad. They can't change anything.</p><p class="small muted">Coach memberships and the coach view are coming soon. Nothing about this archer is shown until then.</p><button class="btn" disabled>Coach sign-in (coming soon)</button></div>`}
