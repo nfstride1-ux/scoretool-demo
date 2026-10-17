@@ -90,7 +90,7 @@ function rankFor(name,disc){if(!disc){const o=rankFor(name,'Outdoor'),i=rankFor(
  else if(i>0)next={need:L[i-1],pts:+(L[i-1]-r3).toFixed(1),label:TIER_OF[AA_LEVELS[i-1]]+' '+FIXED_DIV[AA_LEVELS[i-1]],p:(r3-L[i])/(L[i-1]-L[i])};
  return{...base,state:'ranked',prov:i<=4,lvl,aa:AA_NAME[lvl]||lvl,tier,div,r3,next,date:normDate(R.map(r=>r.date).sort()[R.length-1])}}
 const tierPill=rk=>rk&&rk.state=='ranked'?`<span class="pill t-${rk.tier.toLowerCase()}">${rk.tier} ${rk.div}</span>`:`<span class="pill t-none">${rk&&rk.state=='placement'?'Placement':'Unranked'}</span>`;
-function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase():'none',C={bronze:'#c07a3a',silver:'#c9d1dc',gold:'#ffc629',platinum:'#38e1ff',diamond:'#a5f3fc',champion:'#ff6b6b',elite:'#d48bff',none:'#475569'}[t];
+function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase():'none',C={bronze:'#c07a3a',silver:'#c9d1dc',gold:'#ffc629',platinum:'#38e1ff',diamond:'#a5f3fc',champion:'#ff6b6b',elite:'#60a5fa',none:'#475569'}[t];
  const pips=rk&&rk.state=='ranked'?({I:3,II:2,III:1}[rk.div]):0;
  return`<svg width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="${rk&&rk.state=='ranked'?rk.tier+' '+rk.div:'Unranked'}"><defs><linearGradient id="eg${t}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C}"/><stop offset="1" stop-color="${C}" stop-opacity=".35"/></linearGradient></defs><path d="M32 3 57 15v18c0 14-11 24-25 28C18 57 7 47 7 33V15z" fill="url(#eg${t})" stroke="${C}" stroke-width="2"/><circle cx="32" cy="29" r="11" fill="none" stroke="#0b0f17" stroke-width="3"/><circle cx="32" cy="29" r="4" fill="#0b0f17"/>${[...Array(pips)].map((_,k)=>`<rect x="${32-(pips*8-3)/2+k*8}" y="46" width="5" height="5" fill="#0b0f17" transform="rotate(45 ${32-(pips*8-3)/2+k*8+2.5} 48.5)"/>`).join('')}</svg>`}
 function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
@@ -112,7 +112,7 @@ function rewardsView(){const p=S.profile;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
 /* ---------- Profile cards (replace animal avatars) ---------- */
-const BANNERS=[['Navy & gold','#13294b','#ffc629'],['Royal blue','#1d4ed8','#93c5fd'],['Red & black','#b91c1c','#111827'],['Green & gold','#166534','#facc15'],['Purple','#6d28d9','#f0abfc'],['Teal','#0f766e','#5eead4'],['Orange','#c2410c','#fde68a'],['Black & white','#111827','#e5e7eb']];
+const BANNERS=[['Navy & gold','#13294b','#ffc629'],['Royal blue','#1d4ed8','#93c5fd'],['Red & black','#b91c1c','#111827'],['Green & gold','#166534','#facc15'],['Sky blue','#0369a1','#7dd3fc'],['Teal','#0f766e','#5eead4'],['Orange','#c2410c','#fde68a'],['Black & white','#111827','#e5e7eb']];
 const card=()=>{S.card=S.card||{banner:0,featured:[],title:''};return S.card};
 const initials=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 function colourFor(name){if(name==S.profile&&S.card)return BANNERS[S.card.banner||0];let h=0;for(const c of name||'')h=(h*31+c.charCodeAt(0))>>>0;return BANNERS[h%BANNERS.length]}
@@ -199,7 +199,7 @@ function recapView(){const M=recapMonths();if(!M.length){app.innerHTML=`<div cla
   aw=`<div class="card"><span class="kicker">Squad awards · ${mn}</span>${best(s=>s.arrowsN,'Most arrows')}${best(s=>s.xs,'Most X\'s')}${best(s=>s.pbs.length,'Most PBs')}${best(s=>s.rounds,'Most rounds')}<p class="small muted">Private to your squad. Never on share cards.</p></div>`}
  app.innerHTML=`<div class="card"><label for="rm">Month</label><select id="rm">${M.map(m=>`<option value="${m}" ${m==recapMonth?'selected':''}>${monthName(m)}</option>`).join('')}</select></div>
  ${slides.map(([k,b])=>`<div class="wrap-slide"><span class="kicker">${k}</span>${b}</div>`).join('')}
- <div class="wrap-slide" style="background:linear-gradient(150deg,#3b0764,#0b2340)"><span class="kicker">Your archer type</span>${st.type?`<div class="big" style="font-size:44px;color:var(--gold)">${st.type[0]}</div><p>${st.type[1]}</p>`:'<p>Not enough arrows this month.</p>'}</div>
+ <div class="wrap-slide" style="background:linear-gradient(150deg,#0c4a6e,#0b2340)"><span class="kicker">Your archer type</span>${st.type?`<div class="big" style="font-size:44px;color:var(--gold)">${st.type[0]}</div><p>${st.type[1]}</p>`:'<p>Not enough arrows this month.</p>'}</div>
  ${aw}<div class="card"><span class="kicker">Share</span><canvas id="rcv" width="1080" height="1350" style="width:100%;border-radius:14px" aria-label="Shareable recap card"></canvas>
  <p class="small muted">No name, club, age or photo on the card. Just your stats.</p><button class="btn" id="rsave">Save card</button> <button class="btn ghost" id="rshare">Share</button></div>`;
  $('#rm').onchange=e=>{recapMonth=e.target.value;recapView()};drawRecap(st,mn);
