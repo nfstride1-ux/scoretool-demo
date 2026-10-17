@@ -52,7 +52,24 @@ td:first-child,th:first-child{text-align:left}tr.click{cursor:pointer}tr.click:a
 .note{border-left:3px solid var(--sky);padding:8px 10px;background:#0e1a2e;border-radius:8px;font-size:13px;color:var(--ink2)}
 .seg{display:flex;background:#0e1522;border-radius:10px;padding:3px;gap:3px}.seg button{flex:1;border:0;background:none;color:var(--muted);padding:8px;border-radius:8px;font:700 13px var(--body);cursor:pointer}.seg button.on{background:var(--blue);color:#fff}
 .tgt{display:block;margin:6px auto;max-width:260px}
-</style></head><body>
+
+.desk{display:none}
+@media(min-width:1024px){
+body{padding-bottom:0}.top{padding:12px 28px}.vo-bar{font-size:13px}
+main{max-width:none;padding:20px 28px 110px}
+.tabs{left:50%;right:auto;bottom:16px;transform:translateX(-50%);border-radius:18px;border:1px solid #1f2b40;padding:6px 10px;gap:4px;box-shadow:0 10px 40px #000a}
+.tabs button{flex:none;width:96px}
+.t-squad .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}.t-squad .grid .card{margin:0}
+.t-mix{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+.t-mix>.card:first-child{position:sticky;top:96px;max-height:calc(100vh - 116px);overflow:auto;margin:0}
+.t-mix .chips{flex-wrap:wrap;overflow:visible}.desk{display:block;margin-top:6px}
+#out{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}#out>.card{margin:0}
+#out>.card:first-child,#out>.card:nth-child(2),#out>.card:last-child{grid-column:1/-1}
+#out>.card:nth-child(2) svg{max-height:360px}
+.t-rank .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.t-saved,.t-about{max-width:760px;margin:0 auto}
+.sheet{align-items:center}.sheet .pane{border-radius:20px;max-width:820px}
+}</style></head><body>
 <header class="top"><div class="logo">Score<span>Tool</span></div><div class="mode"><span>Competitor</span><b>Coach</b></div></header>
 <div class="vo-bar">👁 View-only coach mode · playground · real squad scores</div>
 <main id="app"></main>
@@ -81,16 +98,16 @@ const LS='coachCombos.v1',combos=()=>JSON.parse(localStorage.getItem(LS)||'[]'),
 const TABS=[['squad','👥','Squad'],['mix','🧪','Analyse'],['saved','⭐','Saved'],['rank','🏆','Rankings'],['about','ℹ️','About']];
 function nav(){$('#tabs').innerHTML=TABS.map(([k,i,l])=>`<button class="${k===tab?'on':''}" data-t="${k}"><span>${i}</span>${l}</button>`).join('')}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render();scrollTo(0,0)}};
-function render(){nav();({squad,mix,saved,rank,about})[tab]()}
+function render(){nav();app.className='t-'+tab;({squad,mix,saved,rank,about})[tab]()}
 // ---------- squad ----------
 function squad(){
- app.innerHTML=`<div class="card"><span class="kicker">Phil's squad · compound</span><h1>Squad overview</h1><div class="muted small">${R.length} scores since 2024 · tap an archer to analyse</div></div>`+SQ.map(a=>{
+ app.innerHTML=`<div class="card"><span class="kicker">Phil's squad · compound</span><h1>Squad overview</h1><div class="muted small">${R.length} scores since 2024 · tap an archer to analyse</div></div><div class="grid">`+SQ.map(a=>{
   const rs=R.filter(r=>r.m===a.id),last=rs[rs.length-1],[tc,tl]=trendOf(rs),best={};
   rs.forEach(r=>{if(r.t!=null&&(!best[r.r]||r.t>best[r.r].t))best[r.r]=r});
   const bl=Object.values(best).sort((x,y)=>y.dt<x.dt?-1:1);
   return`<div class="card arch" data-a="${a.id}"><div class="row"><div class="av" style="background:${a.c}">${a.ini}</div><div class="sp"><h3 style="margin:0">${esc(a.name)}</h3><div class="muted tiny">${esc(a.club)} · ${rs.length} scores</div></div><span class="trend ${tc}">${tl}</span></div>
   ${last?`<div class="row" style="margin-top:10px"><div class="sp"><div class="muted tiny">LATEST · ${fmt(last.dt)}</div><div class="small">${esc(last.r)}</div></div><div class="big">${last.t??'–'}</div></div>`:'<div class="muted small">No compound scores yet</div>'}
-  ${bl.length?`<div class="flab">Best per round</div><div class="bests">${bl.slice(0,5).map(b=>`<span class="muted">${esc(b.r)} <span class="tiny">${fmt(b.dt)}</span></span><b>${b.t}</b>`).join('')}</div>${bl.length>5?`<div class="muted tiny" style="margin-top:4px">+${bl.length-5} more rounds in Analyse</div>`:''}`:''}</div>`}).join('');
+  ${bl.length?`<div class="flab">Best per round</div><div class="bests">${bl.slice(0,5).map(b=>`<span class="muted">${esc(b.r)} <span class="tiny">${fmt(b.dt)}</span></span><b>${b.t}</b>`).join('')}</div>${bl.length>5?`<div class="muted tiny" style="margin-top:4px">+${bl.length-5} more rounds in Analyse</div>`:''}`:''}</div>`}).join('')+'</div>';
  app.querySelectorAll('.arch').forEach(el=>el.onclick=()=>{S={...S,a:[+el.dataset.a],r:[],dist:[],end:[],from:'',to:''};tab='mix';render();scrollTo(0,0)});
 }
 // ---------- filtering ----------
@@ -113,14 +130,15 @@ function mix(){
  <div class="row" style="margin-top:6px"><input type="date" id="from" value="${S.from}" aria-label="From"><span class="muted">→</span><input type="date" id="to" value="${S.to}" aria-label="To"></div>
  ${rounds.length?chips('r',rounds,'Rounds'):'<div class="muted small" style="margin-top:8px">No scores for this pick.</div>'}
  ${dists.length?chips('dist',dists,'Distances'):''}${endsL.length?chips('end',endsL,'Single ends'):''}
- <div class="row" style="margin-top:12px"><div class="seg sp"><button data-split="1" class="${S.split?'on':''}">Overlay archers</button><button data-split="0" class="${!S.split?'on':''}">Combine all</button></div><button class="btn sm" id="save">⭐ Save</button></div></div>
+ <div class="row" style="margin-top:12px"><div class="seg sp"><button data-split="1" class="${S.split?'on':''}">Overlay archers</button><button data-split="0" class="${!S.split?'on':''}">Combine all</button></div><button class="btn sm" id="save">⭐ Save</button></div>
+ <div class="desk">${combos().length?`<div class="flab"><span>Saved combos</span></div>`+combos().map((x,i)=>`<div class="combo" data-ci="${i}"><span>⭐</span><b>${esc(x.name)}</b></div>`).join(''):''}</div></div>
  <div id="out"></div>`;
  app.querySelectorAll('[data-k]').forEach(el=>el.onclick=()=>{const k=el.dataset.k,v=k==='a'||k==='end'?+el.dataset.v:el.dataset.v;S[k]=tog(S[k],v);if(k==='a'||k==='r'){S.dist=[];S.end=[]}mix()});
  app.querySelectorAll('[data-clear]').forEach(el=>el.onclick=()=>{const k=el.dataset.clear;if(k==='date'){S.from=S.to=''}else S[k]=[];mix()});
  app.querySelectorAll('[data-pre]').forEach(el=>el.onclick=()=>{S.from=el.dataset.pre;S.to='';mix()});
  app.querySelectorAll('[data-split]').forEach(el=>el.onclick=()=>{S.split=el.dataset.split==='1';mix()});
  $('#from').onchange=e=>{S.from=e.target.value;mix()};$('#to').onchange=e=>{S.to=e.target.value;mix()};
- $('#save').onclick=saveCombo;out();
+ $('#save').onclick=saveCombo;app.querySelectorAll('[data-ci]').forEach(el=>el.onclick=()=>{const x=combos()[+el.dataset.ci].s;S={...x};if(x.rel)S.from=ago(x.rel);delete S.rel;mix()});out();
 }
 function groups(rs){if(!S.split)return[{k:'all',name:'Combined',c:'#38bdf8',rs}];const ids=[...new Set(rs.map(r=>r.m))];return ids.map(id=>({k:id,name:byId[id].name,c:byId[id].c,rs:rs.filter(r=>r.m===id)}))}
 function out(){
@@ -153,7 +171,7 @@ function out(){
 }
 const legend=G=>G.length>1?`<div class="legend">${G.map(g=>`<span><i style="background:${g.c}"></i>${esc(g.name)}</span>`).join('')}</div>`:'';
 function axes(W,H,P,lo,hi,yl){let s='';for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=H-P.b-(H-P.t-P.b)*i/4;s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y}" y2="${y}" stroke="#1e2a3d"/><text x="${P.l-4}" y="${y+3}" text-anchor="end">${Math.round(v*10)/10}</text>`}return s}
-function trendSvg(G,sub){const W=340,H=180,P={l:34,r:8,t:10,b:22};const pts=G.map(g=>({g,p:g.rs.map(r=>{let v;if(S.metric==='rt')v=r.rt;else if(sub){const e=endsOf(r).map(e=>e.t).filter(x=>x!=null);v=av(e)}else v=r.t;return v==null?null:{x:+new Date(r.dt),y:v,r}}).filter(Boolean)}));
+function trendSvg(G,sub){const W=wide()?900:340,H=wide()?300:180,P={l:34,r:8,t:10,b:22};const pts=G.map(g=>({g,p:g.rs.map(r=>{let v;if(S.metric==='rt')v=r.rt;else if(sub){const e=endsOf(r).map(e=>e.t).filter(x=>x!=null);v=av(e)}else v=r.t;return v==null?null:{x:+new Date(r.dt),y:v,r}}).filter(Boolean)}));
  const all=pts.flatMap(p=>p.p);if(!all.length)return'<div class="muted small">No values for this metric.</div>';
  let x0=Math.min(...all.map(p=>p.x)),x1=Math.max(...all.map(p=>p.x));if(x0===x1){x0-=864e5;x1+=864e5}
  let lo=Math.min(...all.map(p=>p.y)),hi=Math.max(...all.map(p=>p.y));const pad=(hi-lo)*.1||1;lo-=pad;hi+=pad;
@@ -161,14 +179,14 @@ function trendSvg(G,sub){const W=340,H=180,P={l:34,r:8,t:10,b:22};const pts=G.ma
  let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,P,lo,hi)}<text x="${P.l}" y="${H-6}">${fmt(new Date(x0).toISOString().slice(0,10))}</text><text x="${W-P.r}" y="${H-6}" text-anchor="end">${fmt(new Date(x1).toISOString().slice(0,10))}</text>`;
  pts.forEach(({g,p})=>{if(p.length>1)s+=`<polyline fill="none" stroke="${g.c}" stroke-width="2" stroke-opacity=".75" points="${p.map(q=>X(q.x).toFixed(1)+','+Y(q.y).toFixed(1)).join(' ')}"/>`;p.forEach(q=>s+=`<circle cx="${X(q.x).toFixed(1)}" cy="${Y(q.y).toFixed(1)}" r="3.2" fill="${g.c}"><title>${esc(q.r.r)} ${fmt(q.r.dt)}: ${Math.round(q.y*10)/10}</title></circle>`)});
  return s+'</svg>'}
-function perEndSvg(G){const W=340,H=170,P={l:30,r:6,t:10,b:22};const ser=G.map(g=>{const m={};g.rs.flatMap(endsOf).forEach(e=>{if(e.t!=null)(m[e.n]=m[e.n]||[]).push(e.t)});return{g,m}});
+function perEndSvg(G){const W=wide()?520:340,H=wide()?260:170,P={l:30,r:6,t:10,b:22};const ser=G.map(g=>{const m={};g.rs.flatMap(endsOf).forEach(e=>{if(e.t!=null)(m[e.n]=m[e.n]||[]).push(e.t)});return{g,m}});
  const ns=[...new Set(ser.flatMap(s=>Object.keys(s.m).map(Number)))].sort((a,b)=>a-b);if(!ns.length)return'';
  const vals=ser.flatMap(s=>Object.values(s.m).map(av));let lo=Math.min(...vals),hi=Math.max(...vals);const pad=(hi-lo)*.15||1;lo=Math.max(0,lo-pad);hi+=pad;
  const bw=(W-P.l-P.r)/ns.length,Y=y=>H-P.b-(H-P.t-P.b)*(y-lo)/(hi-lo);let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,P,lo,hi)}`;
  ns.forEach((n,i)=>{const x=P.l+i*bw;if(ns.length<=24||i%2===0)s+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${n}</text>`;const w=bw*.8/ser.length;ser.forEach((q,j)=>{const v=q.m[n];if(!v)return;const a=av(v);s+=`<rect x="${(x+bw*.1+j*w).toFixed(1)}" y="${Y(a).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${(H-P.b-Y(a)).toFixed(1)}" rx="2" fill="${q.g.c}"><title>End ${n}: ${f1(a)} (${v.length})</title></rect>`})});
  return s+'</svg>'}
 function distSvg(G,E){const keys=['X','10','9','8','7','6','5','4','3','2','1','M'];const ser=G.map(g=>{const c={};let n=0;E.filter(e=>!S.split||e.r.m===g.k).forEach(e=>e.ar.forEach(a=>{a=a.toUpperCase();c[a]=(c[a]||0)+1;n++}));return{g,c,n}});
- const ks=keys.filter(k=>ser.some(s=>s.c[k]));const W=340,H=150,P={l:30,r:6,t:10,b:22};const mx=Math.max(...ser.flatMap(s=>ks.map(k=>s.n?(s.c[k]||0)/s.n*100:0)),1);
+ const ks=keys.filter(k=>ser.some(s=>s.c[k]));const W=wide()?520:340,H=wide()?240:150,P={l:30,r:6,t:10,b:22};const mx=Math.max(...ser.flatMap(s=>ks.map(k=>s.n?(s.c[k]||0)/s.n*100:0)),1);
  const bw=(W-P.l-P.r)/ks.length,Y=v=>H-P.b-(H-P.t-P.b)*v/mx;let s=`<svg viewBox="0 0 ${W} ${H}">${axes(W,H,P,0,mx)}`;
  ks.forEach((k,i)=>{const x=P.l+i*bw;s+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${k}</text>`;const w=bw*.8/ser.length;ser.forEach((q,j)=>{const v=q.n?(q.c[k]||0)/q.n*100:0;s+=`<rect x="${(x+bw*.1+j*w).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${(H-P.b-Y(v)).toFixed(1)}" rx="2" fill="${q.g.c}"><title>${k}: ${v.toFixed(1)}% (${q.c[k]||0})</title></rect>`})});
  return s+'</svg><div class="muted tiny">% of arrows by value</div>'}
@@ -183,7 +201,7 @@ function sheet(r){const sh=$('#sheet');const a=byId[r.m];
 function autoName(){const n=S.a.length?S.a.map(i=>byId[i].name.split(' ')[0]).join(' + '):'Whole squad';const p=[n];if(S.r.length)p.push(S.r.length>1?S.r.length+' rounds':S.r[0]);if(S.dist.length)p.push(S.dist.join('/'));if(S.end.length)p.push('ends '+S.end.join(','));
  const pr={[ago(3)]:'last 3 months',[ago(6)]:'last 6 months',[ago(12)]:'last 12 months','2026-01-01':'this year'};if(S.from&&!S.to)p.push(pr[S.from]||'from '+fmt(S.from));else if(S.from||S.to)p.push(fmt(S.from)+'–'+fmt(S.to));return p.join(' · ')}
 function relFrom(){const m={[ago(3)]:3,[ago(6)]:6,[ago(12)]:12};return m[S.from]}
-function saveCombo(){const name=prompt('Name this combo',autoName());if(!name)return;const c=combos();c.unshift({name,s:{...S,rel:relFrom()}});saveC(c);toast('Saved ⭐ '+name)}
+function saveCombo(){const name=prompt('Name this combo',autoName());if(!name)return;const c=combos();c.unshift({name,s:{...S,rel:relFrom()}});saveC(c);toast('Saved ⭐ '+name);if(tab==='mix')mix()}
 function saved(){const c=combos();
  app.innerHTML=`<div class="card"><span class="kicker">One tap to reopen</span><h1>Saved combos</h1><div class="muted small">Saved on this device. "Last 3 months" style combos roll forward automatically.</div></div><div class="card">${c.length?c.map((x,i)=>`<div class="combo" data-i="${i}"><span>⭐</span><b>${esc(x.name)}</b><span class="x" data-del="${i}">✕</span></div>`).join(''):'<div class="muted">Nothing saved yet. In Analyse, tick what you want and press ⭐ Save.</div>'}</div>
  <div class="card"><h3>Quick starts</h3>${SQ.slice(0,6).map(a=>`<div class="combo" data-q="${a.id}"><span class="dot" style="width:10px;height:10px;border-radius:50%;background:${a.c}"></span><b>${esc(a.name)} · last 3 months</b><span class="muted">›</span></div>`).join('')}<div class="combo" data-q="all"><span>👥</span><b>Whole squad overlay · last 6 months</b><span class="muted">›</span></div></div>`;
@@ -192,23 +210,26 @@ function saved(){const c=combos();
  app.querySelectorAll('[data-q]').forEach(el=>el.onclick=()=>{const q=el.dataset.q;S={a:q==='all'?[]:[+q],r:[],from:ago(q==='all'?6:3),to:'',dist:[],end:[],split:true,metric:'t'};tab='mix';render();scrollTo(0,0)});
 }
 // ---------- rankings ----------
-let RL='top10_open',RR='';
-function rank(){const list=D.ranked.filter(a=>a.lists.includes(RL));const rc={};list.forEach(a=>Object.keys(a.best).forEach(k=>rc[k]=(rc[k]||0)+1));
+let RL='top10_open';const RRm={};const wide=()=>matchMedia('(min-width:1024px)').matches;
+function rankCol(L){const list=D.ranked.filter(a=>a.lists.includes(L));const rc={};list.forEach(a=>Object.keys(a.best).forEach(k=>rc[k]=(rc[k]||0)+1));
  const sqBest={};R.filter(r=>r.dt>=D.window_from&&r.t!=null).forEach(r=>{const k=r.m+'|'+r.r;if(!sqBest[k]||r.t>sqBest[k].t)sqBest[k]=r});
  Object.values(sqBest).forEach(r=>rc[r.r]=rc[r.r]||0);
- const rounds=Object.keys(rc).sort((a,b)=>rc[b]-rc[a]);if(!RR||!rounds.includes(RR))RR=rounds[0]||'';
+ const rounds=Object.keys(rc).sort((a,b)=>rc[b]-rc[a]);let RR=RRm[L];if(!RR||!rounds.includes(RR))RR=RRm[L]=rounds[0]||'';
  let rows=list.filter(a=>a.best[RR]).map(a=>({name:a.name,club:a.club,s:a.best[RR].s,dt:a.best[RR].dt,rt:a.best[RR].rt,sq:a.sq,pos:a.pos}));
  const have=new Set(rows.map(r=>r.name.toLowerCase()));
  Object.values(sqBest).filter(r=>r.r===RR&&!have.has(byId[r.m].name.toLowerCase())).forEach(r=>rows.push({name:byId[r.m].name,club:byId[r.m].club,s:r.t,dt:r.dt,rt:r.rt,sq:true,pos:['Phil\'s squad']}));
  rows.sort((a,b)=>b.s-a.s);
- app.innerHTML=`<div class="card"><span class="kicker">Compound · since ${fmt(D.window_from)}</span><h1>Rankings</h1>
- <div class="seg" style="margin:8px 0"><button data-l="top10_open" class="${RL==='top10_open'?'on':''}">Top 10 Open</button><button data-l="top10_u16" class="${RL==='top10_u16'?'on':''}">Top 10 Under 16</button></div>
- <div class="flab"><span>Compare on round</span></div><select id="rr">${rounds.map(r=>`<option ${r===RR?'selected':''}>${esc(r)}</option>`).join('')}</select></div>
+ return`<div class="rcol"><div class="card"><span class="kicker">${L==='top10_open'?'Top 10 Open':'Top 10 Under 16'} · compare on round</span><select data-rr="${L}">${rounds.map(r=>`<option ${r===RR?'selected':''}>${esc(r)}</option>`).join('')}</select></div>
  <div class="card"><table><tr><th>#</th><th style="text-align:left">Archer</th><th>Best</th></tr>${rows.map((r,i)=>`<tr class="${r.sq?'sq':''}"><td>${i+1}</td><td style="text-align:left">${esc(r.name)}<div class="tiny muted">${esc(r.club)} · ${fmt(r.dt)}${r.pos.length?' · '+esc(r.pos.join(', ')):''}</div></td><td><b>${r.s}</b>${r.rt!=null?`<div class="tiny muted">${r.rt}</div>`:''}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">No scores on this round</td></tr>'}</table>
  <div class="muted tiny" style="margin-top:8px">Squad rows highlighted blue. Only archers whose Archer's Diary scores were collected are listed (${list.filter(a=>Object.keys(a.best).length).length} of ${list.length} on this list so far).</div></div>
- <div class="card"><h3>Who's on the list</h3><div class="muted tiny" style="margin-bottom:6px">From the official AA national rankings</div><table>${list.map(a=>`<tr class="${a.sq?'sq':''}"><td>${esc(a.name)}<div class="tiny muted">${esc(a.club)}${a.state?', '+esc(a.state):''}</div></td><td class="tiny muted">${esc(a.pos.join(', '))}</td></tr>`).join('')}</table></div>`;
- app.querySelectorAll('[data-l]').forEach(el=>el.onclick=()=>{RL=el.dataset.l;RR='';rank()});$('#rr').onchange=e=>{RR=e.target.value;rank()};
+ <div class="card"><h3>Who's on the list</h3><div class="muted tiny" style="margin-bottom:6px">From the official AA national rankings</div><table>${list.map(a=>`<tr class="${a.sq?'sq':''}"><td>${esc(a.name)}<div class="tiny muted">${esc(a.club)}${a.state?', '+esc(a.state):''}</div></td><td class="tiny muted">${esc(a.pos.join(', '))}</td></tr>`).join('')}</table></div></div>`}
+function rank(){const W=wide();
+ app.innerHTML=`<div class="card"><span class="kicker">Compound · since ${fmt(D.window_from)}</span><h1>Rankings</h1>
+ ${W?'':`<div class="seg" style="margin-top:8px"><button data-l="top10_open" class="${RL==='top10_open'?'on':''}">Top 10 Open</button><button data-l="top10_u16" class="${RL==='top10_u16'?'on':''}">Top 10 Under 16</button></div>`}</div>
+ <div class="rgrid">${W?rankCol('top10_open')+rankCol('top10_u16'):rankCol(RL)}</div>`;
+ app.querySelectorAll('[data-l]').forEach(el=>el.onclick=()=>{RL=el.dataset.l;rank()});app.querySelectorAll('[data-rr]').forEach(el=>el.onchange=e=>{RRm[el.dataset.rr]=e.target.value;rank()});
 }
+let _w=wide();addEventListener('resize',()=>{if(wide()!==_w){_w=wide();render()}});
 function about(){app.innerHTML=`<div class="card"><span class="kicker">Playground</span><h1>Coach mode</h1><p>This is a try-out of Phil's view-only coach mode, built from the squad's real Archer's Diary scores (compound, from 2024).</p>
  <div class="note">🎯 <b>Group patterns &amp; arrow plots</b> come later, from rounds the testers shoot in ScoreTool. Archer's Diary history has arrow values per end, not where each arrow landed.</div>
  <p class="small muted">Data built ${esc(D.generated)} · ${R.length} squad scores · rankings window from ${fmt(D.window_from)}. View-only: no edits, no exports. Saved combos stay on this device.</p></div>`}
