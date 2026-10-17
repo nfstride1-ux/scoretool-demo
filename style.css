@@ -157,3 +157,6 @@ html,body{height:100%;overflow:hidden}
 #shell{height:100vh;height:-webkit-fill-available;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 #shell>.top{flex:none;position:relative}
 #scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+.aba-hd{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:8px 0}.aba-hd>div{display:flex;flex-direction:column}
+.aba-pts{border-collapse:collapse;margin:6px 0;font-size:14px}.aba-pts th,.aba-pts td{border:1px solid var(--line);padding:2px 8px;text-align:center}
+.aba-cols{display:grid;grid-template-columns:1fr 1fr;gap:6px}.aba-p{border-collapse:collapse;width:100%;font-size:14px}.aba-p th,.aba-p td{border:1px solid var(--line);padding:3px 4px;text-align:center}

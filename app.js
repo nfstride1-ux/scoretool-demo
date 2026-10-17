@@ -294,7 +294,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#st').onclick=()=>{if($('#rd').value=='__new')return;startRound($('#rd').value)};
  /* Start straight from a saved round in My rounds */app.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{const c=(S.customRounds||[])[+b.dataset.cs];if(c)startRound(c.name)});bindList();return}
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur),P=cur.pos||[];
- if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
+ if(R.aba&&window.abaScore)return abaScore(R);if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
  const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
  const FR0=faceR(R,ei),FF=isFld(FR0)&&!cur.bugs?fldFor(cur,ei,FR0):null,FR=cur.bugs?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FF?fldFR(FF):FR0,FL=FF?fldDists(cur.peg,FF.f,fldMarked(FR0)):null,SP=isBug(FR)&&cur.spot?BUGC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).filter(Boolean);
