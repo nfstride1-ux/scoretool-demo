@@ -212,7 +212,7 @@ function drawRecap(st,mn){const c=$('#rcv'),x=c.getContext('2d');const g=x.creat
  T.forEach(([k,v],i)=>{const cx=70+(i%2)*480,cy=380+Math.floor(i/2)*260;x.fillStyle='rgba(255,255,255,.06)';x.fillRect(cx,cy,440,220);x.fillStyle='#9aa7ba';x.font='700 36px Inter,sans-serif';x.fillText(k,cx+30,cy+60);x.fillStyle='#eef2f8';x.font='800 120px "Barlow Condensed",sans-serif';x.fillText(String(v),cx+30,cy+180)});
  x.fillStyle='#eef2f8';x.font='800 48px "Barlow Condensed",sans-serif';x.fillText('SCORE',70,1280);const w1=x.measureText('SCORE').width;x.fillStyle='#ffc629';x.fillText('TOOL',70+w1,1280);const w2=x.measureText('TOOL').width;x.fillStyle='#9aa7ba';x.font='500 30px Inter,sans-serif';x.fillText('archery calendars',90+w1+w2,1278)}
 window.EXTRA_VIEWS.recap=recapView;
-/* ---------- My other apps: archer's own links to outside apps. Stored locally. Quick-add example chips pre-fill the form; nothing is added until the archer taps Add. ---------- */
+/* ---------- Apps I use (internal id oapps / S.apps unchanged): archer's own links to outside apps. Stored locally. Quick-add example chips pre-fill the form; nothing is added until the archer taps Add. ---------- */
 const APP_CATS=['Sight marks','Video','Tuning','Other'];
 function appKind(u){try{const x=new URL(u);return/apps\.apple\.com$/.test(x.hostname)?'ios':/play\.google\.com$/.test(x.hostname)?'play':'web'}catch(e){return'web'}}
 const titleCase=t=>t.replace(/[-_.]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
@@ -229,7 +229,7 @@ function appRec(a,old){const n=new Date().toISOString();return{id:(old&&old.id)|
 const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
 function addApp(raw,cat){const u=normUrl(raw);if(!u)return false;S.apps=S.apps||[];if(!S.apps.some(a=>a.url==u))S.apps.push(appRec({url:u,name:appName(u)||u,cat:cat||''}));save();return true}
 function otherAppsCard(){const L=S.apps=S.apps||[],e=appEdit!=null?L[appEdit]:null;
- return`<div class="card" id="oapps"><span class="kicker">My other apps</span><h2>My other apps</h2>
+ return`<div class="card" id="oapps"><span class="kicker">Linked apps</span><h2>Apps I use</h2>
  ${L.length?L.map((a,i)=>`<div class="list-item row"><span style="min-width:0">${appIcon(a)}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(a.name)}</b> ↗</a>${a.cat?` <span class="pill t-none">${esc(a.cat)}</span>`:''}<br><span class="small muted" style="word-break:break-all">${esc(a.url)}</span></span><span style="flex:0 0 auto"><button class="btn ghost" data-ae="${i}" style="padding:4px 10px;min-height:34px">Edit</button> <button class="btn ghost" data-ad="${i}" style="padding:4px 10px;min-height:34px">Delete</button></span></div>`).join(''):'<p class="muted">Add the apps you use for sight marks, video and tuning.</p>'}
  ${e?'':`<button class="btn full" id="apaste" style="margin-top:6px">Paste link</button><p class="small muted" style="margin:6px 0 0">${isIOS()?'Copy the app\'s link (in the App Store tap Share, then Copy Link), then tap Paste.':'Copy the app\'s link, then tap Paste. On Android you can also Share a Play Store or web link straight to ScoreTool once it\'s installed.'}</p>`}
  ${e?'':`<p class="small" style="margin:10px 0 4px"><b>Examples</b> (tap to fill in, then Add):</p><div style="display:flex;flex-wrap:wrap;gap:6px">${APP_EXAMPLES.map((x,i)=>`<button class="btn ghost" data-aex="${i}" style="padding:6px 10px;min-height:34px">+ ${esc(x[0])}</button>`).join('')}</div>`}

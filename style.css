@@ -136,7 +136,8 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 @media(min-width:900px){.bs-a{min-width:30px;height:30px;font-size:14px}}
 
 /* scoring screen: face size tag + custom scroll bar */
-.facetag{position:absolute;top:6px;left:6px;background:#111d;color:#fff;font:700 12px var(--body);padding:3px 8px;border-radius:10px;pointer-events:none;letter-spacing:.02em}
+.zcyc{position:absolute;top:6px;right:6px;z-index:2;min-width:44px;height:30px;padding:0 9px;border-radius:15px;border:1px solid #fff8;background:#111c;color:#fff;font:800 13px var(--body);letter-spacing:.02em;box-shadow:0 1px 4px #0005;cursor:pointer;touch-action:manipulation}.zcyc.on{background:#7c3aedee;border-color:#c4b5fd}
+.ad-endrow{align-items:flex-start}.ad-dist{display:flex;flex-direction:column;align-items:flex-end;text-align:right;line-height:1.2}.ad-dist #facesize{font-size:12px;font-weight:600;color:#374151}
 #sbar{position:fixed;right:0;width:24px;z-index:7;touch-action:none;cursor:pointer}#sbar.left{right:auto;left:0}
 #sbar .sb-track{position:absolute;top:0;bottom:0;left:9px;width:6px;border-radius:3px;background:#94a3b855}
 #sbar .sb-thumb{position:absolute;top:0;left:4px;width:16px;border-radius:8px;background:#7c3aed;box-shadow:0 1px 4px #0006}
