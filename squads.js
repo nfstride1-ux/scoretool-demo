@@ -33,7 +33,8 @@ const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',
 function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name),R=realFor(m.name).filter(r=>!r.incomplete);
  const last=R[R.length-1];if(last){const prev=R.slice(0,-1).filter(r=>r.round==last.round&&r.division==last.division),pb=prev.length&&last.score>Math.max(...prev.map(r=>r.score));
   F.push({id:m.id+'s'+normDate(last.date)+last.round,date:normDate(last.date),who:m,pb,html:pb?`<b>${esc(n)}</b> set a <b style="color:var(--gold)">NEW CEILING</b> · ${last.score} PB`:`<b>${esc(n)}</b> shot <b>${last.score}</b>`,sub:`${esc(last.round)} · official`,ver:'official'})}
- const B=earnedBadges(m.name).filter(b=>b.on),top=B.slice(-2);top.forEach(b=>F.push({id:m.id+'b'+b.id,date:m.last||today(),who:m,html:`<b>${esc(n)}</b> unlocked <b class="rt-${b.rarity}">${b.name.toUpperCase()}</b> <span class="pill" style="background:var(--night2);color:var(--r-${b.rarity=='legendary'?'leg':b.rarity=='mythic'?'myth':b.rarity})">${RARITY[b.rarity]}</span>`,sub:esc(b.how)}));
+ /* badge news is dated when the badge was really earned; badges without a known date stay out of the feed */
+ const B=earnedBadges(m.name).filter(b=>b.on&&b.when).sort((a,b)=>a.when<b.when?-1:1),top=B.slice(-2);top.forEach(b=>F.push({id:m.id+'b'+b.id,date:b.when,who:m,html:`<b>${esc(n)}</b> unlocked <b class="rt-${b.rarity}">${b.name.toUpperCase()}</b> <span class="pill" style="background:var(--night2);color:var(--r-${b.rarity=='legendary'?'leg':b.rarity=='mythic'?'myth':b.rarity})">${RARITY[b.rarity]}</span>`,sub:esc(b.how)}));
  if(window.rankFeed)rankFeed(m,n).forEach(x=>F.push(x));
  if(m.impr>3)F.push({id:m.id+'i',date:m.last||today(),who:m,html:`<b>${esc(n)}</b> is <b class="up">+${m.impr}%</b> on their own average`,sub:'vs own last 10 rounds'})});return F.sort((a,b)=>a.date<b.date?1:-1).slice(0,12)}
 /* Preset cheers only (no free text). Bullseye is a gold cheer that only appears on personal-best posts. */
@@ -51,7 +52,7 @@ function squad(){seedSquad();const Q=S.squad;
  if(Q.rawRank)metrics.raw=['Latest score (admin on)',m=>m.raw&&m.raw[0]?m.raw[0][2]:0,v=>v];
  const M=metrics[sqTab]||metrics.wk,rows=act.slice().sort((a,b)=>M[1](b)-M[1](a));
  const me=act.find(m=>m.name==S.profile);
- let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${act.length} members · ${(Q.adults||[]).length} adults · no chat, cheers only · invite code <b>${esc(Q.code)}</b>${myAdult()?' · you are '+(myAdult().role=='Admin'?'the admin':'a '+myAdult().role.toLowerCase()):''}</p></div>
+ let h=`<div class="card dark"><span class="kicker">Squad · private</span><h1>${esc(Q.name)}</h1><p class="small" style="margin:0">${plN(act.length,'member','members')} · ${plN((Q.adults||[]).length,'adult','adults')} · no chat, cheers only · invite code <b>${esc(Q.code)}</b>${myAdult()?' · you are '+(myAdult().role=='Admin'?'the admin':'a '+myAdult().role.toLowerCase()):''}</p></div>
  ${window.leagueCard?leagueCard():''}<div class="card"><span class="kicker">More boards</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${Object.entries(metrics).map(([k,v])=>`<button class="btn ${k==sqTab?'':'ghost'}" data-m="${k}" style="padding:6px 10px;font-size:13px">${v[0]}</button>`).join('')}</div>
  ${rows.map((m,i)=>`<div class="list-item row"><span>${i+1}. ${who(m)} <b>${shortName(m.name)}</b>${m.sample?' <span class="sample">sample</span>':''}</span>${sqTab=='badges'?`<div style="max-width:55%">${iconRow(m.blist||[],20)}</div>`:`<b>${M[2](M[1](m))}</b>`}</div>`).join('')}
  <p class="small muted">${sqTab=='impr'?'Each archer is compared with their own last 10 rounds, so it\'s fair across ability.':'Ranks effort and badges, not raw scores.'}</p></div>
@@ -84,7 +85,7 @@ function safe(){return`<div class="card"><span class="kicker">Safe squads</span>
 window.squadMini=function(){seedSquad();const Q=S.squad,ins=Q&&(Q.members.some(m=>m.name==S.profile)||myAdult());
  let h=`<div class="card"><span class="kicker">Squads</span>`;
  if(ins){const act=Q.members.filter(m=>m.status!='pending').map(memberStats).sort((a,b)=>b.wk-a.wk).slice(0,3);
-  h+=`<div class="list-item" style="display:block"><div class="row"><b>${esc(Q.name)}</b><span class="small muted">${Q.members.filter(m=>m.status!='pending').length} members</span></div>
+  h+=`<div class="list-item" style="display:block"><div class="row"><b>${esc(Q.name)}</b><span class="small muted">${plN(Q.members.filter(m=>m.status!='pending').length,'member','members')}</span></div>
   <div class="small muted" style="margin:4px 0 2px">Top 3 · this week's arrows</div>${act.map((m,i)=>`<div class="row small"><span>${i+1}. ${who(m)} ${m.name==S.profile?'<b>You</b>':esc(shortName(m.name))}</span><b>${m.wk}</b></div>`).join('')}
   <button class="btn ghost" style="margin-top:8px;padding:6px 12px" onclick="nav('squad')">Open squad ›</button></div>`}
  else h+=`<p class="small muted">You're not in a squad yet.</p>`;

@@ -70,7 +70,7 @@ try:
   chk('never shown as a 3-arrow end',' end' not in pg.inner_text('#abacard').lower() and 'of 3' not in pg.inner_text('#abaarrow'))
   chk('exit button visible while scoring',pg.locator('#abaexit').is_visible())
   chk('start: max possible 800 (no "of 800")',pg.inner_text('#abamax')=='max possible 800')
-  chk('club-rule tick box at the start',pg.locator('#abaclub').count()==1 and 'Club rule: first half is 1 arrow too' in pg.inner_text('#abaclubl') and not pg.is_checked('#abaclub'))
+  chk('club-rule tick box at the start',pg.locator('#abaclub').count()==1 and 'Club rule: first half 1 arrow' in pg.inner_text('#abaclubl') and not pg.is_checked('#abaclub'))
   chk('arrow 1 buttons 20/18/16/Miss',z()==['20','18','16','Miss'])
   pg.click('[data-z=A]');chk('hit on arrow 1: 20, straight to target 2',tg()=='Target 2 of 20' and tot()=='20' and z()==['20','18','16','Miss'] and E("abaHitCode(cur.aba[0])")=='1A')
   chk('tick box gone once scoring starts',pg.locator('#abaclub').count()==0)

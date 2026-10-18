@@ -51,7 +51,7 @@ window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)r
  const opts=DISC.map(d=>{const L=G.filter(x=>x.disc==d);return L.length?`<optgroup label="${DN[d]}">${L.map(x=>`<option value="${esc(x.rd)}" ${x===g?'selected':''}>${esc(x.rd)} · ${x.best.sc} · ${fmt(x.best.d)}</option>`).join('')}</optgroup>`:''}).join('');
  return`<div class="card bs-card" id="bscard"><span class="kicker">🏆 My best scores <span class="real">official</span></span><h2 style="margin:2px 0 8px">Personal bests</h2>
  ${B.length>1?`<div class="bs-bows">${B.map(([b,n])=>`<button type="button" data-bsb="${esc(b)}" class="${b==bow?'on':''}">${esc(b)} <span>${n}</span></button>`).join('')}</div>`:''}
- <label for="bssel" class="small">Pick a round (${G.length} rounds, best full score each)</label><select id="bssel">${opts}</select>
+ <label for="bssel" class="small">Pick a round (${plN(G.length,'round','rounds')}, best full score each)</label><select id="bssel">${opts}</select>
  <div class="bs-hero"><div class="bs-big">${s.sc}${mx?`<small>/${mx}</small>`:''}</div><div class="bs-meta"><span class="pill" style="background:${isBest?'var(--gold)':'var(--blue)'}">${isBest?'⭐ PB':'#'+(g.full.indexOf(s)+1)+' on this round'}</span>
   <b>${fmt(s.d)}</b><span>${esc(s.ev)}</span><span class="muted">${esc(s.club||'')}${s.rt&&s.rt!='0'?' · rating '+esc(s.rt):''}</span></div></div>
  <p class="small muted" style="margin:6px 0">${esc(s.rd)} · ${esc(s.div||bow)} · best of ${g.full.length} full round${g.full.length==1?'':'s'}${g.all.length>g.full.length?` (${g.all.length-g.full.length} partial not counted)`:''}${s.url?` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Scoresheet ↗</a>`:''}</p>

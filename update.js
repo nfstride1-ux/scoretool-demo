@@ -10,7 +10,7 @@ async function remoteVersion(){
  return null}
 async function check(){if(shown||!navigator.onLine)return;const v=await remoteVersion();if(!v)return;if(base==null){base=v;return}if(v!==base)show()}
 function show(){if(shown)return;shown=true;const b=document.createElement('button');b.id='updBanner';b.type='button';b.setAttribute('role','status');
- b.textContent='New version ready \u2014 tap to update';b.style.cssText='position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9999;background:#ffd84d;color:#111;border:0;border-radius:12px;padding:12px 14px;font:inherit;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:pointer';
+ b.textContent='New version ready \u2014 tap to update';b.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);z-index:9999;background:#ffd84d;color:#111;border:0;border-radius:12px;padding:12px 14px;font:inherit;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:pointer';
  b.onclick=update;document.body.appendChild(b)}
 function snapshot(){try{const s={t:Date.now(),view:typeof view!='undefined'?view:null,y:scrollY,r:window._r??null,o:window._o??null,ps:window._ps??null,oc:window._oc??null,cur:(typeof cur!='undefined'&&cur)?cur.id:null};
  if(typeof save=='function')save();sessionStorage.setItem(SNAP,JSON.stringify(s))}catch(e){}}

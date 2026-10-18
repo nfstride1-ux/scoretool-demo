@@ -30,8 +30,10 @@ const BADGE_DEFS=[
 const isTen=a=>a=='X'||a=='10';
 /* Every end we have for an archer: own scored sessions + official arrows from Archer's Diary. */
 function allEnds(name){const own=name==S.profile;const E=[];
- if(own)(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach(e=>E.push({date:s.date,arrows:e.map(String),src:'session'})));
- offFor(name).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official'})}));return E}
+ if(own)(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach(e=>E.push({date:s.date,arrows:e.map(String),src:'session',round:s.round})));
+ offFor(name).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official',round:o.round})}));return E}
+/* 10/X badges only count target rounds: field faces top out at 6 and ABA 3D scores 20/18/16, so '10 or X' can't apply there */
+const tgtEnd=e=>{const R=ROUNDS[e.round]||{};return!R.aba&&!/field|3d|aba|clout/i.test(String(e.round||''))&&!(typeof isFld=='function'&&ROUNDS[e.round]&&typeof faceR=='function'&&isFld(faceR(R,0)))};window.badgeTgtEnd=tgtEnd;
 function dayMap(name){return arrowDays(name)}
 function realFor(name){return name==S.profile?findReal(name):(REAL[name]||findReal(name))}
 /* Weekly practice streak with streak freezes: 1 freeze earned per 4 straight weeks (max 2 banked). A missed week uses a freeze instead of breaking the streak. */
@@ -44,14 +46,19 @@ function streakInfo(dm){const W=new Set(Object.keys(dm).filter(d=>dm[d]>0).map(w
  return{cur:run,best,freezes:fr,used}}
 function pbBeaten(name){const own=name==S.profile;if(own&&done().some(s=>winsFor(s).some(w=>w[0]=='🏆')))return true;
  const m={};for(const r of realFor(name)){if(r.incomplete)continue;const k=r.round+'|'+r.division;if(m[k]!=null&&r.score>m[k])return true;m[k]=Math.max(m[k]||0,r.score)}return false}
-function badgeFacts(name){const E=allEnds(name),dm=dayMap(name),st=streakInfo(dm),tot=Object.values(dm).reduce((a,b)=>a+b,0),xs=E.reduce((t,e)=>t+e.arrows.filter(a=>a=='X').length,0);
+function badgeFacts(name){const EA=allEnds(name),E=EA.filter(tgtEnd),dm=dayMap(name),st=streakInfo(dm),tot=Object.values(dm).reduce((a,b)=>a+b,0),xs=E.reduce((t,e)=>t+e.arrows.filter(a=>a=='X').length,0);
  const notes=name==S.profile?Object.values(S.notes||{}).join(' \n'):'';
+ /* the date each badge was first earned (for the feed), from the same conditions */
+ const byD=E.slice().sort((a,b)=>a.date<b.date?-1:1),first=f=>{const e=byD.find(f);return e?e.date:null},cum=(f,k)=>{let t=0;for(const e of byD){t+=f(e);if(t>=k)return e.date}return null};
+ const dd=Object.keys(dm).filter(d=>dm[d]>0).sort(),cumD=k=>{let t=0;for(const d of dd){t+=dm[d];if(t>=k)return d}return null};
+ const when={dayone:[dd[0],...realFor(name).map(r=>normDate(r.date))].filter(Boolean).sort()[0]||null,century:cumD(100),xfactor:cum(e=>e.arrows.filter(a=>a=='X').length,10),
+  hattrick:first(e=>e.arrows.some((a,i)=>isTen(a)&&isTen(e.arrows[i+1])&&isTen(e.arrows[i+2]))),ironarm:dd.find(d=>dm[d]>=300)||null,flawless:first(e=>e.arrows.length>=3&&e.arrows.every(isTen))};
  const has={dayone:tot>0||realFor(name).length>0,century:tot>=100,locked:st.best>=3,xfactor:xs>=10,
   hattrick:E.some(e=>e.arrows.some((a,i)=>isTen(a)&&isTen(e.arrows[i+1])&&isTen(e.arrows[i+2]))),
   ceiling:pbBeaten(name),ironarm:Object.values(dm).some(n=>n>=300),weather:/\brain(y|ing|ed)?\b/i.test(notes),
   flawless:E.some(e=>e.arrows.length>=3&&e.arrows.every(isTen)),unbreak:st.best>=12};
- return{has,E,dm,st,tot,xs}}
-function earnedBadges(name){const f=badgeFacts(name);return BADGE_DEFS.map(d=>({id:d[0],icon:ICON[d[1]],name:d[2],rarity:d[3],how:d[4],on:!!f.has[d[0]]}))}
+ return{has,when,E,dm,st,tot,xs}}
+function earnedBadges(name){const f=badgeFacts(name);return BADGE_DEFS.map(d=>({id:d[0],icon:ICON[d[1]],name:d[2],rarity:d[3],how:d[4]+(['xfactor','hattrick','flawless'].includes(d[0])?' (target rounds)':''),on:!!f.has[d[0]],when:f.when[d[0]]||null}))}
 const hexIcon=(b,sm)=>`<span class="rc-${b.rarity}" style="display:inline-block"><span class="hex${sm?' sm':''}" title="${b.name} · ${RARITY[b.rarity]}">${b.icon}</span></span>`;
 function badgeCard(b){return`<div class="bcard rc-${b.rarity} ${b.on?'':'off'}" tabindex="0" title="${esc(b.how)}">${hexIcon(b)}<b>${b.name}</b><small>${RARITY[b.rarity]}${b.on?'':' · locked'}</small><div class="small muted" style="font-size:12px;margin-top:4px">${esc(b.how)}</div></div>`}
 /* Keep the old helpers working with the new set: [iconHTML, name, earned] */
@@ -88,7 +95,9 @@ function rankFor(name,disc){if(!disc){const o=rankFor(name,'Outdoor'),i=rankFor(
  const lvl=AA_LEVELS[i],tier=TIER_OF[lvl];let div=FIXED_DIV[lvl],next=null;
  if(!div){const lo=L[i],hi=L[i-1],step=(hi-lo)/3,k=Math.min(2,Math.floor((r3-lo)/step));div=['III','II','I'][k];const nxtNeed=k<2?lo+step*(k+1):hi;next={need:nxtNeed,pts:+(nxtNeed-r3).toFixed(1),label:k<2?tier+' '+['III','II','I'][k+1]:TIER_OF[AA_LEVELS[i-1]]+' '+(FIXED_DIV[AA_LEVELS[i-1]]||'III'),p:(r3-lo)/(hi-lo)}}
  else if(i>0)next={need:L[i-1],pts:+(L[i-1]-r3).toFixed(1),label:TIER_OF[AA_LEVELS[i-1]]+' '+FIXED_DIV[AA_LEVELS[i-1]],p:(r3-L[i])/(L[i-1]-L[i])};
- return{...base,state:'ranked',prov:i<=4,lvl,aa:AA_NAME[lvl]||lvl,tier,div,r3,next,date:normDate(R.map(r=>r.date).sort()[R.length-1])}}
+ /* provisional comes from the same check as the AA progress card */
+ const QL=R.map(r=>({rt:r.rating,q:window.aaQualOf?aaQualOf(r,r.cat):false})),Q=window.aaLevelStatus?aaLevelStatus(QL,L,i):{ok:i>4,missing:0};let conf=null;for(let j=i+1;j<AA_LEVELS.length&&!Q.ok;j++){const q2=aaLevelStatus(QL,L,j);if(q2.ok){conf=AA_NAME[AA_LEVELS[j]]||AA_LEVELS[j];break}}
+ return{...base,state:'ranked',prov:!Q.ok,missing:Q.missing,confirmed:conf,lvl,aa:AA_NAME[lvl]||lvl,tier,div,r3,next,date:normDate(R.map(r=>r.date).sort()[R.length-1])}}
 /* One rank name everywhere: the real Archery Australia classification (e.g. Grand Master Bowman, provisional). */
 const aaLabel=rk=>rk&&rk.state=='ranked'?rk.aa+(rk.prov?' (provisional)':''):rk&&rk.state=='placement'?'Not rated yet':'Unranked';window.aaLabel=aaLabel;
 const tierPill=rk=>`<span class="pill t-none">${esc(aaLabel(rk))}</span>`;
@@ -102,7 +111,7 @@ function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
  else if(rk.state=='below')body=`<p><b>Unranked</b> · ${rk.toWhite} rating points to <b>White</b>.</p>`;
  else{const L=AA_CLASS[rk.bow][rk.cls],k=AA_LEVELS.indexOf(rk.lvl),nx=k>0?{name:AA_NAME[AA_LEVELS[k-1]]||AA_LEVELS[k-1],pts:+(L[k-1]-rk.r3).toFixed(1),p:(rk.r3-L[k])/(L[k-1]-L[k])}:null;
   body=`<h2 style="margin:0">${esc(rk.aa)}</h2><div class="small muted">${rk.disc} · Archery Australia classification · ${rk.bow} · ${rk.cls}</div>${rk.prov?'<span class="est">Provisional</span>':''}
-  ${rk.prov?'<p class="small muted" style="margin:6px 0 0">Archery Australia only confirms Master Bowman and above once some of those rounds are at an open tournament or an Archery Australia ranking event. ScoreTool can\'t check that yet, so it says provisional until your club confirms it.</p>':''}
+  ${rk.prov?`<p class="small muted" style="margin:6px 0 0" id="provwhy">Provisional: your scores reach ${esc(rk.aa)}, but it ${aaNeedTxt(rk.missing)}.${rk.confirmed?` Confirmed so far: ${esc(rk.confirmed)}.`:''} Same check as the AA classification progress card below.</p>`:''}
   ${nx?`<div class="bar" style="margin-top:10px"><i style="width:${Math.round(Math.max(.03,Math.min(1,nx.p))*100)}%"></i></div><p class="small" style="margin:6px 0 0">${nx.pts} rating points to <b>${nx.name}</b> (on your 3rd-best round)</p>`:'<p class="small">Top level.</p>'}`}
  const oth=rk.other;const othTxt=oth&&oth.state=='ranked'?`${oth.disc}: <b>${esc(aaLabel(oth))}</b>`:oth&&oth.state=='placement'?`${oth.disc}: ${oth.n} of 3 rounds towards a rating`:oth&&oth.state=='below'?`${oth.disc}: unranked`:'';
  return`<div class="card" id="rankcard"><span class="kicker">AA classification · ${yr} · official scores only</span>${body}${othTxt?`<p class="small muted" style="margin:8px 0 0">Also ${othTxt}. Outdoor and indoor are separate classifications.</p>`:''}
@@ -168,7 +177,7 @@ function seasonOf(dt){const d=new Date(dt+'T00:00'),m=d.getMonth(),y=d.getFullYe
 const TRACK=[[250,'Banner','Season stripe'],[750,'Title','Grinder'],[1500,'Emblem frame','Season frame'],[3000,'Banner','Neon night'],[5000,'Title','Season Legend']];
 function seasonCard(){const s=seasonOf(today()),xp=sumXP(xpByDay(S.profile),s.start,s.end),days=Math.ceil((new Date(s.end)-new Date(today()))/864e5),rk=rankFor(S.profile);
  const nx=TRACK.find(t=>xp<t[0]);
- return`<div class="card dark"><span class="kicker">Season · ${s.name}</span><div class="row"><h2 style="margin:0">${xp} pts</h2><span class="small muted">${days} days left</span></div>
+ return`<div class="card dark"><span class="kicker">Season · ${s.name}</span><div class="row"><h2 style="margin:0">${xp} pts</h2><span class="small muted">${plN(days,'day','days')} left</span></div>
  <div class="bar" style="margin:8px 0"><i style="width:${Math.min(100,xp/TRACK[TRACK.length-1][0]*100)}%"></i></div>
  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">${TRACK.map(t=>`<div class="stat" style="padding:6px;${xp>=t[0]?'outline:1px solid var(--cyan)':'opacity:.55'}"><span style="display:block;font-weight:800;font-size:12px;line-height:1.2">${t[2]}</span><span class="small muted" style="font-size:11px">${t[1]} · ${t[0]}</span></div>`).join('')}</div>
  <p class="small muted" style="margin:8px 0 0">${nx?`${nx[0]-xp} more activity points to <b>${nx[2]}</b>. `:'Track complete! '}Free reward track, cosmetic only. Nothing to buy and nothing that helps your score. Activity points (pts): 1 for every arrow you shoot (up to 300 a day) and 25 for each finished round. Season stripe, Neon night = banner designs for your profile card; Grinder, Season Legend = titles; Season frame = a border.</p></div>`}
@@ -181,20 +190,21 @@ function monthStats(name,ym){const inM=d=>normDate(d).slice(0,7)==ym,dm=dayMap(n
  const ends=E.filter(e=>e.arrows.length);const bestEnd=ends.reduce((b,e)=>{const s=e.arrows.reduce((t,a)=>t+val(a),0);return!b||s>b.s||(s==b.s&&e.arrows.length<b.n)?{s,n:e.arrows.length,a:e.arrows}:b},null);
  const xs=E.reduce((t,e)=>t+e.arrows.filter(a=>a=='X').length,0),tens=E.reduce((t,e)=>t+e.arrows.filter(isTen).length,0),scored=E.reduce((t,e)=>t+e.arrows.length,0);
  const R=realFor(name).filter(r=>!r.incomplete),pbs=[],best={};R.forEach(r=>{const k=r.round+'|'+r.division;if(best[k]!=null&&r.score>best[k]&&inM(r.date))pbs.push(r);best[k]=Math.max(best[k]||0,r.score)});
- const rc={};R.filter(r=>inM(r.date)).forEach(r=>rc[r.round]=(rc[r.round]||0)+1);if(name==S.profile)done().filter(s=>inM(s.date)).forEach(s=>rc[s.round]=(rc[s.round]||0)+1);
+ /* rounds: for your own recap, the same shoot list and incomplete rule as Stats (incomplete counted only when 'Include incomplete' is ticked) */
+ const rc={};let incN=0;if(name==S.profile&&window.statShoots){statShoots().filter(x=>inM(x.date)).forEach(x=>{if(x.inc&&!S.incInc){incN++;return}rc[x.round]=(rc[x.round]||0)+1})}else R.filter(r=>inM(r.date)).forEach(r=>rc[r.round]=(rc[r.round]||0)+1);
  const top=Object.entries(rc).sort((a,b)=>b[1]-a[1])[0],rounds=Object.values(rc).reduce((a,b)=>a+b,0);
  const prevYm=(()=>{const d=new Date(ym+'-15');d.setMonth(d.getMonth()-1);return d.toLocaleDateString('en-CA').slice(0,7)})();
  const avgRt=m=>{const v=ratedRounds(name,null).filter(r=>normDate(r.date).slice(0,7)==m&&r.rating!=null).map(r=>r.rating);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
  const a1=avgRt(ym),a0=avgRt(prevYm);
  const type=arrowsN>=2000?['The Grinder','Put the most work in. Arrows on arrows.']:scored>=60&&xs/scored>=.25?['Sniper','X after X after X.']:pbs.length?['Ceiling Breaker','New personal bests this month.']:a1!=null&&a0!=null&&a1>a0?['Comeback Kid','Ratings up on last month.']:rounds>=4?['Comp Beast','Round after round after round.']:arrowsN>0?['The Steady One','Turned up and did the work.']:null;
- return{ym,arrowsN,days,bestEnd,xs,tens,scored,pbs,top,rounds,type}}
+ return{ym,arrowsN,days,bestEnd,xs,tens,scored,pbs,top,rounds,type,incN}}
 function recapMonths(){const set=new Set();Object.keys(dayMap(S.profile)).forEach(d=>set.add(d.slice(0,7)));realFor(S.profile).forEach(r=>set.add(normDate(r.date).slice(0,7)));return[...set].sort().reverse()}
 const monthName=ym=>new Date(ym+'-15').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
 function recapTeaser(){const M=recapMonths();return`<div class="card"><span class="kicker">Recap</span><div class="row"><span><b>Your month, wrapped</b><br><span class="small muted">${M.length?monthName(M[0])+' is ready':'Log some arrows to unlock your first recap'}</span></span><button class="btn" onclick="nav('recap')" ${M.length?'':'disabled'}>Open</button></div></div>`}
 function recapView(){const M=recapMonths();if(!M.length){app.innerHTML=`<div class="card dark"><span class="kicker">Recap</span><h1>Nothing to wrap yet</h1><p>Your monthly recap builds itself from your real arrows and official results. Log a session to get started.</p></div>`;return}
  if(!M.includes(recapMonth))recapMonth=M[0];const st=monthStats(S.profile,recapMonth),mn=monthName(recapMonth);
  const slides=[[`Your ${mn.split(' ')[0]}`,`<div class="big">${st.arrowsN.toLocaleString()}</div><p>arrows across ${st.days} day${st.days==1?'':'s'}</p>`],
-  ['Rounds',`<div class="big">${st.rounds}</div><p>${st.top?`Most shot: <b>${esc(st.top[0])}</b> (${st.top[1]}×)`:'No rounds logged this month'}</p>`],
+  ['Rounds',`<div class="big" id="recaprounds">${st.rounds}</div><p>${st.top?`Most shot: <b>${esc(st.top[0])}</b> (${st.top[1]}×)`:'No rounds logged this month'}${st.incN?`<br><span class="small" id="recapinc">Plus ${plN(st.incN,'incomplete round','incomplete rounds')}, not counted (same as Stats; tick Include incomplete on Stats to count ${st.incN==1?'it':'them'}).</span>`:''}</p>`],
   ['Best end',st.bestEnd?`<div class="big">${st.bestEnd.s}</div><p>${st.bestEnd.a.join(' · ')}</p>`:'<p>No scored ends this month.</p>'],
   ['X count',`<div class="big">${st.xs}</div><p>X's · ${st.tens} tens or better from ${st.scored} scored arrows</p>`],
   ['New ceilings',st.pbs.length?`<div class="big">${st.pbs.length}</div><p>${st.pbs.map(r=>`${r.score} · ${esc(r.round)}`).join('<br>')}</p>`:'<p>No new PBs this month.</p>']];

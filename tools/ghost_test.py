@@ -35,13 +35,13 @@ try:
   chk('target round: Face: WA, no field picker',pg.inner_text('#bugface').strip()=='Face: WA' and pg.locator('.fldpick').count()==0)
   E('cur=null;sv="sheet";score()');pg.wait_for_timeout(500)
   # 2. top-ranked ghost
-  RD='WA 720 (50m Compound)';L=GT['rounds'][RD]['list']
+  RD='WA 720 (50m Compound)';L=[x for x in GT['rounds'][RD]['list'] if x.get('g','Male')=='Male' and x.get('cls','Open')=='Open']  # Nathe: Open Male, same as rankings
   pg.select_option('#rd',RD);pg.wait_for_timeout(800);pg.check('#ghon')
   modes=pg.eval_on_selector_all('[data-gm]','b=>b.map(x=>x.dataset.gm)')
   chk('existing ghost modes kept + top',('off' in modes) and ('top' in modes))
   pg.click('[data-gm=top]');pg.wait_for_timeout(100)
   opts=pg.eval_on_selector_all('#ghtop option','o=>o.map(x=>x.textContent)')
-  chk('picker lists all top-ranked archers with club/score/date',len(opts)==len(L) and L[0]['n'] in opts[0] and str(L[0]['s']) in opts[0] and L[0]['c'] in opts[0])
+  chk('picker lists the top-ranked Open Male archers with club/score/date',len(opts)==len(L) and L[0]['n'] in opts[0] and str(L[0]['s']) in opts[0] and L[0]['c'] in opts[0])
   pg.select_option('#ghtop','2');pg.click('#st');pg.wait_for_timeout(700)
   g=E('cur.ghost');x=L[2]
   chk('ghost ends = scoresheet ends',g['ends']==x['ends'] and g['ar']==x['ar'] and g['mode']=='top')

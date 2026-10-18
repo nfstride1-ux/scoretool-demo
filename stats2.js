@@ -24,6 +24,12 @@ function allShoots(){const me=S.profile||'',out=[],O=offFor(me).slice(),used=new
    event:s.src=='paper'?'Paper score sheet (competition)':'Practice',rating:null,field:isFld(faceR(R,0))||!!R.aba,aba:!!R.aba,s})});
  return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.id<b.id?-1:1))}
 window.statShoots=allShoots;
+/* ONE round list for Stats and Analytics: canonical names, rounds with a counted shoot (complete, or any when Include incomplete is ticked), newest first */
+function roundList(L){L=L||allShoots();const rc={},last={};L.filter(x=>!!S.incInc||!x.inc).forEach(x=>{rc[x.round]=(rc[x.round]||0)+1;last[x.round]=x.date});
+ return Object.keys(rc).sort((a,b)=>last[a]<last[b]?1:last[a]>last[b]?-1:rc[b]-rc[a]).map(r=>({r,n:rc[r]}))}
+window.statRounds=roundList;
+/* distance label for an end: the real distance, or for field/3D rounds (distances vary target to target) a field label; never '?' */
+window.distLabel=(d,round)=>{d=String(d||'').replace(/\s*\(leg.*\)/,'').trim();if(d)return d;const r=String(round||'');return/aba|3d/i.test(r)?'3D (unmarked)':/umk|unmarked/i.test(r)?'Field (unmarked)':/field/i.test(r)?'Field (marked, mixed)':'Not recorded'};
 const ST=window._st2=window._st2||{r:null,id:null};
 const incOn=()=>!!S.incInc;
 const poolOf=(L,r)=>L.filter(x=>x.round==r&&(incOn()||!x.inc));
@@ -42,7 +48,7 @@ const card=(id,k,t,b,x,n)=>`<div class="card scard" id="${id}" data-round="${E(S
 const LATE_T=1;
 /* under-18 testers: numbers only, no tips or reasons (Coach's read is Nathe-only anyway) */
 const junior=()=>typeof TESTER!='undefined'&&!!(TESTER&&TESTER.junior);window.statJunior=junior;
-function lateText(e1,e2,t){if(junior()){const d=e2-e1;return Math.abs(d)<LATE_T?`Your last ${pl(t,'end')} were within ${r1(Math.abs(d))} of your first ${pl(t,'end')}.`:`Your last ${pl(t,'end')} averaged ${r1(Math.abs(d))} points an end ${d<0?'lower':'higher'} than your first ${pl(t,'end')}.`}const d=e2-e1;return Math.abs(d)<LATE_T?`Your last ${pl(t,'end')} were within ${r1(Math.abs(d))} of your first ${pl(t,'end')}, so they held up.`:d<0?`Your last ${pl(t,'end')} averaged ${r1(-d)} points an end lower than your first ${pl(t,'end')}. Points slip late in the round.`:`Your last ${pl(t,'end')} averaged ${r1(d)} points an end higher than your first ${pl(t,'end')}. You finish stronger than you start.`}
+function lateText(e1,e2,t){if(junior()){const d=e2-e1;return Math.abs(d)<LATE_T?`Your last ${pl(t,'end')} were within ${r1(Math.abs(d))} of your first ${pl(t,'end')}.`:`Your last ${pl(t,'end')} averaged ${plN(r1(Math.abs(d)),'point','points')} an end ${d<0?'lower':'higher'} than your first ${pl(t,'end')}.`}const d=e2-e1;return Math.abs(d)<LATE_T?`Your last ${pl(t,'end')} were within ${r1(Math.abs(d))} of your first ${pl(t,'end')}, so they held up.`:d<0?`Your last ${pl(t,'end')} averaged ${plN(r1(-d),'point','points')} an end lower than your first ${pl(t,'end')}. Points slip late in the round.`:`Your last ${pl(t,'end')} averaged ${plN(r1(d),'point','points')} an end higher than your first ${pl(t,'end')}. You finish stronger than you start.`}
 window.lateText=lateText;
 /* per-distance averages over a set of shoots: every arrow at that distance (same as Analytics and the scores read) */
 function distAvgs(W){const pd={};W.forEach(s=>s.ends.forEach((e,i)=>{const d=s.dists[i];if(!d)return;const o=pd[d]=pd[d]||{d,pts:0,arr:0,ends:0};o.pts+=e.reduce((t,a)=>t+(val(a)||0),0);o.arr+=e.length;o.ends++}));
@@ -60,8 +66,8 @@ function tipFor(P,x){const W=P.filter(s=>s.ends.length);if(!W.length)return{set:
  if(fl.length){const e1=avg(fl.map(f=>f[0])),e2=avg(fl.map(f=>f[1]));if(e1-e2>=LATE_T)return{set:W.length,kind:'late',v:[+e1.toFixed(1),+e2.toFixed(1)],txt:lab+`Your last ends average ${r1(e2)}, against ${r1(e1)} for your first ends (first and last third of each shoot). Points slip late in the round, so plan to keep your energy and focus to the end.`}}
  if(A.length&&low/A.length>0.2)return{set:W.length,kind:'low',v:Math.round(100*low/A.length),txt:lab+`${Math.round(100*low/A.length)}% of your arrows (${low} of ${A.length}) were ${fld?'4s':'8s'} or lower. Cutting those low arrows is worth more than chasing ${fld?'6s':'Xs'}.`};
  return{set:W.length,kind:'ok',txt:lab+'Your ends are close together. Keep doing what you are doing.'}}
-function render(){if(window.abaSeed)abaSeed();const L=allShoots(),rc={},last={};L.filter(x=>incOn()||!x.inc).forEach(x=>{rc[x.round]=(rc[x.round]||0)+1;last[x.round]=x.date});
- const rounds=Object.keys(rc).sort((a,b)=>last[a]<last[b]?1:last[a]>last[b]?-1:rc[b]-rc[a]);
+function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L),rc={};RL.forEach(o=>rc[o.r]=o.n);
+ const rounds=RL.map(o=>o.r);
  const nInc=L.filter(x=>x.inc).length;
  if(!rounds.length){app.innerHTML=`<div class="card"><span class="kicker">Stats</span><h2>No scores yet</h2><p class="small muted">Score a round in the app, or your official results from Archer's Diary show here once they load.</p>${nInc?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="incinc" style="width:18px;height:18px"> Include incomplete rounds (${nInc})</label>`:''}</div>`;bind();return}
  if(!ST.r||!rc[ST.r])ST.r=rounds[0];const P=poolOf(L,ST.r),newest=P[P.length-1];let x=P.find(s=>s.id==ST.id);if(!x){x=newest;ST.id=x.id}
@@ -113,7 +119,7 @@ function more(P,x,full,L){const n=P.length,sums=x.ends.map(endSum);let h='';
  h+=card('c-compare','Compare: you against you','',full.length?`<p id="cmp">${Y.length?`In ${yr} you averaged <b>${Math.round(avg(Y.map(s=>s.score)))}</b> over ${pl(Y.length,'complete shoot')}.`:`No complete shoots of this round in ${yr} yet.`} Your first ${F3.length==1?'shoot':F3.length+' shoots'} of this round ${F3.length==1?'was':'averaged'} <b>${Math.round(avg(F3.map(s=>s.score)))}</b> (${fmt(F3[0].date)}${F3.length>1?' to '+fmt(F3[F3.length-1].date):''}).</p>`:'<p class="small muted">No complete shoots of this round yet.</p>',0,n);
  if(x.aba&&window.abaStats){const ss=P.filter(s=>s.s).map(s=>s.s),X=abaStats(ss);h+=card('abastats','ABA 3D','',`<div class="stats" style="grid-template-columns:1fr 1fr 1fr"><div class="stat"><b>${r1(X.avg)}</b>average per target</div><div class="stat"><b>${Math.round(100*X.first)}%</b>first-arrow hits</div><div class="stat"><b>${X.kill}</b>kills (A)</div></div><p class="small">Vital (B) ${X.vital} · Wound (C) ${X.wound} · No score ${X.miss}.</p>`,0,n)}
  if(x.s&&(x.s.pos||[]).some(e=>(e||[]).some(Boolean)))h+=plottedCard(x.s);
- if(isMe()&&window.coachReadFor)h+=coachReadFor(ST.r,P.filter(s=>s.ends.length),pot).replace('data-n="'+P.filter(s=>s.ends.length).length+'"','data-n="'+n+'"').replace(/(\d+) shoots?, the same ones as the rest of this page\./,(m,k)=>+k==n?m:`${k} of these ${n} shoots have end-by-end scores; the read uses those.`);
+ if(isMe()&&window.coachReadFor)h+=coachReadFor(ST.r,P.filter(s=>s.ends.length),pot).replace('data-n="'+P.filter(s=>s.ends.length).length+'"','data-n="'+n+'"').replace(/(\d+) shoots?, the same ones as the rest of this page\./,(m,k)=>+k==n?m:`${k} of these ${plN(n,'shoot','shoots')} have end-by-end scores; the read uses those.`);
  /* AA classification lives on the Ranks tab only */
  h+=`<button class="btn full" id="goan2" style="margin:4px 0 10px;background:linear-gradient(90deg,#ffc629,#ffdd73);color:#111">📊 Analytics for ${E(ST.r)} · trends across shoots</button>`;
  return h}
