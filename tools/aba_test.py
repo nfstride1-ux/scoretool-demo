@@ -87,9 +87,9 @@ try:
   E("cur=null;sv='sheet';score()");pg.wait_for_timeout(300)
   # new interclub round: tap sequences
   pg.select_option('#rd',IC);pg.click('#st');pg.wait_for_timeout(500)
-  tg=lambda:pg.inner_text('#abatg');tot=lambda:pg.inner_text('#abatot');z=lambda:[x.split('\n')[0] for x in pg.locator('[data-z]').all_inner_texts()]
-  chk('starts on the 3-arrow half, target 1 of 20',tg()=='Target 1 of 20' and pg.text_content('#abahalf')=='First half · 3-arrow')
-  chk('one target counter only',pg.inner_text('#abacard').count(' of 20')==1 and ' of 40' not in pg.inner_text('#abacard'))
+  tgf=lambda:pg.inner_text('#abatg').replace('\n',' ');tg=lambda:tgf().split(' · ')[-1];tot=lambda:pg.inner_text('#abatot');z=lambda:[x.split('\n')[0] for x in pg.locator('[data-z]').all_inner_texts()]
+  chk('starts on the 3-arrow half, target 1 of 20',tgf()=='First half · Target 1 of 20' and pg.text_content('#abahalf').startswith('3-arrow half · target'))
+  chk('one per-half counter, round position shown once as context',pg.inner_text('#abacard').count(' of 20')==1 and pg.inner_text('#abacard').count(' of 40 in the round')==1 and '1 / 20' not in pg.inner_text('#abacard'))
   chk('start never says first arrow only','first arrow only' not in pg.inner_text('#abacard') and 'Arrow 1' in pg.inner_text('#abaarrow'))
   chk('never shown as a 3-arrow end',' end' not in pg.inner_text('#abacard').lower() and 'of 3' not in pg.inner_text('#abaarrow'))
   chk('exit button visible while scoring',pg.locator('#abaexit').is_visible())
@@ -112,7 +112,7 @@ try:
   for _ in range(6):pg.click('[data-z=A]')
   chk('subtotal 1-10 after 10 targets',pg.eval_on_selector_all('#abalive [data-sub]','t=>t.map(x=>x.textContent)')[0]=='156' and 'First half: 156 (1-10: 156, 11-20: 0)' in pg.inner_text('#abahalves'))
   for _ in range(10):pg.click('[data-z=A]')
-  chk('second half (1-arrow) starts at its target 1',tg()=='Target 1 of 20' and pg.text_content('#abahalf')=='Second half · 1-arrow' and z()==['20','18','16','Miss'] and 'First half done: 356' in pg.inner_text('#abarule'))
+  chk('second half (1-arrow) starts at its target 1',tgf()=='Second half · Target 1 of 20' and pg.text_content('#abahalf').startswith('1-arrow half · target') and z()==['20','18','16','Miss'] and 'First half done: 356' in pg.inner_text('#abarule'))
   pg.click('[data-z=M]');chk('1A miss = 0, moves on (no arrow 2)',tg()=='Target 2 of 20' and tot()=='356' and z()==['20','18','16','Miss'])
   pg.click('[data-z=B]');chk('1A hit: one tap then next',tg()=='Target 3 of 20' and tot()=='374')
   chk('half totals line','Second half: 18 (1-10: 18, 11-20: 0)' in pg.inner_text('#abahalves'))
@@ -128,7 +128,7 @@ try:
   # club rule: both halves 1-arrow
   pg.click('[data-abv=score]');pg.click('#abadone');pg.wait_for_timeout(300)
   pg.select_option('#rd',IC);pg.click('#st');pg.wait_for_timeout(400);pg.check('#abaclub');pg.wait_for_timeout(200)
-  chk('club rule: first half becomes 1-arrow',pg.text_content('#abahalf')=='First half · 1-arrow (club rule)' and 'One arrow a target' in pg.inner_text('#abarule'))
+  chk('club rule: first half becomes 1-arrow',pg.text_content('#abahalf').startswith('1-arrow half (club rule) · target') and 'One arrow a target' in pg.inner_text('#abarule'))
   pg.click('[data-z=M]');chk('club rule: first-half miss = 0, moves on',tg()=='Target 2 of 20' and tot()=='0' and E("cur.ends[0]")==['M'] and 'Club rule on' in pg.inner_text('#abacard'))
   hv=pg.inner_text('#abahalves');chk('club rule summary names halves, no 1A/3A as half names','First half: 0' in hv and 'Second half: 0' in hv and '1A' not in hv and '3A' not in hv)
   for _ in range(39):pg.click('[data-z=A]')
