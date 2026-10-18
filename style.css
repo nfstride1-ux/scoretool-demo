@@ -160,3 +160,5 @@ html,body{height:100%;overflow:hidden}
 .aba-hd{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:8px 0}.aba-hd>div{display:flex;flex-direction:column}
 .aba-pts{border-collapse:collapse;margin:6px 0;font-size:14px}.aba-pts th,.aba-pts td{border:1px solid var(--line);padding:2px 8px;text-align:center}
 .aba-cols{display:grid;grid-template-columns:1fr 1fr;gap:6px}.aba-p{border-collapse:collapse;width:100%;font-size:14px}.aba-p th,.aba-p td{border:1px solid var(--line);padding:3px 4px;text-align:center}
+
+.aba-cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:6px}.aba-cols4 .aba-p{font-size:12px}.aba-cols4 .aba-p th,.aba-cols4 .aba-p td{padding:2px 1px}.aba-cols4 .aba-t{color:var(--muted);font-size:10px}.aba-cols4 .aba-v{font-weight:800}.aba-cols4 .aba-r{font-size:11px}.aba-now td{outline:2px solid #ffd84d}.aba-sub td{border-top:2px solid var(--line)}

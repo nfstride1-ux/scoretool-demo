@@ -6,7 +6,7 @@
 (function(){
 const PTS=[[20,18,16],[14,12,10],[8,6,4]],ZN=['A','B','C'],ZL={A:'Kill',B:'Vital',C:'Wound'};
 /* One ABA round in the picker: the Interclub sheet. First half = 3-arrow half (targets 1-20, first arrow to hit scores),
-   second half = 1-arrow half (targets 21-40, one arrow, a miss scores 0). Checked against Nathe's sheet photo (3A columns on the left,
+   second half = 1-arrow half (its own targets 1-20, one arrow, a miss scores 0). Checked against Nathe's sheet photo (3A columns on the left,
    then 1A; '3 Arrow Total' then '1 Arrow total') and ABA rule 7(a)1 ('a 3 arrow and one arrow round'). 20 points max per target, 800 per round. */
 const IC='ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)',IC_OLD='ABA Interclub (3A + 1A, 40 targets)';
 ROUNDS[IC]={ends:40,ape:1,face:'ABA 3D animal',max:800,aba:3,halves:[{n:3,t:20,l:'3A',name:'3-arrow half',desc:'up to 3 arrows a target: the first arrow to hit scores'},{n:1,t:20,l:'1A',name:'1-arrow half',desc:'one arrow a target: a miss scores 0'}],practice:true};
@@ -19,13 +19,17 @@ function migrate(){let ch=0;(S.sessions||[]).forEach(x=>{if(x.round==IC_OLD){x.r
 const isAba=r=>!!(ROUNDS[r]&&ROUNDS[r].aba);window.isAbaRound=isAba;
 const escA=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* which half a round-target index (0-based) is in: {h, n arrows, tn target number in half, start index} */
-function where(R,i){let s=0;for(let h=0;h<R.halves.length;h++){const H=R.halves[h];if(i<s+H.t)return{h,H,n:H.n,tn:i-s+1,s};s+=H.t}const H=R.halves[R.halves.length-1];return{h:R.halves.length-1,H,n:H.n,tn:H.t,s:s-H.t}}
+/* club rule (start-of-round tick): the first half is shot 1-arrow too, so both halves are 1-arrow */
+const CLUB={n:1,t:20,l:'1A',name:'1-arrow half (club rule)',desc:'one arrow a target: a miss scores 0'};
+function halvesOf(R,x){x=x||(typeof cur!='undefined'?cur:null);return x&&x.abaClub&&R.halves.length>1?[CLUB,...R.halves.slice(1)]:R.halves}
+window.abaHalvesOf=halvesOf;
+function where(R,i,x){const HS=halvesOf(R,x);let s=0;for(let h=0;h<HS.length;h++){const H=HS[h];if(i<s+H.t)return{h,H,n:H.n,tn:i-s+1,s};s+=H.t}const H=HS[HS.length-1];return{h:HS.length-1,H,n:H.n,tn:H.t,s:s-H.t}}
 window.abaWhere=where;
 const abaPts=(n,k,z)=>k>=1&&k<=n&&ZN.includes(z)?PTS[k-1][ZN.indexOf(z)]:null;window.abaPts=abaPts;
 const st=()=>{cur.aba=cur.aba||[];return cur.aba};
 function targetIdx(){return cur.ends.length&&cur.ends[cur.ends.length-1].length==0?cur.ends.length-1:cur.ends.length}
 /* record zone A/B/C or 'M' for the current target: first arrow to score; arrows 2/3 only after a miss, and only in a 3-arrow half */
-function abaHit(z){const R=ROUNDS[cur.round],A=st(),i=targetIdx();if(i>=R.ends||cur.finished)return;const n=where(R,i).n;
+function abaHit(z){const R=ROUNDS[cur.round],A=st(),i=targetIdx();if(i>=R.ends||cur.finished)return;const n=where(R,i,cur).n;
  if(!cur.ends[i])cur.ends[i]=[];const t=A[i]=A[i]||{m:0,d:null};
  if(z=='M'){t.m++;if(t.m>=n){cur.ends[i]=['M'];t.k=0;t.z=''}}
  else{const k=t.m+1,p=abaPts(n,k,z);if(p==null)return;cur.ends[i]=[String(p)];t.k=k;t.z=z}
@@ -40,37 +44,54 @@ function abaStats(ss){const T=[];ss.forEach(s=>s.ends.forEach((e,i)=>{if(!e.leng
  const n=T.length,sum=T.reduce((t,x)=>t+x.v,0);return{n,sum,avg:n?sum/n:null,first:n?T.filter(x=>x.k==1).length/n:null,firstN:T.filter(x=>x.k==1).length,kill:T.filter(x=>x.z=='A').length,vital:T.filter(x=>x.z=='B').length,wound:T.filter(x=>x.z=='C').length,miss:T.filter(x=>!x.k).length}}
 window.abaStats=abaStats;
 /* half totals: per half, scores by target (null = not shot), running total within the half, subtotals 1-10 and 11-20 */
-function halves(s){const R=ROUNDS[s.round];let i0=0;return R.halves.map(H=>{const v=[...Array(H.t)].map((_,j)=>{const e=s.ends[i0+j];return e&&e.length?val(e[0]):null});let run=0;const rn=v.map(x=>x==null?null:(run+=x));
+function halves(s){const R=ROUNDS[s.round];let i0=0;return halvesOf(R,s).map(H=>{const v=[...Array(H.t)].map((_,j)=>{const e=s.ends[i0+j];return e&&e.length?val(e[0]):null});let run=0;const rn=v.map(x=>x==null?null:(run+=x));
  const sub=[0,1].map(q=>v.slice(q*10,q*10+10).reduce((t,x)=>t+(x||0),0)),o={H,v,rn,sub,tot:v.reduce((t,x)=>t+(x||0),0),i0};i0+=H.t;return o})}
 window.abaHalves=halves;
-/* paper-style sheet: mirrors the ABA Interclub Official Score Sheet */
-function paper(s){const R=ROUNDS[s.round],HS=halves(s),hd=s.abaHead||{},A=s.aba||[];
- const col=(o,q)=>`<table class="aba-p"><tr><th>T</th><th title="arrow number + zone">Hit</th><th>${o.H.l}</th></tr>${[...Array(10)].map((_,j)=>{const t=q*10+j,a=A[o.i0+t]||{},v=o.v[t];return`<tr><td>${o.i0+t+1}</td><td>${v==null?'':v===0?'M':a.k?hitCode(a):''}</td><td><b>${v==null?'':v===0?'M':v}</b> <span class="small muted">${o.rn[t]==null?'':o.rn[t]}</span></td></tr>`}).join('')}<tr><td colspan="2" class="small">Subtotal ${o.i0+q*10+1}-${o.i0+q*10+10}</td><td><b>${o.sub[q]}</b></td></tr></table>`;
+/* The sheet grid, laid out like the paper ABA Interclub sheet: 4 columns (3A 1-10, 3A 11-20, 1A 1-10, 1A 11-20). Each row = one target:
+   its score next to the running total for that half. Subtotal per 10 targets, then each half's total, then the round total.
+   Both halves are numbered 1-20, as on the paper. */
+const halfTag=(o,HS)=>HS.length>1?(o===HS[0]?'First half':'Second half')+' · ':'';
+function grid(s,live){const HS=halves(s),A=s.aba||[],nx=live?targetIdx():-1;
+ const col=(o,q,h)=>`<table class="aba-p" data-col="${o.H.l}-${q}"><tr><th colspan="3">${o.H.l} <span class="small">${q*10+1}-${q*10+10}</span></th></tr>${[...Array(10)].map((_,j)=>{const t=q*10+j,a=A[o.i0+t]||{},v=o.v[t],on=o.i0+t==nx;
+  return`<tr${on?' class="aba-now"':''}><td class="aba-t">${t+1}</td><td class="aba-v" data-hit="${v==null?'':v===0?'M':a.k?hitCode(a):''}" title="${v==null?'':v===0?'no score':hitCode(a)}">${v==null?'':v}</td><td class="aba-r">${o.rn[t]==null?'':o.rn[t]}</td></tr>`}).join('')}<tr class="aba-sub"><td colspan="2" class="small">${q*10+1}-${q*10+10}</td><td><b data-sub="${h}-${q}">${o.sub[q]}</b></td></tr></table>`;
+ return`<div class="aba-cols4">${HS.map((o,h)=>col(o,0,h)+col(o,1,h)).join('')}</div>
+ <div class="aba-tots">${HS.map((o,h)=>`<div class="list-item row"><span>${halfTag(o,HS)}${o.H.n==3?'3 Arrow':o.H.n==1?'1 Arrow':o.H.n+' Arrow'} Total <span class="small muted">(${o.sub[0]} + ${o.sub[1]})</span></span><b id="abah${h}">${o.tot}</b></div>`).join('')}
+ ${HS.length>1?`<div class="list-item row" style="font-size:18px"><span><b>ROUND TOTAL</b></span><b id="abaround">${HS.reduce((t,o)=>t+o.tot,0)}</b></div>`:''}</div>`}
+window.abaGrid=grid;
+function paper(s){const hd=s.abaHead||{},HS=halves(s);
  return`<div class="card aba-sheet" id="abapaper"><div style="text-align:center"><b>ABA INTERCLUB</b><div class="small" style="color:#ff6b6b">Official Score Sheet</div></div>
  <div class="aba-hd"><div><span class="small muted">Name</span><b>${escA(hd.name||S.profile||'')}</b></div><div><span class="small muted">Date</span><b>${escA(s.date)}</b></div><div><span class="small muted">ABA #</span>${escA(hd.no||'')}</div><div><span class="small muted">Grade</span>${escA(hd.grade||'')}</div><div><span class="small muted">Division</span>${escA(hd.div||'')}</div><div><span class="small muted">Target</span>${escA(hd.target||'')}</div></div>
- <p class="small muted" style="margin:6px 0 0">Points: arrow number (1, 2 or 3) by zone (A Kill, B Vital, C Wound). Hit = arrow + zone, e.g. 1A = 20, 2B = 12.</p><table class="aba-pts"><tr><th>Arrow</th><th>A</th><th>B</th><th>C</th></tr>${PTS.map((r,k)=>`<tr><th>${k+1}</th>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>
- ${HS.map(o=>`<div class="aba-half"><div class="kicker" style="margin-top:8px">${HS.length>1?(o===HS[0]?'First half':'Second half')+' · ':''}${o.H.name} (${o.H.l}) · targets ${o.i0+1}-${o.i0+o.H.t}</div><div class="small muted">${o.H.desc}</div><div class="aba-cols">${col(o,0)}${col(o,1)}</div><div class="list-item row"><span>${o.H.n==3?'3 Arrow':o.H.n==1?'1 Arrow':o.H.n+' Arrow'} Total</span><b id="abahalf${o.H.l}">${o.tot}</b></div></div>`).join('')}
- ${HS.length>1?`<div class="list-item row" style="font-size:18px"><span><b>ROUND TOTAL</b></span><b id="abaround">${HS.reduce((t,o)=>t+o.tot,0)}</b></div>`:''}
+ <p class="small muted" style="margin:6px 0 0" id="abahow">${HS.map(o=>`${halfTag(o,HS)}${o.H.l}: ${o.H.desc}`).join('. ')}. Each half is targets 1-20. Points: 1A 20, 1B 18, 1C 16 · 2A 14, 2B 12, 2C 10 · 3A 8, 3B 6, 3C 4.</p>
+ <table class="aba-pts"><tr><th>Arrow</th><th>A</th><th>B</th><th>C</th></tr>${PTS.map((r,k)=>`<tr><th>${k+1}</th>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>
+ ${grid(s,false)}
  ${s.abaNote?`<p class="small muted">${escA(s.abaNote)}</p>`:''}</div>`}
 window.abaPaper=paper;
-function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fin?null:where(R,i),n=W?W.n:1,t=A[i]||{m:0},k=(t.m||0)+1,tot=total(cur),doneT=cur.ends.filter(e=>e.length).length,maxP=tot+(R.ends-doneT)*20,HS=halves(cur);
+/* Scorer: one target at a time. Arrow 1's buttons (20/18/16/Miss); a score records the target and moves straight on.
+   Only a Miss in a 3-arrow half brings up arrow 2 (14/12/10/Miss), then arrow 3 (8/6/4/Miss); three misses = 0 and move on.
+   In a 1-arrow half: one tap (20/18/16 or Miss = 0), then the next target. */
+function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fin?null:where(R,i,cur),n=W?W.n:1,t=A[i]||{m:0},k=(t.m||0)+1,tot=total(cur),doneT=cur.ends.filter(e=>e.length).length,maxP=tot+(R.ends-doneT)*20,HS=halves(cur);
  if(fin&&!cur.finished){cur.finished=true;save()}const S3=abaStats([cur]);if(window._abaSid!==cur.id){window._abaSid=cur.id;window._abaView=cur.finished?'sheet':'score'}
- const hd=cur.abaHead=cur.abaHead||{};
- const top=`<div class="card" id="abacard"><span class="kicker">ABA 3D · first arrow to score</span>
- <div class="row" style="justify-content:space-between;align-items:flex-end;margin:6px 0"><div><div class="small muted" id="abahalf">${fin?'Round':(R.halves.length>1?(W.h==0?'First half':'Second half')+' · ':'')+W.H.name+' · target'}</div><b style="font-size:30px" id="abatg">${fin?'Done':(i+1)+' of '+R.ends}</b></div><div style="text-align:right"><div class="small muted">Total</div><b style="font-size:30px;color:var(--gold)" id="abatot">${tot}</b><div class="small muted" id="abamax">max possible ${maxP}</div></div></div>
- ${fin?'':`<div class="list-item" id="abarule" style="margin:4px 0;border-left:4px solid ${W.n>1?'#ffd84d':'#3b82f6'};padding-left:8px"><b>${W.H.name}:</b> ${W.H.desc}.${R.halves.length>1?(W.h==0?' The 1-arrow half comes second (targets 21-40).':` First half done: ${HS[0].tot}.`):''}</div>`}
- <div class="small muted" id="abahalves">${HS.map(o=>`${o.H.name[0].toUpperCase()+o.H.name.slice(1)} (targets ${o.i0+1}-${o.i0+o.H.t}): <b>${o.tot}</b> (${o.i0+1}-${o.i0+10}: ${o.sub[0]}, ${o.i0+11}-${o.i0+20}: ${o.sub[1]})`).join(' · ')}</div>
+ const hd=cur.abaHead=cur.abaHead||{},fresh=!doneT&&!t.m&&!fin;
+ const li=[...cur.ends.keys()].filter(j=>cur.ends[j].length).pop(),LW=li!=null?where(R,li,cur):null,LH=LW?HS[LW.h]:null;
+ const last=li==null?'':`<div class="list-item" id="abalast" style="margin:4px 0">Last: ${LW.H.l} target ${LW.tn} scored <b>${val(cur.ends[li][0])}</b>${(A[li]||{}).k?' ('+hitCode(A[li])+')':' (no score)'} · ${LW.H.l} running total <b>${LH.rn[LW.tn-1]}</b></div>`;
+ const top=`<div class="card" id="abacard"><span class="kicker">ABA Interclub 3D</span>
+ <div class="row" style="justify-content:space-between;align-items:flex-end;margin:6px 0"><div><div class="small muted" id="abahalf">${fin?'Round':halfTag(W.H,HS.map(o=>o.H))+W.H.l+' · '+(W.n>1?'3-arrow':'1-arrow')}</div><b style="font-size:30px" id="abatg">${fin?'Done':'Target '+W.tn+' of '+W.H.t}</b></div><div style="text-align:right"><div class="small muted">Total</div><b style="font-size:30px;color:var(--gold)" id="abatot">${tot}</b><div class="small muted" id="abamax">max possible ${maxP}</div></div></div>
+ ${fin?'':`<div class="list-item" id="abarule" style="margin:4px 0;border-left:4px solid ${W.n>1?'#ffd84d':'#3b82f6'};padding-left:8px">${W.n>1?'Tap the score of your first arrow to hit. A hit moves straight to the next target. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0). Then it moves to the next target.'}${HS.length>1&&W.h==1?` First half done: ${HS[0].tot}.`:''}</div>`}
+ ${fresh?`<label class="list-item" id="abaclubl" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" id="abaclub" ${cur.abaClub?'checked':''}> <span>Club rule: first half is 1 arrow too</span></label>`:cur.abaClub?'<div class="small muted" id="abaclubon">Club rule on: both halves are 1-arrow.</div>':''}
+ <div class="small muted" id="abahalves">${HS.map(o=>`${o.H.l}: <b>${o.tot}</b> (1-10: ${o.sub[0]}, 11-20: ${o.sub[1]})`).join(' · ')}</div>
  <div class="zbar" style="justify-content:flex-start;margin:8px 0"><button class="zb${window._abaView=='score'?' on':''}" data-abv="score">Score</button><button class="zb${window._abaView=='sheet'?' on':''}" data-abv="sheet">Score sheet</button><button class="zb" id="abaexit" style="margin-left:auto">${fin?'✓ Close':'✕ Exit round'}</button></div>`;
  const pad=fin?`<p><b>Round complete: ${tot}</b> · avg ${S3.avg!=null?S3.avg.toFixed(1):'–'} per target · first-arrow hits ${S3.firstN}/${S3.n} · kills (A) ${S3.kill}</p><button class="btn full" id="abadone">Done</button>`:`
- <p style="margin:4px 0" id="abaarrow"><b>Arrow ${k} of ${n}</b>${n>1?(k<n?` · a miss means you shoot arrow ${k+1} at this target`:' · last arrow: a miss scores 0'):' · one arrow only in this half: a miss scores 0'}${t.m?` <span class="small muted">· missed ${t.m}</span>`:''}</p>
- <div class="aba-pad" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ZN.map(z=>`<button class="aba-z" data-z="${z}" style="min-height:64px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:${z=='A'?'#ffd84d':z=='B'?'#3b82f6':'#334155'};color:${z=='A'?'#111':'#fff'}">${abaPts(n,k,z)}<div style="font-size:13px;font-weight:700">${z} · ${ZL[z]}</div></button>`).join('')}<button class="aba-z" data-z="M" style="min-height:64px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:#64748b;color:#fff">M<div style="font-size:13px;font-weight:700">${k<n?'Miss · shoot arrow '+(k+1):'Miss · 0'}</div></button></div>
- <label for="abad" class="small" style="display:block;margin-top:10px">Estimated distance (optional, unmarked)</label><input id="abad" type="number" inputmode="numeric" min="1" max="60" placeholder="m" value="${t.d||''}" style="width:110px">`;
+ <p style="margin:4px 0" id="abaarrow"><b>Arrow ${k}</b>${n>1?(k==1?'':` · arrow ${k-1} missed`):''}</p>
+ <div class="aba-pad" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${ZN.map(z=>`<button class="aba-z" data-z="${z}" style="min-height:64px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:${z=='A'?'#ffd84d':z=='B'?'#3b82f6':'#334155'};color:${z=='A'?'#111':'#fff'}">${abaPts(n,k,z)}<div style="font-size:11px;font-weight:700">${ZL[z]} ${z}</div></button>`).join('')}<button class="aba-z" data-z="M" style="min-height:64px;font-size:18px;font-weight:800;border-radius:12px;border:0;background:#64748b;color:#fff">Miss<div style="font-size:11px;font-weight:700">${k<n?'arrow '+(k+1):'0 · next'}</div></button></div>
+ ${last}`;
  const head=`<details style="margin-top:8px"><summary class="small">Sheet details (name, ABA #, grade, division, target)</summary>${[['name','Name',S.profile||''],['no','ABA #',''],['grade','Grade',''],['div','Division',''],['target','Target','']].map(([k2,l,ph])=>`<label class="small" for="abh-${k2}">${l}</label><input id="abh-${k2}" data-abh="${k2}" value="${escA(hd[k2]||'')}" placeholder="${escA(ph)}">`).join('')}</details>`;
- app.innerHTML=top+(window._abaView=='sheet'?'</div>'+paper(cur):pad+`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" id="abaundo" ${doneT||t.m?'':'disabled'}>↶ Undo</button>${fin?'':`<button class="btn ghost" id="abafin">Finish early</button>`}</div>${head}</div>`)+
+ const dist=fin?'':`<label for="abad" class="small" style="display:block;margin-top:10px">Estimated distance (optional, unmarked)</label><input id="abad" type="number" inputmode="numeric" min="1" max="60" placeholder="m" value="${t.d||''}" style="width:110px">`;
+ app.innerHTML=top+(window._abaView=='sheet'?'</div>'+paper(cur):pad+`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" id="abaundo" ${doneT||t.m?'':'disabled'}>↶ Undo</button>${fin?'':`<button class="btn ghost" id="abafin">Finish early</button>`}</div></div><div class="card" id="abalive"><span class="kicker">Your sheet so far</span>${grid(cur,true)}</div><div class="card">${dist}${head}</div>`)+
  `<p class="small muted" style="margin:0 4px 12px">ABA National Rules (1 Jan 2026), rule 13: 1A = 20, 1B = 18, 1C = 16, 2A = 14, 2B = 12, 2C = 10, 3A = 8, 3B = 6, 3C = 4. The first arrow to score counts; no more arrows once one scores. Up to 20 a target.</p>`;
  app.querySelectorAll('[data-abv]').forEach(b=>b.onclick=()=>{window._abaView=b.dataset.abv;abaScore(R)});
  app.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>abaHit(b.dataset.z));
  app.querySelectorAll('[data-abh]').forEach(x=>x.onchange=()=>{hd[x.dataset.abh]=x.value.trim();save()});
+ const cb=$('#abaclub');if(cb)cb.onchange=()=>{if(cur.ends.some(e=>e.length))return;cur.abaClub=cb.checked;if(!cb.checked)delete cur.abaClub;S.abaClub=cb.checked;save();abaScore(R)};
  const dI=$('#abad');if(dI)dI.onchange=()=>{const A=st(),j=targetIdx();A[j]=A[j]||{m:0};const v=parseInt(dI.value);A[j].d=v>0&&v<=60?v:null;save()};
  const u=$('#abaundo');if(u)u.onclick=abaUndo;const f=$('#abafin');if(f)f.onclick=()=>{if(!cur.ends.some(e=>e.length))return;if(!cur.ends[cur.ends.length-1].length)cur.ends.pop();cur.finished=true;save();abaScore(R)};
  const x=$('#abaexit');if(x)x.onclick=()=>{if(cur.finished){cur=null;sv='sheet';window._abaView='score';save();score()}else leaveScoring()};
@@ -89,6 +110,6 @@ window.abaSeed=seed;window.abaMigrate=migrate;try{if(typeof S!='undefined'&&S&&S
 const _st=stats;stats=function(){seed();_st.apply(this,arguments);const ss=done().filter(s=>s.round==window._r||(!window._r&&false));if(!isAba(window._r)||!ss.length||$('#abastats'))return;const X=abaStats(ss),last=ss[ss.length-1],L=abaStats([last]),LH=halves(last);
  app.insertAdjacentHTML('afterbegin',`<div class="card" id="abastats"><span class="kicker">ABA 3D</span><h3 style="margin:2px 0 6px">${ss.length} round${ss.length>1?'s':''} · ${X.n} targets</h3>
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr"><div class="stat"><b>${X.avg.toFixed(1)}</b>avg per target</div><div class="stat"><b>${Math.round(100*X.first)}%</b>first-arrow hits</div><div class="stat"><b>${X.kill}</b>kills (A)</div></div>
- <p class="small" style="margin:6px 0 0">Vital (B) ${X.vital} · Wound (C) ${X.wound} · No score ${X.miss}. Last: <b>${total(last)}</b> on ${escA(last.date)}${LH.length>1?` (${LH.map(o=>o.H.l+' '+o.tot).join(' + ')})`:''}${last.src=='paper'?' · from a paper sheet':''}.</p></div>`)};
-const _sc=score;score=function(){if(!cur)seed();return _sc.apply(this,arguments)};
+ <p class="small" style="margin:6px 0 0">Vital (B) ${X.vital} · Wound (C) ${X.wound} · No score ${X.miss}. Last: <b>${total(last)}</b> on ${escA(last.date)}${LH.length>1?` (${LH.map(o=>o.H.l+' '+o.tot).join(' + ')}${last.abaClub?', club rule: both halves 1-arrow':''})`:''}${last.src=='paper'?' · from a paper sheet':''}.</p></div>`)};
+const _sc=score;score=function(){if(!cur)seed();else if(isAba(cur.round)&&cur.abaClub===undefined&&S.abaClub&&!cur.ends.some(e=>e.length))cur.abaClub=true;return _sc.apply(this,arguments)};
 })();
