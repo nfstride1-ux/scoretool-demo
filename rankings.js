@@ -12,7 +12,7 @@ window.rankCard=function(name){
  const rows=Object.values(best).sort((a,b)=>Object.keys(D).indexOf(a.discipline)-Object.keys(D).indexOf(b.discipline));
  const asof=new Date(R.as_of).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
  let h=`<div class="card" id="rank-slot"><span class="kicker">National ranking</span><h2>Archery Australia</h2>`;
- if(!rows.length)h+=`<p><b>Not currently ranked.</b></p><p class="small muted">To appear, shoot a round at an AA or World Archery registered tournament or a Qualifying &amp; Ranking Event (QRE). Club shoots don't count.</p>`;
+ if(!rows.length)h+=`<p><b>Not currently ranked.</b></p><p class="small muted">To appear, shoot a round at an AA or World Archery registered tournament or an Archery Australia ranking event. Club shoots don't count.</p>`;
  else h+=rows.map(x=>`<div class="row" style="padding:6px 0;border-bottom:1px solid #0001"><span><b>${D[x.discipline]}</b><br><span class="small muted">${x.division} · ${x.age_class} ${x.gender}</span></span><span style="text-align:right"><b>${ord(x.class_rank)}</b> of ${x.class_size}<br><span class="small muted">rating ${x.rating}</span></span></div>`).join('');
  h+=`<p class="small muted">Rank within class, as of ${asof}. Ratings drop 2 points a month (5 for field and clout), so ranks change without new scores. Source: <a href="${src}" target="_blank" rel="noopener">Archer's Diary official AA rankings</a>.</p></div>`;
  return h};

@@ -46,15 +46,15 @@ try:
   txt=pg.inner_text('#app')
   for w in ['(SD)','end spread','End spread','rolling average','Rolling average','Potential','Flights','Round phase','Half split','AA rule 4.1','Evidence bank','localStorage','Elite III','8.41']:chk('Stats has no "'+w+'"',w not in txt)
   chk('Stats has no Champion tier',not re.search(r'Champion(?!ship)',txt,re.I))
-  chk('QRE explained on Stats wherever shown',('QRE' not in txt) or 'Qualifying' in txt)
+  chk('no QRE on Stats','QRE' not in txt)
   home=T('home');score=T('score');ranks=T('rewards');me=T('me');fol=T('follow')
   for nm,t in [('Home',home),('Score',score),('Ranks',ranks),('Me',me),('Following',fol)]:
     for w in ['localStorage','Evidence bank','AA rule 4.1','Elite III','Bronze III','Diamond','Platinum','Peak rank']:chk(f'{nm} has no "{w}"',w not in t)
     chk(f'{nm} has no Champion tier',not re.search(r'Champion(?!ship)',t,re.I))
   chk('Score: Ghost match explained','shoot against a past score' in score)
-  chk('Ranks: XP explained','activity points' in ranks)
+  chk('Ranks: activity points, no XP','activity points' in ranks and not re.search(r'\bXP\b',ranks))
   chk('Ranks: Season stripe explained','banner designs' in ranks)
-  chk('Ranks: QRE explained wherever shown',('QRE' not in ranks) or 'Qualifying' in ranks)
+  chk('Ranks: no QRE (plain words)','QRE' not in ranks and 'Qualifying' not in ranks)
   # ---------- one home each ----------
   T('home');chk('Home: no rank card',pg.locator('#rank-slot,#rankcard,#realrank').count()==0 and 'Grand Master' not in home)
   chk('Home: no badges',pg.locator('.irow').count()==0 and 'BADGES' not in home)
