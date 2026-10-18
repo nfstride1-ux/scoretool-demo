@@ -56,7 +56,7 @@ function distAvgs(W){const pd={};W.forEach(s=>s.ends.forEach((e,i)=>{const d=s.d
 window.distAvgs=distAvgs;
 /* Every tip uses ONE labelled set: all shoots of this round in the picker list that have end-by-end scores
    (follows 'Include incomplete'), the same shoots the scores read and Analytics use. */
-function tipFor(P,x){const W=P.filter(s=>s.ends.length);if(!W.length)return{set:0,txt:'Shoot this round with end-by-end scores to get a tip.'};
+function tipFor(P,x){if(x&&x.aba&&x.s&&window.aba3DBlocks){const b=aba3DBlocks(aba3DFacts(x.s));return{set:1,kind:'3d-'+b.kind,txt:'This round: '+b.txt}}const W=P.filter(s=>s.ends.length);if(!W.length)return{set:0,txt:'Shoot this round with end-by-end scores to get a tip.'};
  const lab=`<span class="small muted" id="tipset">Across your ${pl(W.length,'shoot')} of ${E(ST.r)} with end-by-end scores${W.length<P.length?` (${P.length-W.length} with totals only left out)`:''}:</span> `;
  const A=W.flatMap(s=>s.ends.flat()),fld=W[0].field,low=A.filter(a=>(val(a)||0)<=(fld?4:8)).length;
  const D=distAvgs(W).sort((a,b)=>a.pa-b.pa);
@@ -79,7 +79,7 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  <p class="small muted" style="margin:4px 0 0" id="statcount">${pl(n,'shoot')} of ${E(ST.r)}. Every card below uses these.</p></div>`;
  /* 1 Last shoot */
  const sums=x.ends.map(endSum),A=x.ends.flat(),apes=x.ends.map(e=>e.length);
- const ends=x.ends.length?(x.aba?`<div class="small" style="display:flex;flex-wrap:wrap;gap:4px">${sums.map((v,i)=>`${i%20==0&&sums.length>20?`<span class="small muted" style="flex-basis:100%">${i<20?'First half':'Second half'} · targets 1-20</span>`:''}<span class="adb ${v>=20?'k-y':v>=16?'k-b':v?'k-k':'k-m'}" title="target ${i%20+1}">${v||'M'}</span>`).join('')}</div>`:endChart(sums,apes,x.dists.some(Boolean)?x.dists:null,'End by end',[],x.field)+`<h3 style="margin:10px 0 4px">Arrow values</h3>`+arrowTable(A,x.field))
+ const ends=x.ends.length?(x.aba?`<div class="small" style="display:flex;flex-wrap:wrap;gap:4px">${sums.map((v,i)=>`${(h1=>(i==0||i==h1)&&sums.length>h1?`<span class="small muted" style="flex-basis:100%">${i<h1?'First half':'Second half'} · targets 1-${i<h1?h1:sums.length-h1}</span>`:'')(x.s&&ROUNDS[x.s.round]&&ROUNDS[x.s.round].halves?ROUNDS[x.s.round].halves[0].t:20)}<span class="adb ${v>=20?'k-y':v>=16?'k-b':v?'k-k':'k-m'}" title="target ${(h1=>i<h1?i+1:i-h1+1)(x.s&&ROUNDS[x.s.round]&&ROUNDS[x.s.round].halves?ROUNDS[x.s.round].halves[0].t:20)}">${v||'M'}</span>`).join('')}</div>`:endChart(sums,apes,x.dists.some(Boolean)?x.dists:null,'End by end',[],x.field)+`<h3 style="margin:10px 0 4px">Arrow values</h3>`+arrowTable(A,x.field))
   :'<p class="small muted">Only the total was published for this shoot, so there are no end-by-end scores.</p>';
  h+=card('c-last',(x===newest?'Last shoot':'Chosen shoot')+' · '+fmt(x.date),'',`<div class="row" style="align-items:flex-end"><div><b style="font-size:34px;color:var(--gold)" id="lastscore">${x.score}</b>${R.max?`<span class="small muted"> / ${R.max}</span>`:''}<div class="small muted">${E(x.event)}${x.club?' · '+E(x.club):''}</div></div><div style="text-align:right">${tag(x)}${x.rating!=null?`<div class="small muted">rating ${x.rating}</div>`:''}</div></div>
   ${x.ends.length?`<p class="small muted" style="margin:6px 0">${x.aba?pl(x.ends.length,'target'):pl(x.ends.length,'end')+' · '+A.length+' arrows'}${x.flagged?` · the sheet has ${x.ends.length+x.flagged} ends filled in: ${x.ends.length} scored and ${x.flagged} that is all misses (most likely a sheet error, so it's left out)`:''}</p>`:''}${ends}${x.url?`<a class="small" href="${E(x.url)}" target="_blank" rel="noopener">Scoresheet ↗</a>`:''}`,0,n);
@@ -88,6 +88,8 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  if(T.length<2)trend=`<p>${T.length?'One complete shoot of this round so far.':'No complete shoots of this round yet.'} Shoot it again to see a trend.</p>`;
  else{const a=avg(l3),b=p3.length?avg(p3):T[0],d=a-b,sp=Math.max(2,Math.abs(b)*0.005);trend=`<p><b>${d>sp?'Going up.':d<-sp?'Dipping.':'Steady.'}</b> Your last ${pl(l3.length,'shoot')} averaged <b>${Math.round(a)}</b>, ${p3.length?`against ${Math.round(b)} for the ${pl(p3.length,'shoot')} before`:`against ${b} on your first`}.${nI?` <span class="small muted">Includes ${pl(nI,'incomplete round')}, because Include incomplete is ticked.</span>`:''}</p>`}
  h+=card('c-trend',"How you're going",'',trend+(junior()?'':(()=>{const tp=tipFor(P,x);return`<div class="list-item" id="tip" data-set="${tp.set}" data-kind="${tp.kind||''}"><span class="kicker" style="font-size:11px">Tip</span><div>${tp.txt}</div></div>`})()),0,n);
+ /* 3D: plain-sentence cards from tapped target scores */
+ if(x.aba&&window.aba3DCards)h+=aba3DCards(P,x);
  /* 3 PB */
  const best=full.slice().sort((a,b)=>b.score-a.score||(a.date<b.date?-1:1)),pb=best[0];
  const allPB={};L.filter(s=>!s.inc).forEach(s=>{if(!allPB[s.round]||s.score>allPB[s.round].score)allPB[s.round]=s});
@@ -103,6 +105,10 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  h+=`<button class="btn ghost full" id="moredet" aria-expanded="${open}" style="margin:6px 0 10px">${open?'Hide detail':'More detail'} <span class="small muted">· for you and your coach</span></button><div id="more" ${open?'':'hidden'}>${open?more(P,x,full,L):''}</div>`;
  app.innerHTML=h;bind()}
 function more(P,x,full,L){const n=P.length,sums=x.ends.map(endSum);let h='';
+ /* 3D rounds: end splits, spread, best ends and plots don't apply (targets, not ends); the 3D cards sit up front */
+ if(x.aba){const yr=today().slice(0,4),Y=full.filter(s=>s.date.startsWith(yr)),F3=full.slice(0,3);
+ h+=card('c-compare','Compare: you against you','',full.length?`<p id="cmp">${Y.length?`In ${yr} you averaged <b>${Math.round(avg(Y.map(s=>s.score)))}</b> over ${pl(Y.length,'complete shoot')}.`:`No complete shoots of this round in ${yr} yet.`} Your first ${F3.length==1?'shoot':F3.length+' shoots'} of this round ${F3.length==1?'was':'averaged'} <b>${Math.round(avg(F3.map(s=>s.score)))}</b> (${fmt(F3[0].date)}${F3.length>1?' to '+fmt(F3[F3.length-1].date):''}).</p>`:'<p class="small muted">No complete shoots of this round yet.</p>',0,n);
+ return h}
  if(x.ends.length>=2){const k=Math.floor(sums.length/2),a=x.ends.slice(0,k),b=x.ends.slice(sums.length-k),sa=a.reduce((t,e)=>t+endSum(e),0),sb=b.reduce((t,e)=>t+endSum(e),0),odd=sums.length%2;
   const cnt=(L,v)=>L.flat().filter(q=>String(q).toUpperCase()==v).length,ks=x.field?['6','5','4','3','2','1','M']:(['X','10','9','8','7','6','5','4','3','2','1','M']).filter(q=>cnt(x.ends,q)>0||['X','10','9','8','M'].includes(q));const _u=(x.field?['6','5','4','3','2','1','M']:['X','10','9','8','7','6','5','4','3','2','1','M']).filter(q=>cnt(x.ends,q)>0||(x.field?['6','5','4','M']:['X','10','9','8','M']).includes(q));
   h+=card('c-half','First half vs second half',fmt(x.date)+' · '+x.score,`<div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b id="h1">${sa}</b>first ${pl(k,'end')}</div><div class="stat"><b id="h2">${sb}</b>last ${pl(k,'end')}</div></div>

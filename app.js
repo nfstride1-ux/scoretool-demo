@@ -302,7 +302,10 @@ const faceVB=R=>R&&R.col?'-0.33 -0.95 0.66 1.9':isBug(R)?'-0.31 -0.93 0.62 1.86'
 /* face for a given end: custom rounds have distance blocks, each with its own face */
 function faceR(R,ei){if(!R.blocks)return R;let k=0;for(const b of R.blocks){k+=+b.ends;if(ei<k)return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}const b=R.blocks[R.blocks.length-1];return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}
 /* custom practice rounds (practice only, never counted for classification) */
-function regCustom(){(S.customRounds||[]).forEach(c=>{const ends=c.blocks.reduce((t,b)=>t+ +b.ends,0);ROUNDS[c.name]={ends,ape:+c.ape,face:c.blocks.map(b=>`${b.size}cm ${b.type}`).join(' / '),max:ends*c.ape*10,custom:true,practice:true,blocks:c.blocks,xs:c.xs}})}
+/* a 3D practice round: ABA scoring (3-arrow half then 1-arrow half, 20 a target); odd counts put the extra target in the first half */
+function abaCustom(c){const n=Math.max(2,Math.round(+c.targets||20)),h1=Math.ceil(n/2),h2=n-h1;return{ends:n,ape:1,face:'ABA 3D animal',max:20*n,aba:3,halves:[{n:3,t:h1,l:'3A',name:'3-arrow half',desc:'up to 3 arrows a target: the first arrow to hit scores'},{n:1,t:h2,l:'1A',name:'1-arrow half',desc:'one arrow a target: a miss scores 0'}],custom:true,practice:true,kind:'3d',targets:n}}
+window.abaCustom=abaCustom;
+function regCustom(){(S.customRounds||[]).forEach(c=>{if(c.kind=='3d'){ROUNDS[c.name]=abaCustom(c);return}const ends=c.blocks.reduce((t,b)=>t+ +b.ends,0);ROUNDS[c.name]={ends,ape:+c.ape,face:c.blocks.map(b=>`${b.size}cm ${b.type}`).join(' / '),max:ends*c.ape*10,custom:true,practice:true,blocks:c.blocks,xs:c.xs}})}
 /* Marks drawn ON the target face (selected arrow, magnifier crosshair, group circle): bright green with a dark outline so they show on every ring colour. */
 const FM='#39ff14',FMO='#0b0f17';
 const faceHi=frag=>frag.replace(/stroke="#39ff14" stroke-width="([0-9.e-]+)"/g,(m,w)=>`stroke="${FMO}" stroke-width="${(+w*2.2).toFixed(4)}"`)+frag;/* dark copy underneath, green on top */
@@ -407,12 +410,12 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  ${secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
  <div class="ad-sum">${hiStats(arrowsAll,s)}&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${early?arrowsIn(s)*per+' <span class="small">('+arrowsIn(s)+' arrows shot)</span>':fullMax}</span></div></div>
  ${fin?roundSummary(s)+`<div class="ad-sheet" style="padding:10px">${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
- <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
+ <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:'')+(window.shareSheet?`<button class="ad-fin" id="shsheet">Share</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';score()});
  if($('#addsc'))$('#addsc').onclick=()=>{sv='entry';score()};
  if($('#finnow'))$('#finnow').onclick=()=>{if(!confirm(`Finish round now? ${arrowsIn(s)} arrows, ${total(s)} points.`))return;while(s.ends.length>1&&!s.ends[s.ends.length-1].length){s.ends.pop();if(s.pos)s.pos.length=Math.min(s.pos.length,s.ends.length)}s.finished=true;fix=null;justDone=false;sv='sheet';save();score()};
- if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
+ if($('#shsheet'))$('#shsheet').onclick=()=>shareSheet(s);if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
 const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)','AA 50/1440 (50/40/30/20m)':'AA 50/1440'};
@@ -436,7 +439,8 @@ function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;sv='
 addEventListener('popstate',()=>{if(cur&&view=='score'&&!document.getElementById('leaveov')){history.pushState({scoring:1},'');leaveScoring()}});
 
 
-function roundForm(){const c=crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):(crEdit.d||{name:'',ape:6,xs:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]});crEdit.d=c;
+function roundForm(){const c=crEdit.d||(crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):{name:'',ape:6,xs:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]});crEdit.d=c;
+ if(c.kind=='3d')return roundForm3D(c);
  const tot=()=>c.blocks.reduce((t,b)=>t+ +b.ends,0)*c.ape*10;
  app.innerHTML=`<div class="card"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="e.g. Tuesday 30m blast">
  <label for="cape">Arrows per end</label><div style="display:flex;gap:6px"><select id="cape" style="flex:1">${[3,6].map(n=>`<option ${c.ape==n?'selected':''}>${n}</option>`).join('')}<option value="c" ${![3,6].includes(+c.ape)?'selected':''}>Custom</option></select><input id="capec" type="number" min="1" max="12" value="${c.ape}" style="flex:1" ${[3,6].includes(+c.ape)?'hidden':''} aria-label="Custom arrows per end"></div>
@@ -445,13 +449,13 @@ function roundForm(){const c=crEdit.i>=0?JSON.parse(JSON.stringify(S.customRound
   <label>Distance<div style="display:flex;gap:4px"><input data-f="dist" type="number" min="1" value="${b.dist}" style="min-width:0"><select data-f="unit" style="width:64px">${['m','yd'].map(u=>`<option ${b.unit==u?'selected':''}>${u}</option>`).join('')}</select></div></label>
   <label>Ends<input data-f="ends" type="number" min="1" max="60" value="${b.ends}"></label>
   <label>Face size<select data-f="size">${[122,80,60,40].map(z=>`<option value="${z}" ${b.size==z?'selected':''}>${z}cm</option>`).join('')}</select></label>
-  <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
+  <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
   ${c.blocks.length>1?`<button class="btn ghost" data-rb="${i}" style="margin-top:6px;padding:4px 10px">Remove block</button>`:''}</div>`).join('')}
  <button class="btn ghost" id="addb" style="margin-top:6px">+ Add distance</button>
  <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${tot()}</span></b> <span class="small muted">· practice only, never counted for classification</span></p>
  <div style="display:flex;gap:6px;margin-top:10px"><button class="btn" id="csave">Save round</button><button class="btn ghost" id="ccancel">Cancel</button></div></div>`;
  const up=()=>{$('#cmax').textContent=tot()};
- app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{const b=c.blocks[+el.closest('[data-b]').dataset.b];b[el.dataset.f]=['dist','ends','size'].includes(el.dataset.f)?+el.value:el.value;up()});
+ app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{if(el.dataset.f=='type'&&el.value=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}const b=c.blocks[+el.closest('[data-b]').dataset.b];b[el.dataset.f]=['dist','ends','size'].includes(el.dataset.f)?+el.value:el.value;up()});
  $('#cape').onchange=e=>{if(e.target.value=='c'){$('#capec').hidden=false}else{$('#capec').hidden=true;c.ape=+e.target.value}up()};$('#capec').oninput=e=>{c.ape=Math.max(1,Math.min(12,+e.target.value||1));up()};
  $('#cn').oninput=e=>c.name=e.target.value;$('#cxs').onchange=e=>c.xs=e.target.checked;
  $('#addb').onclick=()=>{const l=c.blocks[c.blocks.length-1];c.blocks.push({...l});roundForm()};
@@ -459,6 +463,23 @@ function roundForm(){const c=crEdit.i>=0?JSON.parse(JSON.stringify(S.customRound
  $('#ccancel').onclick=()=>{crEdit=null;score()};
  $('#csave').onclick=()=>{const n=c.name.trim();if(!n)return alert('Give your round a name.');if(ROUNDS[n]&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
   c.name=n;S.customRounds=S.customRounds||[];if(crEdit.i>=0){const old=S.customRounds[crEdit.i].name;if(old!=n){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=n})}S.customRounds[crEdit.i]=c}else S.customRounds.push(c);S.lastRound=n;crEdit=null;save();regCustom();score()}}
+/* 3D practice round form: the only setting is the number of targets */
+function roundForm3D(c){const n=Math.max(2,Math.round(+c.targets||20)),h1=Math.ceil(n/2),h2=n-h1;
+ app.innerHTML=`<div class="card" id="cform3d"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="e.g. Sunday 3D course">
+ <label for="cface">Face type</label><select id="cface">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${v=='3d'?'selected':''}>${l}</option>`).join('')}</select>
+ <label for="ctg">Number of targets</label><input id="ctg" type="number" inputmode="numeric" min="2" max="100" step="1" value="${n}">
+ <p class="small" id="ctgsplit" style="margin:6px 0 0">First half (3-arrow): <b>${plN(h1,'target','targets')}</b> · Second half (1-arrow): <b>${plN(h2,'target','targets')}</b>${n%2?`<br><span class="muted" id="ctgodd">Odd number, so the extra target goes in the first half.</span>`:''}</p>
+ <p class="small muted" style="margin:6px 0 0">ABA 3D scoring: in the 3-arrow half the first arrow to hit scores (20/18/16, then 14/12/10, then 8/6/4); in the 1-arrow half a miss scores 0. The club-rule option (first half 1 arrow too) is on the scoring screen.</p>
+ <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${20*n}</span></b> <span class="small muted">· 20 a target · practice only, never counted for classification</span></p>
+ <div style="display:flex;gap:6px;margin-top:10px"><button class="btn" id="csave">Save round</button><button class="btn ghost" id="ccancel">Cancel</button></div></div>`;
+ $('#cn').oninput=e=>c.name=e.target.value;
+ /* update the split and max in place (no re-render, so typing and tapping Save never fight a redraw) */
+ const sp=()=>{const v=Math.max(2,Math.min(100,Math.round(+$('#ctg').value||2))),a=Math.ceil(v/2),b2=v-a;c.targets=v;$('#ctgsplit').innerHTML=`First half (3-arrow): <b>${plN(a,'target','targets')}</b> · Second half (1-arrow): <b>${plN(b2,'target','targets')}</b>${v%2?'<br><span class="muted" id="ctgodd">Odd number, so the extra target goes in the first half.</span>':''}`;$('#cmax').textContent=20*v};
+ $('#ctg').oninput=$('#ctg').onchange=sp;
+ $('#cface').onchange=e=>{delete c.kind;c.blocks=c.blocks&&c.blocks.length?c.blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}];c.blocks.forEach(b=>b.type=e.target.value);c.ape=c.ape||6;roundForm()};
+ $('#ccancel').onclick=()=>{crEdit=null;score()};
+ $('#csave').onclick=()=>{const v=+$('#ctg').value;if(v!==Math.round(v)||v<2)return alert('Enter a whole number of targets, 2 or more.');c.targets=Math.min(100,v);const nm=c.name.trim();if(!nm)return alert('Give your round a name.');if(ROUNDS[nm]&&(!ROUNDS[nm].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=nm:true)))return alert('That name is already used. Pick another.');
+  const o={name:nm,kind:'3d',targets:c.targets};S.customRounds=S.customRounds||[];if(crEdit.i>=0){const old=S.customRounds[crEdit.i].name;if(old!=nm){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=nm})}S.customRounds[crEdit.i]=o}else S.customRounds.push(o);S.lastRound=nm;crEdit=null;save();regCustom();score()}}
 function plottedCard(s){if(!s||!(s.pos||[]).some(e=>(e||[]).some(Boolean)))return'<p class="small muted" style="margin:0 4px 12px">No arrows were plotted in this session.</p>';const pts=s.pos.flat().filter(Boolean),g=groupStats(pts),R=ROUNDS[s.round]||{};
  return`<div class="card"><h3>Group plot · ${s.date}</h3><p class="small muted">${pts.length} plotted arrows from ${s.round}. Keypad arrows have no position, so they aren't shown.</p><div style="max-width:300px;margin:0 auto">${faceSVG(pts,'gplot',isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08',R,pts.length>=3?faceHi(`<circle cx="${g.cx}" cy="${g.cy}" r="${g.r}" fill="none" stroke="#39ff14" stroke-width="0.012" stroke-dasharray="0.04 0.03"/><path d="M${g.cx-0.06} ${g.cy}h0.12M${g.cx} ${g.cy-0.06}v0.12" stroke="#39ff14" stroke-width="0.018"/>`):'')}</div>${pts.length>=3?`<p class="small">Centre of group: ${Math.abs(g.cy)<0.04?'level':g.cy<0?'high':'low'}, ${Math.abs(g.cx)<0.04?'centred':g.cx<0?'left':'right'}. Spread ${(g.r*10).toFixed(1)} rings.</p>`:''}</div>`}
 function sessionList(){return`<div class="card"><h3>Past sessions</h3>${allSessions().slice().reverse().map(s=>`<div class="list-item row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${total(s)}</b> · ${s.round}<div class="small muted">${s.date} ${s.sample?'<span class="sample">sample data</span>':''}${s.src=='paper'?' <span class="real">competition · paper sheet</span>':''}${isIncS(s)?' <span class="sample inc-tag">Incomplete</span>':''}</div>${noteBox(s)}</div>${s.sample?'':`<span class="sess-act">${ROUNDS[s.round]?`<button class="btn ghost" data-open="${s.id}">Open</button>`:''}<button class="btn ghost" data-del="${s.id}" aria-label="delete">🗑</button></span>`}</div>`).join('')||'<p class="small muted">No sessions yet. Tap Start on a round to score your first one.</p>'}</div>`}
