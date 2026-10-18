@@ -86,7 +86,7 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  /* 2 How you're going */
  const TP=incOn()?P:full,nI=TP.filter(s=>s.inc).length,T=TP.map(s=>s.score),l3=T.slice(-3),p3=T.slice(-6,-3);let trend;
  if(T.length<2)trend=`<p>${T.length?'One complete shoot of this round so far.':'No complete shoots of this round yet.'} Shoot it again to see a trend.</p>`;
- else{const a=avg(l3),b=p3.length?avg(p3):T[0],d=a-b,sp=Math.max(2,Math.abs(b)*0.005);trend=`<p><b>${d>sp?'Going up.':d<-sp?'Dipping.':'Steady.'}</b> Your last ${pl(l3.length,'shoot')} averaged <b>${Math.round(a)}</b>, ${p3.length?`against ${Math.round(b)} for the ${pl(p3.length,'shoot')} before`:`against ${b} on your first`}.${nI?` <span class="small muted">Includes ${pl(nI,'incomplete round')}, because Include incomplete is ticked.</span>`:''}</p>`}
+ else{const a=avg(l3),b=p3.length?avg(p3):T[0],d=a-b,sp=Math.max(2,Math.abs(b)*0.005);trend=`<p><b>${CB()?(d>sp?'▲ ':d<-sp?'▼ ':'● '):''}${d>sp?'Going up.':d<-sp?'Dipping.':'Steady.'}</b> Your last ${pl(l3.length,'shoot')} averaged <b>${Math.round(a)}</b>, ${p3.length?`against ${Math.round(b)} for the ${pl(p3.length,'shoot')} before`:`against ${b} on your first`}.${nI?` <span class="small muted">Includes ${pl(nI,'incomplete round')}, because Include incomplete is ticked.</span>`:''}</p>`}
  h+=card('c-trend',"How you're going",'',trend+(junior()?'':(()=>{const tp=tipFor(P,x);return`<div class="list-item" id="tip" data-set="${tp.set}" data-kind="${tp.kind||''}"><span class="kicker" style="font-size:11px">Tip</span><div>${tp.txt}</div></div>`})()),0,n);
  /* 3D: plain-sentence cards from tapped target scores */
  if(x.aba&&window.aba3DCards)h+=aba3DCards(P,x);
@@ -99,7 +99,7 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
   <p class="small muted" style="margin:6px 0 0" id="pbnote">Complete rounds only. Incomplete rounds never count as a PB${incOn()?', so ticking Include incomplete doesn\'t change this card':''}.</p>`,0,n);
  /* 4 Score history */
  const H=P,run=H.map((s,i)=>{const w=H.slice(Math.max(0,i-2),i+1).filter(y=>!y.inc).map(y=>y.score);return w.length?Math.round(avg(w)):null}),pbl=H.map((s,i)=>{const v=H.slice(0,i+1).filter(y=>!y.inc).map(y=>y.score);return v.length?Math.max(...v):null});
- h+=card('c-hist','Score history','',H.length>1?lineChart([{name:'Score',data:H.map(s=>s.score),c:'#3b82f6'},{name:'Average of your last 3',data:run,c:'#ffc629',dash:1},{name:'PB',data:pbl,c:'#16a34a',w:1.5,dash:1}],{labels:H.map(s=>s.date.slice(2,7))}):'<p class="small muted">Needs 2 or more shoots of this round.</p>',0,n);
+ h+=card('c-hist','Score history','',H.length>1?lineChart([{name:'Score',data:H.map(s=>s.score),c:'#3b82f6'},{name:'Average of your last 3',data:run,c:'#ffc629',dash:1},{name:'PB',data:pbl,c:CBC('#16a34a','#ffffff'),w:1.5,dash:1}],{labels:H.map(s=>s.date.slice(2,7))}):'<p class="small muted">Needs 2 or more shoots of this round.</p>',0,n);
  /* More detail */
  const open=!!S.statsMore;
  h+=`<button class="btn ghost full" id="moredet" aria-expanded="${open}" style="margin:6px 0 10px">${open?'Hide detail':'More detail'} <span class="small muted">· for you and your coach</span></button><div id="more" ${open?'':'hidden'}>${open?more(P,x,full,L):''}</div>`;

@@ -19,6 +19,6 @@ function renderGear(){seedBows();const L=myBows(),b=curBow(),el=document.createE
  if($('#bren'))$('#bren').onclick=()=>{const n=prompt('New name',b.name);if(n&&n.trim()){b.name=n.trim();save();diary()}};
  el.querySelectorAll('.smk').forEach(i=>i.onchange=()=>{const d=i.dataset.d,k=i.dataset.k,m=b.marks[d]=b.marks[d]||{},old=m[k]||'',nv=i.value.trim();if(old==nv)return;m[k]=nv;
   S.setup=S.setup||[];S.setup.push({id:'sm'+Date.now(),archer:S.profile,date:today(),cat:'Sight',change:`${d}${k=='h'?' horizontal':''}: ${old||'none'} to ${nv||'cleared'}`,reason:'',noticed:'',bow:b.name});save();
-  i.style.outline='3px solid #16a34a';setTimeout(()=>i.style.outline='',800)});
+  i.style.outline='3px solid '+(CB()?'#5ab0ff':'#16a34a');setTimeout(()=>i.style.outline='',800)});
  if($('#nadd'))$('#nadd').onclick=()=>{const v=parseFloat($('#ndist').value);if(!(v>0))return;const d=v+$('#nunit').value;if(!bowDists(b).includes(d))b.extra.push(d);save();diary()}}
 const _diaryBase=diary;diary=function(){_diaryBase();renderGear()};
