@@ -2,6 +2,7 @@
 # early/late text from its numbers, per-value tables add up, plain words, end labels on every end chart. Chrome 390x844.
 import subprocess,sys,time,os,re
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -12,7 +13,7 @@ RECALC='''()=>{const P=statPool(),W=P.filter(s=>s.ends.length),A=W.flatMap(s=>s.
  const D=distAvgs(W).sort((a,b)=>a.pa-b.pa);const fl=W.filter(s=>s.ends.length>=2).map(s=>{const t=Math.max(1,Math.floor(s.ends.length/3));const m=v=>v.reduce((a,b)=>a+b,0)/v.length;return[m(s.ends.slice(0,t).map(endSum)),m(s.ends.slice(-t).map(endSum))]});
  const m=v=>v.reduce((a,b)=>a+b,0)/v.length;return{nP:P.length,nW:W.length,D,late:fl.length?[m(fl.map(f=>f[0])),m(fl.map(f=>f[1]))]:null,low:A.length?Math.round(100*A.filter(a=>(val(a)||0)<=(fld?4:8)).length/A.length):null}}'''
 def login(pg,who):
-  pg.goto('http://localhost:8773/');pg.wait_for_timeout(1000);pg.get_by_text(who).first.click();pg.wait_for_timeout(500)
+  pg.goto('http://localhost:8773/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
   if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break

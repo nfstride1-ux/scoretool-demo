@@ -2,7 +2,8 @@
    No free text between members: the only interaction is one preset cheer per item. */
 const AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const who=m=>window.initDisc?initDisc(m):`<span style="font-size:22px">${m.avatar||''}</span>`;
-const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
+/* testers show by their chosen display name only (names.js); others keep 'First L.' */
+const shortName=n=>{const d=window.dispName?dispName(n):n;if(d!==n)return d;const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
 /* Preset squad: every tester (20 Oct 2026, Nathe: all testers in ScoreTool Testers). Same code and members on every tester profile; data is still per phone (no server).
    Names are the tester profile names (testers.js) so each member's real data and points line up. */
 const PRESET_SQ={preset:'st-testers-1',name:'ScoreTool Testers',code:'STRIDE-3T7',admin:'Nathaniel Stride',rawRank:false,

@@ -128,7 +128,7 @@ const BANNERS=[['Navy & gold','#13294b','#ffc629'],['Royal blue','#1d4ed8','#93c
 const card=()=>{S.card=S.card||{banner:0,featured:[],title:''};return S.card};
 const initials=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 function colourFor(name){if(name==S.profile&&S.card)return BANNERS[S.card.banner||0];let h=0;for(const c of name||'')h=(h*31+c.charCodeAt(0))>>>0;return BANNERS[h%BANNERS.length]}
-function initDisc(m,sz=44){const B=colourFor(m.name);return`<span class="ini" style="width:${sz}px;height:${sz}px;font-size:${sz*.4}px;background:linear-gradient(135deg,${B[2]},${B[1]});color:${['#111827','#13294b','#166534','#b91c1c'].includes(B[1])&&B[2]!='#111827'?'#0b0f17':'#fff'}" aria-hidden="true">${initials(m.name)}</span>`}
+function initDisc(m,sz=44){const B=colourFor(m.name);return`<span class="ini" style="width:${sz}px;height:${sz}px;font-size:${sz*.4}px;background:linear-gradient(135deg,${B[2]},${B[1]});color:${['#111827','#13294b','#166534','#b91c1c'].includes(B[1])&&B[2]!='#111827'?'#0b0f17':'#fff'}" aria-hidden="true">${initials(window.dispName?dispName(m.name):m.name)}</span>`}
 function cardData(name){const mine=name==S.profile,B=earnedBadges(name).filter(b=>b.on),rk=rankFor(name),R=realFor(name),last=R[R.length-1];
  let feat=mine?card().featured.map(id=>B.find(b=>b.id==id)).filter(Boolean):[];if(!feat.length){const ord=['mythic','legendary','epic','rare','common'];feat=B.slice().sort((a,b)=>ord.indexOf(a.rarity)-ord.indexOf(b.rarity)).slice(0,3)}
  const title=(mine&&card().title&&(B.some(b=>b.name==card().title)||seasonTitles().includes(card().title)))?card().title:'';

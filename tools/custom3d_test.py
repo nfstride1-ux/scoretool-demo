@@ -1,6 +1,7 @@
 # Score > Create my practice round > Face type 3D: ABA scoring, targets-only setting, odd split, 20 a target, same scorer/sheet/share. 390x844.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

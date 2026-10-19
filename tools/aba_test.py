@@ -1,6 +1,7 @@
 # ABA Interclub (first half 3-arrow, second half 1-arrow) scorer, score sheet view, seeded 17 May 2025 round. 390x844 Chrome.
 import subprocess,sys,time,os,re
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -10,7 +11,7 @@ try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']);pg=b.new_page(viewport={'width':390,'height':844})
   errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and errs.append(m.text))
-  pg.goto('http://localhost:8771/');pg.wait_for_timeout(1000);pg.get_by_text('Nathaniel Stride').first.click();pg.wait_for_timeout(500);pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  pg.goto('http://localhost:8771/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500);pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

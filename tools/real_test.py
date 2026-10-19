@@ -1,6 +1,7 @@
 # Checks for real rankings + Coach's read (Nathe only). Serves the repo on :8765 and drives Chrome at 390 px.
 import json,subprocess,time,sys,os
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 srv=subprocess.Popen([sys.executable,'-m','http.server','8765'],cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
@@ -11,7 +12,7 @@ try:
   # playground reference numbers
   pg=b.new_page();pg.add_init_script('window.__NORENDER=true');pg.goto('http://localhost:8765/c-7q4m9x2k/');pg.wait_for_timeout(800)
   ap=b.new_page(viewport={'width':390,'height':844});errs=[];ap.on('console',lambda m:m.type=='error' and errs.append(m.text));ap.on('pageerror',lambda e:errs.append(str(e)))
-  ap.goto('http://localhost:8765/');ap.wait_for_timeout(1000);ap.get_by_text('Nathaniel Stride').first.click();ap.wait_for_timeout(600)
+  ap.goto('http://localhost:8765/');ap.wait_for_timeout(1000);nm_seed.pick(ap,'nathe');ap.wait_for_timeout(600)
   ap.get_by_text('Demo unlock').first.click();ap.wait_for_timeout(600)
   for _ in range(3):
    if ap.locator('nav [data-v=stats]').is_visible():break

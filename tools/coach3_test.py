@@ -1,6 +1,7 @@
 # Archery Coach's 12 screen-capture bugs (after 0814) + ABA club-rule layout + ABA distance input removed. Chrome 390x844, archer view.
 import subprocess,sys,time,os,re,json,base64,urllib.parse
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

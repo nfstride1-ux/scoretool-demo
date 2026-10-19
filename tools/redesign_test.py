@@ -1,12 +1,13 @@
 # Stats redesign + Coach's bug list (tester Nathaniel Stride, plus Logan for 'other testers still work'). Chrome, 390x844.
 import subprocess,sys,time,os,re,json
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 srv=subprocess.Popen([sys.executable,'-m','http.server','8772'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 def login(pg,who):
-  pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);pg.get_by_text(who).first.click();pg.wait_for_timeout(500)
+  pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
   if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
@@ -116,7 +117,7 @@ try:
   # arrow counts
   T('home');wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
   chk("B8 Today's arrows = shared count",int(pg.locator('#volring text').first.text_content())==E('arrowDays()[today()]||0'))
-  ft=T('follow');m=re.search(r'NS You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
+  ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
   # 782 / compare grammar / season
   st();rnd('ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)');more(True);c=pg.inner_text('#c-compare')
   chk('B9 Compare grammar + season','first shoot of this round was' in c and 'sessions' not in c and 'No complete shoots of this round in 2026' in c)

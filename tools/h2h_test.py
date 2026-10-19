@@ -5,6 +5,7 @@
 import subprocess,sys,time,os,json,re
 from urllib.parse import urlparse,parse_qs
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,7 +21,9 @@ def relay(route,req):
 NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny'}
 errs=[]
 def phone(b,tid):
-  ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay);pg=ctx.new_page()
+  ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay)
+  # each phone only knows its OWN display name; the others must arrive through the (mocked) relay
+  ctx.add_init_script("for(const id of %s)if(id!='%s')localStorage.removeItem('scoretool.dname.'+id)"%(json.dumps(nm_seed.IDS),tid));pg=ctx.new_page()
   pg.on('pageerror',lambda e:errs.append(f'{tid}: {e}'));pg.on('dialog',lambda d:d.accept())
   pg.goto(f'http://localhost:8781/?tester={tid}');pg.wait_for_timeout(1200)
   pg.evaluate("n=>{S.unlocked=true;if(!S.profile)S.profile=n;save()}",NAMES[tid]);pg.reload();pg.wait_for_timeout(2200);return ctx,pg
@@ -53,10 +56,10 @@ try:
   chk('opponent list has every other tester (8), not just the squad',J.locator('#h2hop option').count()==8)
   chk('round list is the indoor rounds',J.locator('#h2hrd option').all_inner_texts()==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m'])
   J.click('#h2hgo');J.wait_for_timeout(500)
-  chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Logan' in J.inner_text('#h2hchip'))
+  chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
   chk('invite sent to Logan\'s inbox',any('-in-logan' in t for t in RELAY))
   tick(L);L.evaluate("cur=null;sv='sheet';nav('score')");L.wait_for_timeout(400)
-  chk('Logan sees "Joseph challenged you"','Joseph challenged you' in L.inner_text('#h2hcard'))
+  chk('Logan sees "Joseph challenged you"','Joey challenged you' in L.inner_text('#h2hcard'))
   if SHOT:L.screenshot(path=OUT+'/2-invite.png')
   L.click('[data-h2hacc]');L.wait_for_timeout(500)
   chk('Logan: accepting starts his scorer on the same round','Indoor WA 18m' in L.inner_text('#roundname') and L.locator('#h2hchip').count()==1)
@@ -64,11 +67,11 @@ try:
   tick(J);tick(L);tick(J)
   chk('Joseph sees Logan\'s end 1 live: chip 29 - 29','29 – 29' in J.inner_text('#h2hchip'))
   keys(J,['10','9','9']);tick(J);tick(L)
-  chk('Logan sees Joseph ahead after end 2 (28 vs end not shot yet)','You 29 – 57 Joseph' in L.inner_text('#h2hchip'))
+  chk('Logan sees Joseph ahead after end 2 (28 vs end not shot yet)','You 29 – 57 Joey' in L.inner_text('#h2hchip'))
   if SHOT:L.screenshot(path=OUT+'/3-scoring-live-chip.png')
   L.click('#h2hchip');L.wait_for_timeout(300)
   t=L.inner_text('#h2hview')
-  chk('match view shows end by end and running totals',"X 10 9" in t and '29 – 57' in t and "Joseph has shot 2 ends" in t)
+  chk('match view shows end by end and running totals',"X 10 9" in t and '29 – 57' in t and "Joey has shot 2 ends" in t)
   if SHOT:L.screenshot(path=OUT+'/4-match-view-live.png')
   EJ=ends(11);EL=ends(23);EJ[0]=['X','10','9'];EJ[1]=['10','9','9'];EL[0]=['10','10','9']
   J.evaluate(FILL,[EJ,True]);L.evaluate(FILL,[EL,True])
@@ -79,7 +82,7 @@ try:
   print('test totals',tj,tl)
   chk('both phones show the same final totals',f'{tj} – {tl}' in vj and f'{tl} – {tj}' in vl)
   w='J' if tj>tl else 'L' if tl>tj else 'D'
-  chk('both agree on the winner',(w=='J' and '▲ You win' in vj and '▲ Joseph wins' in vl) or (w=='L' and '▲ Logan wins' in vj and '▲ You win' in vl) or (w=='D' and ('Draw' in vj or 'decided' in vj)))
+  chk('both agree on the winner',(w=='J' and '▲ You win' in vj and '▲ Joey wins' in vl) or (w=='L' and '▲ Zap wins' in vj and '▲ You win' in vl) or (w=='D' and ('Draw' in vj or 'decided' in vj)))
   if SHOT:J.screenshot(path=OUT+'/5-final-joseph.png',full_page=True);L.screenshot(path=OUT+'/6-final-logan.png')
   # ---------- indoor 3-spot faces (Joseph's phone) ----------
   J.evaluate("cur=null;sv='sheet';nav('score')");J.wait_for_timeout(300);J.select_option('#rd','Indoor WA 18m');J.click('#st');J.wait_for_timeout(400)
@@ -123,6 +126,23 @@ try:
   if SHOT:J.screenshot(path=OUT+'/9-squad-9-members.png')
   J.evaluate("S.squad.members=S.squad.members.slice(0,3);delete S.presetTop;save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
   chk('an old 3-member tester squad is topped up to 9 once',J.evaluate("S.squad.members.length")==9 and J.evaluate("S.squad.code")=='STRIDE-3T7')
+  # ---------- display names through the relay ----------
+  REALN=['Nathaniel','Stride','Arthur','Wolfe','Snook','Choong','Chapman','Bureny','Burney','Engelen','Evans','Matete','George Philip']
+  msgs=[json.loads(m['message']) for L_ in RELAY.values() for m in L_]
+  chk('relay never carries a real name',not any(n.lower() in json.dumps(msgs).lower() for n in REALN))
+  inv=[m for m in msgs if m.get('k')=='inv'];st=[m for m in msgs if m.get('k')=='st']
+  chk('invite carries only id, round, code, mode, display name',inv and all(set(m)<= {'k','code','round','mode','from','to','nm','nt','t'} for m in inv) and inv[0].get('nm')=='Joey')
+  chk('match state carries only id, code, round, scores and display name',st and all(set(m)<= {'k','code','by','round','mode','a','b','ends','done','nm','nt','t'} for m in st))
+  dirm=RELAY.get('scoretool-h2h-q7m4-names',[]);dm=[json.loads(m['message']) for m in dirm]
+  chk('names directory topic: id + display name only',dm and all(set(m)<={'k','id','n','nt','t'} for m in dm) and {m['id']:m['n'] for m in dm}.get('joseph')=='Joey')
+  chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Tester 4')
+  for nm_,pg_ in (('Joseph',J),('Logan',L)):
+    for v in ('home','score','squad','rewards','me'):
+      pg_.evaluate(f"cur=null;nav('{v}')");pg_.wait_for_timeout(350)
+      txt=pg_.evaluate("document.body.innerText+' '+[...document.querySelectorAll('[value],[title],[aria-label],[placeholder]')].map(e=>[e.getAttribute('value'),e.title,e.getAttribute('aria-label'),e.placeholder].join(' ')).join(' ')")
+      bad_=[n for n in REALN if re.search(r'\b'+n+r'\b',txt)]
+      chk(f'{nm_} {v}: no real names on screen',not bad_)
+      if bad_:print('   found',bad_)
   cj.close();cl.close()
   # ---------- Pair 2: Nate (colour-blind) vs Dana, set points ----------
   cn,Nt=phone(b,'nate');cd,D=phone(b,'dana')
@@ -139,7 +159,7 @@ try:
   for _ in range(2):tick(Nt);tick(D)
   Nt.evaluate("h2hView(S.matches[S.matches.length-1].code)");D.evaluate("h2hView(S.matches[S.matches.length-1].code)");Nt.wait_for_timeout(300)
   vn=Nt.inner_text('#h2hview');vd=D.inner_text('#h2hview')
-  chk('set points: Nate 7 - 3, Nate wins on both phones','7 – 3' in vn and '▲ You win' in vn and '3 – 7' in vd and '▲ Nate wins' in vd)
+  chk('set points: Nate 7 - 3, Nate wins on both phones','7 – 3' in vn and '▲ You win' in vn and '3 – 7' in vd and '▲ Navy wins' in vd)
   chk('draw set gives 1 each','3 – 1 (draw)' in vn)
   html=Nt.inner_html('#h2hview')
   chk('colour-blind safe: winner marked with ▲ and words, no red/green/purple in the match view',('▲' in vn) and not re.search(r'#(22c55e|16a34a|39ff14|d62828|dc2626|ef4444|7c3aed|8b5cf6|a855f7)',html))

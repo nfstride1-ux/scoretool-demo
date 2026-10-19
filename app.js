@@ -100,7 +100,7 @@ async function __loadReal(){await loadArrows();
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
 const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
 const aliasKey=(O,n)=>{if(O[n])return n;const[f,...r]=String(n||'').toLowerCase().split(' '),l=r.pop()||'';return l?Object.keys(O).find(x=>{x=x.toLowerCase();return x.includes(l)&&x.includes(f.slice(0,4))}):undefined};const offFor=n=>OFF[aliasKey(OFF,n)]||[];
-const findReal=n=>{const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
+const findReal=n=>{n=String(n||'');if(!n.split(' ')[1])return REAL[n]||[];/* one-word display names have no surname to match */const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
 
 
 
@@ -189,7 +189,7 @@ function gate(){return`<div class="card dark gate"><span class="kicker">Members 
 <p class="small muted">Payments aren't switched on in this demo. Card, Apple Pay and Google Pay via Stripe will come later.</p>
 <button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their official results from Archer's Diary.</p>
-${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
+${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${esc(dispName(n))}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
 function render(){cbSync();seedNotes();regCustom();
@@ -238,7 +238,7 @@ function iconRow(b,size=26){return`<div class="irow" style="position:relative"><
 function badgeTip(el){const w=el.closest('.irow'),t=w.querySelector('.btip'),r=el.getBoundingClientRect(),q=w.getBoundingClientRect();t.textContent=el.dataset.tip;t.hidden=false;t.style.top=(r.bottom-q.top+4)+'px';t.style.left=Math.max(0,Math.min(q.width-t.offsetWidth,r.left-q.left+r.width/2-t.offsetWidth/2))+'px';clearTimeout(w._t);w._t=setTimeout(()=>t.hidden=true,1800)}
 function shelf(){const b=[...volBadges(),...badges()];return`<div class="card"><span class="kicker">Badges shelf</span>${iconRow(b)}</div>`}
 function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
- let h=`<div class="card dark"><span class="kicker">G'day ${S.profile.split(' ')[0]}</span><h1>Your progress zone</h1>
+ let h=`<div class="card dark"><span class="kicker">G'day ${esc(myName())}</span><h1>Your progress zone</h1>
  <div class="stats"><div class="stat"><b id="wkshoots">${realShoots(true).filter(x=>x.date>=weekStart()&&x.date<=today()).length}</b>shoots this week</div><div class="stat"><b>${streak()}</b>wk streak</div><div class="stat"><b id="wkarrows">${weekArrows()}</b>arrows this week</div></div>
  <p class="small muted" style="margin:10px 0 0">You're compared with <b>your own past self</b>, not with anyone else.</p>${kidLine()}</div>`;
  if(L)h+=coachCard(L);
@@ -361,7 +361,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  /* score keys in one or two compact rows, highest first (X 10 9 ... 1 M) */const xk=R.xs===false?[]:['X'],keys=isBug(FR)||isFld(FR)?['6','5','4','3','2','1','M']:[...xk,...(isSpot(FR)?['10','9','8','7','6']:isSix(FR)?['10','9','8','7','6','5']:['10','9','8','7','6','5','4','3','2','1']),'M'],kcols=keys.length>8?Math.ceil(keys.length/2):keys.length;
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
  const y0=scrollY;app.innerHTML=`<div class="ad"><div class="ad-title">Score End${R.custom?' · practice':''}</div>
- <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(S.profile)}</div><div class="ad-box"><div class="row ad-endrow"><b>End ${ei+1}</b><span class="ad-dist">${d?`<b id="enddist">${esc(d)}</b>`:''}<span id="facesize">${esc(faceSize(FR))}</span></span></div><div class="small" id="roundname">${esc(cur.round.replace(/\s*\([^)]*\)\s*$/,''))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
+ <div class="ad-head"><div class="ad-left"><div class="ad-box">${esc(myName())}</div><div class="ad-box"><div class="row ad-endrow"><b>End ${ei+1}</b><span class="ad-dist">${d?`<b id="enddist">${esc(d)}</b>`:''}<span id="facesize">${esc(faceSize(FR))}</span></span></div><div class="small" id="roundname">${esc(cur.round.replace(/\s*\([^)]*\)\s*$/,''))}</div>${d?`<div class="small" id="sighttag">Sight ${sm?esc(sm):'not set'}</div>`:''}</div></div>
  <div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
  <div class="ad-chips" aria-label="Arrows this end">${Array.from({length:R.ape},(_,j)=>e[j]!=null?`<span class="adb ${bcol(e[j])}" role="button" tabindex="0" data-fix="${ei},${j}" aria-label="fix arrow ${e[j]}"${fix&&fix[0]==ei&&fix[1]==j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${e[j]}</span>`:'<span class="adb adb-empty"></span>').join('')}
  <button class="ad-small" id="undo" ${cur.ends.some(x=>x.length)&&!fix?'':'disabled'}>↶ Undo</button>${ei>0&&!fix?`<button class="ad-small" id="prevend">‹ End ${ei}</button>`:''}${fix?`<button class="ad-small" id="delarrow">✕ Delete arrow</button><button class="ad-small" id="fixcancel">Done</button>`:''}${isFld(FR0)?`<button class="ad-small" id="bugface" aria-pressed="${BG}">${BG?'Face: Bugs Eyes':'Face: Field'}</button>`:I3?`<button class="ad-small" id="face3">${FR.tri?'Face: Vegas 3-spot':'Face: Vertical 3-spot'}</button>`:''}${cur.h2h&&window.h2hChip?h2hChip(cur):''}<button class="ad-small" id="hideface" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
@@ -423,7 +423,7 @@ var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 function hiStats(A,s){const R0=ROUNDS[s.round]||{};if(R0.aba)return'';if(typeof isFld=='function'&&typeof faceR=='function'&&isFld(faceR(R0,0))||/field/i.test(s.round||''))return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;const isB=bugsOn(s)||A.some(a=>a=='6')&&!A.some(a=>a=='X'||+a>6);if(isB)return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>`}
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),fullMax=bugsOn(s)?R.ends*R.ape*6:R.max,per=fullMax/(R.ends*R.ape),early=!isFull(s);
- app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>${s.h2h&&window.h2hChip?`<div style="padding:6px 8px">${h2hChip(s)}</div>`:''}
+ app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(myName())}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>${s.h2h&&window.h2hChip?`<div style="padding:6px 8px">${h2hChip(s)}</div>`:''}
  ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(bugsOn(s)?'Bugs Eyes field 3-spot (6-1)'+((/@.*/.exec(sec.k)||[''])[0]?' '+(/@.*/.exec(sec.k)||[''])[0]:''):sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
  ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
  ${secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
@@ -443,7 +443,7 @@ function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.roun
  const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
  const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
  const pb=best?(sc>total(best)?`🎉 New practice PB for this round, beating ${total(best)}.`:sc==total(best)?'Equal to your practice best for this round.':''):'First time you have scored this round here.';
- return`<div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><table class="ad-kv">${div?row('Division',esc(div),'from your official results'):''}${row('Round Name',esc(s.round))}${row('Score',sc)}
+ return`<div class="ad-sheet"><div class="ad-name">${esc(myName())}</div><table class="ad-kv">${div?row('Division',esc(div),'from your official results'):''}${row('Round Name',esc(s.round))}${row('Score',sc)}
  ${best?row('Best Score',Math.max(total(best),sc),total(best)>=sc?fmtD(best.date):fmtD(s.date)):''}${rt!=null?row('AA Rating',rt.toFixed(1)):''}${lv?row('Classification',esc(lv.name),'level for this rating · practice isn\'t counted'):''}</table>
  ${pb?`<div class="ad-band" style="margin:0">Personal best</div><p style="margin:8px 12px">${pb}</p>`:''}</div>`}
 function arrowsIn(s){return s.ends.reduce((t,e)=>t+e.length,0)}
@@ -649,12 +649,12 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
  bindCoachCards();
  {const cb=$('#cbsafe');if(cb)cb.onchange=()=>{S.cb=cb.checked;save();cbSync()}}
  $('#sbside').onchange=e=>{S.sbarSide=e.target.value=='left'?'left':'right';save();sbarSync()};
- if(window.bindOtherApps)bindOtherApps();$('#rs').onclick=()=>{if(confirm('Clear all of '+(TESTER?TESTER.short:'this')+'\'s test data on this phone?')){localStorage.removeItem(KEY);location.reload()}}}
+ if(window.bindOtherApps)bindOtherApps();$('#rs').onclick=()=>{if(confirm('Clear all of '+(TESTER?myName():'this')+'\'s test data on this phone?')){localStorage.removeItem(KEY);location.reload()}}}
 /* last 10 sessions = the same complete shoots Stats uses (official results + app sessions), newest last */
-function shareData(){const L=window.statShoots?statShoots().filter(x=>!x.inc):done().map(s=>({date:s.date,round:s.round,score:total(s),ends:s.ends}));return{n:S.profile,s:L.slice(-10).map(x=>[x.date,x.round,x.score,x.ends&&x.ends.length?x.ends.flat().length:(typeof roundArrows=='function'&&roundArrows(x.round))||0,0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
+function shareData(){const L=window.statShoots?statShoots().filter(x=>!x.inc):done().map(s=>({date:s.date,round:s.round,score:total(s),ends:s.ends}));return{n:myName(),s:L.slice(-10).map(x=>[x.date,x.round,x.score,x.ends&&x.ends.length?x.ends.flat().length:(typeof roundArrows=='function'&&roundArrows(x.round))||0,0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
- const real=findReal(D.n);
- app.innerHTML=`<div class="card dark"><span class="kicker">Parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
+ const real=[];/* links carry a display name now, so no name lookup: the last 10 sessions already include official results */
+ app.innerHTML=`<div class="card dark"><span class="kicker">Parent view · read only</span><h1>${esc(dispName(String(D.n||'')))}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
  <div class="card"><h3>Progress</h3>${lineChart([{name:'Session score',data:D.s.map(x=>x[2]),c:'#1d4ed8'}],{labels:D.s.map(x=>x[0].slice(5))})}${D.s.some(x=>x[4])?'<p class="small"><span class="sample">Includes sample data</span></p>':''}</div>
  <div class="card" id="sharelist"><h3>Last ${plN(D.s.length,'session','sessions')}</h3>${D.s.slice().reverse().map(x=>`<div class="list-item row"><span>${esc(x[1])}<br><span class="small muted">${esc(x[0])}</span></span><b>${x[2]}</b></div>`).join('')||'<p class="small muted">No sessions yet.</p>'}</div>
  <div class="card"><h3>Badges earned</h3><p>${D.b.join(' · ')||'None yet'}</p></div>
@@ -701,21 +701,21 @@ const COACH_SEED={id:'ci-phill-2026-10',coach:'Phill Arthur',squad:"Phill's comp
 function seedCoach(){S.coachInvites=S.coachInvites||[];S.coaches=S.coaches||[];
  if(S.coachSeeded==COACH_SEED.id)return;S.coachSeeded=COACH_SEED.id;
  if(TESTER&&COACH_SEED.for.includes(TESTER.id)&&!S.coaches.some(c=>c.id==COACH_SEED.id))S.coachInvites.push({id:COACH_SEED.id,coach:COACH_SEED.coach,squad:COACH_SEED.squad,sent:COACH_SEED.sent});save()}
-const coachLink=()=>location.origin+location.pathname+'#coach='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({n:S.profile,t:TESTER?TESTER.id:''})))));
+const coachLink=()=>location.origin+location.pathname+'#coach='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({n:myName(),t:TESTER?TESTER.id:''})))));
 function coachCards(url){seedCoach();const I=S.coachInvites,C=S.coaches;
  return`<div class="card" id="coachcard"><span class="kicker">Coach</span><h2>My coaches</h2>
- <h3>Coach invites</h3>${I.length?I.map(x=>`<div class="list-item"><b>${esc(x.coach)}</b> invited you to <b>${esc(x.squad)}</b><div class="small muted">Sent ${esc(x.sent)}. If you accept, they can see your scores and stats. They can't change anything.</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-ciacc="${esc(x.id)}">Accept</button><button class="btn ghost" data-cidec="${esc(x.id)}">Decline</button></div></div>`).join(''):'<p class="small muted" id="noinv">No invites right now. When a coach invites you to their squad, it shows up here.</p>'}
- <h3 style="margin-top:14px">Coaches who can see my scores</h3>${C.length?C.map(c=>`<div class="list-item row"><span><b>${esc(c.coach)}</b><br><span class="small muted">${esc(c.squad)} · since ${esc(c.since)}</span></span><button class="btn ghost" data-crm="${esc(c.id)}" style="padding:6px 12px;min-height:36px">Remove</button></div>`).join(''):'<p class="small muted" id="nocoach">No coaches yet.</p>'}
+ <h3>Coach invites</h3>${I.length?I.map(x=>`<div class="list-item"><b>${esc(dispName(x.coach))}</b> invited you to <b>${esc(x.squad)}</b><div class="small muted">Sent ${esc(x.sent)}. If you accept, they can see your scores and stats. They can't change anything.</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-ciacc="${esc(x.id)}">Accept</button><button class="btn ghost" data-cidec="${esc(x.id)}">Decline</button></div></div>`).join(''):'<p class="small muted" id="noinv">No invites right now. When a coach invites you to their squad, it shows up here.</p>'}
+ <h3 style="margin-top:14px">Coaches who can see my scores</h3>${C.length?C.map(c=>`<div class="list-item row"><span><b>${esc(dispName(c.coach))}</b><br><span class="small muted">${esc(c.squad)} · since ${esc(c.since)}</span></span><button class="btn ghost" data-crm="${esc(c.id)}" style="padding:6px 12px;min-height:36px">Remove</button></div>`).join(''):'<p class="small muted" id="nocoach">No coaches yet.</p>'}
  <h3 style="margin-top:14px">Coach view link</h3><p class="small">Coaches with a ScoreTool coach membership can open this link for a view-only look at your scores and stats.</p><input readonly value="${coachLink()}" id="clink" aria-label="coach view link"><button class="btn ghost" id="clcp" style="margin-top:6px">Copy coach link</button></div>
  <div class="card" id="parentcard"><span class="kicker">Parent</span><h2>Share with a parent</h2><p class="small">A view-only link for a parent. It shows your last 10 sessions, streak and badges as they are right now. They can't change anything. Copy a new link any time to update it.</p><input readonly value="${url}" id="sh" aria-label="parent share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a></div>`}
 function bindCoachCards(){const find=(L,id)=>L.findIndex(x=>x.id==id);
  app.querySelectorAll('[data-ciacc]').forEach(b=>b.onclick=()=>{const i=find(S.coachInvites,b.dataset.ciacc);if(i<0)return;const x=S.coachInvites.splice(i,1)[0];S.coaches.push({id:x.id,coach:x.coach,squad:x.squad,since:today()});save();me()});
  app.querySelectorAll('[data-cidec]').forEach(b=>b.onclick=()=>{const i=find(S.coachInvites,b.dataset.cidec);if(i<0)return;S.coachInvites.splice(i,1);save();me()});
- app.querySelectorAll('[data-crm]').forEach(b=>b.onclick=()=>{const i=find(S.coaches,b.dataset.crm);if(i<0)return;if(!confirm(`Remove ${S.coaches[i].coach}? They won't see your scores any more.`))return;S.coaches.splice(i,1);save();me()});
+ app.querySelectorAll('[data-crm]').forEach(b=>b.onclick=()=>{const i=find(S.coaches,b.dataset.crm);if(i<0)return;if(!confirm(`Remove ${dispName(S.coaches[i].coach)}? They won't see your scores any more.`))return;S.coaches.splice(i,1);save();me()});
  const cl=$('#clcp');if(cl)cl.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#clink').value);cl.textContent='Copied'}}
 function renderCoachLanding(){$('#tabs').hidden=true;let D=null;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){}
  if(!D||!D.n){app.innerHTML='<div class="card">This coach link is invalid.</div>';return}
- app.innerHTML=`<div class="card dark" id="coachlanding"><span class="kicker">Coach view · view only</span><h1>${esc(D.n)}</h1><p>This link is for coaches. It opens a view-only look at ${esc(D.n.split(' ')[0])}'s scores and stats.</p></div>
+ app.innerHTML=`<div class="card dark" id="coachlanding"><span class="kicker">Coach view · view only</span><h1>${esc(dispName(D.n))}</h1><p>This link is for coaches. It opens a view-only look at ${esc(dispName(D.n))}'s scores and stats.</p></div>
  <div class="card"><h2>You need a coach membership</h2><p>Sign in with a ScoreTool coach membership to see this archer. Coaches will see full score stats for their squad. They can't change anything.</p><p class="small muted">Coach memberships and the coach view are coming soon. Nothing about this archer is shown until then.</p><button class="btn" disabled>Coach sign-in (coming soon)</button></div>`}
 
 /* Hide the tab bar while a text field has the on-screen keyboard up (touch screens only), so it never sits on top of the keyboard. */

@@ -2,6 +2,7 @@
 # plotted arrows show their score, trend indicators carry arrows/signs. Saves 390x844 screenshots to /workspace/nate-colourblind if it exists.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
+import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

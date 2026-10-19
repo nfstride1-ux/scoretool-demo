@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright
+import nm_seed
 import json
 ok=[];bad=[]
 def chk(name,cond):
@@ -7,7 +8,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']); pg=b.new_page(viewport={'width':390,'height':844})
     errs=[]; pg.on('console',lambda m: m.type=='error' and errs.append(m.text)); pg.on('pageerror',lambda e: errs.append(str(e)))
     pg.goto('http://localhost:8765/'); pg.wait_for_timeout(1200)
-    pg.get_by_text('Nathaniel Stride').first.click(); pg.wait_for_timeout(800)
+    nm_seed.pick(pg,'nathe'); pg.wait_for_timeout(800)
     pg.get_by_text('Demo unlock').first.click(); pg.wait_for_timeout(800)
     for _ in range(3):
         if pg.locator('nav [data-v=score]').is_visible(): break
