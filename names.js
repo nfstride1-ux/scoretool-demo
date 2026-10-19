@@ -70,7 +70,7 @@ let nmBusy=false;
 async function nmSync(){if(nmBusy)return false;nmBusy=true;let ch=false;try{const before=TESTER&&nmClash(TESTER.id);
  const L=await h2hPoll(NM_TOPIC(),localStorage.getItem(NM_SINCE));if(L&&L.length){L.forEach(d=>{localStorage.setItem(NM_SINCE,d._id);if(d.k=='nm'&&nmLearn(d.id,d.n,d.nt))ch=true})}
  await nmPublish(false);if(TESTER&&nmClash(TESTER.id)&&!before)ch=true}finally{nmBusy=false}
- if(ch&&typeof render=='function'&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))&&!(typeof cur!='undefined'&&cur&&typeof view!='undefined'&&view=='score'))render();return ch}
+ if(ch&&typeof render=='function'&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))&&!(typeof cur!='undefined'&&cur&&typeof view!='undefined'&&view=='score')){if(document.getElementById('h2hview')&&window._h2hv)h2hView(window._h2hv);else render()}return ch}
 window.nmSync=nmSync;
 /* my own name: save locally, put me in my own cache (so uniqueness is checked the same way everywhere), post it */
 function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setItem(nmOwnKey(id),JSON.stringify(o));localStorage.setItem(nmAskKey(id),'1');

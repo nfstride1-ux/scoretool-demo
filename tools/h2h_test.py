@@ -1,7 +1,8 @@
 # Head-to-head matches between testers on separate phones (separate browser contexts = separate localStorage), relay mocked in memory
 # (no real ntfy traffic, no real score data: every context starts empty and is thrown away). Pairs: Joseph vs Logan (highest total)
 # and Nate (colour-blind mode) vs Dana (set points). Also checks the indoor 3-spot faces (no Bugs Eyes off field rounds) and the
-# 9-member ScoreTool Testers squad. Saves 390x844 screenshots to /workspace/h2h if it exists.
+# 9-member ScoreTool Testers squad. Match night (group): 3 archers (invite + code box, ties, finish), 10 archers (#join= link,
+# 2 simulated archers on the relay), the 11th refused, host close. Saves 390x844 screenshots to /workspace/h2h if it exists.
 import subprocess,sys,time,os,json,re
 from urllib.parse import urlparse,parse_qs
 from playwright.sync_api import sync_playwright
@@ -18,7 +19,7 @@ def relay(route,req):
     N[0]+=1;L.append({'id':'m%06d'%N[0],'event':'message','topic':topic,'message':req.post_data or ''});return route.fulfill(status=200,body='{}',headers={'access-control-allow-origin':'*'})
   since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
   route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
-NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny'}
+NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny','nathe':'Nathaniel Stride','phill':'Phill Arthur','steven':'Steven Snook','michael':'Michael Choong','tahuri':'Tahuri Burney'}  # internal profile keys only, never shown
 errs=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay)
@@ -34,7 +35,7 @@ def keys(pg,E):
   pg.evaluate("document.querySelector('#fpm')?.remove()");pg.click('#enext');pg.wait_for_timeout(250)
 def challenge(pg,opp,mode):
   pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(400)
-  pg.click('#h2hnew summary');pg.select_option('#h2hrd','Indoor WA 18m');pg.select_option('#h2hop',opp);pg.select_option('#h2hmd',mode)
+  pg.click('#h2hnew summary');pg.select_option('#h2hrd','Indoor WA 18m');pg.check(f'#h2hnew [data-h2hop="{opp}"]');pg.select_option('#h2hmd',mode)
   return pg
 FILL="([E,fin])=>{const m=S.matches[S.matches.length-1],s=S.sessions.find(x=>x.id==m.sid);s.ends=E.map(e=>e.slice());s.pos=E.map(()=>[]);if(fin)s.finished=true;save()}"
 # Labelled TEST ends (not real scores): deterministic pattern so each side's total is known
@@ -53,7 +54,7 @@ try:
   cj,J=phone(b,'joseph');cl,L=phone(b,'logan')
   challenge(J,'logan','total')
   if SHOT:J.screenshot(path=OUT+'/1-start-match.png')
-  chk('opponent list has every other tester (8), not just the squad',J.locator('#h2hop option').count()==8)
+  chk('opponent list has every other tester (8), not just the squad',J.locator('[data-h2hop]').count()==8 and J.locator('#h2hmdw').is_visible())
   chk('round list is the indoor rounds',J.locator('#h2hrd option').all_inner_texts()==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m'])
   J.click('#h2hgo');J.wait_for_timeout(500)
   chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
@@ -165,6 +166,82 @@ try:
   chk('colour-blind safe: winner marked with ▲ and words, no red/green/purple in the match view',('▲' in vn) and not re.search(r'#(22c55e|16a34a|39ff14|d62828|dc2626|ef4444|7c3aed|8b5cf6|a855f7)',html))
   if SHOT:Nt.screenshot(path=OUT+'/10-nate-sets-final.png',full_page=True)
   cn.close();cd.close()
+  # ---------- Match night: 3 archers ----------
+  def post(topic,obj):N[0]+=1;RELAY.setdefault(topic,[]).append({'id':'m%06d'%N[0],'event':'message','topic':topic,'message':json.dumps(obj)})
+  FG0="c=>{const m=h2hGet(c);if(m.sid)return false;h2hStart(m);return true}"
+  def fg(pg,c,E,fin):
+    if pg.evaluate(FG0,c):pg.wait_for_timeout(500)
+    pg.evaluate(FG,[c,E,fin])
+  FG="([c,E,fin])=>{const m=h2hGet(c);const s=S.sessions.find(x=>x.id==m.sid);s.ends=E.map(e=>e.slice());s.pos=E.map(()=>[]);if(fin)s.finished=true;save();cur=null;h2hView(c)}"
+  def gv(pg,c):pg.evaluate(f"cur=null;h2hView('{c}')");pg.wait_for_timeout(250);return pg.inner_text('#h2hview')
+  def ranks(pg):return pg.evaluate("[...document.querySelectorAll('.h2hrow')].map(d=>[d.querySelector('.rk').textContent,d.querySelector('.nm').textContent.replace(/\\s*\\(you\\)/,''),+d.querySelector('.tt').textContent,d.classList.contains('lead')])")
+  GKEYS={'k','code','by','round','mode','g','ends','done','nm','nt','t','host','when','from','to'}
+  ch_,H=phone(b,'nathe');cp_,P=phone(b,'phill');cs_,St=phone(b,'steven')
+  H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300);H.click('#h2hnew summary');H.select_option('#h2hrd','Indoor WA 18m')
+  H.check('[data-h2hop="phill"]');H.check('[data-h2hop="steven"]')
+  chk('group: scoring choice hidden with more than 1 opponent (highest total only)',not H.locator('#h2hmdw').is_visible() and H.inner_text('#h2hgo')=='Create match night')
+  H.fill('#h2hwhen','2026-10-24T19:00');H.click('#h2hgo');H.wait_for_timeout(500)
+  code=H.text_content('#h2hcode').strip();chk('group: host gets a match code and join link',len(code)==8 and H.input_value('#h2hlink').endswith('#join='+code))
+  chk('group: date and time shown','24 Oct' in H.inner_text('#h2hview') and '7:00' in H.inner_text('#h2hview') and 'Live leaderboard' in H.text_content('#h2hview'))
+  if SHOT:H.screenshot(path=OUT+'/11-group-created.png')
+  tick(P);P.evaluate("cur=null;sv='sheet';nav('score')");P.wait_for_timeout(300)
+  chk('group: invitee sees the host display name','Bullseye invited you to a match night' in P.inner_text('#h2hcard'))
+  P.click('[data-h2hacc]');P.wait_for_timeout(800);chk('group: accept opens the leaderboard',P.locator('#h2hview').count()==1)
+  St.evaluate("cur=null;sv='sheet';nav('score')");St.wait_for_timeout(300);St.fill('#h2hjc',code.lower());St.click('#h2hjgo');St.wait_for_timeout(900)
+  chk('group: join by typing the code',St.locator('#h2hview').count()==1 and St.evaluate(f"!!h2hGet('{code}')&&h2hGet('{code}').g==1"))
+  fg(H,code,*[[['X','10','9'],['10','10','10']],False]);fg(P,code,*[[['10','10','9'],['9','9','9']],False]);fg(St,code,*[[['10','9','9'],['10','9','9']],False])
+  for _ in range(2):
+    for x in (H,P,St):tick(x)
+  gv(H,code);rk=ranks(H);print('   ranks',rk)
+  chk('group: live leaderboard rank, display name, total',rk[0][:3]==['1','▲ Bullseye',59] and sorted(r[1] for r in rk[1:])==['Coach P','Steady'] and all(r[2]==56 for r in rk[1:]))
+  chk('group: ranking tie shown as =2',[r[0] for r in rk[1:]]==['=2','=2'])
+  chk('group: leader marked ▲ plus blue',rk[0][3] and not any(r[3] for r in rk[1:]) and 'dbeafe' in open(os.path.join(ROOT,'style.css')).read())
+  chk('group: ends done shown','2/20 ends' in H.inner_text('#h2hview'))
+  H.locator('.h2hrow[data-h2hid="steven"] summary').click();H.wait_for_timeout(200)
+  chk('group: tap a name to see their ends','End 1: 10 9 9' in H.inner_text('.h2hrow[data-h2hid="steven"]'))
+  if SHOT:H.screenshot(path=OUT+'/12-group-live.png')
+  fg(St,code,*[[['10','10','10'],['9','9','8']],False]);tick(St);tick(H);gv(H,code);rk=ranks(H)
+  chk('group: equal totals split on 10s (Steady 3 tens beats Coach P 2)',[r[1] for r in rk]==['▲ Bullseye','Steady','Coach P'] and [r[0] for r in rk]==['1','2','3'])
+  E20=lambda e:[e]*20
+  fg(H,code,*[E20(['10','10','9']),True]);fg(P,code,*[E20(['10','10','10']),True]);fg(St,code,*[E20(['9','9','9']),True])
+  for _ in range(2):
+    for x in (H,P,St):tick(x)
+  vh,vp=gv(H,code),gv(P,code)
+  chk('group: final results once everyone has finished (no close needed)','Final results' in H.text_content('#h2hview') and '▲ Coach P wins' in vh and '▲ You win' in vp)
+  chk('group: Close match button gone after the finish',H.locator('#h2hclose').count()==0)
+  if SHOT:H.screenshot(path=OUT+'/13-group-final.png',full_page=True)
+  gm=[json.loads(m['message']) for m in RELAY.get('scoretool-h2h-q7m4-'+code.lower(),[])]
+  chk('group payloads: id, display name, round, code and scores only',gm and all(set(m)<=GKEYS for m in gm) and not any(n.lower() in json.dumps(gm).lower() for n in REALN))
+  chk('group: no real names in any invite',not any(n.lower() in json.dumps([json.loads(m['message']) for t,L_ in RELAY.items() if '-in-' in t for m in L_]).lower() for n in REALN))
+  ch_.close();cp_.close();cs_.close()
+  # ---------- Match night: 10 archers, #join link, 11th refused, host close ----------
+  ch_,H=phone(b,'logan');H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300);H.click('#h2hnew summary');H.click('#h2hgo');H.wait_for_timeout(500)
+  code=H.text_content('#h2hcode').strip();link=H.input_value('#h2hlink');chk('group: code-only match (no ticks) is a match night',H.locator('#h2hview').count()==1 and len(code)==8)
+  PH=[]
+  for tid in ('joseph','michael','dana','tahuri','nate','phill','steven'):
+    c_,g_=phone(b,tid);g_.goto(link.replace('http://localhost:8781/','http://localhost:8781/?tester=%s'%tid));g_.wait_for_timeout(1500)
+    if not g_.locator('#h2hview').count():g_.reload();g_.wait_for_timeout(2500)
+    PH.append((tid,c_,g_))
+  print('   joined',[(t,g_.locator('#h2hview').count(),g_.url[-30:]) for t,_,g_ in PH]);chk('group: 7 archers joined from the #join link',all(g_.locator('#h2hview').count()==1 for _,_,g_ in PH))
+  chk('group: join link cleared from the address bar',all('#join' not in g_.url for _,_,g_ in PH))
+  topic='scoretool-h2h-q7m4-'+code.lower()
+  for gid in ('guest1','guest2'):post(topic,{'k':'st','code':code,'by':gid,'round':'Indoor WA 18m','mode':'total','g':1,'ends':[['10','10','9']],'done':False,'t':1})
+  cx,X=phone(b,'nathe');X.evaluate("cur=null;sv='sheet';nav('score')");X.wait_for_timeout(300);X.fill('#h2hjc',code);X.click('#h2hjgo');X.wait_for_timeout(900)
+  chk('group: the 11th archer is refused','This match is full (10 archers).' in X.inner_text('#h2hjmsg') and X.locator('#h2hview').count()==0)
+  chk('group: the refused archer posts nothing',not any(json.loads(m['message']).get('by')=='nathe' for m in RELAY.get(topic,[])))
+  for i,(tid,_,g_) in enumerate(PH):fg(g_,code,*[[['10','9',str(9-i%3)]],False])
+  for _ in range(2):
+    for x in [H]+[g_ for _,_,g_ in PH]:tick(x)
+  gv(H,code);rk=ranks(H);print('   ranks10',rk)
+  chk('group: 10 archers on the host leaderboard',len(rk)==10)
+  gr=[r[0] for r in rk if r[1].strip('▲ ')=='Tester'];chk('group: simulated archers with equal ends share a place',len(gr)==2 and gr[0]==gr[1] and gr[0].startswith('='))
+  chk('group: no real names on the 10-archer board',not any(n.lower() in H.inner_text('#h2hview').lower() for n in REALN))
+  if SHOT:H.screenshot(path=OUT+'/14-group-10.png',full_page=True)
+  H.click('#h2hclose');H.wait_for_timeout(400);gv(H,code);chk('group: host close shows final results','Final results' in H.text_content('#h2hview') and 'closed by the host' in H.inner_text('#h2hview'))
+  g_=PH[0][2];tick(g_);v=gv(g_,code);chk('group: other phones see the close and final results','Final results' in g_.text_content('#h2hview') and 'closed by the host' in v and g_.locator('#h2hback').count()==0)
+  chk('group: Close match is host-only',g_.locator('#h2hclose').count()==0)
+  for _,c_,_ in PH:c_.close()
+  ch_.close();cx.close()
   chk('no page errors '+str(errs[:3]),not errs)
 finally:
  srv.terminate()

@@ -170,3 +170,10 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .h2hchip{border:1.5px solid #2563eb!important;font-weight:700}
 .h2htab td.h2hwin{background:#dbeafe;color:#0f172a;font-weight:700}
 .h2htab td{font-size:13px}
+/* match night (group) */
+.h2hops{border:0;padding:0;margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 12px}.h2hops legend{font-weight:600;margin-bottom:4px;padding:0}
+.h2htk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--muted,#94a3b8);margin:0}.h2htk input{width:14px;height:14px;margin:0;accent-color:#2563eb}
+.h2hrow{border-bottom:1px solid rgba(148,163,184,.25)}.h2hrow summary{display:grid;grid-template-columns:28px 1fr auto;gap:2px 8px;align-items:center;padding:8px 6px;cursor:pointer;list-style:none}
+.h2hrow summary::-webkit-details-marker{display:none}.h2hrow .en{grid-column:2/4}.h2hrow .tt{font-size:18px;text-align:right}
+.h2hrow.lead summary{background:#dbeafe;color:#0f172a;border-left:4px solid #2563eb;border-radius:8px}.h2hrow.lead .muted{color:#1e3a8a}
+.h2hends{padding:4px 6px 8px 42px}
