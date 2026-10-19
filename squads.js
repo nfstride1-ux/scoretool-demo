@@ -3,11 +3,14 @@
 const AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const who=m=>window.initDisc?initDisc(m):`<span style="font-size:22px">${m.avatar||''}</span>`;
 const shortName=n=>{const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
-/* Preset squad for the 3 testers. Same code and members on every tester profile; data is still per phone (no server). */
+/* Preset squad: every tester (20 Oct 2026, Nathe: all testers in ScoreTool Testers). Same code and members on every tester profile; data is still per phone (no server).
+   Names are the tester profile names (testers.js) so each member's real data and points line up. */
 const PRESET_SQ={preset:'st-testers-1',name:'ScoreTool Testers',code:'STRIDE-3T7',admin:'Nathaniel Stride',rawRank:false,
- members:[{id:'mN',name:'Nathaniel Stride',status:'active'},{id:'mP',name:'Phill Arthur',status:'active'},{id:'mL',name:'Logan Wolfe',status:'active'}],
+ members:(typeof TESTERS!='undefined'?TESTERS:[{id:'nathe',name:'Nathaniel Stride'},{id:'phill',name:'Phill Arthur'},{id:'logan',name:'Logan Wolfe'}]).map(t=>({id:{nathe:'mN',phill:'mP',logan:'mL'}[t.id]||'m_'+t.id,name:t.name,status:'active'})),
  adults:[{id:'aN',name:'Nathaniel Stride',role:'Admin'}]};
-function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset){S.presetSeeded=PRESET_SQ.preset;return}if(S.presetSeeded==PRESET_SQ.preset)return;S.presetSeeded=PRESET_SQ.preset;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
+/* an already-seeded tester squad gets any tester it is missing, once (cheers and settings kept; a later admin removal sticks) */
+function presetTopUp(){if(S.presetTop=='all-testers')return;S.presetTop='all-testers';const M=S.squad.members=S.squad.members||[];let n=0;PRESET_SQ.members.forEach(m=>{if(!M.some(x=>x.name==m.name||x.id==m.id)){M.push({...m});n++}});save()}
+function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset){S.presetSeeded=PRESET_SQ.preset;presetTopUp();return}if(S.presetSeeded==PRESET_SQ.preset)return;S.presetSeeded=PRESET_SQ.preset;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
  S.squad=JSON.parse(JSON.stringify(PRESET_SQ));S.squad.cheers={};save()}
 /* Invite codes: 3 letters + 4 digits (e.g. KTR-4827), no look-alike letters (I, O). Made on the creator's phone; no server. */
 function newCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ',r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n};let c='';for(let i=0;i<3;i++)c+=L[r(L.length)];return c+'-'+String(1000+r(9000))}

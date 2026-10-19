@@ -32,7 +32,7 @@ try:
   chk('field face button says Field',pg.inner_text('#bugface').strip()=='Face: Field')
   E('cur=null;sv="sheet";score()');pg.wait_for_timeout(300)
   tr=E("Object.keys(ROUNDS).find(r=>/720 \\(70m\\)/.test(r))");pg.select_option('#rd',tr);pg.click('#st');pg.wait_for_timeout(500)
-  chk('target round: Face: WA, no field picker',pg.inner_text('#bugface').strip()=='Face: WA' and pg.locator('.fldpick').count()==0)
+  chk('target round: no Bugs Eyes face button (field only since 20 Oct 2026), no field picker',pg.locator('#bugface').count()==0 and pg.locator('.fldpick').count()==0)
   E('cur=null;sv="sheet";score()');pg.wait_for_timeout(500)
   # 2. top-ranked ghost
   RD='WA 720 (50m Compound)';L=[x for x in GT['rounds'][RD]['list'] if x.get('g','Male')=='Male' and x.get('cls','Open')=='Open']  # Nathe: Open Male, same as rankings
