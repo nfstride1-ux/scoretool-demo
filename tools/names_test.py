@@ -85,7 +85,30 @@ try:
   sync(L);chk('clash: others show the earlier picker\'s name, later one as Tester N',L.evaluate("testerName('steven')")=='ROCKET' and L.evaluate("testerName('michael')")=='Tester 6')
   M.fill('#nmin','Comet');M.click('#nmingo');M.wait_for_timeout(500);sync(L)
   chk('after re-pick everyone sees the new name',L.evaluate("testerName('michael')")=='Comet' and M.locator('#nmscreen').count()==0)
-  chk('bad names from the relay are ignored',(post(NT,{'k':'nm','id':'dana','n':'Sh1tHead','nt':1,'t':1}),sync(L),L.evaluate("testerName('dana')"))[2]=='Tester 7')
+  chk('bad names from the relay are ignored',(post(NT,{'k':'nm','id':'dana','n':'Sh1tHead','nt':int(time.time()*1000),'t':int(time.time()*1000)}),sync(L),L.evaluate("testerName('dana')"))[2]=='Tester 7')
+  # ---------- newest post per id wins; own past names never clash; stale test posts ignored ----------
+  now=lambda:int(time.time()*1000)
+  t1=now();post(NT,{'k':'nm','id':'dana','n':'DeeOne','nt':t1,'t':t1});sync(L);chk('relay: a name is learned',L.evaluate("testerName('dana')")=='DeeOne')
+  t2=now()+5;post(NT,{'k':'nm','id':'dana','n':'DeeTwo','nt':t2,'t':t2});sync(L);chk('relay: a newer post from the same id replaces the older one',L.evaluate("testerName('dana')")=='DeeTwo')
+  post(NT,{'k':'nm','id':'dana','n':'DeeOld','nt':t1-1,'t':t1-1});sync(L);chk('relay: an older post arriving late does not win',L.evaluate("testerName('dana')")=='DeeTwo')
+  chk('own past name is free again (one entry per id, no self clash)',L.evaluate("nmCheck('DeeOne','logan').ok") and not L.evaluate("nmClash('dana')"))
+  J.evaluate("nav('me')");J.wait_for_timeout(300);J.fill('#nmme','JoJo2');J.click('#nmmego');J.wait_for_timeout(300);J.fill('#nmme','JoJo');J.click('#nmmego');J.wait_for_timeout(300)
+  chk('changing back to my own earlier name is allowed',J.evaluate("myName()")=='JoJo' and not J.evaluate("nmClash('joseph')"));sync(L)
+  post(NT,{'k':'nm','id':'nathe','n':'NatheTest','nt':1792449217608,'t':1792449217609});sync(L)
+  chk("stale 'NatheTest' relay post (before the reset) is ignored",L.evaluate("testerName('nathe')")=='Tester 1')
+  L.evaluate("(()=>{const D=JSON.parse(localStorage.getItem('scoretool.names')||'{}');D.nathe={n:'NatheTest',nt:1792449217608};localStorage.setItem('scoretool.names',JSON.stringify(D))})()")
+  chk("stale 'NatheTest' already cached on a phone is dropped",L.evaluate("testerName('nathe')")=='Tester 1')
+  post(NT,{'k':'nm','id':'nathe','n':'Skipper','nt':now(),'t':now()});sync(L);chk("Nathe's real pick shows, NatheTest can't block it",L.evaluate("testerName('nathe')")=='Skipper' and L.evaluate("nmCheck('NatheTest','logan').ok"))
+  tc=now();post(NT,{'k':'nm','id':'dana','clr':1,'t':tc});sync(L);chk('a clear entry removes a cached name',L.evaluate("testerName('dana')")=='Tester 7')
+  post('scoretool-h2h-q7m4-in-logan',{'k':'inv','g':1,'code':'FTH4ML5U','round':'Indoor WA 18m','mode':'total','from':'nathe','to':'logan','when':'','nm':'NatheTest','nt':1792449217608,'t':1792449249108})
+  L.evaluate("S.h2hIn=undefined;h2hTick(true)");L.wait_for_timeout(600);chk('stale test invite from before the reset is ignored',L.evaluate("!h2hGet('FTH4ML5U')"))
+  L.evaluate("S.matches.push({code:'OLDINV01',round:'Indoor WA 18m',mode:'total',g:1,host:'nathe',opp:'nathe',created:1792449249108,status:'invite'});save()");L.reload();L.wait_for_timeout(2200)
+  chk('a stale invite already on a phone is dropped on load',L.evaluate("!h2hGet('OLDINV01')"))
+  cn_,Nn=phone(b,'nathe');Nn.click('#nmlater') if Nn.locator('#nmlater').count() else None
+  Nn.evaluate("localStorage.setItem('scoretool.dname.nathe',JSON.stringify({n:'NatheTest',nt:1792449217608}));localStorage.setItem('scoretool.dname.asked.nathe','1')");Nn.reload();Nn.wait_for_timeout(2200)
+  chk("the test browser's own stale 'NatheTest' pick is not used: asked to pick again",Nn.locator('#nmscreen').count()==1 and Nn.evaluate("myName()")=='Tester 1')
+  chk('the stale own pick is never posted',not any(json.loads(m['message']).get('n')=='NatheTest' and m['id']>'m%06d'%(N[0]-50) and json.loads(m['message']).get('t',0)>1792449217609 for m in RELAY.get(NT,[])))
+  cn_.close()
   # ---------- no real tester name renders anywhere ----------
   VIEWS=['home','score','stats','rewards','follow','diary','me','squad','badges','recap','help','suggest','analytics']
   for nm,pg in (('Joseph',J),('Logan',L),('Michael',M)):
@@ -100,7 +123,7 @@ try:
     pg.evaluate("cur=null;nav('squad')");pg.wait_for_timeout(400)
     if SHOT and nm=='Logan':pg.screenshot(path=OUT+'/5-squad-logan.png')
   sq=L.evaluate("nav('squad')") or L.inner_text('#app')
-  chk('squad lists display names / Tester N','JoJo' in sq and 'Comet' in sq and 'Tester 1' in sq)
+  chk('squad lists display names / Tester N','JoJo' in sq and 'Comet' in sq and 'Skipper' in sq and 'Tester 7' in sq)
   # shared outside the app
   J.evaluate("nav('me')");J.wait_for_timeout(400);url=J.input_value('#sh');cl_=J.input_value('#clink')
   dec=lambda u:json.loads(base64.b64decode(unquote(u.split('#',1)[1].split('=',1)[1])).decode('utf-8'))

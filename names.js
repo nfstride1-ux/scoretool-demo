@@ -9,6 +9,10 @@
    name, the later picker is asked to choose another and shows as 'Tester N' on other phones until they do.
    Safety net: any tester real name (and its known variants) that still reaches the page is swapped for the display name. */
 const NM_DIR='scoretool.names',NM_SINCE='scoretool.names.since',nmOwnKey=id=>'scoretool.dname.'+id,nmAskKey=id=>'scoretool.dname.asked.'+id,nmPostKey=id=>'scoretool.dname.posted.'+id;
+/* Reset point (20 Oct 2026, 06:36 Perth): a browser test posted 'NatheTest' for nathe and match-night invites from it to every
+   tester's inbox at 06:33-06:34. Anything older than this (relay posts, cached names, own picks, pending invites) is ignored, so
+   it can't show on any phone; the relay copies expire by themselves within 12 hours. */
+const NM_RESET=H2H_RESET;
 const NM_HINT='Pick a nickname, not your full real name.';
 const NM_VARIANTS={phill:['Phil Arthur'],joseph:['Joe Snook'],dana:['Dana Matete'],tahuri:['Tahuri Engelen-Burney','Tahuri Burney','Tahuri Engelen']};
 /* small built-in rude list. SUB: blocked anywhere in the name. WORD: blocked as a whole word (so Cassie, Grape, Hitchcock are fine). */
@@ -22,9 +26,10 @@ function nmRude(s){const f=nmFold(s),flat=f.replace(/[^a-z]/g,''),squash=flat.re
  return NM_SUB.some(w=>flat.includes(w)||squash.includes(w)||flatI.includes(w))||toks.some(t=>NM_WORD.includes(t)||NM_WORD.includes(t.replace(/(.)\1+/g,'$1')))||NM_WORD.includes(flat)}
 /* surnames (and full names) of every tester: a nickname must not contain them */
 const NM_REAL=(()=>{const S1=new Set(),F=[];TESTERS.forEach(t=>{[t.name,t.ad,...(NM_VARIANTS[t.id]||[])].filter(Boolean).forEach(n=>{F.push([t.id,n]);n.split(/\s+/).slice(1).join(' ').split(/[\s-]+/).filter(x=>x.length>2).forEach(x=>S1.add(x.toLowerCase()))})});return{sur:[...S1],full:F}})();
-function nmDir(){try{return JSON.parse(localStorage.getItem(NM_DIR)||'{}')||{}}catch(e){return{}}}
+function nmDir(){let D;try{D=JSON.parse(localStorage.getItem(NM_DIR)||'{}')||{}}catch(e){D={}}for(const id in D){const e=D[id];if(!e||(e.u||e.nt||0)<NM_RESET)delete D[id]}return D}
 function nmSaveDir(D){try{localStorage.setItem(NM_DIR,JSON.stringify(D))}catch(e){}}
-const nmOwn=id=>{try{const j=JSON.parse(localStorage.getItem(nmOwnKey(id))||'null');return j&&j.n?j:null}catch(e){return null}};
+const nmOwnRaw=id=>{try{const j=JSON.parse(localStorage.getItem(nmOwnKey(id))||'null');return j&&j.n?j:null}catch(e){return null}};
+const nmOwn=id=>{const j=nmOwnRaw(id);return j&&(j.nt||0)>=NM_RESET?j:null};
 const nmIdx=id=>TESTERS.findIndex(t=>t.id==id);
 const nmNeutral=id=>{const i=nmIdx(id);return i<0?'Tester':'Tester '+(i+1)};
 /* Rule check. Returns {ok,n,msg}. selfId is skipped for the uniqueness check; pass uniq=false to check format/rude only. */
@@ -42,11 +47,14 @@ function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
 function nmOwners(D){const O={};Object.entries(D).forEach(([id,e])=>{if(!e||!e.n)return;const k=String(e.n).toLowerCase(),o=O[k];
  if(!o||e.nt<o.nt||(e.nt==o.nt&&nmIdx(id)<nmIdx(o.id)))O[k]={id,nt:e.nt}});return O}
 function nmClash(id){const D=nmDir(),e=D[id];if(!e||!e.n)return false;const o=nmOwners(D)[String(e.n).toLowerCase()];return!!(o&&o.id!=id)}
-/* learn a name from the relay (directory, invite or match state) */
-function nmLearn(id,n,nt){if(!id||nmIdx(id)<0||typeof n!='string')return false;const me=TESTER&&TESTER.id;if(id==me)return false;
- const c=nmCheck(n,id,false);if(!c.ok)return false;const D=nmDir(),e=D[id];nt=+nt||0;
- if(e&&e.n==c.n&&(e.nt||0)<=nt)return false;if(e&&(e.nt||0)>nt&&e.n!=c.n)return false;
- D[id]={n:c.n,nt};nmSaveDir(D);return true}
+/* learn a name from the relay (directory, invite or match state). u = when it was posted: the newest post from an id always
+   replaces that id's older one (one entry per id, so an id's own past names can never clash with it). nt = when it was picked,
+   which decides clashes BETWEEN ids. */
+function nmLearn(id,n,nt,u){if(!id||nmIdx(id)<0||typeof n!='string')return false;const me=TESTER&&TESTER.id;if(id==me)return false;
+ u=+u||0;if(u<NM_RESET)return false;const c=nmCheck(n,id,false);if(!c.ok)return false;const D=nmDir(),e=D[id];
+ if(e&&(e.u||e.nt||0)>u)return false;const ch=!e||e.n!=c.n;D[id]={n:c.n,nt:+nt||u,u};nmSaveDir(D);return ch}
+/* a clear entry {k:'nm',id,clr:1} newer than the cached name removes it */
+function nmForget(id,u){u=+u||0;if(u<NM_RESET||(TESTER&&TESTER.id==id))return false;const D=nmDir(),e=D[id];if(!e||(e.u||e.nt||0)>u)return false;delete D[id];nmSaveDir(D);return true}
 /* --- what the app shows --- */
 function testerName(id){const me=TESTER&&TESTER.id,o=id?nmOwn(id):null;if(id&&id==me)return o?o.n:nmNeutral(id);
  const e=nmDir()[id];if(e&&e.n&&nmCheck(e.n,id,false).ok&&!nmClash(id))return e.n;
@@ -65,23 +73,23 @@ window.dispName=dispName;window.testerName=testerName;window.myName=myName;windo
 /* --- relay sync --- */
 const NM_TOPIC=()=>H2H_NS+'-names';
 async function nmPublish(force){if(!TESTER)return;const o=nmOwn(TESTER.id);if(!o)return;const last=+localStorage.getItem(nmPostKey(TESTER.id))||0;
- if(!force&&Date.now()-last<6*36e5)return;if(await h2hPost(NM_TOPIC(),{k:'nm',id:TESTER.id,n:o.n,nt:o.nt,t:Date.now()}))localStorage.setItem(nmPostKey(TESTER.id),String(Date.now()))}
+ if(!force&&last>=NM_RESET&&Date.now()-last<6*36e5)return;if(await h2hPost(NM_TOPIC(),{k:'nm',id:TESTER.id,n:o.n,nt:o.nt,t:Date.now()}))localStorage.setItem(nmPostKey(TESTER.id),String(Date.now()))}
 let nmBusy=false;
 async function nmSync(){if(nmBusy)return false;nmBusy=true;let ch=false;try{const before=TESTER&&nmClash(TESTER.id);
- const L=await h2hPoll(NM_TOPIC(),localStorage.getItem(NM_SINCE));if(L&&L.length){L.forEach(d=>{localStorage.setItem(NM_SINCE,d._id);if(d.k=='nm'&&nmLearn(d.id,d.n,d.nt))ch=true})}
+ const L=await h2hPoll(NM_TOPIC(),localStorage.getItem(NM_SINCE));if(L&&L.length){L.forEach(d=>{localStorage.setItem(NM_SINCE,d._id);if(d.k=='nm'&&(d.clr?nmForget(d.id,d.t):nmLearn(d.id,d.n,d.nt,d.t)))ch=true})}
  await nmPublish(false);if(TESTER&&nmClash(TESTER.id)&&!before)ch=true}finally{nmBusy=false}
  if(ch&&typeof render=='function'&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))&&!(typeof cur!='undefined'&&cur&&typeof view!='undefined'&&view=='score')){if(document.getElementById('h2hview')&&window._h2hv)h2hView(window._h2hv);else render()}return ch}
 window.nmSync=nmSync;
 /* my own name: save locally, put me in my own cache (so uniqueness is checked the same way everywhere), post it */
 function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setItem(nmOwnKey(id),JSON.stringify(o));localStorage.setItem(nmAskKey(id),'1');
- const D=nmDir();D[id]=o;nmSaveDir(D);nmPublish(true)}
-(function(){if(!TESTER)return;const o=nmOwn(TESTER.id);if(o){const D=nmDir();if(!D[TESTER.id]||D[TESTER.id].n!=o.n){D[TESTER.id]=o;nmSaveDir(D)}}})();
+ const D=nmDir();D[id]={...o,u:o.nt};nmSaveDir(D);nmPublish(true)}
+(function(){if(!TESTER)return;const o=nmOwn(TESTER.id);if(o){const D=nmDir();if(!D[TESTER.id]||D[TESTER.id].n!=o.n){D[TESTER.id]={...o,u:o.nt};nmSaveDir(D)}}})();
 /* --- screens --- */
 function nmForm(id,cta){const o=TESTER&&nmOwn(TESTER.id);return`<label for="${id}">Display name</label><input id="${id}" maxlength="16" autocomplete="off" autocapitalize="words" value="${o?esc(o.n):''}" placeholder="e.g. Arrowhead_7">
  <p class="small muted" style="margin:4px 0">${NM_HINT} 2 to 16 letters, numbers, spaces, - or _. Other testers see only this name.</p><p class="small" id="${id}err" role="alert" style="margin:4px 0;font-weight:600"></p><button class="btn alt full" id="${id}go">${cta}</button>`}
 function nmBindForm(id,done){const go=$('#'+id+'go'),inp=$('#'+id);if(!go)return;const sub=()=>{const c=nmCheck(inp.value,TESTER.id);if(!c.ok){$('#'+id+'err').textContent='⚠ '+c.msg;return}nmSetMine(c.n);done()};
  go.onclick=sub;inp.onkeydown=e=>{if(e.key=='Enter')sub()}}
-function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmOwn(TESTER.id)&&!localStorage.getItem(nmAskKey(TESTER.id))}
+function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmOwn(TESTER.id)&&(!localStorage.getItem(nmAskKey(TESTER.id))||!!nmOwnRaw(TESTER.id))}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
  <p class="small">${clash?'Another tester picked that name first. Choose a different one.':'This is the name other testers see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}

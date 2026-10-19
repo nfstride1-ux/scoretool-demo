@@ -177,3 +177,5 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .h2hrow summary::-webkit-details-marker{display:none}.h2hrow .en{grid-column:2/4}.h2hrow .tt{font-size:18px;text-align:right}
 .h2hrow.lead summary{background:#dbeafe;color:#0f172a;border-left:4px solid #2563eb;border-radius:8px}.h2hrow.lead .muted{color:#1e3a8a}
 .h2hends{padding:4px 6px 8px 42px}
+.h2hrow.inv .h2hsum{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 6px;color:var(--muted);font-style:italic}
+.h2hdel{padding:4px 10px;min-height:32px;font-size:13px;font-weight:400;opacity:.8}.h2hinvl{font-weight:400}

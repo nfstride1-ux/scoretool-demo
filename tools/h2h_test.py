@@ -20,12 +20,12 @@ def relay(route,req):
   since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
   route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
 NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny','nathe':'Nathaniel Stride','phill':'Phill Arthur','steven':'Steven Snook','michael':'Michael Choong','tahuri':'Tahuri Burney'}  # internal profile keys only, never shown
-errs=[]
+errs=[];DLG=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay)
   # each phone only knows its OWN display name; the others must arrive through the (mocked) relay
   ctx.add_init_script("for(const id of %s)if(id!='%s')localStorage.removeItem('scoretool.dname.'+id)"%(json.dumps(nm_seed.IDS),tid));pg=ctx.new_page()
-  pg.on('pageerror',lambda e:errs.append(f'{tid}: {e}'));pg.on('dialog',lambda d:d.accept())
+  pg.on('pageerror',lambda e:errs.append(f'{tid}: {e}'));pg.on('dialog',lambda d:(DLG.append(d.message),d.accept()))
   pg.goto(f'http://localhost:8781/?tester={tid}');pg.wait_for_timeout(1200)
   pg.evaluate("n=>{S.unlocked=true;if(!S.profile)S.profile=n;save()}",NAMES[tid]);pg.reload();pg.wait_for_timeout(2200);return ctx,pg
 def tick(pg):pg.evaluate("h2hTick(true)");pg.wait_for_timeout(500)
@@ -59,6 +59,10 @@ try:
   J.click('#h2hgo');J.wait_for_timeout(500)
   chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
   chk('invite sent to Logan\'s inbox',any('-in-logan' in t for t in RELAY))
+  J.evaluate("h2hView(S.matches[S.matches.length-1].code)");J.wait_for_timeout(200)
+  chk('1v1 waiting: opponent shown as invited',J.locator('#h2hview .h2hinvl').count()==1 and 'Waiting for Zap' not in J.inner_text('#h2hview') or J.locator('#h2hview .h2hinvl').count()==1)
+  chk('1v1 waiting: no Remove while the match is open',J.locator('[data-h2hdel]').count()==0)
+  J.evaluate("{const m=S.matches[S.matches.length-1];cur=S.sessions.find(s=>s.id==m.sid);sv='entry';score()}");J.wait_for_timeout(300)
   tick(L);L.evaluate("cur=null;sv='sheet';nav('score')");L.wait_for_timeout(400)
   chk('Logan sees "Joseph challenged you"','Joey challenged you' in L.inner_text('#h2hcard'))
   if SHOT:L.screenshot(path=OUT+'/2-invite.png')
@@ -72,6 +76,7 @@ try:
   if SHOT:L.screenshot(path=OUT+'/3-scoring-live-chip.png')
   L.click('#h2hchip');L.wait_for_timeout(300)
   t=L.inner_text('#h2hview')
+  chk('1v1: invited label goes once the opponent posts',J.locator('#h2hview .h2hinvl').count()==0)
   chk('match view shows end by end and running totals',"X 10 9" in t and '29 – 57' in t and "Joey has shot 2 ends" in t)
   if SHOT:L.screenshot(path=OUT+'/4-match-view-live.png')
   EJ=ends(11);EL=ends(23);EJ[0]=['X','10','9'];EJ[1]=['10','9','9'];EL[0]=['10','10','9']
@@ -175,7 +180,7 @@ try:
   FG="([c,E,fin])=>{const m=h2hGet(c);const s=S.sessions.find(x=>x.id==m.sid);s.ends=E.map(e=>e.slice());s.pos=E.map(()=>[]);if(fin)s.finished=true;save();cur=null;h2hView(c)}"
   def gv(pg,c):pg.evaluate(f"cur=null;h2hView('{c}')");pg.wait_for_timeout(250);return pg.inner_text('#h2hview')
   def ranks(pg):return pg.evaluate("[...document.querySelectorAll('.h2hrow')].map(d=>[d.querySelector('.rk').textContent,d.querySelector('.nm').textContent.replace(/\\s*\\(you\\)/,''),+d.querySelector('.tt').textContent,d.classList.contains('lead')])")
-  GKEYS={'k','code','by','round','mode','g','ends','done','nm','nt','t','host','when','from','to'}
+  GKEYS={'k','code','by','round','mode','g','ends','done','nm','nt','t','host','when','from','to','inv'}
   ch_,H=phone(b,'nathe');cp_,P=phone(b,'phill');cs_,St=phone(b,'steven')
   H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300);H.click('#h2hnew summary');H.select_option('#h2hrd','Indoor WA 18m')
   H.check('[data-h2hop="phill"]');H.check('[data-h2hop="steven"]')
@@ -183,10 +188,16 @@ try:
   H.fill('#h2hwhen','2026-10-24T19:00');H.click('#h2hgo');H.wait_for_timeout(500)
   code=H.text_content('#h2hcode').strip();chk('group: host gets a match code and join link',len(code)==8 and H.input_value('#h2hlink').endswith('#join='+code))
   chk('group: date and time shown','24 Oct' in H.inner_text('#h2hview') and '7:00' in H.inner_text('#h2hview') and 'Live leaderboard' in H.text_content('#h2hview'))
+  chk('wording: hint says You plus up to 9 others (10 archers max)','You plus up to 9 others (10 archers max).' in H.evaluate("h2hCard()"))
+  chk('wording: leaderboard count "1 of 10 archers"','1 of 10 archers' in H.inner_text('#h2hview'))
+  inv=H.evaluate("[...document.querySelectorAll('.h2hrow.inv')].map(d=>[d.querySelector('.rk').textContent,d.textContent])")
+  chk('invited archers listed before they join: muted, no rank',len(inv)==2 and all(r[0]=='' and 'invited' in r[1] for r in inv))
   if SHOT:H.screenshot(path=OUT+'/11-group-created.png')
   tick(P);P.evaluate("cur=null;sv='sheet';nav('score')");P.wait_for_timeout(300)
   chk('group: invitee sees the host display name','Bullseye invited you to a match night' in P.inner_text('#h2hcard'))
   P.click('[data-h2hacc]');P.wait_for_timeout(800);chk('group: accept opens the leaderboard',P.locator('#h2hview').count()==1)
+  tick(H);gv(H,code);chk('an invited archer becomes a normal row once they post',H.locator('.h2hrow.inv').count()==1 and H.locator('.h2hrow[data-h2hid="phill"]:not(.inv) .rk').count()==1)
+  chk('the joiner sees the still-invited archer too',gv(P,code) and P.locator('.h2hrow.inv[data-h2hid="steven"]').count()==1)
   St.evaluate("cur=null;sv='sheet';nav('score')");St.wait_for_timeout(300);St.fill('#h2hjc',code.lower());St.click('#h2hjgo');St.wait_for_timeout(900)
   chk('group: join by typing the code',St.locator('#h2hview').count()==1 and St.evaluate(f"!!h2hGet('{code}')&&h2hGet('{code}').g==1"))
   fg(H,code,*[[['X','10','9'],['10','10','10']],False]);fg(P,code,*[[['10','10','9'],['9','9','9']],False]);fg(St,code,*[[['10','9','9'],['10','9','9']],False])
@@ -209,6 +220,13 @@ try:
   vh,vp=gv(H,code),gv(P,code)
   chk('group: final results once everyone has finished (no close needed)','Final results' in H.text_content('#h2hview') and '▲ Coach P wins' in vh and '▲ You win' in vp)
   chk('group: Close match button gone after the finish',H.locator('#h2hclose').count()==0)
+  chk('wording: final count "3 of 10 archers"','3 of 10 archers' in vh and '3 of 10 archers' in H.evaluate("h2hCard()"))
+  nS=H.evaluate("S.sessions.length");nd=len(DLG);H.click('[data-h2hdel]');H.wait_for_timeout(400)
+  chk('remove: asks first, then removes the match from this phone only',len(DLG)==nd+1 and 'this phone' in DLG[-1] and H.evaluate(f"!h2hGet('{code}')") and P.evaluate(f"!!h2hGet('{code}')"))
+  chk('remove: scoring session kept',H.evaluate("S.sessions.length")==nS and H.evaluate(f"S.sessions.some(s=>s.h2h=='{code}')"))
+  P.evaluate("cur=null;sv='sheet';nav('score')");P.wait_for_timeout(300)
+  chk('remove: quiet Remove button on a finished match in All matches',P.locator(f'#h2hcard [data-h2hdel="{code}"]').count()==1)
+  P.click(f'#h2hcard [data-h2hdel="{code}"]');P.wait_for_timeout(400);chk('remove from the list works',P.evaluate(f"!h2hGet('{code}')") and P.locator(f'[data-h2hopen="{code}"]').count()==0)
   if SHOT:H.screenshot(path=OUT+'/13-group-final.png',full_page=True)
   gm=[json.loads(m['message']) for m in RELAY.get('scoretool-h2h-q7m4-'+code.lower(),[])]
   chk('group payloads: id, display name, round, code and scores only',gm and all(set(m)<=GKEYS for m in gm) and not any(n.lower() in json.dumps(gm).lower() for n in REALN))
@@ -240,6 +258,7 @@ try:
   H.click('#h2hclose');H.wait_for_timeout(400);gv(H,code);chk('group: host close shows final results','Final results' in H.text_content('#h2hview') and 'closed by the host' in H.inner_text('#h2hview'))
   g_=PH[0][2];tick(g_);v=gv(g_,code);chk('group: other phones see the close and final results','Final results' in g_.text_content('#h2hview') and 'closed by the host' in v and g_.locator('#h2hback').count()==0)
   chk('group: Close match is host-only',g_.locator('#h2hclose').count()==0)
+  chk('remove offered once the host closes',g_.locator('[data-h2hdel]').count()==1)
   for _,c_,_ in PH:c_.close()
   ch_.close();cx.close()
   chk('no page errors '+str(errs[:3]),not errs)

@@ -10,7 +10,7 @@
 const H2H_BASE='https://ntfy.sh',H2H_NS='scoretool-h2h-q7m4';
 const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2hInbox=id=>H2H_NS+'-in-'+id;
 const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>/^Indoor WA/.test(r)&&!ROUNDS[r].custom);
-const H2H_MAX=10;
+const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
 const H2H_MODES={total:'Highest total',sets:'Set points (2 for a set win, 1 for a draw, first to 6)'};
 const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
 const h2hAll=()=>S.matches=S.matches||[],h2hGet=c=>h2hAll().find(m=>m.code==c);
@@ -32,7 +32,7 @@ function h2hCalc(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ape=R.ape,s=h2hSess
  if(m.mode!='sets'&&dA&&dB){if(ta!=tb)win=ta>tb?'a':'b';else{const t1=cnt(A,x=>x=='X'||x=='10'),t2=cnt(B,x=>x=='X'||x=='10');if(t1!=t2){win=t1>t2?'a':'b';tie='Tied on total, decided on 10s (incl. X)'}else{const x1=cnt(A,x=>x=='X'),x2=cnt(B,x=>x=='X');if(x1!=x2){win=x1>x2?'a':'b';tie='Tied on total and 10s, decided on Xs'}else win='draw'}}}
  if(m.mode=='sets'&&!win&&dA&&dB)win=sa==sb?'draw':sa>sb?'a':'b';
  return{rows,ta,tb,sa,sb,win,tie,dA,dB}}
-function h2hLine(m){if(m.g){const b=h2hBoard(m),r=b.rows.find(x=>x.me);return r?`${r.tie?'=':''}${h2hOrd(r.rank)} of ${b.rows.length} · ${r.tot}`:plN(b.rows.length,'archer','archers')}const c=h2hCalc(m),o=h2hShort(m.opp);return m.mode=='sets'?`You ${c.sa} – ${c.sb} ${o} (set points)`:`You ${c.ta} – ${c.tb} ${o}`}
+function h2hLine(m){if(m.g){const b=h2hBoard(m),r=b.rows.find(x=>x.me);return`${r?(r.tie?'=':'')+h2hOrd(r.rank)+' · '+r.tot+' · ':''}${b.rows.length} of ${H2H_MAX} archers`}const c=h2hCalc(m),o=h2hShort(m.opp);return m.mode=='sets'?`You ${c.sa} – ${c.sb} ${o} (set points)`:`You ${c.ta} – ${c.tb} ${o}`}
 function h2hResult(m,c){if(m.g)return h2hGResult(m);const o=h2hShort(m.opp);if(!c.win)return'';return c.win=='draw'?'Draw':c.win=='a'?'▲ You win':`▲ ${esc(o)} wins`}
 window.h2hChip=function(s){const m=h2hGet(s.h2h);if(!m)return'';const c=m.g?null:h2hCalc(m),r=h2hResult(m,c);
  return`<button class="ad-small h2hchip" id="h2hchip" onclick="h2hView('${m.code}')" aria-label="Open head-to-head match">⚔ ${m.g?'Match night · ':''}${esc(h2hLine(m))}${r?' · '+r:''}</button>`};
@@ -44,11 +44,11 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
  const L=h2hAll().slice().reverse(),inv=L.filter(m=>m.status=='invite'),act=L.filter(m=>m.status!='invite'&&m.status!='declined').slice(0,6),me=h2hMe();
  return`<div class="card" id="h2hcard"><span class="kicker">Head-to-head</span><h3>Shoot an indoor round against other testers</h3><p class="small muted" style="margin:2px 0 8px">You both score on your own phones and see each other's ends as you go.</p>
  ${inv.map(m=>`<div class="list-item" data-inv="${m.code}"><b>${esc(h2hShort(m.opp))} ${m.g?'invited you to a match night':'challenged you'}</b><div class="small muted">${esc(m.round)} · ${esc(m.mode=='sets'?'Set points':'Highest total')}${m.when?' · '+esc(h2hWhen(m.when)):''}</div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-h2hacc="${m.code}">Accept and start</button><button class="btn ghost" data-h2hno="${m.code}">Not now</button></div></div>`).join('')}
- ${act.map(m=>{if(m.g){const r=h2hResult(m);return`<div class="list-item row"><span><b>Match night · ${esc(m.round)}</b><div class="small muted">${esc(h2hLine(m))}${m.when?' · '+esc(h2hWhen(m.when)):''}${r?' · <b>'+r+'</b>':m.status=='full'?' · match full':''}</div></span><button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}const c=h2hCalc(m),r=h2hResult(m,c);return`<div class="list-item row"><span><b>vs ${esc(h2hShort(m.opp))}</b><div class="small muted">${esc(m.round)} · ${esc(h2hLine(m))}${r?' · <b>'+r+'</b>':m.status=='declined-by-opp'?' · they said not now':!m.op?' · waiting for them to accept':''}</div></span><button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}).join('')}
+ ${act.map(m=>{if(m.g){const r=h2hResult(m);return`<div class="list-item row"><span><b>Match night · ${esc(m.round)}</b><div class="small muted">${esc(h2hLine(m))}${m.when?' · '+esc(h2hWhen(m.when)):''}${r?' · <b>'+r+'</b>':m.status=='full'?' · match full':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}const c=h2hCalc(m),r=h2hResult(m,c);return`<div class="list-item row"><span><b>vs ${esc(h2hShort(m.opp))}</b><div class="small muted">${esc(m.round)} · ${esc(h2hLine(m))}${r?' · <b>'+r+'</b>':m.status=='declined-by-opp'?' · they said not now':!m.op?' · waiting for them to accept':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}).join('')}
  <details id="h2hnew"><summary class="btn full" style="list-style:none;text-align:center;margin-top:6px">Start a match</summary>
  <label for="h2hrd">Round</label><select id="h2hrd">${H2H_ROUNDS().map(r=>`<option ${r=='Indoor WA 18m'?'selected':''}>${esc(r)}</option>`).join('')}</select>
  <fieldset class="h2hops"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me).map(t=>`<label class="h2htk"><input type="checkbox" data-h2hop="${t.id}"> ${esc(testerName(t.id))}</label>`).join('')}</fieldset>
- <p class="small muted" id="h2hophint">Tick 1 for a head-to-head, or up to ${H2H_MAX-1} for a match night. Others can join with the code.</p>
+ <p class="small muted" id="h2hophint">You plus up to ${H2H_MAX-1} others (${H2H_MAX} archers max). Tick 1 for a head-to-head. Others can join with the code.</p>
  <div id="h2hmdw" hidden><label for="h2hmd">Scoring</label><select id="h2hmd">${Object.entries(H2H_MODES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></div>
  <div id="h2hwhw"><label for="h2hwhen">When (optional)</label><input type="datetime-local" id="h2hwhen"></div>
  <button class="btn alt full" id="h2hgo" style="margin-top:10px">Create match night</button><p class="small muted">They see it on their Score tab and tap Accept. Only your display name, the round and your arrow scores are shared, just for this match.</p></details>
@@ -64,23 +64,23 @@ window.h2hBind=function(){const g=$('#h2hgo'),ticked=()=>[...app.querySelectorAl
   h2hPost(h2hInbox(opp),{k:'inv',code:m.code,round:m.round,mode:m.mode,from:me,to:opp,...h2hNm(),t:Date.now()});h2hStart(m)};
  app.querySelectorAll('[data-h2hacc]').forEach(b=>{if(!b.onclick)b.onclick=()=>{const m=h2hGet(b.dataset.h2hacc);if(m)h2hStart(m)}});
  app.querySelectorAll('[data-h2hno]').forEach(b=>b.onclick=()=>{const m=h2hGet(b.dataset.h2hno);if(!m)return;m.status='declined';save();if(!m.g)h2hPost(h2hTopic(m.code),{k:'no',code:m.code,by:h2hMe(),t:Date.now()});score()});
- app.querySelectorAll('[data-h2hopen]').forEach(b=>b.onclick=()=>h2hView(b.dataset.h2hopen))};
+ app.querySelectorAll('[data-h2hopen]').forEach(b=>b.onclick=()=>h2hView(b.dataset.h2hopen));h2hBindDel()};
 window.h2hView=function(code){const m=h2hGet(code);if(!m)return;if(m.g)return h2hViewG(m);const c=h2hCalc(m),o=esc(h2hShort(m.opp)),s=h2hSess(m),R=ROUNDS[m.round]||{},sets=m.mode=='sets',r=h2hResult(m,c);
  const ago=m.seen?Math.max(0,Math.round((Date.now()-m.seen)/1000)):null,mk=(x,y,ok)=>ok&&x>y?' ▲':'';
  const st=r?`<p style="font-size:22px;font-weight:800;margin:6px 0">${r}</p>${c.tie?`<p class="small">${esc(c.tie)}</p>`:''}`:m.status=='declined-by-opp'?`<p>${o} said not now.</p>`:!m.op?`<p>Waiting for ${o} to accept. They'll see it on their Score tab.</p>`:`<p>${o} has shot ${plN(c.rows.filter(x=>x.fb).length,'end','ends')}${m.op.done?' and finished':''}.</p>`;
  app.innerHTML=`<div id="h2hview"><div class="card dark"><span class="kicker">Head-to-head · ${esc(sets?'Set points':'Highest total')}</span><h1>You vs ${o}</h1><p class="small" style="margin:0">${esc(m.round)} · ${plN(R.ends,'end','ends')} of ${R.ape}${sets?' · 2 for a set win, 1 for a draw, first to 6':''}</p>
  <p style="font-size:28px;font-weight:800;margin:8px 0 0">${sets?`${c.sa} – ${c.sb}`:`${c.ta} – ${c.tb}`}</p><p class="small" style="margin:0">You – ${o}${sets?' · set points':''}</p>${st}</div>
- <div class="card"><table class="ad-tab h2htab" style="width:100%"><thead><tr><th>End</th><th>You</th><th>${o}</th><th>${sets?'Sets':'Totals'}</th></tr></thead><tbody>
+ <div class="card"><table class="ad-tab h2htab" style="width:100%"><thead><tr><th>End</th><th>You</th><th>${o}${!m.op?' <span class="small muted h2hinvl">invited</span>':''}</th><th>${sets?'Sets':'Totals'}</th></tr></thead><tbody>
  ${c.rows.map(x=>{const both=x.fa&&x.fb;return`<tr><td>${x.i+1}</td><td${both&&x.ea>x.eb?' class="h2hwin"':''}>${x.a.length?`${esc(x.a.join(' '))} <b>${x.ea}</b>${mk(x.ea,x.eb,both)}`:'–'}</td><td${both&&x.eb>x.ea?' class="h2hwin"':''}>${x.b.length?`${esc(x.b.join(' '))} <b>${x.eb}</b>${mk(x.eb,x.ea,both)}`:'–'}</td><td>${sets?(x.pa!=null?`${x.sa} – ${x.sb}${x.pa==1?' (draw)':''}`:'–'):`${x.ta} – ${x.tb}`}</td></tr>`}).join('')||'<tr><td colspan="4" class="small muted">No ends yet.</td></tr>'}</tbody></table>
  <p class="small muted">▲ marks the higher end.${ago!=null?` Last update from ${o} ${ago<60?ago+'s':Math.round(ago/60)+' min'} ago.`:''} Updates every few seconds while the app is open.</p>
  <div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap">${s&&!h2hMyDone(m)?`<button class="btn alt" id="h2hback">Back to scoring</button>`:''}<button class="btn ghost" id="h2hrf">Refresh now</button><button class="btn ghost" id="h2hout">All matches</button></div></div></div>`;
  const b=$('#h2hback');if(b)b.onclick=()=>{cur=s;sv='entry';fix=null;score()};$('#h2hrf').onclick=()=>h2hTick(true);$('#h2hout').onclick=()=>{cur=null;sv='sheet';if(view!='score')nav('score');else score()}};
 let h2hN=0,h2hBusy=false;
 async function h2hTick(force){if(h2hBusy||(document.hidden&&!force)||!TESTER)return;h2hBusy=true;try{const me=h2hMe();let ch=false;
- if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
+ if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt,d.t))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)&&(d.t||0)>=H2H_RESET){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
  const live=h2hAll().filter(m=>m.status!='declined'&&m.status!='invite'&&m.status!='full'&&Date.now()-(m.created||0)<2*864e5&&!(m.g?(m.closed||h2hBoard(m).fin)&&(!m.sid||m.sentDone)&&m.finSeen:(m.op&&m.op.done&&h2hMyDone(m)&&m.sentDone)));
  for(const m of live){if(m.sid){const st=h2hState(m),sig=JSON.stringify(st.ends)+st.done;if(sig!=m.sent){if(await h2hPost(h2hTopic(m.code),st)){m.sent=sig;if(st.done)m.sentDone=true;save()}}}
-  const L=await h2hPoll(h2hTopic(m.code),m.since);if(L&&L.length){L.forEach(d=>{m.since=d._id;if(m.g){if(h2hApplyG(m,d))ch=true;return}if(d.code!=m.code||d.by!=m.opp)return;if(d.nm&&nmLearn(d.by,d.nm,d.nt))ch=true;if(d.k=='st'){m.op={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now();if(m.status=='declined-by-opp')m.status='active'}if(d.k=='no'&&!m.op)m.status='declined-by-opp';ch=true});save()}if(m.g&&(m.closed||h2hBoard(m).fin))m.finSeen=true}
+  const L=await h2hPoll(h2hTopic(m.code),m.since);if(L&&L.length){L.forEach(d=>{m.since=d._id;if(m.g){if(h2hApplyG(m,d))ch=true;return}if(d.code!=m.code||d.by!=m.opp)return;if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;if(d.k=='st'){m.op={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now();if(m.status=='declined-by-opp')m.status='active'}if(d.k=='no'&&!m.op)m.status='declined-by-opp';ch=true});save()}if(m.g&&(m.closed||h2hBoard(m).fin))m.finSeen=true}
  if(ch){const v=$("#h2hview"),chip=$("#h2hchip"),card=$("#h2hcard");if(v)h2hView(window._h2hv);else if(chip&&cur&&cur.h2h)chip.outerHTML=h2hChip(cur);else if(card&&!cur&&view=='score'&&!($('#h2hnew')||{}).open)score()}}finally{h2hBusy=false}}
 const _h2hV=window.h2hView;window.h2hView=c=>{window._h2hv=c;_h2hV(c)};
 setInterval(h2hTick,8000);setTimeout(()=>h2hTick(true),1500);document.addEventListener('visibilitychange',()=>{if(!document.hidden)h2hTick(true)});
@@ -97,16 +97,17 @@ function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).
  rows.sort((a,b)=>b.tot-a.tot||b.t10-a.t10||b.x-a.x||ids.indexOf(a.id)-ids.indexOf(b.id));
  rows.forEach((r,i)=>{const p=rows[i-1];r.rank=p&&p.tot==r.tot&&p.t10==r.t10&&p.x==r.x?p.rank:i+1});
  rows.forEach(r=>{r.tie=rows.filter(x=>x.rank==r.rank).length>1;r.lead=r.rank==1&&r.tot>0});
- return{rows,R,fin:!!m.closed||(rows.length>1&&rows.every(r=>r.done))}}
+ const wait=(m.inv||[]).filter(id=>!ids.includes(id)).slice(0,Math.max(0,H2H_MAX-ids.length)).map(id=>({id,nm:h2hShort(id),invited:true,me:id==h2hMe()}));
+ return{rows,wait,R,fin:!!m.closed||(rows.length>1&&rows.every(r=>r.done))}}
 function h2hGResult(m){const b=h2hBoard(m);if(!b.fin)return'';const L=b.rows.filter(r=>r.lead);if(!L.length)return'No scores';
  return L.length==1?(L[0].me?'▲ You win':`▲ ${esc(L[0].nm)} wins`):`▲ Tie for 1st: ${L.map(r=>esc(r.me?'You':r.nm)).join(', ')}`}
 function h2hApplyG(m,d){if(d.code!=m.code)return false;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
- if(d.k=='hd'){if(d.nm)nmLearn(d.host,d.nm,d.nt);if(d.host&&!m.order.includes(d.host))m.order.unshift(d.host);return true}
- if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<H2H_MAX){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
+ if(d.k=='hd'){if(d.nm)nmLearn(d.host,d.nm,d.nt,d.t);if(Array.isArray(d.inv))m.inv=d.inv.filter(x=>typeof x=='string').slice(0,H2H_MAX-1);if(d.host&&!m.order.includes(d.host))m.order.unshift(d.host);return true}
+ if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<H2H_MAX){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
  if(d.k=='cl'&&d.by==m.host&&!m.closed){m.closed=true;return true}return false}
 function h2hCreateG(T){const me=h2hMe();if(T.length>H2H_MAX-1)return;const w=($('#h2hwhen')||{}).value||'';
- const m={code:h2hCode(),round:$('#h2hrd').value,mode:'total',g:1,host:me,a:me,opp:me,order:[me],ops:{},when:w,created:Date.now(),status:'active'};h2hAll().push(m);save();
- h2hPost(h2hTopic(m.code),{k:'hd',code:m.code,round:m.round,mode:'total',host:me,when:w,...h2hNm(),t:Date.now()}).then(()=>h2hPost(h2hTopic(m.code),h2hState(m)));
+ const m={code:h2hCode(),round:$('#h2hrd').value,mode:'total',g:1,host:me,a:me,opp:me,order:[me],ops:{},inv:T.slice(),when:w,created:Date.now(),status:'active'};h2hAll().push(m);save();
+ h2hPost(h2hTopic(m.code),{k:'hd',code:m.code,round:m.round,mode:'total',host:me,when:w,inv:T.slice(),...h2hNm(),t:Date.now()}).then(()=>h2hPost(h2hTopic(m.code),h2hState(m)));
  m.sent=JSON.stringify([])+false;T.forEach(id=>h2hPost(h2hInbox(id),{k:'inv',g:1,code:m.code,round:m.round,mode:'total',from:me,to:id,when:w,...h2hNm(),t:Date.now()}));save();h2hView(m.code)}
 /* join from an invite, the code box or a #join= link. Reads the whole match topic first so the 10-archer cap holds. */
 async function h2hJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,''),me=h2hMe(),msg=t=>{window._h2hJmsg=t;const e=$('#h2hjmsg');if(e)e.textContent=t};
@@ -126,11 +127,11 @@ function h2hViewG(m){const b=h2hBoard(m),R=b.R,s=h2hSess(m),me=h2hMe(),res=h2hGR
  app.innerHTML=`<div id="h2hview"><div class="card dark"><span class="kicker">Match night · Highest total</span><h1>${b.fin?'Final results':'Live leaderboard'}</h1>
  <p class="small" style="margin:0">${esc(m.round)} · ${plN(R.ends,'end','ends')} of ${R.ape}${m.when?' · '+esc(h2hWhen(m.when)):''} · ${b.rows.length} of ${H2H_MAX} archers${m.closed?' · closed by the host':''}</p>
  ${res?`<p style="font-size:22px;font-weight:800;margin:6px 0 0">${res}</p>`:''}${full?`<p>This match is full (${H2H_MAX} archers).</p>`:''}</div>
- <div class="card"><div class="h2hlb">${b.rows.map(row).join('')}</div>
+ <div class="card"><div class="h2hlb">${b.rows.map(row).join('')}${b.wait.map(r=>`<div class="h2hrow inv" data-h2hid="${esc(r.id)}"><div class="h2hsum"><span class="rk"></span><span class="nm">${esc(r.nm)}</span><span class="small">invited</span></div></div>`).join('')}</div>
  <p class="small muted">▲ marks the leader. Tap a name to see their ends. Updates every few seconds while the app is open.</p>
  <p class="small" style="margin:8px 0 4px">Match code <b id="h2hcode" style="letter-spacing:1px">${esc(m.code)}</b></p><div class="row" style="gap:6px"><input readonly id="h2hlink" value="${esc(h2hJoinLink(m.code))}" aria-label="Join link" style="flex:1"><button class="btn ghost" id="h2hcp">Copy link</button></div>
- <div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px">${!full&&!m.closed&&!h2hMyDone(m)?`<button class="btn alt" id="h2hback">${s?'Back to scoring':'Start scoring'}</button>`:''}<button class="btn ghost" id="h2hrf">Refresh now</button>${host&&!m.closed&&!b.fin?'<button class="btn ghost" id="h2hclose">Close match</button>':''}<button class="btn ghost" id="h2hout">All matches</button></div></div></div>`;
- const bk=$('#h2hback');if(bk)bk.onclick=()=>{if(s){cur=s;sv='entry';fix=null;score()}else h2hStart(m)};
+ <div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px">${!full&&!m.closed&&!h2hMyDone(m)?`<button class="btn alt" id="h2hback">${s?'Back to scoring':'Start scoring'}</button>`:''}<button class="btn ghost" id="h2hrf">Refresh now</button>${host&&!m.closed&&!b.fin?'<button class="btn ghost" id="h2hclose">Close match</button>':''}<button class="btn ghost" id="h2hout">All matches</button>${h2hOver(m)?'<button class="btn ghost h2hdel" data-h2hdel="'+esc(m.code)+'">Remove from this phone</button>':''}</div></div></div>`;
+ h2hBindDel();const bk=$('#h2hback');if(bk)bk.onclick=()=>{if(s){cur=s;sv='entry';fix=null;score()}else h2hStart(m)};
  $('#h2hcp').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(h2hJoinLink(m.code));$('#h2hcp').textContent='Copied'};
  const cl=$('#h2hclose');if(cl)cl.onclick=()=>{if(!confirm('Close the match and show final results?'))return;m.closed=true;save();h2hPost(h2hTopic(m.code),{k:'cl',code:m.code,by:me,t:Date.now()});h2hView(m.code)};
  app.querySelectorAll('.h2hrow').forEach(d=>{if((window._h2hOpen||{})[d.dataset.h2hid])d.open=true;d.ontoggle=()=>{window._h2hOpen=window._h2hOpen||{};window._h2hOpen[d.dataset.h2hid]=d.open}});
@@ -138,3 +139,11 @@ function h2hViewG(m){const b=h2hBoard(m),R=b.R,s=h2hSess(m),me=h2hMe(),res=h2hGR
 /* #join=CODE link: wait until a tester is signed in, then join */
 const _h2hRender=render;render=function(){const j=/^#join=([A-Za-z0-9-]+)/.exec(location.hash);
  if(j&&TESTER&&S.unlocked&&S.profile){history.replaceState(null,'',location.pathname+location.search);view='score';const r=_h2hRender();h2hJoin(j[1]);return r}return _h2hRender()};
+
+/* finished or closed matches can be removed from this phone (the scoring session stays) */
+function h2hOver(m){if(m.g)return!!(m.closed||m.status=='full'||h2hBoard(m).fin);return!!(h2hCalc(m).win||m.status=='declined-by-opp')}
+const h2hDelBtn=m=>h2hOver(m)?`<button class="btn ghost h2hdel" data-h2hdel="${esc(m.code)}" aria-label="Remove this match from this phone">Remove</button>`:'';
+function h2hBindDel(){app.querySelectorAll('[data-h2hdel]').forEach(b=>b.onclick=()=>{const c=b.dataset.h2hdel;if(!confirm('Remove this match from this phone? Your scores stay in your sessions.'))return;
+ S.matches=h2hAll().filter(m=>m.code!=c);save();if($('#h2hview')){cur=null;sv='sheet';if(view!='score')nav('score');else score()}else score()})}
+/* drop invites from before the reset point that are still waiting on this phone */
+if(typeof S!='undefined'&&S&&S.matches){const n=S.matches.length;S.matches=S.matches.filter(m=>!(m.status=='invite'&&(m.created||0)<H2H_RESET));if(S.matches.length!=n)save()}
