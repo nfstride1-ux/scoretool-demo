@@ -211,3 +211,12 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .pg-tab tr.lead td:first-child{font-weight:800;box-shadow:inset 3px 0 0 #ffd84d;padding-left:7px}
 .pg-tab .pg-sh{padding:4px 8px;min-height:0;font-size:12px}
 .pg-chip .small{opacity:.85}
+/* league: how each week is scored (segmented choice per archer) */
+.lg-grow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding:6px 0;border-top:1px solid var(--line)}
+.lg-gname{font-weight:700;min-width:70px}
+.lg-segs{display:inline-flex;border:1px solid #3b82f6;border-radius:10px;overflow:hidden}
+.lg-seg{background:transparent;color:inherit;border:0;border-left:1px solid #3b82f6;padding:7px 9px;font:inherit;font-size:13px;min-height:0}
+.lg-seg:first-child{border-left:0}
+.lg-seg.on{background:#1d4ed8;color:#fff;font-weight:800;box-shadow:inset 0 -3px 0 #ffd84d}
+.lg-seg:disabled{opacity:.5}
+.su-face.su-vert{width:56px;height:150px}

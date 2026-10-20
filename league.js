@@ -11,6 +11,9 @@
    per archer per week, so a phone that's been away catches up from whoever opens next. A post that fails (offline) stays queued and is
    sent when the phone is back online. Payloads: tester ids, nicknames, ends only. Phill is not offered in the league archer list. */
 const LG_R='Vegas 300 (18 m)',LG_W=6,LG_SNAP=6*36e5,LG_EXCL=['phill'],LG_KEYS=['X','10','9','8','7','6','M'],LG_FACE='Vertical 3-spot';
+/* shown text: the league round is '300 (18 m)', never 'Vegas' (Coach re-test, 20 Oct). The ROUNDS key stays for stored data. */
+const LG_RL='300 (18 m)',rdLabel=r=>r==LG_R?LG_RL:r;window.rdLabel=rdLabel;
+const LG_FINTXT='Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).';
 const lgAll=()=>S.leagues=S.leagues||[],lgGet=c=>lgAll().find(l=>l.code==c);
 const lgTopic=c=>H2H_NS+'-lg-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
 const lgName=id=>h2hShort(id);
@@ -97,7 +100,7 @@ async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
 /* ---------- screens ---------- */
 function lgCard(){if(!TESTER)return'';const me=h2hMe(),L=lgAll().slice().reverse();
- return`<div class="card" id="lgcard"><span class="kicker">League</span><h3>Onion Shed Challenge</h3><p class="small muted" style="margin:2px 0 8px">Six Vegas 300s at 18 m on the vertical 3-spot. Cumulative total, then one shoot-up final.</p>
+ return`<div class="card" id="lgcard"><span class="kicker">League</span><h3>Onion Shed Challenge</h3><p class="small muted" style="margin:2px 0 8px">Six 300s at 18 m on the vertical 3-spot. Cumulative total, then one shoot-up final.</p><p class="small" id="lgrules" style="margin:0 0 8px">${LG_FINTXT}</p>
  ${L.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(lg.name)}</b><div class="small muted">${lg.fin?'Final shoot-up':'Week '+lgWeek(lg)+' of 6'} · ${lgArchers(lg).length} archers</div></span><button class="btn ghost" data-lgopen="${lg.code}">Open</button></div>`).join('')}
  <details id="lgnew"><summary>New league</summary><label for="lgname">League name</label><input id="lgname" maxlength="40" value="Onion Shed Challenge">
@@ -131,17 +134,21 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
   :`<p class="small" style="margin:0 0 6px">Shared phone, group ${gk+1}: ${G[gk].map(id=>esc(lgName(id))).join(', ')}. Any member's phone can score the group.</p><button class="btn alt" data-lgsg="${gk}">Score group ${gk+1} on this phone</button>`;
  const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}" data-lgrow="${esc(r.id)}"><td>${r.tie?'=':''}${r.rk}</td><td>${k==0&&r.t>0&&!r.tie?'▲ ':''}${esc(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table></div>
- <p class="small muted" style="margin:4px 0 0">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting. Every week: ${LG_R}, ${LG_FACE.toLowerCase()}.</p>`;
- const grpEd=host&&!lg.fin?`<details id="lggrp"><summary>Scoring groups, week ${w}</summary><p class="small muted">Default is everyone on their own phone. Put households on a shared phone. Archers can move only before they start.</p>
-  ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="row" style="gap:6px"><span>${esc(lgName(id))}</span><select data-lggs="${esc(id)}" ${st?'disabled':''}><option value="">Own phone</option>${[0,1,2,3].map(g=>`<option value="${g}" ${k===g?'selected':''}>Shared phone ${g+1}</option>`).join('')}</select></div>`}).join('')}
-  <button class="btn ghost" id="lggsave" style="margin-top:6px">Save groups</button><p class="small" id="lggmsg" role="alert"></p></details>`:'';
+ <p class="small muted" style="margin:4px 0 0">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting. Every week: ${LG_RL}, ${LG_FACE.toLowerCase()}.</p>`;
+ /* how this week is scored (host): a clear choice per archer, own phone or a shared phone for the group. Saved on tap. (Coach re-test, 20 Oct) */
+ const GA=lgGroups(lg,w),seg=(id,g,lab,on,dis)=>`<button type="button" class="lg-seg${on?' on':''}" data-lggb="${esc(id)}" data-g="${g}" aria-pressed="${on}" ${dis?'disabled':''}>${lab}</button>`;
+ const grpEd=host&&!lg.fin?`<div class="card" id="lggrp"><span class="kicker">Week ${w} · how it's scored</span><h3 style="margin:2px 0 4px">One phone or own phones?</h3>
+  <p class="small muted" style="margin:0 0 8px">Tap for each archer. <b>Own phone</b>: they score themselves. <b>Phone 1, 2 or 3</b>: one phone scores that whole group. Archers can move only before they start.</p>
+  <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:0 0 8px"><button type="button" class="btn ghost" id="lgallown">Everyone on own phone</button><button type="button" class="btn ghost" id="lgallone">Everyone on one phone</button></div>
+  ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="lg-grow"><span class="lg-gname">${esc(lgName(id))}${st?' <span class="small muted">(started)</span>':''}</span><span class="lg-segs" role="group" aria-label="How ${esc(lgName(id))} is scored">${seg(id,'',k==null?'&#10003; Own phone':'Own phone',k==null,st)}${[0,1,2].map(g=>seg(id,g,k===g?'&#10003; Phone '+(g+1):'Phone '+(g+1),k===g,st)).join('')}</span></div>`}).join('')}
+  <p class="small" id="lggmsg" role="alert" style="margin:6px 0 0"></p></div>`:'';
  const done6=lgArchers(lg).filter(id=>lgDoneE(lgEnt(lg,id,LG_W))).length;
- app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(LG_R)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
+ app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
  <p class="small" style="margin:0">${lg.fin?'All six 300s are in. Final shoot-up.':w<6?`Week ${w} of 6 is current${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}. One 300 each, at home or together.`:`Day 6${lg.weeks&&lg.weeks[5]?' · '+wk(lg.weeks[5]):''}: everyone shoots the 6th 300 together. Then the shoot-up final.`}</p></div>
  ${fm?`<div class="card"><button class="btn alt" id="lgfin">${lgFinDone(lg)?'Final result':'Open the final shoot-up'}</button></div>`:`<div class="card" id="lgmine">${mine}</div>`}
- ${E&&!fm?lgEntryCard(lg,w,E.ids):''}
+ ${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}
  <div class="card"><h3>League table</h3>${tab}</div>
- ${grpEd}${host&&!lg.fin?`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${!(lg.weeks||[]).some(Boolean)&&w<6?`<button class="btn ghost" id="lgnext">Move to week ${w+1}</button>`:''}${w==6&&done6>=2?`<button class="btn ghost" id="lgforce">Start shoot-up now</button>`:''}</div>${w==6?`<p class="small muted">The final starts by itself when every archer's day-6 300 is in (${done6} of ${lgArchers(lg).length}).</p>`:''}</div>`:''}
+ ${host&&!lg.fin?`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${!(lg.weeks||[]).some(Boolean)&&w<6?`<button class="btn ghost" id="lgnext">Move to week ${w+1}</button>`:''}${w==6&&done6>=2?`<button class="btn ghost" id="lgforce">Start shoot-up now</button>`:''}</div>${w==6?`<p class="small muted">The final starts by itself when every archer's day-6 300 is in (${done6} of ${lgArchers(lg).length}).</p>`:''}</div>`:''}
  <div class="card"><p class="small" style="margin:0">League code <b id="lgcode">${esc(code)}</b>. Share it so others can join.</p>${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}
  <div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn ghost" id="lgback">All leagues</button>${lgFinDone(lg)?`<button class="btn ghost" id="lgdel">Remove</button>`:''}</div></div></div>`;
  const q=s=>app.querySelector(s);
@@ -152,7 +159,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;lgKey(code,w,act,b.dataset.lgk)});
  if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;lgUndo(code,w,act)};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
- if(q('#lggsave'))q('#lggsave').onclick=()=>{const G2=[[],[],[],[]];app.querySelectorAll('[data-lggs]').forEach(s=>{if(s.value!=='')G2[+s.value].push(s.dataset.lggs)});const ok=lgSetGroups(code,w,G2);if(!ok)q('#lggmsg').textContent='⚠ An archer who has started this week can\'t move group.';else lgView(code)};
+ const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='An archer who has started this week can\'t move group.';return}lgView(code)};
+ app.querySelectorAll('[data-lggb]').forEach(b=>b.onclick=()=>{const id=b.dataset.lggb,g=b.dataset.g,G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>x!=id));if(g!=='')G2[+g].push(id);setG(G2)});
+ if(q('#lgallown'))q('#lgallown').onclick=()=>{const S0=lgArchers(lg).filter(id=>lgHas(lgEnt(lg,id,w)));setG([0,1,2,3].map(k=>(GA[k]||[]).filter(x=>S0.includes(x))))};
+ if(q('#lgallone'))q('#lgallone').onclick=()=>{const S0=lgArchers(lg).filter(id=>lgHas(lgEnt(lg,id,w))&&lgGroupOf(lg,w,id)!==0);const G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>S0.includes(x)));G2[0]=lgArchers(lg).filter(id=>!S0.includes(id));setG(G2)};
  if(q('#lgnext'))q('#lgnext').onclick=()=>{lg.cw=w+1;lg.cwt=Date.now();lg.dirty=1;save();lgTick(true);lgView(code)};
  if(q('#lgforce'))q('#lgforce').onclick=()=>{if(done6<lgArchers(lg).length&&!confirm('Start the shoot-up now? Archers without a day-6 300 are left out.'))return;if(lgForce(code))suLadderView(lgFinCode(lg))};
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
