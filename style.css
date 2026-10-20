@@ -204,3 +204,10 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .lg-tab th:nth-child(2),.lg-tab td:nth-child(2){text-align:left;white-space:normal;max-width:72px;overflow-wrap:anywhere}
 .lg-tab th:nth-last-child(2),.lg-tab td:nth-last-child(2){font-weight:700}
 #lgview .lg-tab th{font-size:11px}
+/* ABA State Titles at Peel group card */
+.pg-tab{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.pg-tab th,.pg-tab td{padding:5px 3px;text-align:right;border-bottom:1px solid var(--line)}
+.pg-tab th:first-child,.pg-tab td:first-child{text-align:left;overflow-wrap:anywhere}
+.pg-tab tr.lead td:first-child{font-weight:800;box-shadow:inset 3px 0 0 #ffd84d;padding-left:7px}
+.pg-tab .pg-sh{padding:4px 8px;min-height:0;font-size:12px}
+.pg-chip .small{opacity:.85}
