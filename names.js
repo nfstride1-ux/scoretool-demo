@@ -27,12 +27,18 @@ function nmRude(s){const f=nmFold(s),flat=f.replace(/[^a-z]/g,''),squash=flat.re
  return NM_SUB.some(w=>flat.includes(w)||squash.includes(w)||flatI.includes(w))||toks.some(t=>NM_WORD.includes(t)||NM_WORD.includes(t.replace(/(.)\1+/g,'$1')))||NM_WORD.includes(flat)}
 /* surnames (and full names) of every tester: a nickname must not contain them */
 const NM_REAL=(()=>{const S1=new Set(),F=[];TESTERS.forEach(t=>{[t.name,t.ad,...(NM_VARIANTS[t.id]||[])].filter(Boolean).forEach(n=>{F.push([t.id,n]);n.split(/\s+/).slice(1).join(' ').split(/[\s-]+/).filter(x=>x.length>2).forEach(x=>S1.add(x.toLowerCase()))})});return{sur:[...S1],full:F}})();
-function nmDir(){let D;try{D=JSON.parse(localStorage.getItem(NM_DIR)||'{}')||{}}catch(e){D={}}for(const id in D){const e=D[id];if(!e||(e.u||e.nt||0)<NM_RESET)delete D[id]}return D}
+function nmDir(){let D;try{D=JSON.parse(localStorage.getItem(NM_DIR)||'{}')||{}}catch(e){D={}}for(const id in D){const e=D[id];if(!e||(e.u||e.nt||0)<NM_RESET||/^tester\s*\d*$/i.test(String(e.n||'').trim()))delete D[id]}return D}
 function nmSaveDir(D){try{localStorage.setItem(NM_DIR,JSON.stringify(D))}catch(e){}}
 const nmOwnRaw=id=>{try{const j=JSON.parse(localStorage.getItem(nmOwnKey(id))||'null');return j&&j.n?j:null}catch(e){return null}};
 const nmOwn=id=>{const j=nmOwnRaw(id);return j&&(j.nt||0)>=NM_RESET?j:null};
 const nmIdx=id=>TESTERS.findIndex(t=>t.id==id);
-const nmNeutral=id=>{const i=nmIdx(id);return i<0?'Tester':'Tester '+(i+1)};
+/* Default nicknames (Nathe, 20 Oct 2026): pre-set on every phone, so no 'Tester N' shows anywhere. A tester can still pick their
+   own in Me; a real pick (own phone or relay, after NM_RESET) wins over the default. 'Tester N' stays only as a last resort for an
+   id with no default. */
+const NM_DEF={nathe:'Nathe',phill:'Phill',logan:'Logan',steven:'Snookie',joseph:'Joe',michael:'Choongy',dana:'Dana',tahuri:'Tahuri',estiaan:'Estiaan',nate:'Nate',darnie:'Darnie'};
+const nmDef=id=>NM_DEF[id]||null;
+const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);return i<0?'Tester':'Tester '+(i+1)};
+window.NM_DEF=NM_DEF;
 /* Rule check. Returns {ok,n,msg}. selfId is skipped for the uniqueness check; pass uniq=false to check format/rude only. */
 function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
  if(n.length<2)return{ok:false,n,msg:'Use at least 2 characters.'};
@@ -40,6 +46,8 @@ function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
  if(!/^[A-Za-z0-9 _-]+$/.test(n))return{ok:false,n,msg:'Use letters, numbers, spaces, - and _ only.'};
  if(nmRude(n))return{ok:false,n,msg:'Please pick a different name.'};
  const lo=n.toLowerCase(),toks=lo.split(/[\s_-]+/);
+ if(selfId&&NM_DEF[selfId]&&NM_DEF[selfId].toLowerCase()==lo)return{ok:true,n,msg:''};
+ if(Object.entries(NM_DEF).some(([id,d])=>id!=selfId&&d.toLowerCase()==lo))return{ok:false,n,msg:'That is another tester\'s name.'};
  if(NM_REAL.sur.some(s=>toks.includes(s)||lo.replace(/[\s_-]/g,'').includes(s.replace(/[\s_-]/g,'')))||NM_REAL.full.some(([,f])=>f.toLowerCase()==lo))return{ok:false,n,msg:NM_HINT};
  if(/^tester\s*\d*$/i.test(n))return{ok:false,n,msg:'Pick a name of your own.'};
  if(uniq){const D=nmDir();if(Object.entries(D).some(([id,e])=>id!=selfId&&e&&String(e.n).toLowerCase()==lo))return{ok:false,n,msg:'Another tester already has that name.'}}
@@ -86,7 +94,7 @@ function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setIte
  const D=nmDir();D[id]={...o,u:o.nt};nmSaveDir(D);nmPublish(true)}
 (function(){if(!TESTER)return;const o=nmOwn(TESTER.id);if(o){const D=nmDir();if(!D[TESTER.id]||D[TESTER.id].n!=o.n){D[TESTER.id]={...o,u:o.nt};nmSaveDir(D)}}})();
 /* --- screens --- */
-function nmForm(id,cta){const o=TESTER&&nmOwn(TESTER.id);return`<label for="${id}">Display name</label><input id="${id}" maxlength="16" autocomplete="off" autocapitalize="words" value="${o?esc(o.n):''}" placeholder="e.g. Arrowhead_7">
+function nmForm(id,cta){const o=TESTER&&nmOwn(TESTER.id);return`<label for="${id}">Display name</label><input id="${id}" maxlength="16" autocomplete="off" autocapitalize="words" value="${o?esc(o.n):''}" placeholder="${TESTER&&nmDef(TESTER.id)?esc(nmDef(TESTER.id))+' (default)':'e.g. Arrowhead_7'}">
  <p class="small muted" style="margin:4px 0">${NM_HINT} 2 to 16 letters, numbers, spaces, - or _. Other testers see only this name.</p><p class="small" id="${id}err" role="alert" style="margin:4px 0;font-weight:600"></p><button class="btn alt full" id="${id}go">${cta}</button>`}
 function nmBindForm(id,done){const go=$('#'+id+'go'),inp=$('#'+id);if(!go)return;const sub=()=>{const c=nmCheck(inp.value,TESTER.id);if(!c.ok){$('#'+id+'err').textContent='⚠ '+c.msg;return}nmSetMine(c.n);done()};
  go.onclick=sub;inp.onkeydown=e=>{if(e.key=='Enter')sub()}}
@@ -97,7 +105,7 @@ let nmSkipMem=false;
 const nmLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const nmSkipped=id=>nmSkipMem||(+nmLS.get(nmAskKey(id))||0)>=NM_RESET;
 (function(){if(!TESTER)return;const id=TESTER.id;if(nmOwnRaw(id)&&!nmOwn(id)){nmLS.del(nmOwnKey(id));if(!nmSkipped(id))nmLS.del(nmAskKey(id))}})();
-function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
+function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
  <p class="small">${clash?'Another tester picked that name first. Choose a different one.':'This is the name other testers see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}
@@ -108,8 +116,8 @@ const _nmMe=me;me=function(){_nmMe();const c=document.createElement('div');c.cla
  c.innerHTML=`<span class="kicker">Display name</span><h2>${esc(myName())}</h2>${nmForm('nmme','Save display name')}`;app.prepend(c);
  nmBindForm('nmme',()=>me())};
 /* safety net, social views only: scrub real names from text and visible attributes (never touches data-* attributes) */
-const NM_SOCIAL='#h2hview,#h2hcard,.h2hchip,#leaguecard',NM_SOCIAL_VIEWS=['squad','badges','profile','recap'];
-const nmSocial=el=>{if(!el||!el.closest)return false;if(el.closest(NM_SOCIAL))return true;return typeof view!='undefined'&&NM_SOCIAL_VIEWS.includes(view)&&!!el.closest('#app')};
+const NM_SOCIAL='#h2hview,#h2hcard,.h2hchip,#leaguecard,#lgview,#lgcard,#suview',NM_SOCIAL_VIEWS=['squad','badges','profile','recap'];
+const nmSocial=el=>{if(!el||!el.closest)return false;if(el.closest('.nm-real'))return false;/* setup tick lists show real names (Nathe, 20 Oct) */if(el.closest(NM_SOCIAL))return true;return typeof view!='undefined'&&NM_SOCIAL_VIEWS.includes(view)&&!!el.closest('#app')};
 (function(){const A=['value','title','aria-label','placeholder','alt','content'];
  const fix=root=>{if(root.nodeType==3){if(!nmSocial(root.parentElement))return;const v=nmScrub(root.data);if(v!==root.data)root.data=v;return}if(root.nodeType!=1)return;
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n=root;

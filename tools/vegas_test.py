@@ -138,7 +138,7 @@ try:
   # ---------- One-phone Vegas: 4 shooters, offline ----------
   NET.clear();co,O=phone(b,'nathe',offline=True);n0=len(NET)
   newform(O,'Vegas 300');O.check('[name=h2hpm][value=one]');O.wait_for_timeout(100)
-  chk('one-phone: invites hidden, name boxes shown',not O.locator('.h2hops').is_visible() and O.locator('[data-h2hnm]').count()==2 and O.inner_text('#h2hgo')=='Start one-phone match')
+  chk('one-phone: invites hidden, name boxes shown',not O.locator('#h2hnew .h2hops').is_visible() and O.locator('[data-h2hnm]').count()==2 and O.inner_text('#h2hgo')=='Start one-phone match')
   O.fill('#h2hneed','4');O.dispatch_event('#h2hneed','input');O.wait_for_timeout(100)
   def names(L):
     for k,v in enumerate(L):O.fill(f'#h2hnm{k}',v)

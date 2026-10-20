@@ -104,5 +104,22 @@
   "club": "Kalamunda Governor Stirling Archers",
   "loaded": false,
   "note": "scores removed from scores.db at his request (exclude.py); not on the box; needs a new Archer's Diary pull"
+ },
+ "estiaan": {
+  "name": "Estiaan Cronje",
+  "ad": "Estiaan Cronje",
+  "member_id": 19190,
+  "club": "Gosnells Archers Inc",
+  "n": 23,
+  "sum": 11305,
+  "by_div": {
+   "Compound": 16,
+   "Barebow Recurve": 6,
+   "Longbow": 1
+  },
+  "cls": "Open",
+  "junior": false,
+  "loaded": true,
+  "window": "2025-02-16..2025-08-16 (6 months before his last recorded shoot)"
  }
 }

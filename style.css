@@ -196,3 +196,11 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .su-pad button:disabled{opacity:.35}
 .lc-chip{background:#0b1f4d;color:#fff;border:1px solid #243a6b;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px}.lc-chip.on{background:#1d4ed8;border:2px solid #ffc629;font-weight:800}
 .su-now{background:#ffc629;color:#0b1f4d;border-radius:6px;padding:1px 6px;font-weight:800;font-size:12px}.h2hpm{border:0;padding:0;margin:6px 0 0}.h2hpm legend{font-weight:600;padding:0;margin-bottom:4px}.h2hpm .h2htk{margin:4px 0}
+
+/* league table: fits a phone; scrolls sideways if it ever cannot */
+.lg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.lg-tab{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+.lg-tab th,.lg-tab td{width:auto!important;padding:5px 2px;text-align:right;white-space:nowrap}
+.lg-tab th:nth-child(2),.lg-tab td:nth-child(2){text-align:left;white-space:normal;max-width:72px;overflow-wrap:anywhere}
+.lg-tab th:nth-last-child(2),.lg-tab td:nth-last-child(2){font-weight:700}
+#lgview .lg-tab th{font-size:11px}

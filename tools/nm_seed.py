@@ -4,7 +4,7 @@
 # its own route later, which takes priority.
 import json
 from playwright.sync_api._generated import Browser,BrowserContext
-SEED={'nathe':'Bullseye','phill':'Coach P','logan':'Zap','steven':'Steady','joseph':'Joey','michael':'Mick','dana':'Dee','tahuri':'Taz','nate':'Navy'}
+SEED={'nathe':'Bullseye','phill':'Coach P','logan':'Zap','steven':'Steady','joseph':'Joey','michael':'Mick','dana':'Dee','tahuri':'Taz','nate':'Navy','estiaan':'Ezzy'}
 IDS=list(SEED)
 JS="(()=>{const S=%s;for(const id in S)if(!localStorage.getItem('scoretool.dname.'+id))localStorage.setItem('scoretool.dname.'+id,JSON.stringify({n:S[id],nt:Date.now()}))})()"%json.dumps(SEED)
 def quiet(route,req):route.fulfill(status=200,body='',headers={'access-control-allow-origin':'*'})

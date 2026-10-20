@@ -9,7 +9,7 @@
    a 1v1 format). The order of first appearance on the topic decides who is in when two join at once. */
 const H2H_BASE='https://ntfy.sh',H2H_NS='scoretool-h2h-q7m4';
 const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2hInbox=id=>H2H_NS+'-in-'+id;
-const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||ROUNDS[r].vegas)&&!ROUNDS[r].custom);
+const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||ROUNDS[r].vegas&&!ROUNDS[r].league)&&!ROUNDS[r].custom);
 const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
 const H2H_MODES={total:'Highest total',sets:'Set points (2 for a set win, 1 for a draw, first to 6)'};
 const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
@@ -41,7 +41,7 @@ function h2hStart(m){const r=m.round;S.lastRound=r;sv='entry';justDone=false;fix
  cur={id:'s'+Date.now(),date:today(),round:r,ends:[[]],pos:[[]],note:'',h2h:m.code};if(indoor3(ROUNDS[r],faceR(ROUNDS[r],0)))cur.face3=S.face3||'vert';
  S.sessions.push(cur);m.sid=cur.id;m.status='active';save();h2hPost(h2hTopic(m.code),h2hState(m));m.sent=JSON.stringify(h2hState(m).ends)+h2hMyDone(m);save();history.pushState({scoring:1},'');score();scrollTo(0,0)}
 window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicker">Head-to-head</span><h3>Shoot against another tester</h3><p class="small muted">Pick your tester name in Me first.</p></div>`;
- const L=h2hAll().slice().reverse(),inv=L.filter(m=>m.status=='invite'),act=L.filter(m=>m.status!='invite'&&m.status!='declined').slice(0,6),me=h2hMe();
+ const L=h2hAll().filter(m=>!m.lg).slice().reverse(),inv=L.filter(m=>m.status=='invite'),act=L.filter(m=>m.status!='invite'&&m.status!='declined').slice(0,6),me=h2hMe();
  return`<div class="card" id="h2hcard"><span class="kicker">Head-to-head</span><h3>Shoot an indoor round against other testers</h3><p class="small muted" style="margin:2px 0 8px">You both score on your own phones and see each other's ends as you go.</p>
  ${inv.map(m=>`<div class="list-item" data-inv="${m.code}"><b>${esc(h2hShort(m.opp))} ${m.g?'invited you to a match night':'challenged you'}</b><div class="small muted">${esc(m.round)} · ${esc(m.mode=='sets'?'Set points':'Highest total')}${m.when?' · '+esc(h2hWhen(m.when)):''}</div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-h2hacc="${m.code}">Accept and start</button><button class="btn ghost" data-h2hno="${m.code}">Not now</button></div></div>`).join('')}
  ${act.map(m=>{if(m.g){const r=h2hResult(m);return`<div class="list-item row"><span><b>Match night · ${esc(m.round)}</b><div class="small muted">${esc(h2hLine(m))}${m.when?' · '+esc(h2hWhen(m.when)):''}${r?' · <b>'+r+'</b>':m.status=='full'?' · match full':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}const c=h2hCalc(m),r=h2hResult(m,c);return`<div class="list-item row"><span><b>vs ${esc(h2hShort(m.opp))}</b><div class="small muted">${esc(m.round)} · ${esc(h2hLine(m))}${r?' · <b>'+r+'</b>':m.status=='declined-by-opp'?' · they said not now':!m.op?' · waiting for them to accept':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}).join('')}
@@ -49,7 +49,7 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
  <label for="h2hrd">Round</label><select id="h2hrd">${H2H_ROUNDS().map(r=>`<option ${r=='Indoor WA 18m'?'selected':''}>${esc(r)}</option>`).join('')}</select>
  <fieldset class="h2hpm"><legend>Scoring</legend><label class="h2htk"><input type="radio" name="h2hpm" value="multi" checked> Each archer scores on their own phone</label><label class="h2htk"><input type="radio" name="h2hpm" value="one"> Score everyone on one phone</label></fieldset>
  <div id="h2hnw"><label for="h2hneed">Shooters</label><input type="number" id="h2hneed" min="2" max="${H2H_MAX}" value="2" inputmode="numeric"></div><div id="h2hnames" hidden></div><p class="small" id="h2hnerr" role="alert" style="margin:4px 0;font-weight:600"></p>
- <fieldset class="h2hops"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me).map(t=>`<label class="h2htk"><input type="checkbox" data-h2hop="${t.id}"> ${esc(testerName(t.id))}</label>`).join('')}</fieldset>
+ <fieldset class="h2hops nm-real"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me).map(t=>`<label class="h2htk"><input type="checkbox" data-h2hop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
  <p class="small muted" id="h2hophint">You plus up to ${H2H_MAX-1} others (${H2H_MAX} archers max). Tick 1 for a head-to-head. Others can join with the code.</p>
  <div id="h2hmdw" hidden><label for="h2hmd">Scoring</label><select id="h2hmd">${Object.entries(H2H_MODES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></div>
  <div id="h2hwhw"><label for="h2hwhen">When (optional)</label><input type="datetime-local" id="h2hwhen"></div>
@@ -82,7 +82,7 @@ window.h2hView=function(code){const m=h2hGet(code);if(!m)return;if(m.g)return h2
  const b=$('#h2hback');if(b)b.onclick=()=>{cur=s;sv='entry';fix=null;score()};$('#h2hrf').onclick=()=>h2hTick(true);$('#h2hout').onclick=()=>{cur=null;sv='sheet';if(view!='score')nav('score');else score()}};
 let h2hN=0,h2hBusy=false;
 async function h2hTick(force){if(h2hBusy||(document.hidden&&!force)||!TESTER)return;h2hBusy=true;try{const me=h2hMe();let ch=false;
- if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt,d.t))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)&&(d.t||0)>=H2H_RESET){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
+ if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='lginv'&&window.lgInvite&&lgInvite(d))ch=true;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt,d.t))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)&&(d.t||0)>=H2H_RESET){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
  const live=h2hAll().filter(m=>!m.local&&m.status!='declined'&&m.status!='invite'&&m.status!='full'&&Date.now()-(m.created||0)<2*864e5&&!(m.g?(m.closed||h2hBoard(m).fin)&&(!m.sid||m.sentDone)&&m.finSeen&&!(window.suKeepPolling&&suKeepPolling(m)):(m.op&&m.op.done&&h2hMyDone(m)&&m.sentDone)));
  for(const m of live){if(m.sid){const st=h2hState(m),sig=JSON.stringify(st.ends)+st.done;if(sig!=m.sent){if(await h2hPost(h2hTopic(m.code),st)){m.sent=sig;if(st.done)m.sentDone=true;save()}}}
   const L=await h2hPoll(h2hTopic(m.code),m.since);if(L&&L.length){L.forEach(d=>{m.since=d._id;if(m.g){if(h2hApplyG(m,d))ch=true;return}if(d.code!=m.code||d.by!=m.opp)return;if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;if(d.k=='st'){m.op={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now();if(m.status=='declined-by-opp')m.status='active'}if(d.k=='no'&&!m.op)m.status='declined-by-opp';ch=true});save()}if(m.g&&(m.closed||h2hBoard(m).fin))m.finSeen=true;if(m.g&&window.suTick&&await suTick(m))ch=true}
@@ -94,8 +94,8 @@ setInterval(h2hTick,8000);setTimeout(()=>h2hTick(true),1500);document.addEventLi
 const h2hOrd=n=>n+((n%100>10&&n%100<14)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
 const h2hWhen=w=>{const d=new Date(w);return isNaN(d)?'':d.toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})};
 const h2hJoinLink=c=>location.origin+location.pathname+'#join='+c;
-const h2hEndsOf=(m,id)=>id==h2hMe()?((h2hSess(m)||{ends:[]}).ends.filter(e=>e&&e.length)):((((m.ops||{})[id]||{}).ends)||[]);
-const h2hDoneOf=(m,id)=>id==h2hMe()?h2hMyDone(m):!!((m.ops||{})[id]||{}).done;
+const h2hEndsOf=(m,id)=>id==h2hMe()&&!m.lg?((h2hSess(m)||{ends:[]}).ends.filter(e=>e&&e.length)):((((m.ops||{})[id]||{}).ends)||[]);
+const h2hDoneOf=(m,id)=>id==h2hMe()&&!m.lg?h2hMyDone(m):!!((m.ops||{})[id]||{}).done;
 /* rank by total, then 10s (incl. X), then Xs; the same on all three = shared place (shown as =2) */
 function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).slice(0,H2H_MAX),cnt=(E,f)=>E.flat().filter(f).length;
  const rows=ids.map(id=>{const E=h2hEndsOf(m,id);return{id,nm:(m.names&&m.names[id])||h2hShort(id),E,tot:E.reduce((t,e)=>t+endSum(e),0),n:E.filter(e=>e.length==R.ape).length,done:h2hDoneOf(m,id),t10:cnt(E,x=>x=='X'||x=='10'),x:cnt(E,x=>x=='X'),me:id==h2hMe()}});
@@ -106,7 +106,7 @@ function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).
  return{rows,wait,R,fin:!!m.closed||(rows.length>1&&rows.every(r=>r.done))}}
 function h2hGResult(m){const b=h2hBoard(m);if(!b.fin)return'';const L=b.rows.filter(r=>r.lead);if(!L.length)return'No scores';
  return L.length==1?(L[0].me?'▲ You win':`▲ ${esc(L[0].nm)} wins`):`▲ Tie for 1st: ${L.map(r=>esc(r.me?'You':r.nm)).join(', ')}`}
-function h2hApplyG(m,d){if(d.code!=m.code)return false;if(window.suApply&&suApply(m,d))return true;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
+function h2hApplyG(m,d){if(d.code!=m.code)return false;if(window.suApply&&suApply(m,d))return true;if(m.lg)return false;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
  if(d.k=='hd'){if(d.nm)nmLearn(d.host,d.nm,d.nt,d.t);if(Array.isArray(d.inv))m.inv=d.inv.filter(x=>typeof x=='string').slice(0,H2H_MAX-1);if(d.host&&!m.order.includes(d.host))m.order.unshift(d.host);return true}
  if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<H2H_MAX){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
  if(d.k=='cl'&&d.by==m.host&&!m.closed){m.closed=true;return true}return false}

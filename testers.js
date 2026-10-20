@@ -14,8 +14,14 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
  /* Dana: listed as 'Dana Matete' in Phil's group; Archer's Diary has him as Dana Chapman-Bureny (Gosnells, male, compound, member 32545), the only Dana at Gosnells. */
  {id:'dana',name:'Dana Chapman-Bureny',short:'Dana',bow:'Compound',data:true},
  {id:'tahuri',name:'Tahuri Burney',short:'Tahuri',ad:'Tahuri Engelen-Burney',bow:'Compound',data:true,junior:true},
+ /* Estiaan Cronje (Gosnells, AD member 19190, Open compound): added 20 Oct 2026. He stopped shooting; history = the 6 months before his last recorded shoot (16 Feb to 16 Aug 2025). */
+ {id:'estiaan',name:'Estiaan Cronje',short:'Estiaan',bow:'Compound',data:true},
  /* Nate Evans (Kalamunda, AD member 20536): confirmed tester 18 Oct 2026. His scores were removed from scores.db at his earlier request, so his profile stays empty until they are pulled again. */
- {id:'nate',name:'Nate Evans',short:'Nate',bow:'Compound',data:false}];
+ {id:'nate',name:'Nate Evans',short:'Nate',bow:'Compound',data:false},
+ /* Darnie (20 Oct 2026, Nathe): an archer who is NOT a tester. He can be scored, picked in matches, match nights, leagues and groups,
+    and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts. No surname given. */
+ {id:'darnie',name:'Darnie',short:'Darnie',bow:'',data:false,guest:true}];
+const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';
  if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else id=localStorage.getItem('scoretool.tester');

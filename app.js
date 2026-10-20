@@ -30,6 +30,8 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'WA Field 12 Unmarked + 12 Marked':{ends:24,ape:3,face:'field 20-80cm',max:432,blocks:[{dist:'Unmarked',unit:'',size:'20-80',type:'field',ends:12},{dist:'Marked',unit:'',size:'20-80',type:'field',ends:12}]},
  /* Vegas 300 (20 Oct 2026): 30 arrows, 10 ends of 3 at 20 yd on the 40 cm Vegas 3-spot, X 10-6 + M with X = 10, no 12 dot. Shoot-up: shootup.js */
  'Vegas 300':{ends:10,ape:3,face:'40cm',max:300,vegas:true,blocks:[{dist:20,unit:'yd',size:40,type:'full',ends:10}]},
+ /* Onion Shed Challenge league round: the same Vegas 300 shot at 18 m (league.js). Not offered for match nights. */
+ 'Vegas 300 (18 m)':{ends:10,ape:3,face:'40cm',max:300,vegas:true,league:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]},
  'Practice 10 ends × 3':{ends:10,ape:3,face:'any',max:300},
  'Practice 6 ends × 6':{ends:6,ape:6,face:'any',max:360}};
 const KEY=TESTER&&TESTER.id!='nathe'?'scoretool.v1.'+TESTER.id:'scoretool.v1';

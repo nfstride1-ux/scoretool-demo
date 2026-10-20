@@ -54,7 +54,7 @@ try:
   cj,J=phone(b,'joseph');cl,L=phone(b,'logan')
   challenge(J,'logan','total')
   if SHOT:J.screenshot(path=OUT+'/1-start-match.png')
-  chk('opponent list has every other tester (8), not just the squad',J.locator('[data-h2hop]').count()==8 and J.locator('#h2hmdw').is_visible())
+  chk('opponent list has every other archer (10: testers plus Darnie), not just the squad',J.locator('[data-h2hop]').count()==10 and J.locator('#h2hmdw').is_visible())
   chk('round list is the indoor rounds',J.locator('#h2hrd option').all_inner_texts()==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
   J.click('#h2hgo');J.wait_for_timeout(500)
   chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
@@ -125,13 +125,15 @@ try:
   ff=set(re.findall(r'fill="(#[0-9a-f]+)"',J.inner_html('#pface')))
   chk('field Bugs Eyes is gold and black only '+str(ff),J.inner_text('#bugface')=='Face: Bugs Eyes' and ff<={'#ffd84d','#111','#fff'})
   J.evaluate("S.sessions=S.sessions.filter(s=>s!==cur);cur=null;save()")
-  # squad: all 9 testers
+  # squad: all 10 testers (Darnie is not a tester)
   J.evaluate("nav('squad')");J.wait_for_timeout(500)
-  chk('squad has all 9 testers',J.evaluate("S.squad.members.length")==9 and '9 members' in J.inner_text('.card.dark'))
-  chk('weekly league lists 9',J.evaluate("leagueTable().length")==9)
+  chk('squad has all 10 testers',J.evaluate("S.squad.members.length")==10 and '10 members' in J.inner_text('.card.dark'))
+  chk('weekly league lists 10',J.evaluate("leagueTable().length")==10)
   if SHOT:J.screenshot(path=OUT+'/9-squad-9-members.png')
   J.evaluate("S.squad.members=S.squad.members.slice(0,3);delete S.presetTop;save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
-  chk('an old 3-member tester squad is topped up to 9 once',J.evaluate("S.squad.members.length")==9 and J.evaluate("S.squad.code")=='STRIDE-3T7')
+  chk('an old 3-member tester squad is topped up to 10 once',J.evaluate("S.squad.members.length")==10 and J.evaluate("S.squad.code")=='STRIDE-3T7')
+  J.evaluate("S.squad.members=S.squad.members.filter(m=>m.id!='m_estiaan'&&m.id!='m_steven');S.presetTop='all-testers';save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
+  mm=J.evaluate("S.squad.members.map(m=>m.id)");chk('a phone topped up before Estiaan joined gets him once; an admin removal still sticks','m_estiaan' in mm and 'm_steven' not in mm and len(mm)==9)
   # ---------- display names through the relay ----------
   REALN=['Nathaniel','Stride','Arthur','Wolfe','Snook','Choong','Chapman','Bureny','Burney','Engelen','Evans','Matete','George Philip']
   msgs=[json.loads(m['message']) for L_ in RELAY.values() for m in L_]
@@ -141,7 +143,7 @@ try:
   chk('match state carries only id, code, round, scores and display name',st and all(set(m)<= {'k','code','by','round','mode','a','b','ends','done','nm','nt','t'} for m in st))
   dirm=RELAY.get('scoretool-h2h-q7m4-names',[]);dm=[json.loads(m['message']) for m in dirm]
   chk('names directory topic: id + display name only',dm and all(set(m)<={'k','id','n','nt','t'} for m in dm) and {m['id']:m['n'] for m in dm}.get('joseph')=='Joey')
-  chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Tester 4')
+  chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Snookie')
   J.evaluate("cur=null;nav('home')");J.wait_for_timeout(300);chk("personal: Joseph's home greets him by real name","G'day Joseph" in J.text_content('#app'))
   for nm_,pg_ in (('Joseph',J),('Logan',L)):
     for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#leaguecard')):

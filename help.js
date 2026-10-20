@@ -6,10 +6,10 @@ const FORM_URL='https://formsubmit.co/nfshold@gmail.com';
 let lastTab='home';
 (function(){const top=document.querySelector('.top');if(top){const b=document.createElement('button');b.className='help-btn';b.setAttribute('aria-label','Help');b.textContent='?';b.onclick=()=>nav('help');top.appendChild(b)}
  const o=window.nav;window.nav=function(v){if(v!='help'&&v!='suggest')lastTab=v;return o(v)}})();
-function helpCards(){return`<div class="card"><span class="kicker">Help</span><h2>How to use ScoreTool</h2><p class="small">Quick picture guides for every part of the app.</p><button class="btn" onclick="nav('help')">Open Help</button> <button class="btn ghost" onclick="nav('suggest')">Send a suggestion</button></div>`}
+function helpCards(){return`<div class="card"><span class="kicker">Help</span><h2>How to use ScoreTool</h2><p class="small">Quick picture guides for every part of the app.</p><button class="btn" onclick="nav('help')">Open Help</button>${typeof TESTER!='undefined'&&TESTER&&TESTER.guest?'':' <button class="btn ghost" onclick="nav(\'suggest\')">Send a suggestion</button>'}</div>`}
 function helpView(){app.innerHTML=`<div class="card dark"><span class="kicker">Help</span><h1>How to use ScoreTool</h1><p>Tap a guide to see it full screen.</p></div>
 <div class="poster-grid">${HELP_POSTERS.map(([f,t])=>`<button class="poster" data-f="${f}"><img loading="lazy" src="help/${f}.png?v=20261017a" alt="${t}"><span>${t}</span></button>`).join('')}</div>
-<div class="card"><h2>Got an idea or found a bug?</h2><button class="btn full" onclick="nav('suggest')">Send a suggestion</button></div>`;
+${typeof TESTER!='undefined'&&TESTER&&TESTER.guest?'':`<div class="card"><h2>Got an idea or found a bug?</h2><button class="btn full" onclick="nav('suggest')">Send a suggestion</button></div>`}`;
  app.querySelectorAll('.poster').forEach(b=>b.onclick=()=>{const d=document.createElement('div');d.className='poster-full';d.innerHTML=`<img src="help/${b.dataset.f}.png?v=20261017a" alt=""><button class="btn" aria-label="Close">Close ✕</button>`;d.onclick=()=>d.remove();document.body.appendChild(d)})}
 function suggestView(){const who=TESTER?TESTER.name:'',tabs=['Home','Score','Stats','Ranks','Following','Diary','Me','Squads','Help','Other'],cur=(lastTab||'home');
  app.innerHTML=`<div class="card"><span class="kicker">Testers</span><h1>Send a suggestion</h1><p class="small muted">Goes straight to Nathe by email.</p>
