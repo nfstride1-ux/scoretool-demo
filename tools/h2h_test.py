@@ -55,7 +55,7 @@ try:
   challenge(J,'logan','total')
   if SHOT:J.screenshot(path=OUT+'/1-start-match.png')
   chk('opponent list has every other tester (8), not just the squad',J.locator('[data-h2hop]').count()==8 and J.locator('#h2hmdw').is_visible())
-  chk('round list is the indoor rounds',J.locator('#h2hrd option').all_inner_texts()==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m'])
+  chk('round list is the indoor rounds',J.locator('#h2hrd option').all_inner_texts()==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
   J.click('#h2hgo');J.wait_for_timeout(500)
   chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
   chk('invite sent to Logan\'s inbox',any('-in-logan' in t for t in RELAY))
@@ -181,7 +181,7 @@ try:
   FG="([c,E,fin])=>{const m=h2hGet(c);const s=S.sessions.find(x=>x.id==m.sid);s.ends=E.map(e=>e.slice());s.pos=E.map(()=>[]);if(fin)s.finished=true;save();cur=null;h2hView(c)}"
   def gv(pg,c):pg.evaluate(f"cur=null;h2hView('{c}')");pg.wait_for_timeout(250);return pg.inner_text('#h2hview')
   def ranks(pg):return pg.evaluate("[...document.querySelectorAll('.h2hrow')].map(d=>[d.querySelector('.rk').textContent,d.querySelector('.nm').textContent.replace(/\\s*\\(you\\)/,''),+d.querySelector('.tt').textContent,d.classList.contains('lead')])")
-  GKEYS={'k','code','by','round','mode','g','ends','done','nm','nt','t','host','when','from','to','inv'}
+  GKEYS={'k','code','by','round','mode','g','ends','done','nm','nt','t','host','when','from','to','inv','need'}
   ch_,H=phone(b,'nathe');cp_,P=phone(b,'phill');cs_,St=phone(b,'steven')
   H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300);H.click('#h2hnew summary');H.select_option('#h2hrd','Indoor WA 18m')
   H.check('[data-h2hop="phill"]');H.check('[data-h2hop="steven"]')

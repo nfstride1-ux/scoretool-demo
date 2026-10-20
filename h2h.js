@@ -9,7 +9,7 @@
    a 1v1 format). The order of first appearance on the topic decides who is in when two join at once. */
 const H2H_BASE='https://ntfy.sh',H2H_NS='scoretool-h2h-q7m4';
 const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2hInbox=id=>H2H_NS+'-in-'+id;
-const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>/^Indoor WA/.test(r)&&!ROUNDS[r].custom);
+const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||ROUNDS[r].vegas)&&!ROUNDS[r].custom);
 const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
 const H2H_MODES={total:'Highest total',sets:'Set points (2 for a set win, 1 for a draw, first to 6)'};
 const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
@@ -47,6 +47,8 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
  ${act.map(m=>{if(m.g){const r=h2hResult(m);return`<div class="list-item row"><span><b>Match night · ${esc(m.round)}</b><div class="small muted">${esc(h2hLine(m))}${m.when?' · '+esc(h2hWhen(m.when)):''}${r?' · <b>'+r+'</b>':m.status=='full'?' · match full':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}const c=h2hCalc(m),r=h2hResult(m,c);return`<div class="list-item row"><span><b>vs ${esc(h2hShort(m.opp))}</b><div class="small muted">${esc(m.round)} · ${esc(h2hLine(m))}${r?' · <b>'+r+'</b>':m.status=='declined-by-opp'?' · they said not now':!m.op?' · waiting for them to accept':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}).join('')}
  <details id="h2hnew"><summary class="btn full" style="list-style:none;text-align:center;margin-top:6px">Start a match</summary>
  <label for="h2hrd">Round</label><select id="h2hrd">${H2H_ROUNDS().map(r=>`<option ${r=='Indoor WA 18m'?'selected':''}>${esc(r)}</option>`).join('')}</select>
+ <fieldset class="h2hpm"><legend>Scoring</legend><label class="h2htk"><input type="radio" name="h2hpm" value="multi" checked> Each archer scores on their own phone</label><label class="h2htk"><input type="radio" name="h2hpm" value="one"> Score everyone on one phone</label></fieldset>
+ <div id="h2hnw"><label for="h2hneed">Shooters</label><input type="number" id="h2hneed" min="2" max="${H2H_MAX}" value="2" inputmode="numeric"></div><div id="h2hnames" hidden></div><p class="small" id="h2hnerr" role="alert" style="margin:4px 0;font-weight:600"></p>
  <fieldset class="h2hops"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me).map(t=>`<label class="h2htk"><input type="checkbox" data-h2hop="${t.id}"> ${esc(testerName(t.id))}</label>`).join('')}</fieldset>
  <p class="small muted" id="h2hophint">You plus up to ${H2H_MAX-1} others (${H2H_MAX} archers max). Tick 1 for a head-to-head. Others can join with the code.</p>
  <div id="h2hmdw" hidden><label for="h2hmd">Scoring</label><select id="h2hmd">${Object.entries(H2H_MODES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></div>
@@ -54,12 +56,15 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
  <button class="btn alt full" id="h2hgo" style="margin-top:10px">Create match night</button><p class="small muted">They see it on their Score tab and tap Accept. Only your display name, the round and your arrow scores are shared, just for this match.</p></details>
  <div class="row" style="gap:6px;margin-top:8px"><input id="h2hjc" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="Match code" aria-label="Match code" style="flex:1"><button class="btn ghost" id="h2hjgo">Join</button></div><p class="small" id="h2hjmsg" role="alert" style="margin:4px 0">${esc(window._h2hJmsg||'')}</p></div>`};
 window.h2hBind=function(){const g=$('#h2hgo'),ticked=()=>[...app.querySelectorAll('[data-h2hop]:checked')].map(x=>x.dataset.h2hop);
- const sync=()=>{const n=ticked().length;$('#h2hmdw').hidden=n!=1;$('#h2hwhw').hidden=n==1;if(n!=1)$('#h2hmd').value='total';g.textContent=n==1?'Send challenge and start scoring':'Create match night';
+ const one=()=>!!app.querySelector('[name=h2hpm][value=one]:checked'),need=()=>Math.max(2,Math.min(H2H_MAX,parseInt(($('#h2hneed')||{}).value)||2));
+ const names=()=>{const w=$('#h2hnames');if(!w)return;const old=[...w.querySelectorAll('input')].map(x=>x.value);w.innerHTML=Array.from({length:need()},(_,k)=>`<label for="h2hnm${k}">Shooter ${k+1}</label><input id="h2hnm${k}" data-h2hnm maxlength="16" autocomplete="off" value="${esc(old[k]||'')}">`).join('')};
+ const sync=()=>{const o=one(),v=!!(ROUNDS[$('#h2hrd').value]||{}).vegas,n=o?0:ticked().length;$('#h2hnames').hidden=!o;$('.h2hops').hidden=o;$('#h2hophint').hidden=o;$('#h2hnw').hidden=!(o||v);if(o)names();
+  $('#h2hmdw').hidden=n!=1;$('#h2hwhw').hidden=n==1;if(n!=1)$('#h2hmd').value='total';g.textContent=o?'Start one-phone match':n==1?'Send challenge and start scoring':'Create match night';
   app.querySelectorAll('[data-h2hop]').forEach(x=>{if(!x.checked)x.disabled=n>=H2H_MAX-1})};
- if(g){app.querySelectorAll('[data-h2hop]').forEach(x=>x.onchange=sync);sync()}
+ if(g){app.querySelectorAll('[data-h2hop],[name=h2hpm],#h2hrd').forEach(x=>x.onchange=sync);$('#h2hneed').oninput=sync;sync()}
  const jg=$('#h2hjgo');if(jg)jg.onclick=()=>h2hJoin($('#h2hjc').value);
  app.querySelectorAll('[data-h2hacc]').forEach(b=>{const m=h2hGet(b.dataset.h2hacc);if(m&&m.g)b.onclick=()=>h2hJoin(m.code)});
- if(g)g.onclick=()=>{const T=ticked(),me=h2hMe();if(!me)return;if(T.length!=1)return h2hCreateG(T);const opp=T[0];
+ if(g)g.onclick=()=>{const T=ticked(),me=h2hMe();if(!me)return;if(one())return window.lcCreate&&lcCreate([...app.querySelectorAll('[data-h2hnm]')].map(x=>x.value));if(T.length!=1)return h2hCreateG(T);const opp=T[0];
   const m={code:h2hCode(),round:$('#h2hrd').value,mode:$('#h2hmd').value,a:me,b:opp,opp,created:Date.now(),status:'active'};h2hAll().push(m);
   h2hPost(h2hInbox(opp),{k:'inv',code:m.code,round:m.round,mode:m.mode,from:me,to:opp,...h2hNm(),t:Date.now()});h2hStart(m)};
  app.querySelectorAll('[data-h2hacc]').forEach(b=>{if(!b.onclick)b.onclick=()=>{const m=h2hGet(b.dataset.h2hacc);if(m)h2hStart(m)}});
@@ -78,10 +83,10 @@ window.h2hView=function(code){const m=h2hGet(code);if(!m)return;if(m.g)return h2
 let h2hN=0,h2hBusy=false;
 async function h2hTick(force){if(h2hBusy||(document.hidden&&!force)||!TESTER)return;h2hBusy=true;try{const me=h2hMe();let ch=false;
  if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt,d.t))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)&&(d.t||0)>=H2H_RESET){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
- const live=h2hAll().filter(m=>m.status!='declined'&&m.status!='invite'&&m.status!='full'&&Date.now()-(m.created||0)<2*864e5&&!(m.g?(m.closed||h2hBoard(m).fin)&&(!m.sid||m.sentDone)&&m.finSeen:(m.op&&m.op.done&&h2hMyDone(m)&&m.sentDone)));
+ const live=h2hAll().filter(m=>!m.local&&m.status!='declined'&&m.status!='invite'&&m.status!='full'&&Date.now()-(m.created||0)<2*864e5&&!(m.g?(m.closed||h2hBoard(m).fin)&&(!m.sid||m.sentDone)&&m.finSeen&&!(window.suKeepPolling&&suKeepPolling(m)):(m.op&&m.op.done&&h2hMyDone(m)&&m.sentDone)));
  for(const m of live){if(m.sid){const st=h2hState(m),sig=JSON.stringify(st.ends)+st.done;if(sig!=m.sent){if(await h2hPost(h2hTopic(m.code),st)){m.sent=sig;if(st.done)m.sentDone=true;save()}}}
-  const L=await h2hPoll(h2hTopic(m.code),m.since);if(L&&L.length){L.forEach(d=>{m.since=d._id;if(m.g){if(h2hApplyG(m,d))ch=true;return}if(d.code!=m.code||d.by!=m.opp)return;if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;if(d.k=='st'){m.op={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now();if(m.status=='declined-by-opp')m.status='active'}if(d.k=='no'&&!m.op)m.status='declined-by-opp';ch=true});save()}if(m.g&&(m.closed||h2hBoard(m).fin))m.finSeen=true}
- if(ch){const v=$("#h2hview"),chip=$("#h2hchip"),card=$("#h2hcard");if(v)h2hView(window._h2hv);else if(chip&&cur&&cur.h2h)chip.outerHTML=h2hChip(cur);else if(card&&!cur&&view=='score'&&!($('#h2hnew')||{}).open)score()}}finally{h2hBusy=false}}
+  const L=await h2hPoll(h2hTopic(m.code),m.since);if(L&&L.length){L.forEach(d=>{m.since=d._id;if(m.g){if(h2hApplyG(m,d))ch=true;return}if(d.code!=m.code||d.by!=m.opp)return;if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;if(d.k=='st'){m.op={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now();if(m.status=='declined-by-opp')m.status='active'}if(d.k=='no'&&!m.op)m.status='declined-by-opp';ch=true});save()}if(m.g&&(m.closed||h2hBoard(m).fin))m.finSeen=true;if(m.g&&window.suTick&&await suTick(m))ch=true}
+ if(ch&&window.suRefresh&&$('#suview'))suRefresh();else if(ch){const v=$("#h2hview"),chip=$("#h2hchip"),card=$("#h2hcard");if(v)h2hView(window._h2hv);else if(chip&&cur&&cur.h2h)chip.outerHTML=h2hChip(cur);else if(card&&!cur&&view=='score'&&!($('#h2hnew')||{}).open)score()}}finally{h2hBusy=false}}
 const _h2hV=window.h2hView;window.h2hView=c=>{window._h2hv=c;_h2hV(c)};
 setInterval(h2hTick,8000);setTimeout(()=>h2hTick(true),1500);document.addEventListener('visibilitychange',()=>{if(!document.hidden)h2hTick(true)});
 
@@ -93,21 +98,21 @@ const h2hEndsOf=(m,id)=>id==h2hMe()?((h2hSess(m)||{ends:[]}).ends.filter(e=>e&&e
 const h2hDoneOf=(m,id)=>id==h2hMe()?h2hMyDone(m):!!((m.ops||{})[id]||{}).done;
 /* rank by total, then 10s (incl. X), then Xs; the same on all three = shared place (shown as =2) */
 function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).slice(0,H2H_MAX),cnt=(E,f)=>E.flat().filter(f).length;
- const rows=ids.map(id=>{const E=h2hEndsOf(m,id);return{id,nm:h2hShort(id),E,tot:E.reduce((t,e)=>t+endSum(e),0),n:E.filter(e=>e.length==R.ape).length,done:h2hDoneOf(m,id),t10:cnt(E,x=>x=='X'||x=='10'),x:cnt(E,x=>x=='X'),me:id==h2hMe()}});
- rows.sort((a,b)=>b.tot-a.tot||b.t10-a.t10||b.x-a.x||ids.indexOf(a.id)-ids.indexOf(b.id));
+ const rows=ids.map(id=>{const E=h2hEndsOf(m,id);return{id,nm:(m.names&&m.names[id])||h2hShort(id),E,tot:E.reduce((t,e)=>t+endSum(e),0),n:E.filter(e=>e.length==R.ape).length,done:h2hDoneOf(m,id),t10:cnt(E,x=>x=='X'||x=='10'),x:cnt(E,x=>x=='X'),me:id==h2hMe()}});
+ const vx=!!R.vegas;/* Vegas 300 seeding: ties split on X count */rows.sort((a,b)=>b.tot-a.tot||(vx?b.x-a.x||b.t10-a.t10:b.t10-a.t10||b.x-a.x)||ids.indexOf(a.id)-ids.indexOf(b.id));
  rows.forEach((r,i)=>{const p=rows[i-1];r.rank=p&&p.tot==r.tot&&p.t10==r.t10&&p.x==r.x?p.rank:i+1});
  rows.forEach(r=>{r.tie=rows.filter(x=>x.rank==r.rank).length>1;r.lead=r.rank==1&&r.tot>0});
  const wait=(m.inv||[]).filter(id=>!ids.includes(id)).slice(0,Math.max(0,H2H_MAX-ids.length)).map(id=>({id,nm:h2hShort(id),invited:true,me:id==h2hMe()}));
  return{rows,wait,R,fin:!!m.closed||(rows.length>1&&rows.every(r=>r.done))}}
 function h2hGResult(m){const b=h2hBoard(m);if(!b.fin)return'';const L=b.rows.filter(r=>r.lead);if(!L.length)return'No scores';
  return L.length==1?(L[0].me?'▲ You win':`▲ ${esc(L[0].nm)} wins`):`▲ Tie for 1st: ${L.map(r=>esc(r.me?'You':r.nm)).join(', ')}`}
-function h2hApplyG(m,d){if(d.code!=m.code)return false;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
+function h2hApplyG(m,d){if(d.code!=m.code)return false;if(window.suApply&&suApply(m,d))return true;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
  if(d.k=='hd'){if(d.nm)nmLearn(d.host,d.nm,d.nt,d.t);if(Array.isArray(d.inv))m.inv=d.inv.filter(x=>typeof x=='string').slice(0,H2H_MAX-1);if(d.host&&!m.order.includes(d.host))m.order.unshift(d.host);return true}
  if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<H2H_MAX){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
  if(d.k=='cl'&&d.by==m.host&&!m.closed){m.closed=true;return true}return false}
-function h2hCreateG(T){const me=h2hMe();if(T.length>H2H_MAX-1)return;const w=($('#h2hwhen')||{}).value||'';
- const m={code:h2hCode(),round:$('#h2hrd').value,mode:'total',g:1,host:me,a:me,opp:me,order:[me],ops:{},inv:T.slice(),when:w,created:Date.now(),status:'active'};h2hAll().push(m);save();
- h2hPost(h2hTopic(m.code),{k:'hd',code:m.code,round:m.round,mode:'total',host:me,when:w,inv:T.slice(),...h2hNm(),t:Date.now()}).then(()=>h2hPost(h2hTopic(m.code),h2hState(m)));
+function h2hCreateG(T){const me=h2hMe();if(T.length>H2H_MAX-1)return;const w=($('#h2hwhen')||{}).value||'',need=(ROUNDS[$('#h2hrd').value]||{}).vegas?Math.max(2,Math.min(H2H_MAX,parseInt(($('#h2hneed')||{}).value)||0)):0;
+ const m={code:h2hCode(),round:$('#h2hrd').value,mode:'total',g:1,host:me,a:me,opp:me,order:[me],ops:{},inv:T.slice(),need,when:w,created:Date.now(),status:'active'};h2hAll().push(m);save();
+ h2hPost(h2hTopic(m.code),{k:'hd',code:m.code,round:m.round,mode:'total',host:me,when:w,inv:T.slice(),need,...h2hNm(),t:Date.now()}).then(()=>h2hPost(h2hTopic(m.code),h2hState(m)));
  m.sent=JSON.stringify([])+false;T.forEach(id=>h2hPost(h2hInbox(id),{k:'inv',g:1,code:m.code,round:m.round,mode:'total',from:me,to:id,when:w,...h2hNm(),t:Date.now()}));save();h2hView(m.code)}
 /* join from an invite, the code box or a #join= link. Reads the whole match topic first so the 10-archer cap holds. */
 async function h2hJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,''),me=h2hMe(),msg=t=>{window._h2hJmsg=t;const e=$('#h2hjmsg');if(e)e.textContent=t};
@@ -117,12 +122,12 @@ async function h2hJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^
  const hd=L.find(d=>d.k=='hd'&&d.code==code);if(!hd||!ROUNDS[hd.round]){msg('No match found for that code. Check it with the host.');return false}
  const ids=[];if(hd.host)ids.push(hd.host);L.forEach(d=>{if(d.k=='st'&&d.by&&!ids.includes(d.by))ids.push(d.by)});
  if(!ids.includes(me)&&ids.length>=H2H_MAX){if(m){m.status='full';save()}msg(`This match is full (${H2H_MAX} archers).`);return false}
- if(!m){m={code};h2hAll().push(m)}Object.assign(m,{round:hd.round,mode:'total',g:1,host:hd.host,opp:hd.host,when:hd.when||'',order:[],ops:{},created:hd.t||Date.now(),status:'active'});
+ if(!m){m={code};h2hAll().push(m)}Object.assign(m,{round:hd.round,mode:'total',g:1,host:hd.host,opp:hd.host,when:hd.when||'',need:+hd.need||0,order:[],ops:{},created:hd.t||Date.now(),status:'active'});
  L.forEach(d=>{m.since=d._id;h2hApplyG(m,d)});if(!m.order.includes(me))m.order.push(me);
  await h2hPost(h2hTopic(code),h2hState(m));m.sent=JSON.stringify([])+false;save();msg('');window._h2hJmsg='';h2hView(code);return true}
 window.h2hJoin=h2hJoin;
 function h2hViewG(m){const b=h2hBoard(m),R=b.R,s=h2hSess(m),me=h2hMe(),res=h2hGResult(m),host=m.host==me,full=m.status=='full';
- const row=r=>`<details class="h2hrow${r.lead?' lead':''}" data-h2hid="${esc(r.id)}"><summary><span class="rk">${r.tie?'=':''}${r.rank}</span><span class="nm">${r.lead?'▲ ':''}${esc(r.nm)}${r.me?' <span class="small muted">(you)</span>':''}</span><b class="tt">${r.tot}</b><span class="small muted en">${r.n}/${R.ends} ends${r.done?' · done':''}</span></summary>
+ const row=r=>`<details class="h2hrow${r.lead?' lead':''}" data-h2hid="${esc(r.id)}"><summary><span class="rk">${r.tie?'=':''}${r.rank}</span><span class="nm">${r.lead?'▲ ':''}${esc(r.nm)}${r.me?' <span class="small muted">(you)</span>':''}</span><b class="tt">${r.tot}</b><span class="small muted en">${r.n}/${R.ends} ends${R.vegas||m.local?(r.done?' · finished':' · shooting'):r.done?' · done':''}</span></summary>
   <div class="small h2hends">${r.E.length?r.E.map((e,i)=>`<div>End ${i+1}: ${esc(e.join(' '))} <b>${endSum(e)}</b></div>`).join(''):'No ends yet.'}</div></details>`;
  app.innerHTML=`<div id="h2hview"><div class="card dark"><span class="kicker">Match night · Highest total</span><h1>${b.fin?'Final results':'Live leaderboard'}</h1>
  <p class="small" style="margin:0">${esc(m.round)} · ${plN(R.ends,'end','ends')} of ${R.ape}${m.when?' · '+esc(h2hWhen(m.when)):''} · ${b.rows.length} of ${H2H_MAX} archers${m.closed?' · closed by the host':''}</p>
@@ -141,7 +146,7 @@ const _h2hRender=render;render=function(){const j=/^#join=([A-Za-z0-9-]+)/.exec(
  if(j&&TESTER&&S.unlocked&&S.profile){history.replaceState(null,'',location.pathname+location.search);view='score';const r=_h2hRender();h2hJoin(j[1]);return r}return _h2hRender()};
 
 /* finished or closed matches can be removed from this phone (the scoring session stays) */
-function h2hOver(m){if(m.g)return!!(m.closed||m.status=='full'||h2hBoard(m).fin);return!!(h2hCalc(m).win||m.status=='declined-by-opp')}
+function h2hOver(m){if(m.g&&window.suKeepPolling&&suKeepPolling(m))return false;if(m.g)return!!(m.closed||m.status=='full'||h2hBoard(m).fin);return!!(h2hCalc(m).win||m.status=='declined-by-opp')}
 const h2hDelBtn=m=>h2hOver(m)?`<button class="btn ghost h2hdel" data-h2hdel="${esc(m.code)}" aria-label="Remove this match from this phone">Remove</button>`:'';
 function h2hBindDel(){app.querySelectorAll('[data-h2hdel]').forEach(b=>b.onclick=()=>{const c=b.dataset.h2hdel;if(!confirm('Remove this match from this phone? Your scores stay in your sessions.'))return;
  S.matches=h2hAll().filter(m=>m.code!=c);save();if($('#h2hview')){cur=null;sv='sheet';if(view!='score')nav('score');else score()}else score()})}
