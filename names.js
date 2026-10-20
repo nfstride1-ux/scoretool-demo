@@ -1,5 +1,6 @@
-/* Display names (20 Oct 2026). Each tester picks their own nickname; it is the ONLY name the app shows anywhere.
-   Real names in TESTERS stay internal (they match Archer's Diary data and squad/league keys) and never render; ids stay internal.
+/* Display names (20 Oct 2026). Each tester picks their own nickname. Testers are all friends, so real names show in personal
+   places (sign-in, home, Me, score sheets, coach summary, parent/coach links, suggestions); the NICKNAME is what social and
+   competitive views show (head-to-head, match night, squad, league, badges, share images) and the only name on the relay.
    A tester with no name yet shows as 'Tester 1', 'Tester 2'... (position in TESTERS), never the real name.
    Sync (no server): each phone posts {k:'nm',id,n,nt} (id + name + time chosen, nothing else) to the public ntfy.sh topic
    H2H_NS+'-names' and polls it at the head-to-head invite cadence (every 4th 8 s tick, ~32 s, while open). Names are cached
@@ -7,7 +8,7 @@
    Invites and match state also carry the sender's name (nm, nt), so a match works even if the directory poll lags.
    Uniqueness: checked against the cache when picking, then re-checked on every poll; on a clash the earlier pick keeps the
    name, the later picker is asked to choose another and shows as 'Tester N' on other phones until they do.
-   Safety net: any tester real name (and its known variants) that still reaches the page is swapped for the display name. */
+   Safety net, social views only (NM_SOCIAL): a tester real name that reaches them is swapped for the nickname. */
 const NM_DIR='scoretool.names',NM_SINCE='scoretool.names.since',nmOwnKey=id=>'scoretool.dname.'+id,nmAskKey=id=>'scoretool.dname.asked.'+id,nmPostKey=id=>'scoretool.dname.posted.'+id;
 /* Reset point (20 Oct 2026, 06:36 Perth): a browser test posted 'NatheTest' for nathe and match-night invites from it to every
    tester's inbox at 06:33-06:34. Anything older than this (relay posts, cached names, own picks, pending invites) is ignored, so
@@ -99,13 +100,15 @@ const _nmRender=render;render=function(){if(TESTER&&S.unlocked&&S.profile&&!/^#(
 const _nmMe=me;me=function(){_nmMe();const c=document.createElement('div');c.className='card';c.id='nmcard';
  c.innerHTML=`<span class="kicker">Display name</span><h2>${esc(myName())}</h2>${nmForm('nmme','Save display name')}`;app.prepend(c);
  nmBindForm('nmme',()=>me())};
-/* safety net: scrub real names from text and visible attributes as the page changes (never touches data-* attributes) */
+/* safety net, social views only: scrub real names from text and visible attributes (never touches data-* attributes) */
+const NM_SOCIAL='#h2hview,#h2hcard,.h2hchip,#leaguecard',NM_SOCIAL_VIEWS=['squad','badges','profile','recap'];
+const nmSocial=el=>{if(!el||!el.closest)return false;if(el.closest(NM_SOCIAL))return true;return typeof view!='undefined'&&NM_SOCIAL_VIEWS.includes(view)&&!!el.closest('#app')};
 (function(){const A=['value','title','aria-label','placeholder','alt','content'];
- const fix=root=>{if(root.nodeType==3){const v=nmScrub(root.data);if(v!==root.data)root.data=v;return}if(root.nodeType!=1)return;
+ const fix=root=>{if(root.nodeType==3){if(!nmSocial(root.parentElement))return;const v=nmScrub(root.data);if(v!==root.data)root.data=v;return}if(root.nodeType!=1)return;
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n=root;
-  do{if(n.nodeType==3){if(n.parentNode&&/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName))continue;const v=nmScrub(n.data);if(v!==n.data)n.data=v}
-   else for(const a of A)if(n.hasAttribute&&n.hasAttribute(a)){const o=n.getAttribute(a),v=nmScrub(o);if(v!==o){n.setAttribute(a,v);if(a=='value'&&'value'in n)n.value=v}}}while((n=w.nextNode()))};
- const go=()=>{fix(document.body);document.title=nmScrub(document.title)};
+  do{if(n.nodeType==3){if(n.parentNode&&/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName))continue;if(!nmSocial(n.parentElement))continue;const v=nmScrub(n.data);if(v!==n.data)n.data=v}
+   else if(nmSocial(n))for(const a of A)if(n.hasAttribute&&n.hasAttribute(a)){const o=n.getAttribute(a),v=nmScrub(o);if(v!==o){n.setAttribute(a,v);if(a=='value'&&'value'in n)n.value=v}}}while((n=w.nextNode()))};
+ const go=()=>fix(document.body);
  new MutationObserver(M=>{for(const m of M){if(m.type=='characterData')fix(m.target);else if(m.type=='attributes')fix(m.target);else m.addedNodes.forEach(fix)}})
   .observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:A});
  if(document.body)go();else addEventListener('DOMContentLoaded',go)})();

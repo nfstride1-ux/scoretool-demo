@@ -57,7 +57,7 @@ function renderDraft(){const P=$('#sprev');if(!draft.length){P.innerHTML='<p cla
  P.querySelectorAll('[data-f]').forEach(el=>el.oninput=el.onchange=()=>{const i=+el.closest('[data-i]').dataset.i;draft[i][el.dataset.f]=el.value;el.closest('[data-i]').querySelector('p').innerHTML=setupLine(draft[i])});
  P.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{draft.splice(+b.dataset.rm,1);renderDraft()});
  $('#ssave').onclick=()=>{S.setup.push(...draft.map(x=>({...x,date:$('#sd').value})));draft=[];save();diary()}}
-function coachText(from,to){const inR=d=>d>=from&&d<=to,L=[];L.push(`${myName()}: shooting summary ${from} to ${to}`,'');
+function coachText(from,to){const inR=d=>d>=from&&d<=to,L=[];L.push(`${S.profile}: shooting summary ${from} to ${to}`,'');
  const sh=realShoots().filter(x=>inR(x.date));L.push('SCORES');if(!sh.length)L.push('- none in this range');
  sh.forEach(x=>{const n=(S.notes||{})[x.kind=='official'?'o:'+x.date+'|'+x.round:x.s.id]||'',tg=tagsOf(n).map(t=>t[1]);L.push(`- ${x.date} ${x.round}: ${x.score}${x.incomplete?' (incomplete, not counted)':''} [${x.kind}]`);if(tg.length)L.push(`  Tags: ${tg.join(', ')}`);if(n)L.push(`  My notes: ${n}`);
   if(x.kind=='official'){const o=offRounds().find(r=>normDate(r.date)==x.date);if(o){const good=o.ends.filter(e=>!e.flag),sums=good.map(e=>endSum(e.arrows)),third=Math.max(1,Math.floor(sums.length/3)),fake={dists:good.map(e=>e.dist)};
@@ -66,7 +66,7 @@ function coachText(from,to){const inR=d=>d>=from&&d<=to,L=[];L.push(`${myName()}
  const di=mine(S.diary).filter(x=>inR(x.date));L.push('','DIARY (my own words)');if(!di.length)L.push('- none in this range');di.forEach(x=>L.push(`- ${x.date}: ${x.text}`));
  L.push('','Made with ScoreTool. These are my own records.');return L.join('\n')}
 async function sendCoach(from,to){const txt=coachText(from,to),O=$('#cout');
- if(navigator.share){try{await navigator.share({title:`${myName()} shooting summary`,text:txt});O.innerHTML='<p class="small">Shared ✓</p>';return}catch(e){if(e&&e.name=='AbortError')return}}
+ if(navigator.share){try{await navigator.share({title:`${S.profile} shooting summary`,text:txt});O.innerHTML='<p class="small">Shared ✓</p>';return}catch(e){if(e&&e.name=='AbortError')return}}
  O.innerHTML=`<textarea id="ctxt" rows="12" readonly style="margin-top:8px;font-size:13px">${esc(txt)}</textarea><div style="display:flex;gap:6px;margin-top:6px"><button class="btn ghost" id="ccopy">Copy text</button><button class="btn ghost" id="cprint">Print / save PDF</button></div>`;
  $('#ccopy').onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>$('#ccopy').textContent='Copied ✓',()=>{$('#ctxt').select();document.execCommand('copy');$('#ccopy').textContent='Copied ✓'})};
- $('#cprint').onclick=()=>{const w=open('','_blank');if(!w)return;w.document.write(`<title>${esc(myName())} summary</title><pre style="font:14px/1.5 system-ui;white-space:pre-wrap">${esc(txt)}</pre>`);w.document.close();w.focus();w.print()}}
+ $('#cprint').onclick=()=>{const w=open('','_blank');if(!w)return;w.document.write(`<title>${esc(S.profile)} summary</title><pre style="font:14px/1.5 system-ui;white-space:pre-wrap">${esc(txt)}</pre>`);w.document.close();w.focus();w.print()}}

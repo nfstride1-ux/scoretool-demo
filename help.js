@@ -11,10 +11,10 @@ function helpView(){app.innerHTML=`<div class="card dark"><span class="kicker">H
 <div class="poster-grid">${HELP_POSTERS.map(([f,t])=>`<button class="poster" data-f="${f}"><img loading="lazy" src="help/${f}.png?v=20261017a" alt="${t}"><span>${t}</span></button>`).join('')}</div>
 <div class="card"><h2>Got an idea or found a bug?</h2><button class="btn full" onclick="nav('suggest')">Send a suggestion</button></div>`;
  app.querySelectorAll('.poster').forEach(b=>b.onclick=()=>{const d=document.createElement('div');d.className='poster-full';d.innerHTML=`<img src="help/${b.dataset.f}.png?v=20261017a" alt=""><button class="btn" aria-label="Close">Close ✕</button>`;d.onclick=()=>d.remove();document.body.appendChild(d)})}
-function suggestView(){const who=TESTER?myName():'',tabs=['Home','Score','Stats','Ranks','Following','Diary','Me','Squads','Help','Other'],cur=(lastTab||'home');
+function suggestView(){const who=TESTER?TESTER.name:'',tabs=['Home','Score','Stats','Ranks','Following','Diary','Me','Squads','Help','Other'],cur=(lastTab||'home');
  app.innerHTML=`<div class="card"><span class="kicker">Testers</span><h1>Send a suggestion</h1><p class="small muted">Goes straight to Nathe by email.</p>
  <form id="sgForm" method="POST" enctype="multipart/form-data" action="${FORM_URL}" target="sgFrame">
- <input type="hidden" name="_subject" value="[ScoreTool tester] suggestion from ${who}"><input type="hidden" name="tester_id" value="${TESTER?TESTER.id:''}"><input type="hidden" name="_template" value="table"><input type="hidden" name="_captcha" value="false">
+ <input type="hidden" name="_subject" value="[ScoreTool tester] suggestion from ${who}"><input type="hidden" name="_template" value="table"><input type="hidden" name="_captcha" value="false">
  <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
  <label>Your name<input name="tester" required value="${who}"></label>
  <label>Which part of the app?<select name="page">${tabs.map(t=>`<option${t.toLowerCase()==cur||(t=='Ranks'&&cur=='rewards')||(t=='Squads'&&cur=='squad')?' selected':''}>${t}</option>`).join('')}</select></label>

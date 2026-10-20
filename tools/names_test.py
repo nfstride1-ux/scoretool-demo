@@ -1,6 +1,7 @@
 # Display names: rules (length, characters, rude words incl. l33t, real surnames, unique), first-open screen, change on Me,
 # sync through the (mocked, in-memory) ntfy names topic, clash re-check, and NO real tester name rendering anywhere
-# (every tab, the parent share link, the coach link, the coach summary text). No real ntfy traffic. Port 8783.
+# in social views (squad, league, badges, recap, head-to-head); real names in personal ones (home, parent/coach links, coach
+# summary, suggestion form). No real ntfy traffic. Port 8783.
 # Saves 390x844 screenshots to /workspace/names-shots if it exists.
 import subprocess,sys,time,os,json,re,base64
 from urllib.parse import urlparse,parse_qs,unquote
@@ -57,18 +58,19 @@ try:
   J.fill('#nmin','b1tch');J.click('#nmingo');J.wait_for_timeout(200);chk('rude name refused',J.inner_text('#nminerr').strip()!='' and J.locator('#nmscreen').count()==1)
   if SHOT:J.screenshot(path=OUT+'/2-refused.png')
   J.fill('#nmin','  Joey  ');J.click('#nmingo');J.wait_for_timeout(900)
-  chk('saved: home greets the chosen name',"G'day Joey" in J.text_content('#app'))
+  chk('home (personal) greets with the real first name',"G'day Joseph" in J.text_content('#app') and 'Joey' not in J.text_content('#app .kicker'))
   chk('name posted to the names topic: id + name only',any(json.loads(m['message']).get('n')=='Joey' and set(json.loads(m['message']))<={'k','id','n','nt','t'} for m in RELAY.get(NT,[])))
   # ---------- change on Me ----------
   J.evaluate("nav('me')");J.wait_for_timeout(500)
   chk('Me tab has the display-name card',J.locator('#nmcard').count()==1 and 'Joey' in J.text_content('#nmcard'))
   J.fill('#nmme','JoJo');J.click('#nmmego');J.wait_for_timeout(500)
+  chk('Me (personal) still shows the real name for the tester profile','Testing as Joseph Snook' in J.text_content('#app'))
   chk('Me: name changed',J.text_content('#nmcard h2')=='JoJo' and J.evaluate("myName()")=='JoJo')
   if SHOT:J.screenshot(path=OUT+'/3-me-card.png')
   # ---------- second phone: Not now, then learns names from the relay ----------
   cl,L=phone(b,'logan');chk('Logan: first-open screen too',L.locator('#nmscreen').count()==1)
   L.click('#nmlater');L.wait_for_timeout(700)
-  chk('Not now: shows as a neutral Tester N, never the real name',"G'day Tester 3" in L.text_content('#app') and not found(L.evaluate(SCAN)))
+  chk('Not now: home still greets by real first name, nickname is Tester N',"G'day Logan" in L.text_content('#app') and L.evaluate("myName()")=='Tester 3')
   sync(L);chk('Logan learned JoJo from the names topic',L.evaluate("testerName('joseph')")=='JoJo')
   chk('unpicked testers show as Tester N',L.evaluate("testerName('steven')")=='Tester 4' and L.evaluate("testerName('nathe')")=='Tester 1')
   L.evaluate("nav('me')");L.wait_for_timeout(400);L.fill('#nmme','jojo');L.click('#nmmego');L.wait_for_timeout(300)
@@ -109,17 +111,22 @@ try:
   chk("the test browser's own stale 'NatheTest' pick is not used: asked to pick again",Nn.locator('#nmscreen').count()==1 and Nn.evaluate("myName()")=='Tester 1')
   chk('the stale own pick is never posted',not any(json.loads(m['message']).get('n')=='NatheTest' and m['id']>'m%06d'%(N[0]-50) and json.loads(m['message']).get('t',0)>1792449217609 for m in RELAY.get(NT,[])))
   cn_.close()
-  # ---------- no real tester name renders anywhere ----------
-  VIEWS=['home','score','stats','rewards','follow','diary','me','squad','badges','recap','help','suggest','analytics']
+  # ---------- social views: nicknames only; personal views: real names ----------
+  SCANS=lambda sel:"(()=>{const R=[...document.querySelectorAll('%s')];return R.map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder],[alt]')].map(e=>[e.getAttribute('value'),e.getAttribute('title'),e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('alt')].join(' ')).join(' ')).join(' ')})()"%sel
+  SOCIAL=[('squad','#app'),('badges','#app'),('recap','#app'),('score','#h2hcard'),('rewards','#leaguecard')]
   for nm,pg in (('Joseph',J),('Logan',L),('Michael',M)):
     hits={}
-    for v in VIEWS:
+    for v,sel in SOCIAL:
       try:pg.evaluate(f"cur=null;nav('{v}')");pg.wait_for_timeout(450)
       except Exception as e:hits[v]=['error '+str(e)[:60]];continue
-      f=found(pg.evaluate(SCAN))
+      f=found(pg.evaluate(SCANS(sel)))
       if f:hits[v]=f
-    chk(f'{nm}: no real name on any tab',not hits)
+    chk(f'{nm}: no real name in social views (squad, league, badges, recap, head-to-head)',not hits)
     if hits:print('   ',hits)
+    pg.evaluate("cur=null;nav('rewards')");pg.wait_for_timeout(400);chk(f'{nm}: weekly league is on the Ranks tab',pg.locator('#leaguecard').count()==1)
+    for v in ('home','me','stats','diary','suggest'):
+      try:pg.evaluate(f"cur=null;nav('{v}')");pg.wait_for_timeout(300)
+      except Exception as e:errs.append(f'{nm} {v}: {e}')
     pg.evaluate("cur=null;nav('squad')");pg.wait_for_timeout(400)
     if SHOT and nm=='Logan':pg.screenshot(path=OUT+'/5-squad-logan.png')
   sq=L.evaluate("nav('squad')") or L.inner_text('#app')
@@ -127,14 +134,14 @@ try:
   # shared outside the app
   J.evaluate("nav('me')");J.wait_for_timeout(400);url=J.input_value('#sh');cl_=J.input_value('#clink')
   dec=lambda u:json.loads(base64.b64decode(unquote(u.split('#',1)[1].split('=',1)[1])).decode('utf-8'))
-  chk('parent share link carries the display name only',dec(url)['n']=='JoJo')
-  chk('coach link carries the display name only',dec(cl_)['n']=='JoJo')
-  P=cj.new_page();P.goto(url);P.wait_for_timeout(3500);chk('parent view shows no real name',not found(P.evaluate(SCAN)) and 'JoJo' in P.text_content('#app'));P.close()
-  P=cj.new_page();P.goto(cl_);P.wait_for_timeout(3500);chk('coach landing shows no real name',not found(P.evaluate(SCAN)));P.close()
+  chk('parent share link (personal) carries the real name',dec(url)['n']=='Joseph Snook')
+  chk('coach link (personal) carries the real name',dec(cl_)['n']=='Joseph Snook')
+  P=cj.new_page();P.goto(url);P.wait_for_timeout(3500);chk('parent view shows the real name',P.text_content('#app h1')=='Joseph Snook');P.close()
+  P=cj.new_page();P.goto(cl_);P.wait_for_timeout(3500);chk('coach landing shows the real name','Joseph Snook' in P.text_content('#coachlanding'));P.close()
   old=base64.b64encode(json.dumps({'n':'Joseph Snook','s':[],'b':[],'st':0}).encode()).decode()
-  P=cj.new_page();P.goto('http://localhost:8783/#share='+old);P.wait_for_timeout(3500);chk('an old share link with the real name shows the display name',not found(P.evaluate(SCAN)));P.close()
-  chk('coach summary text uses the display name',J.evaluate("coachText('2000-01-01','2100-01-01')").startswith('JoJo:'))
-  chk('suggestion form sends the display name, id hidden',J.evaluate("nav('suggest'),document.querySelector('[name=tester]').value")=='JoJo')
+  P=cj.new_page();P.goto('http://localhost:8783/#share='+old);P.wait_for_timeout(3500);chk('a share link with a real name shows it',P.text_content('#app h1')=='Joseph Snook');P.close()
+  chk('coach summary uses the real name',J.evaluate("coachText('2000-01-01','2100-01-01')").startswith('Joseph Snook:'))
+  chk('suggestion form has the real name',J.evaluate("nav('suggest'),document.querySelector('[name=tester]').value")=='Joseph Snook')
   chk('no page errors',not errs)
   if errs:print(errs[:5])
 finally:

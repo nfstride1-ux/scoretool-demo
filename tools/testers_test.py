@@ -33,7 +33,7 @@ try:
   # picker lists every tester, Nate Evans / Danie Oosthuizen left out
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();pg.goto('http://localhost:8774/');pg.wait_for_timeout(1200)
   names=pg.locator('[data-tester]').all_inner_texts()
-  chk('picker lists all 9 testers, by display name only',names==list(nm_seed.SEED.values()))
+  chk('picker lists all 9 testers by real name',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Chapman-Bureny','Tahuri Burney','Nate Evans'])
   chk('Nate Evans is a tester (confirmed 18 Oct), Danie Oosthuizen is not',"id:'nate',name:'Nate Evans'" in TJ and 'Oosthuizen' not in TJ)
   CP=open(os.path.join(ROOT,'c-7q4m9x2k','index.html'),encoding='utf-8').read()
   chk('Phil coach group page unchanged: Nate still left out there','Choong' in CP and not re.search(r'nate evans|20536',CP,re.I))

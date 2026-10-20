@@ -1,2 +1,2 @@
-/* Minimal pass-through service worker so Android can install the app and use the share target. No caching. v2026-10-20-0707-invited-remove */
+/* Minimal pass-through service worker so Android can install the app and use the share target. No caching. v2026-10-20-1431-real-names-split */
 self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',()=>{});self.addEventListener('message',e=>{if(e.data&&e.data.type=='SKIP_WAITING')self.skipWaiting()});
