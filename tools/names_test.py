@@ -110,6 +110,34 @@ try:
   Nn.evaluate("localStorage.setItem('scoretool.dname.nathe',JSON.stringify({n:'NatheTest',nt:1792449217608}));localStorage.setItem('scoretool.dname.asked.nathe','1')");Nn.reload();Nn.wait_for_timeout(2200)
   chk("the test browser's own stale 'NatheTest' pick is not used: asked to pick again",Nn.locator('#nmscreen').count()==1 and Nn.evaluate("myName()")=='Tester 1')
   chk('the stale own pick is never posted',not any(json.loads(m['message']).get('n')=='NatheTest' and m['id']>'m%06d'%(N[0]-50) and json.loads(m['message']).get('t',0)>1792449217609 for m in RELAY.get(NT,[])))
+  # regression (v2026-10-20-1556): with a stale pre-reset own name stored, 'Not now' did nothing. Real mouse click.
+  bb=Nn.locator('#nmlater').bounding_box();Nn.mouse.click(bb['x']+bb['width']/2,bb['y']+bb['height']/2);Nn.wait_for_timeout(500)
+  chk("regression: 'Not now' (real click, stale pre-reset name) lands on the app",Nn.locator('#nmscreen').count()==0 and Nn.locator('#tabs').is_visible() and Nn.evaluate("view")=='home')
+  Nn.reload();Nn.wait_for_timeout(2000);chk("regression: the skip is remembered after a reload",Nn.locator('#nmscreen').count()==0 and Nn.evaluate("myName()")=='Tester 1')
+  for v in ('score','me','home'):Nn.evaluate(f"nav('{v}')");Nn.wait_for_timeout(250)
+  chk('regression: no re-prompt on later renders; Me tab still offers the name form',Nn.locator('#nmscreen').count()==0 and (Nn.evaluate("nav('me')") or Nn.locator('#nmme').count()==1))
+  # truly fresh profile, real UI flow: unlock gate -> name screen -> real click on Not now
+  cf=b.new_context(viewport={'width':390,'height':844});cf.route('https://ntfy.sh/**',relay);F=cf.new_page();F.on('pageerror',lambda e:errs.append(f'fresh: {e}'))
+  F.goto('http://localhost:8783/?tester=nathe');F.wait_for_timeout(1500)
+  if F.locator('#unlock').count():F.click('#unlock');F.wait_for_timeout(800)
+  chk('fresh profile: name screen with Not now',F.locator('#nmscreen').count()==1 and F.locator('#nmlater').is_visible())
+  bb=F.locator('#nmlater').bounding_box();F.mouse.click(bb['x']+bb['width']/2,bb['y']+bb['height']/2);F.wait_for_timeout(500)
+  chk("fresh profile: real click on 'Not now' lands on the app",F.locator('#nmscreen').count()==0 and F.locator('#tabs').is_visible())
+  F.evaluate("nmSync()");F.wait_for_timeout(500);F.reload();F.wait_for_timeout(2000)
+  chk('fresh profile: no re-prompt after a sync and reload',F.locator('#nmscreen').count()==0)
+  chk('fresh profile: shows as Tester N in social views',F.evaluate("myName()").startswith('Tester ') and F.evaluate("h2hShort('nathe')").startswith('Tester '))
+  # one-phone Vegas works with no nickname set
+  F.evaluate("cur=null;sv='sheet';nav('score')");F.wait_for_timeout(300);F.click('#h2hnew summary');F.select_option('#h2hrd','Vegas 300');F.check('[name=h2hpm][value=one]')
+  F.fill('#h2hnm0','Robin');F.fill('#h2hnm1','Ace');F.click('#h2hgo');F.wait_for_timeout(300);code=F.evaluate("S.matches[S.matches.length-1].code")
+  for _ in range(20):
+    for k in ('X','10','9'):F.click(f'#lccard [data-lck="{k}"]')
+  F.wait_for_timeout(300)
+  chk('fresh profile, no nickname: one-phone Vegas 300 then the shoot-up opens',F.evaluate(f"!!h2hGet('{code}').su") and F.locator('#suview').count()==1)
+  F.evaluate(f"suMatchView('{code}',0)");F.wait_for_timeout(200);F.click('[data-sucall]>>nth=0');F.click('[data-suk="12"]');F.wait_for_timeout(150)
+  for k in ['X','X']+['10']*9:F.evaluate(f"suKey('{code}',0,'{k}','p2')")
+  for k in ['9']*12:F.evaluate(f"suKey('{code}',0,'{k}','p1')")
+  chk('fresh profile, no nickname: one-phone shoot-up finishes',F.evaluate(f"suDone(h2hGet('{code}'))") and F.locator('#nmscreen').count()==0)
+  cf.close()
   cn_.close()
   # ---------- social views: nicknames only; personal views: real names ----------
   SCANS=lambda sel:"(()=>{const R=[...document.querySelectorAll('%s')];return R.map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder],[alt]')].map(e=>[e.getAttribute('value'),e.getAttribute('title'),e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('alt')].join(' ')).join(' ')).join(' ')})()"%sel

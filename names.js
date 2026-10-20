@@ -82,7 +82,7 @@ async function nmSync(){if(nmBusy)return false;nmBusy=true;let ch=false;try{cons
  if(ch&&typeof render=='function'&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))&&!(typeof cur!='undefined'&&cur&&typeof view!='undefined'&&view=='score')){if(document.getElementById('h2hview')&&window._h2hv)h2hView(window._h2hv);else render()}return ch}
 window.nmSync=nmSync;
 /* my own name: save locally, put me in my own cache (so uniqueness is checked the same way everywhere), post it */
-function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setItem(nmOwnKey(id),JSON.stringify(o));localStorage.setItem(nmAskKey(id),'1');
+function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setItem(nmOwnKey(id),JSON.stringify(o));localStorage.setItem(nmAskKey(id),String(Date.now()));
  const D=nmDir();D[id]={...o,u:o.nt};nmSaveDir(D);nmPublish(true)}
 (function(){if(!TESTER)return;const o=nmOwn(TESTER.id);if(o){const D=nmDir();if(!D[TESTER.id]||D[TESTER.id].n!=o.n){D[TESTER.id]={...o,u:o.nt};nmSaveDir(D)}}})();
 /* --- screens --- */
@@ -90,12 +90,19 @@ function nmForm(id,cta){const o=TESTER&&nmOwn(TESTER.id);return`<label for="${id
  <p class="small muted" style="margin:4px 0">${NM_HINT} 2 to 16 letters, numbers, spaces, - or _. Other testers see only this name.</p><p class="small" id="${id}err" role="alert" style="margin:4px 0;font-weight:600"></p><button class="btn alt full" id="${id}go">${cta}</button>`}
 function nmBindForm(id,done){const go=$('#'+id+'go'),inp=$('#'+id);if(!go)return;const sub=()=>{const c=nmCheck(inp.value,TESTER.id);if(!c.ok){$('#'+id+'err').textContent='⚠ '+c.msg;return}nmSetMine(c.n);done()};
  go.onclick=sub;inp.onkeydown=e=>{if(e.key=='Enter')sub()}}
-function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmOwn(TESTER.id)&&(!localStorage.getItem(nmAskKey(TESTER.id))||!!nmOwnRaw(TESTER.id))}
+/* 'Not now' is remembered per tester as a timestamp (scoretool.dname.asked.<id>). A skip or own pick from before the relay reset point
+   (NM_RESET) doesn't count, so a stale test name asks once more; after that 'Not now' sticks. Bug fixed 20 Oct: a stale pre-reset own
+   name used to force the prompt forever, so 'Not now' did nothing. Also kept in memory in case storage is blocked. */
+let nmSkipMem=false;
+const nmLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const nmSkipped=id=>nmSkipMem||(+nmLS.get(nmAskKey(id))||0)>=NM_RESET;
+(function(){if(!TESTER)return;const id=TESTER.id;if(nmOwnRaw(id)&&!nmOwn(id)){nmLS.del(nmOwnKey(id));if(!nmSkipped(id))nmLS.del(nmAskKey(id))}})();
+function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
  <p class="small">${clash?'Another tester picked that name first. Choose a different one.':'This is the name other testers see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}
  ${clash?'':'<button class="btn ghost full" id="nmlater" style="margin-top:6px">Not now</button><p class="small muted">Until you pick one you show as '+esc(nmNeutral(TESTER.id))+'. You can set it any time in Me.</p>'}</div>`;
- nmBindForm('nmin',()=>{$('#tabs').hidden=false;nav('home')});const l=$('#nmlater');if(l)l.onclick=()=>{localStorage.setItem(nmAskKey(TESTER.id),'1');$('#tabs').hidden=false;nav('home')}}
+ nmBindForm('nmin',()=>{$('#tabs').hidden=false;nav('home')});const l=$('#nmlater');if(l)l.onclick=()=>{nmSkipMem=true;nmLS.set(nmAskKey(TESTER.id),String(Date.now()));$('#tabs').hidden=false;nav('home')}}
 const _nmRender=render;render=function(){if(TESTER&&S.unlocked&&S.profile&&!/^#(share|coach)=/.test(location.hash)&&nmNeedPrompt())return nmScreen();return _nmRender()};
 const _nmMe=me;me=function(){_nmMe();const c=document.createElement('div');c.className='card';c.id='nmcard';
  c.innerHTML=`<span class="kicker">Display name</span><h2>${esc(myName())}</h2>${nmForm('nmme','Save display name')}`;app.prepend(c);
