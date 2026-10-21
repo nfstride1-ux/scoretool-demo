@@ -220,3 +220,10 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .lg-seg.on{background:#1d4ed8;color:#fff;font-weight:800;box-shadow:inset 0 -3px 0 #ffd84d}
 .lg-seg:disabled{opacity:.5}
 .su-face.su-vert{width:56px;height:150px}
+/* casual shoot (casual.js) */
+.cs-segs{display:flex;flex-wrap:wrap;margin:4px 0 6px;width:fit-content;max-width:100%}
+.cs-segs .lg-seg{padding:9px 11px;font-size:14px}
+.cs-sug{margin:6px 6px 0 0}
+.cs-person{gap:6px}
+.cs-tab td:first-child,.cs-tab th:first-child{text-align:left}
+#cstype0{margin-bottom:6px}
