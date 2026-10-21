@@ -21,8 +21,8 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
  /* Darnie (20 Oct 2026, Nathe): an archer who is NOT a tester. He can be scored, picked in matches, match nights, leagues and groups,
     and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts.
     21 Oct 2026: Archer's Diary has him as Danie Oosthuizen (Whiteman Park Archers WA, AD member 8704, compound, Open and 50+), NOT
-    Danie-Louis Oosthuizen (same club). History = his 2024+ compound scoresheets (same load as Estiaan) plus two older score-only
-    entries Nathe asked for (588 Indoor QRE 2 Feb 2022, 312 WA State Clout 29 Oct 2023). Nickname stays Darnie (names.js). */
+    Danie-Louis Oosthuizen (same club). History = his full Archer's Diary compound history, 2015 to 2026 (501 scoresheets, same load
+    as Estiaan, Nathe 21 Oct 2026). His crawl stays paused in the scores database; this file is a one-off load. Nickname stays Darnie (names.js). */
  {id:'darnie',name:'Danie Oosthuizen',short:'Darnie',bow:'Compound',data:true,guest:true}];
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();

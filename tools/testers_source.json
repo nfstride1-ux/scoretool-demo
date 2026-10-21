@@ -126,16 +126,18 @@
   "name": "Danie Oosthuizen",
   "ad": "Danie Oosthuizen",
   "member_id": 8704,
-  "club": "Whiteman Park Archers",
-  "n": 29,
-  "sum": 14471,
+  "club": "Benara Bowmen Archery Club Inc",
+  "n": 501,
+  "sum": 332903,
   "by_div": {
-   "Compound": 29
+   "Compound": 501
   },
   "cls": "50+",
   "junior": false,
   "loaded": true,
-  "window": "2024+ compound scoresheets, plus 2 older score-only entries (2022-02-02 588, 2023-10-29 312); read on Nathe's PC 21 Oct 2026",
-  "guest": true
+  "window": "full Archer's Diary compound history 2015-02-07..2026-10-17 (all MyEvents entries); read on Nathe's PC 21 Oct 2026",
+  "guest": true,
+  "current_club": "Whiteman Park Archers",
+  "club_note": "club = most frequent across his full history (427 of 501 at Benara Bowmen); he shoots for Whiteman Park Archers now"
  }
 }

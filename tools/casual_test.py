@@ -1,7 +1,7 @@
 # Casual shoot (casual.js): setup choice (Just me / Casual / League), discipline faces and keys from the app's own round helpers,
 # 1 to 10 people, freeform names, host-confirmed links (under-16s by nickname), linked archer scores on own phone, host scores a
 # name-only friend, this shoot's scores only (no ranking), league table untouched, offline queue then sync, match play on/off
-# (setup and after finishing), 'Do match play?' prompt, ladder seeded from the shoot's scores, host scores the name-only friend
+# (setup and after finishing), 'Do match play?' prompt, ladder seeded from the shoot's scores (finishers only, CS_SEED_FINISHED_ONLY), host scores the name-only friend
 # in match play. Relay mocked in memory (no real ntfy traffic). TEST data only, never posted anywhere.
 import subprocess,sys,time,os,json
 from urllib.parse import urlparse,parse_qs
@@ -217,6 +217,20 @@ try:
   fill(L,c2,'logan',['9','9','9']*10);fill(L,c2,kai,['10','10','10']*10)
   chk('match play on at setup starts by itself when the shoot finishes, Kai (300) is seed 1',L.evaluate(f"csGet('{c2}').mp.seeds")==[kai,'logan'] and L.evaluate(f"!!h2hGet('{c2}M')"))
   chk('target practice keys X 10-1 M',L.evaluate(f"csKeys(csGet('{c2}'),0).join(' ')")=='X 10 9 8 7 6 5 4 3 2 1 M')
+  # ---------- seeding: only archers who finished the round (CS_SEED_FINISHED_ONLY) ----------
+  chk('seeding rule is one named setting, on',L.evaluate("typeof CS_SEED_FINISHED_ONLY!='undefined'&&CS_SEED_FINISHED_ONLY===true") and 'const CS_SEED_FINISHED_ONLY=true;' in open(os.path.join(ROOT,'casual.js'),encoding='utf-8').read())
+  c5=L.evaluate("csCreate({round:'Vegas 300',self:true,ppl:[{n:'Ann'},{n:'Ben'}]}).code");a5=L.evaluate(f"csGet('{c5}').ppl[1].id")
+  fill(L,c5,a5,['10','10','10']*10);fill(L,c5,'logan',['X','X','X']*5)
+  L.evaluate(f"csFinish('{c5}')");L.evaluate(f"csView('{c5}')");L.wait_for_timeout(200)
+  chk('host finishes early: only Ann finished, Zap (5 of 10 ends) and Ben (no arrows) not seeded',L.evaluate(f"csSeeds(csGet('{c5}'))")==[a5])
+  chk('one finished archer: no match play prompt, match play can\'t start',L.locator('#csask').count()==0 and L.evaluate(f"csMpStart('{c5}',true)")==False and not L.evaluate(f"!!h2hGet('{c5}M')"))
+  c4=L.evaluate("csCreate({round:'Vegas 300',self:true,ppl:[{n:'Ann'},{n:'Ben'}]}).code");ann=L.evaluate(f"csGet('{c4}').ppl[1].id");ben=L.evaluate(f"csGet('{c4}').ppl[2].id")
+  fill(L,c4,ann,['10','10','10']*10);fill(L,c4,ben,['9','9','9']*10);fill(L,c4,'logan',['X','X','X']*5)
+  L.evaluate(f"csFinish('{c4}')");L.evaluate(f"csView('{c4}')");L.wait_for_timeout(200)
+  chk('two finishers: prompt shows and says finished archers only',L.locator('#csask').count()==1 and 'only archers who finished every end' in L.text_content('#csask'))
+  L.click('[data-csmpt="on"]');L.wait_for_timeout(300)
+  chk('seeds = finishers only (Ann 300, Ben 270); Zap\'s unfinished 150 left out',L.evaluate(f"csGet('{c4}').mp.seeds")==[ann,ben] and L.evaluate(f"JSON.stringify(h2hGet('{c4}M').su.seeds)")==json.dumps([ann,ben],separators=(',',':')))
+  chk('match play uses the league final format (shoot-up ladder, 3 ends)',L.evaluate(f"h2hGet('{c4}M').sur.ends")==3)
   # ---------- Not me: a linked person declines -> becomes name only on the host ----------
   c3=L.evaluate("csCreate({round:'Vegas 300',self:true,ppl:[{tid:'tahuri'}]}).code");ct(L);ht(T);to_score(T)
   chk('Tahuri gets the invite',T.locator(f'[data-csno="{c3}"]').count()==1)

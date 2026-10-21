@@ -10,13 +10,16 @@
    chip and everywhere others can see. A linked person gets the shoot on their Score tab ('Join' or 'Not me') and scores their own
    arrows; a name-only friend needs no account and the host scores and edits their arrows.
    Match play (optional, on/off): the existing shoot-up ladder (shootup.js) seeded from this shoot's scores (highest score = top
-   seed, ties on 10s then Xs). It can be set at setup or switched on or off by the host after the shoot; when the shoot finishes the
+   seed, ties on 10s then Xs; only archers who finished every end, see CS_SEED_FINISHED_ONLY). It can be set at setup or switched on or off by the host after the shoot; when the shoot finishes the
    host is asked 'Do match play?'. Needs 2 or more archers. Its results stay with this shoot only.
    Sync: like the league. Each phone keeps the shoot in S.casual and posts a snapshot to its own ntfy topic when it changes, when it
    opens and every 6 hours; phones merge by newest entry per archer. Offline: everything is saved on the phone and sent later.
    Relay payload: tester ids, nicknames, the names the host typed for name-only friends (tester real names are swapped for the
    nickname), round, arrow scores. */
 const CS_MAX=10,CS_SNAP=6*36e5,CS_MP_ENDS=3;
+/* Match play seeding (Nathe, 21 Oct 2026): true = only archers who finished the round (every end shot) are seeded;
+   false = everyone who has shot at least one arrow. Flip this one value to change the rule. */
+const CS_SEED_FINISHED_ONLY=true;
 const csAll=()=>S.casual=S.casual||[],csGet=c=>csAll().find(x=>x.code==c);
 const csTopic=c=>H2H_NS+'-cs-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
 const csStd=()=>Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return R&&!R.custom&&!R.legacy&&!R.aba&&!R.league});
@@ -50,8 +53,9 @@ const csFldS=cs=>cs.disc=='field'||isFld(csFace(cs,0));
 const csRow=(cs,id)=>{const E=csEnds(cs,id),R=csR(cs),A=E.flat(),f=csFldS(cs);return{id,nm:csNm(cs,id),E,tot:csTotal(E),n:E.filter(e=>e.length==R.ape).length,arrows:A.length,t10:A.filter(a=>f?a=='6':(a=='X'||a=='10')).length,x:A.filter(a=>f?a=='5':a=='X').length,done:csDoneP(cs,id)}};
 const csAllDone=cs=>(cs.ppl||[]).length>=1&&cs.ppl.every(p=>csDoneP(cs,p.id));
 const csFin=cs=>!!(cs.fin||csAllDone(cs));
-/* match play seeds: everyone who has shot, highest score first, ties on 10s then Xs, then the order they were added */
-function csSeeds(cs){const ids=(cs.ppl||[]).map(p=>p.id);return ids.map(id=>csRow(cs,id)).filter(r=>r.arrows>0).sort((a,b)=>b.tot-a.tot||b.t10-a.t10||b.x-a.x||ids.indexOf(a.id)-ids.indexOf(b.id)).map(r=>r.id)}
+/* match play seeds: archers who finished the round (CS_SEED_FINISHED_ONLY; otherwise everyone who has shot), highest score first,
+   ties on 10s then Xs, then the order they were added */
+function csSeeds(cs){const ids=(cs.ppl||[]).map(p=>p.id);return ids.map(id=>csRow(cs,id)).filter(r=>CS_SEED_FINISHED_ONLY?r.done:r.arrows>0).sort((a,b)=>b.tot-a.tot||b.t10-a.t10||b.x-a.x||ids.indexOf(a.id)-ids.indexOf(b.id)).map(r=>r.id)}
 const csMe=()=>h2hMe();
 const csHost=cs=>cs.host==csMe();
 const csCanScore=(cs,id)=>{const me=csMe(),p=csP(cs,id);if(!p||!me)return false;if(csHost(cs))return id==me||!p.tid;return id==me&&p.tid==me};
@@ -214,7 +218,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  <p class="small muted" style="margin:4px 0 0">This shoot's scores only, in the order people were added. Not counted in any league.</p>`;
  const ends=`<details id="csends"><summary class="small">Ends for each archer</summary>${rows.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(r.nm)}</b>: ${r.E.length?r.E.map((e,i)=>`E${i+1} ${esc(e.join(' '))} (${csTotal(e)})`).join(' · '):'no ends yet'}</div>`).join('')}</details>`;
  const mpCard=!mpOk?`<div class="card" id="csmp"><p class="small muted" style="margin:0">Match play needs 2 or more archers.</p></div>`
-  :`<div class="card" id="csmp"><span class="kicker">Match play</span>${ask?`<div id="csask"><h3 style="margin:2px 0 4px">Do match play?</h3><p class="small" style="margin:0 0 8px">Seeded from this shoot's scores, highest score is seed 1. ${CS_MP_ENDS} ends of 3 a match, winner moves up.</p><div class="row" style="gap:6px;justify-content:flex-start"><button class="btn alt" id="csyes">Yes, start match play</button><button class="btn ghost" id="csnot">No thanks</button></div></div>`:''}
+  :`<div class="card" id="csmp"><span class="kicker">Match play</span>${ask?`<div id="csask"><h3 style="margin:2px 0 4px">Do match play?</h3><p class="small" style="margin:0 0 8px">Seeded from this shoot's scores, highest score is seed 1${CS_SEED_FINISHED_ONLY?' (only archers who finished every end)':''}. ${CS_MP_ENDS} ends of 3 a match, winner moves up.</p><div class="row" style="gap:6px;justify-content:flex-start"><button class="btn alt" id="csyes">Yes, start match play</button><button class="btn ghost" id="csnot">No thanks</button></div></div>`:''}
   ${host?`<div class="row" style="gap:8px;justify-content:flex-start;align-items:center;margin-top:${ask?'10':'0'}px"><span class="small">Match play</span>${csSeg('csmpt',[['off','Off'],['on','On']],cs.mp&&cs.mp.on?'on':'off')}</div>`:`<p class="small" style="margin:0">Match play is ${cs.mp&&cs.mp.on?'on':'off'}.</p>`}
   <p class="small muted" style="margin:6px 0 0">${cs.mp&&cs.mp.on?(m?'Seeded from this shoot\'s scores. Results stay with this shoot.':'Starts when the shoot is finished, seeded from the scores.'):'Off. '+(host?'Switch it on any time, even after the shoot.':'')}</p>
   ${m?`<button class="btn alt full" id="csmpopen" style="margin-top:8px">${mpDone?'Match play result':'Open match play'}</button>`:''}<p class="small" id="csmpmsg" role="alert"></p></div>`;
