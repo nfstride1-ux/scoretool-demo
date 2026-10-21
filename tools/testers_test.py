@@ -33,8 +33,8 @@ try:
   # picker lists every tester, Nate Evans / Danie Oosthuizen left out
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();pg.goto('http://localhost:8774/');pg.wait_for_timeout(1200)
   names=pg.locator('[data-tester]').all_inner_texts()
-  chk('picker lists all 10 testers by real name, then Darnie',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Chapman-Bureny','Tahuri Burney','Estiaan Cronje','Nate Evans','Darnie'])
-  chk('Nate Evans is a tester (confirmed 18 Oct), Danie Oosthuizen is not',"id:'nate',name:'Nate Evans'" in TJ and 'Oosthuizen' not in TJ)
+  chk('picker lists all 10 testers by real name, then Darnie',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Chapman-Bureny','Tahuri Burney','Estiaan Cronje','Nate Evans','Danie Oosthuizen'])
+  chk('Nate Evans is a tester (confirmed 18 Oct); Darnie = Danie Oosthuizen, a guest archer, not Danie-Louis',"id:'nate',name:'Nate Evans'" in TJ and "{id:'darnie',name:'Danie Oosthuizen',short:'Darnie',bow:'Compound',data:true,guest:true}" in TJ and 'Danie-Louis' not in json.dumps(json.load(open(os.path.join(ROOT,'data','sheets_darnie.json')))))
   CP=open(os.path.join(ROOT,'c-7q4m9x2k','index.html'),encoding='utf-8').read()
   chk('Phil coach group page unchanged: Nate still left out there','Choong' in CP and not re.search(r'nate evans|20536',CP,re.I))
   ctx.close()
@@ -87,6 +87,9 @@ try:
     ctx.close()
   ctx,pg=open_as('dana');pg.evaluate("S.profile='Dana Matete';save()");pg.reload();pg.wait_for_timeout(2500)
   chk('dana: old saved name moves to his AD name and keeps his data',pg.evaluate('S.profile')=='Dana Chapman-Bureny' and pg.evaluate('findReal(S.profile).length')==205)
+  ctx.close()
+  ctx,pg=open_as('darnie');pg.evaluate("S.profile='Darnie';save()");pg.reload();pg.wait_for_timeout(2500)
+  chk('darnie: old saved name moves to his full name, nickname stays Darnie',pg.evaluate('S.profile')=='Danie Oosthuizen' and pg.evaluate('myName()')=='Darnie' and pg.evaluate('findReal(S.profile).length')==DB['darnie']['n'])
   ctx.close()
   # everyone else unchanged by adding Nate: same counts as scores.db
   chk('Nate has no data file yet (nothing invented)',not os.path.exists(os.path.join(ROOT,'data','sheets_nate.json')) and not os.path.exists(os.path.join(ROOT,'data','ad_nate.json')))

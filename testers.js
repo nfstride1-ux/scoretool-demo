@@ -19,8 +19,11 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
  /* Nate Evans (Kalamunda, AD member 20536): confirmed tester 18 Oct 2026. His scores were removed from scores.db at his earlier request, so his profile stays empty until they are pulled again. */
  {id:'nate',name:'Nate Evans',short:'Nate',bow:'Compound',data:false},
  /* Darnie (20 Oct 2026, Nathe): an archer who is NOT a tester. He can be scored, picked in matches, match nights, leagues and groups,
-    and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts. No surname given. */
- {id:'darnie',name:'Darnie',short:'Darnie',bow:'',data:false,guest:true}];
+    and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts.
+    21 Oct 2026: Archer's Diary has him as Danie Oosthuizen (Whiteman Park Archers WA, AD member 8704, compound, Open and 50+), NOT
+    Danie-Louis Oosthuizen (same club). History = his 2024+ compound scoresheets (same load as Estiaan) plus two older score-only
+    entries Nathe asked for (588 Indoor QRE 2 Feb 2022, 312 WA State Clout 29 Oct 2023). Nickname stays Darnie (names.js). */
+ {id:'darnie',name:'Danie Oosthuizen',short:'Darnie',bow:'Compound',data:true,guest:true}];
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';

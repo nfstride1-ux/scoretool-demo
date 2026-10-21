@@ -121,5 +121,21 @@
   "junior": false,
   "loaded": true,
   "window": "2025-02-16..2025-08-16 (6 months before his last recorded shoot)"
+ },
+ "darnie": {
+  "name": "Danie Oosthuizen",
+  "ad": "Danie Oosthuizen",
+  "member_id": 8704,
+  "club": "Whiteman Park Archers",
+  "n": 29,
+  "sum": 14471,
+  "by_div": {
+   "Compound": 29
+  },
+  "cls": "50+",
+  "junior": false,
+  "loaded": true,
+  "window": "2024+ compound scoresheets, plus 2 older score-only entries (2022-02-02 588, 2023-10-29 312); read on Nathe's PC 21 Oct 2026",
+  "guest": true
  }
 }

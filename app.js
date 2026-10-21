@@ -52,6 +52,7 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
 if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
 /* a tester renamed to his Archer's Diary name (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
 if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
+if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
