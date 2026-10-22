@@ -5,6 +5,10 @@
    phone only (S.peel), nothing is posted to the relay, and nothing goes into the archer's own rounds or stats. */
 (function(){
 const PG_NAME='ABA State Titles at Peel',PG_DEF=4,PG_MAX=6;
+/* Day 2 (22 Oct 2026, Nathe via Archery Coach): the event is two days. Dates from archerycalendars.com events.json, id aba-2026-097,
+   'Branch J ABA State Titles 2026 - Peel Archers', Sat 24 to Sun 25 Oct 2026 (ABA shoot calendar, dates confirmed). Day 1 and Day 2 are
+   shown as two cards under the one event; nothing is written until a day is started, and existing days are never changed. */
+const PG_DATES=['2026-10-24','2026-10-25'],PG_WHEN='Sat 24 and Sun 25 Oct 2026, Peel Archers';
 const pgEsc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pgEv=()=>{S.peel=S.peel||{name:PG_NAME,days:[]};return S.peel};
 const pgToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -41,28 +45,40 @@ function pgDaysOf(nm){const k=pgKey(nm);return pgEv().days.filter(d=>d.a.some(x=
 /* block running total for the archer's last scored target (restarts each 10-target block, as on the paper sheet) */
 function pgRun(s){const R=pgR(),li=[...s.ends.keys()].filter(j=>s.ends[j]&&s.ends[j].length).pop();if(li==null)return null;const W=abaWhere(R,li,s),HS=abaHalves(s),bk=abaBlocks(W.H.t)[Math.floor((W.tn-1)/10)];
  return{h:W.h,tn:W.tn,from:bk.from,to:bk.to,run:HS[W.h].rn[W.tn-1],hn:abaHalfName(W.h,HS.length)}}
+/* every archer typed on any day (first spelling kept), with their score each day and the event total */
+function pgEvRows(){const E=pgEv(),M=new Map();E.days.forEach((d,q)=>d.a.forEach(x=>{const k=pgKey(x.nm);if(!M.has(k))M.set(k,{nm:x.nm,day:[]});const r=M.get(k);r.day[q]=(r.day[q]||0)+pgTot(x.s)}));
+ return[...M.values()].map(r=>({...r,tot:r.day.reduce((t,v)=>t+(v||0),0)}))}
+function pgEvTable(){const E=pgEv(),n=Math.max(2,E.days.length),R=pgEvRows();if(!R.length)return'';
+ return`<table class="pg-tab" id="pgevtab"><thead><tr><th>Archer</th>${[...Array(n)].map((_,q)=>`<th>Day ${q+1}</th>`).join('')}<th>Event</th></tr></thead><tbody>${R.map(r=>`<tr><td>${pgEsc(r.nm)}</td>${[...Array(n)].map((_,q)=>`<td>${r.day[q]!=null?r.day[q]:'-'}</td>`).join('')}<td><b>${r.tot}</b></td></tr>`).join('')}</tbody></table>`}
+/* back to where the group card lives: Clubs > Group score card (falls back to Score) */
+const pgHome=()=>nav(typeof (window.EXTRA_VIEWS||{}).lab_group=='function'?'lab_group':'score');
+const pgBack=()=>`<button class="btn ghost labback" id="pgbk" style="margin:0 0 8px">&lsaquo; Back</button>`;
 const pgDate=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
 const pgDayNo=d=>pgEv().days.indexOf(d)+1;
 /* ---------- entry card (Score tab, testers) ---------- */
-function pgCard(){if(typeof TESTER=='undefined'||!TESTER)return'';const E=pgEv(),n=E.days.length;
- return`<div class="card" id="pgcard"><span class="kicker">Group score card · ABA 3D</span><h3 style="margin:2px 0 4px">${PG_NAME}</h3><p class="small muted" style="margin:0 0 8px">Score your whole group on this phone, one card a day. Works offline; saved on this phone only.</p><button class="btn alt" id="pgopen">${n?'Open ('+n+' day'+(n>1?'s':'')+')':'Start day 1'}</button></div>`}
+function pgCard(){if(typeof TESTER=='undefined'||!TESTER)return'';const E=pgEv(),n=Math.max(2,E.days.length);
+ const day=q=>{const d=E.days[q],can=q<=E.days.length,dt=d?d.date:PG_DATES[q];
+  return`<div class="list-item row pg-dayrow" data-pgdrow="${q+1}" style="align-items:center"><span><b>Day ${q+1}</b> <span class="small muted">${pgEsc(pgDate(dt))}${d?' · '+d.a.length+' archer'+(d.a.length>1?'s':''):''}</span></span>${d?`<button class="btn ghost" style="white-space:nowrap" data-pgcday="${d.id}"${q==0?' id="pgopen"':''} aria-label="Open Day ${q+1}">Open</button>`:can?`<button class="btn alt" style="white-space:nowrap" data-pgcnew="${q+1}"${q==0?' id="pgopen"':''}>Start Day ${q+1}</button>`:`<span class="small muted">after Day ${q}</span>`}</div>`};
+ return`<div class="card" id="pgcard"><span class="kicker">Group score card · ABA 3D</span><h3 style="margin:2px 0 2px">${PG_NAME}</h3><p class="small" style="margin:0 0 4px">${PG_WHEN}</p><p class="small muted" style="margin:0 0 8px">Score your whole group on this phone, one card a day. Event total adds Day 1 and Day 2. Works offline; saved on this phone only.</p>
+ ${[...Array(n)].map((_,q)=>day(q)).join('')}${E.days.length?`<details id="pgcevt" style="margin-top:6px"><summary class="small">Event totals</summary>${pgEvTable()}</details>`:''}</div>`}
 const _pgH2H=window.h2hCard;window.h2hCard=function(){return(_pgH2H?_pgH2H.apply(this,arguments):'')+pgCard()};
 /* ---------- setup: a new day's group ---------- */
-function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.length+1,P=prev?pgDay(prev):null,k=Math.max(PG_DEF,P?P.a.length:0);
+function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.length+1,dflt=PG_DATES[n-1]||pgToday(),P=prev?pgDay(prev):null,k=Math.max(PG_DEF,P?P.a.length:0);
  const slots=window._pgSlots=window._pgSlots||k;
- app.innerHTML=`<div id="pgview" class="pg-setup"><div class="card dark"><span class="kicker">${PG_NAME}</span><h1>Day ${n}</h1><p class="small" style="margin:4px 0 0">Type the names of the archers in your group today. You score them all on this phone.</p></div>
- <div class="card"><label for="pgdate">Date</label><input id="pgdate" type="date" value="${pgToday()}">
+ app.innerHTML=`<div id="pgview" class="pg-setup">${pgBack()}<div class="card dark"><span class="kicker">${PG_NAME}</span><h1>Day ${n}</h1><p class="small" style="margin:2px 0 0">${PG_WHEN}</p><p class="small" style="margin:4px 0 0">Type the names of the archers in your group today. You score them all on this phone.</p></div>
+ <div class="card"><label for="pgdate">Date</label><input id="pgdate" type="date" value="${dflt}">
  ${[...Array(slots)].map((_,i)=>`<label for="pgn${i}">Archer ${i+1}</label><input id="pgn${i}" data-pgn="${i}" maxlength="40" autocomplete="off" autocapitalize="words" value="${P&&P.a[i]?pgEsc(P.a[i].nm):''}" placeholder="Name">`).join('')}
- <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:8px 0">${slots<PG_MAX?'<button class="btn ghost" id="pgadd">Add archer</button>':''}${slots>1?'<button class="btn ghost" id="pgrem">Remove last</button>':''}${E.days.length&&!P?`<button class="btn ghost" id="pgsame">Same group as day ${E.days.length}</button>`:''}</div>
+ <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:8px 0">${slots<PG_MAX?'<button class="btn ghost" id="pgadd">Add archer</button>':''}${slots>1?'<button class="btn ghost" id="pgrem">Remove last</button>':''}${E.days.length&&!P?`<button class="btn ghost" id="pgsame">Same group as Day ${E.days.length}</button>`:''}</div>
  <label class="small muted" id="pgclubl" style="display:flex;align-items:center;gap:6px;margin:4px 0;padding:0;font-size:12px;font-weight:400;min-height:0"><input type="checkbox" id="pgclub" style="width:16px;height:16px;min-height:0;min-width:0;margin:0;padding:0;flex:none;accent-color:#ffd84d"> Club rule: first half 1 arrow</label>
  <p class="small" id="pgerr" style="margin:6px 0 0" hidden></p>
- <button class="btn full" id="pggo" style="margin-top:8px">Start day ${n}</button>${E.days.length?'<button class="btn ghost full" id="pgback" style="margin-top:6px">Back to the days</button>':''}</div></div>`;
+ <button class="btn full" id="pggo" style="margin-top:8px">Start Day ${n}</button>${E.days.length?'<button class="btn ghost full" id="pgback" style="margin-top:6px">Back to the days</button>':''}</div></div>`;
  const keep=()=>[...document.querySelectorAll('[data-pgn]')].map(x=>x.value);
  const re=(cnt,vals)=>{window._pgSlots=cnt;pgSetup(prev);vals.forEach((v,i)=>{const x=$('#pgn'+i);if(x)x.value=v})};
  const a=$('#pgadd');if(a)a.onclick=()=>re(slots+1,keep());const r=$('#pgrem');if(r)r.onclick=()=>re(slots-1,keep().slice(0,slots-1));
  const sm=$('#pgsame');if(sm)sm.onclick=()=>{window._pgSlots=null;pgSetup(E.days[E.days.length-1].id)};
- $('#pggo').onclick=()=>{const d=pgNewDay(keep(),$('#pgclub').checked,$('#pgdate').value||pgToday());if(!d){const e=$('#pgerr');e.hidden=false;e.textContent='Type at least one name.';return}window._pgSlots=null;pgView(d.id)};
- const b=$('#pgback');if(b)b.onclick=()=>{window._pgSlots=null;pgView(E.open)}}
+ $('#pggo').onclick=()=>{const d=pgNewDay(keep(),$('#pgclub').checked,$('#pgdate').value||dflt);if(!d){const e=$('#pgerr');e.hidden=false;e.textContent='Type at least one name.';return}window._pgSlots=null;pgView(d.id)};
+ const b=$('#pgback');if(b)b.onclick=()=>{window._pgSlots=null;pgView(E.open)};
+ $('#pgbk').onclick=()=>{window._pgSlots=null;pgHome()};scrollTo(0,0)}
 /* ---------- a day's card ---------- */
 function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pgDay(id)||E.days[E.days.length-1];E.open=d.id;cur=null;window._pgv=d.id;const tb=$('#tabs');if(tb)tb.hidden=false;
  const R=pgR(),j=Math.min(d.at||0,d.a.length-1),x=d.a[j],s=x.s,i=pgIdx(s),fin=pgDone(s),W=fin?null:abaWhere(R,i,s),n=W?W.n:1,t=(s.aba||[])[i]||{m:0},k=(t.m||0)+1,HS=abaHalves(s),run=pgRun(s),started=d.a.some(y=>pgN(y.s)||(y.s.aba[0]||{}).m);
@@ -75,9 +91,9 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  <div class="aba-pad" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${ZN.map(z=>`<button class="aba-z" data-pgz="${z}" style="min-height:60px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:${z=='A'?'#ffd84d':z=='B'?'#3b82f6':'#334155'};color:${z=='A'?'#111':'#fff'}">${abaPts(n,k,z)}<div style="font-size:11px;font-weight:700">${ZL[z]} ${z}</div></button>`).join('')}<button class="aba-z" data-pgz="M" style="min-height:60px;font-size:18px;font-weight:800;border-radius:12px;border:0;background:#64748b;color:#fff">Miss<div style="font-size:11px;font-weight:700">${n>1&&k<n?'next arrow':'0'}</div></button></div>`;
  const runL=run?`<div class="list-item" id="pgrun" style="margin:6px 0 0;border-left:4px solid #ffd84d;padding-left:8px">${pgEsc(x.nm)} · ${run.hn.toLowerCase()} target ${run.tn} scored <b>${val(s.ends[[...s.ends.keys()].filter(q=>s.ends[q]&&s.ends[q].length).pop()][0])}</b> · running total ${run.from}-${run.to}: <b>${run.run}</b></div>`:'';
  const rows=d.a.map((y,q)=>{const r=pgRun(y.s);return`<tr data-pgrow="${q}"${q==j?' class="lead"':''}><td>${pgEsc(y.nm)}</td><td>${pgDone(y.s)?'Done':pgN(y.s)+'/'+R.ends}</td><td>${r?r.run:'-'}</td><td><b>${pgTot(y.s)}</b></td><td>${pgEvent(y.nm)}${pgDaysOf(y.nm)>1?'':''}</td><td><button class="btn ghost pg-sh" data-pgsh="${q}" aria-label="Score sheet for ${pgEsc(y.nm)}">Sheet</button></td></tr>`}).join('');
- const dayTabs=E.days.length>1?`<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:8px 0 0">${E.days.map((y,q)=>`<button class="zb${y.id==d.id?' on':''}" data-pgday="${y.id}">Day ${q+1}</button>`).join('')}</div>`:'';
+ const dayTabs=`<div class="row" id="pgdays" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:8px 0 0">${E.days.map((y,q)=>`<button class="zb${y.id==d.id?' on':''}" data-pgday="${y.id}" aria-pressed="${y.id==d.id}">Day ${q+1}</button>`).join('')}${E.days.length<2?`<button class="zb" id="pgday2">Start Day ${E.days.length+1}</button>`:''}</div>`;
  const sheet=view!=null&&d.a[view]?`<div class="card" id="pgsheet"><span class="kicker">Score sheet · day ${pgDayNo(d)}</span><h3 style="margin:2px 0 6px">${pgEsc(d.a[view].nm)}</h3>${abaPaper(d.a[view].s)}<div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn alt" id="pgshare">Share sheet</button><button class="btn ghost" id="pgshx">Close sheet</button></div></div>`:'';
- app.innerHTML=`<div id="pgview"><div class="card dark"><span class="kicker">${PG_NAME} · ABA Interclub 3D</span><h1 style="margin:2px 0">Day ${pgDayNo(d)}</h1><p class="small" style="margin:2px 0 0">${pgEsc(pgDate(d.date))} · ${d.a.length} archer${d.a.length>1?'s':''} on this phone · saved offline</p>${dayTabs}</div>
+ app.innerHTML=`<div id="pgview">${pgBack()}<div class="card dark"><span class="kicker">${PG_NAME} · ABA Interclub 3D</span><h1 style="margin:2px 0">Day ${pgDayNo(d)}</h1><p class="small" style="margin:2px 0 0">${pgEsc(pgDate(d.date))} · ${d.a.length} archer${d.a.length>1?'s':''} on this phone · saved offline</p>${dayTabs}</div>
  <div class="card" id="pgcardx"><span class="kicker">Scoring</span>${chips}
  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:20px" id="pgwho">${pgEsc(x.nm)}</b><div style="text-align:right"><span class="small muted">Day total</span> <b style="font-size:24px;color:var(--gold)" id="pgdaytot">${pgTot(s)}</b></div></div>
  ${!started?`<label class="small muted" id="pgclubl" style="display:flex;align-items:center;gap:6px;margin:2px 0 4px;padding:0;font-size:12px;font-weight:400;min-height:0"><input type="checkbox" id="pgclub" ${s.abaClub?'checked':''} style="width:16px;height:16px;min-height:0;min-width:0;margin:0;padding:0;flex:none;accent-color:#ffd84d"> Club rule: first half 1 arrow (whole group)</label>`:s.abaClub?'<div class="small muted" id="pgclubon" style="font-size:12px;margin:0 0 4px">Club rule on: both halves 1 arrow.</div>':''}
@@ -85,9 +101,10 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  <div class="small muted" id="pghalves" style="margin-top:6px">${HS.map((o,h)=>`${abaHalfName(h,HS.length)}: <b>${o.tot}</b> (${abaBlocks(o.H.t).map(b=>b.from+'-'+b.to+': '+o.sub[b.q]).join(', ')})`).join(' · ')}</div>
  <div class="row" style="gap:8px;justify-content:flex-start;margin-top:10px"><button class="btn ghost" id="pgundo" ${pgN(s)||t.m?'':'disabled'}>Undo</button></div></div>
  <div class="card" id="pgtotals"><span class="kicker">Totals</span><table class="pg-tab"><thead><tr><th>Archer</th><th>Targets</th><th>Block</th><th>Day</th><th>Event</th><th></th></tr></thead><tbody>${rows}</tbody></table>
- <p class="small muted" style="margin:6px 0 0">Block = running total for the 10-target block in progress. Event = all days so far (matched by name).</p></div>
+ <p class="small muted" style="margin:6px 0 0">Block = running total for the 10-target block in progress. Event = Day 1 + Day 2 (matched by name).</p></div>
+ <div class="card" id="pgevent"><span class="kicker">Event total · all days</span>${pgEvTable()}</div>
  ${sheet}
- <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><button class="btn" id="pgnew">New day</button><button class="btn ghost" id="pgdel">Delete day ${pgDayNo(d)}</button></div></div></div>`;
+ <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><button class="btn${E.days.length>=2?' ghost':''}" id="pgnew">Start Day ${E.days.length+1}</button><button class="btn ghost" id="pgdel">Delete Day ${pgDayNo(d)}</button></div></div></div>`;
  const rr=()=>pgView(d.id);
  app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;save();rr()});
  app.querySelectorAll('[data-pgz]').forEach(b=>b.onclick=()=>{pgHit(d,j,b.dataset.pgz);rr()});
@@ -98,7 +115,9 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  const sh=$('#pgshare');if(sh)sh.onclick=()=>{if(window.shareSheet)shareSheet(d.a[view].s)};
  const sx=$('#pgshx');if(sx)sx.onclick=()=>{window._pgSheet=null;rr()};
  $('#pgnew').onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
+ const d2=$('#pgday2');if(d2)d2.onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
+ $('#pgbk').onclick=()=>{window._pgSheet=null;pgHome()};
  $('#pgdel').onclick=()=>{if(!confirm(`Delete day ${pgDayNo(d)} of ${PG_NAME}? Its scores are removed from this phone.`))return;E.days=E.days.filter(y=>y!==d);E.open=E.days.length?E.days[E.days.length-1].id:null;window._pgSheet=null;save();E.days.length?pgView(E.open):pgSetup()}}
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pgopen');if(!b)return;window._pgSheet=null;window._pgSlots=null;const E=pgEv();E.days.length?pgView(E.open):pgSetup()});
-Object.assign(window,{pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pgcard [data-pgcday],#pgcard [data-pgcnew]');if(!b)return;window._pgSheet=null;window._pgSlots=null;b.dataset.pgcday?pgView(b.dataset.pgcday):pgSetup()});
+Object.assign(window,{pgEvRows,PG_DATES,pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
 })();
