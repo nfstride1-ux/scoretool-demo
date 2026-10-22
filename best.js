@@ -3,8 +3,11 @@
    best full round per round name; opening it shows the ends. Can be used as the ghost in a Ghost match. */
 (function(){
 let BS=null;
-const isMe=()=>{const p=String(S.profile||'').toLowerCase();return p.includes('stride')&&p.includes('nath')};
-fetch('data/my_scoresheets.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j;if(typeof view!='undefined'&&(view=='stats'||view=='lab_analysis')&&$('#bscard'))render()}).catch(()=>{});
+/* 22 Oct 2026: every tester with data gets the card from his own sheets (data/sheets_<id>.json; Nathe data/my_scoresheets.json).
+   Testers without sheets (data:false) don't get the card. Display only, nothing stored. */
+const SID=(typeof TESTER!='undefined'&&TESTER)?(TESTER.data?TESTER.id:null):'nathe';
+const isMe=()=>!!BS;
+if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;if(typeof view!='undefined'&&(view=='stats'||view=='lab_analysis')&&$('#bscard'))render()}).catch(()=>{});
 const BOW=d=>(String(d||'').match(/Compound|Recurve|Longbow|Barebow/i)||['Other'])[0].replace(/^./,c=>c.toUpperCase());
 const DISC=['Outdoor','Indoor','Field','Clout'],DN={Outdoor:'Outdoor target',Indoor:'Indoor',Field:'Field',Clout:'Clout'};
 /* Archer's Diary round -> ScoreTool round with the same ends (for Ghost match). 1440s shot in 3-arrow ends at 50/30 m are paired into 6s. */
@@ -12,6 +15,7 @@ const GHOST_MAP={'WA 90/1440':'WA 90/1440 (90/70/50/30m)','WA 70/1440':'WA 70/14
  'WA 70/720':'WA 720 (70m)','WA 60/720':'WA 720 (60m)','WA 50/720':'WA 720 (50m Compound)','WA 60/900 (Canberra)':'WA 60/900 (60/50/40m)',
  'Short Canberra':'Short Canberra (50/40/30m)','Junior Canberra':'Junior Canberra (40/30/20m)','WA Indoor 18m':'Indoor WA 18m','WA Indoor 25m':'Indoor WA 25m',
  'Field 24Mk Red':'WA Field 24 Marked','Field Red 24t MK':'WA Field 24 Marked','2014 AWA Field Course Red':'WA Field 24 Marked','AWA Unmarked Field Course Red':'WA Field 24 Unmarked'};
+const anRoundOf=rd=>{const a=(typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[rd])||rd;return typeof window.canonRound=='function'?window.canonRound(a):a};window.bsAnRound=anRoundOf;
 const v=a=>a=='X'?10:a=='M'||!a?0:+a;
 const fmt=d=>{const x=new Date(d+'T00:00');return isNaN(x)?d:x.getDate()+' '+x.toLocaleString('en-AU',{month:'short'})+' '+x.getFullYear()};
 function entries(){if(!BS||!isMe())return[];const L=BS.sheets.map(s=>({...s,bow:BOW(s.div),src:'ad'}));
@@ -47,6 +51,8 @@ function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);return
 function curBow(){const B=bows();if(!B.length)return null;if(window._bsBow&&B.some(b=>b[0]==window._bsBow))return window._bsBow;const L=entries().sort((a,b)=>a.d<b.d?1:-1);return L[0]?L[0].bow:B[0][0]}
 window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)return'';const G=groups(bow);if(!G.length)return'';
  let g=G.find(x=>x.rd==window._bsRd)||G[0];const pick=g.full.find(s=>s.d+'|'+s.sc==window._bsPick)||g.best,s=pick,isBest=s===g.best,B=bows();
+ /* one shared selection: the shoot shown here drives Full analysis > Analysis (same round names as Stats: SHEET_ALIAS then canonRound) */
+ window._anSel={round:anRoundOf(s.rd),rd:s.rd,d:s.d,sc:s.sc,bow:s.bow};
  const mx=maxOf(s),gm=GHOST_MAP[s.rd],ge=gm&&ghostEnds(s,gm);
  const opts=DISC.map(d=>{const L=G.filter(x=>x.disc==d);return L.length?`<optgroup label="${DN[d]}">${L.map(x=>`<option value="${esc(x.rd)}" ${x===g?'selected':''}>${esc(x.rd)} · ${x.best.sc} · ${fmt(x.best.d)}</option>`).join('')}</optgroup>`:''}).join('');
  return`<div class="card bs-card" id="bscard"><span class="kicker">🏆 My best scores <span class="real">official</span></span><h2 style="margin:2px 0 8px">Personal bests</h2>
@@ -61,14 +67,15 @@ window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)r
  ${g.full.length>1?`<h3 style="margin:12px 0 6px">My top ${Math.min(5,g.full.length)} on ${esc(s.rd)}</h3>${g.full.slice(0,5).map((x,i)=>`<button type="button" class="bs-row ${x===s?'on':''}" data-bsp="${esc(x.d+'|'+x.sc)}"><span class="bs-rk">${i+1}</span><span class="bs-rs"><b>${x.sc}</b> · ${fmt(x.d)}<br><span class="small muted">${esc(x.ev)}</span></span><span class="small muted">${x.ds.length?'ends ›':'total only'}</span></button>`).join('')}`:''}
  </div>`};
 window.bindBest=function(){const c=$('#bscard');if(!c)return;const re=()=>{const y=c.getBoundingClientRect().top;render();const n=$('#bscard');if(n)scrollBy(0,n.getBoundingClientRect().top-y)};
- const sel=$('#bssel');if(sel)sel.onchange=()=>{window._bsRd=sel.value;window._bsPick=null;re()};
- c.querySelectorAll('[data-bsb]').forEach(b=>b.onclick=()=>{window._bsBow=b.dataset.bsb;window._bsRd=null;window._bsPick=null;re()});
- c.querySelectorAll('[data-bsp]').forEach(b=>b.onclick=()=>{window._bsPick=b.dataset.bsp;re()});
+ const sel=$('#bssel');if(sel)sel.onchange=()=>{window._anFree=false;window._bsRd=sel.value;window._bsPick=null;re()};
+ c.querySelectorAll('[data-bsb]').forEach(b=>b.onclick=()=>{window._anFree=false;window._bsBow=b.dataset.bsb;window._bsRd=null;window._bsPick=null;re()});
+ c.querySelectorAll('[data-bsp]').forEach(b=>b.onclick=()=>{window._anFree=false;window._bsPick=b.dataset.bsp;re()});
  const gh=$('#bsgh');if(gh)gh.onclick=()=>{const bow=curBow(),G=groups(bow),g=G.find(x=>x.rd==window._bsRd)||G[0],s=g.full.find(x=>x.d+'|'+x.sc==window._bsPick)||g.best;
   window._bsGhost={rd:GHOST_MAP[s.rd],key:s.d+'|'+s.sc};S.lastRound=GHOST_MAP[s.rd];save();window._ghOn=true;window._ghM='off';nav('score')}};
 /* pick a specific sheet as the ghost when started from this card */
 const _og=window.offGhost;window.offGhost=function(appRound){const p=window._bsGhost;if(p&&p.rd==appRound){const s=entries().find(x=>x.d+'|'+x.sc==p.key&&GHOST_MAP[x.rd]==appRound),E=s&&ghostEnds(s,appRound);
   if(E)return{mode:'off',src:'off',ends:E.map(e=>e.reduce((t,a)=>t+v(a),0)),ar:E.map(e=>e.slice()),pos:null,date:fmt(s.d),ev:s.ev}}return _og(appRound)};
 const _st=stats;stats=function(){_st.apply(this,arguments);if($('#bscard'))return;const h=bestCard();if(!h)return;const go=$('#goan');if(go)go.insertAdjacentHTML('afterend',h);else app.insertAdjacentHTML('afterbegin',h);bindBest()};
+window.bsFollowRound=function(round){const bow=curBow(),G=bow?groups(bow):[],g=G.find(x=>anRoundOf(x.rd)==round);if(g){window._bsRd=g.rd;window._bsPick=null;window._anFree=false;return true}window._anFree=true;return false};
 window.labBestCard=bestCard;/* for Full analysis */
 })();

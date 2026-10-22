@@ -78,18 +78,37 @@ function mini(vals,labs,o={}){if(!vals.length)return'';const W=340,H=110,Pd=30,a
  if(vals.length>1)g+=`<polyline fill="none" stroke="${G}" stroke-width="2.4" points="${vals.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/>`;
  vals.forEach((v,i)=>g+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="${G}"/>`);
  return g+`<text x="${Pd}" y="${H-6}" font-size="9" fill="${M}">${labs[0]||''}</text><text x="${W-Pd}" y="${H-6}" font-size="9" text-anchor="end" fill="${M}">${labs[labs.length-1]||''}</text></svg>`}
+/* End by end bars (SVG). The lowest end is red/orange AND marked with a triangle and 'low' text, so colour isn't the only cue.
+   ref (optional) = dashed blue line: the round average at each end (or one flat average). */
+const fmtL=d=>{if(!d)return'';const[y,m,dd]=String(d).split('-');return+dd+' '+'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[m-1]+' '+y};
+const TB=()=>typeof TESTER!='undefined'&&TESTER&&TESTER.bow||'';
+const lowI=v=>v.reduce((w,x,i)=>x<v[w]?i:w,0),highI=v=>v.reduce((w,x,i)=>x>v[w]?i:w,0);
+function endBars(v,ref,o={}){if(!v.length)return'';const W=340,H=132,top=18,bot=16,ph=H-top-bot,all=v.concat(ref||[]),mx=Math.max(...all,1),mn=Math.min(...all),lo=Math.max(0,mn-(mx-mn)*0.25-1),Y=x=>top+ph-(x-lo)/(mx-lo||1)*ph,bw=W/v.length,wk=lowI(v),lab=v.length>18?3:v.length>12?2:1;
+ let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="End by end scores${ref?' with average line':''}"><defs><linearGradient id="ebg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1d4ed8"/><stop offset="1" stop-color="${G}"/></linearGradient></defs>`;
+ v.forEach((x,i)=>{const X=i*bw+bw*0.12,w=bw*0.76,y=Y(x),isW=i==wk;g+=`<rect x="${X.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(top+ph-y).toFixed(1)}" rx="2" fill="${isW?RD:'url(#ebg)'}"><title>End ${i+1}: ${f1(x)}</title></rect>`;
+  if(isW)g+=`<text x="${(X+w/2).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="10" text-anchor="middle" fill="${RD}" font-weight="700">&#9660;${bw>=22?'low':''}</text>`;
+  if(i%lab==0||isW)g+=`<text x="${(X+w/2).toFixed(1)}" y="${H-3}" font-size="9" text-anchor="middle" fill="${isW?RD:M}"${isW?' font-weight="700"':''}>${i+1}</text>`});
+ if(ref&&ref.length){const pts=ref.map((r,i)=>[(i*bw).toFixed(1)+','+Y(r).toFixed(1),((i+1)*bw).toFixed(1)+','+Y(r).toFixed(1)].join(' ')).join(' ');g+=`<polyline points="${pts}" fill="none" stroke="${B}" stroke-width="2" stroke-dasharray="5 4"/>`}
+ return g+`</svg>`+(ref?`<p class="small muted" style="margin:2px 0 0"><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="${B}" stroke-width="2" stroke-dasharray="5 4"/></svg> ${o.refLab||'your average'}</p>`:'')}
+const endLine=(v,w)=>{const wk=lowI(v),hi=highI(v);return`<p class="small" style="margin:6px 0 0">Lowest end ${w}: <b style="color:${RD}">&#9660; end ${wk+1}</b> (${f1(v[wk])}). Highest: end ${hi+1} (${f1(v[hi])}).</p>`};
 /* ---------- Analysis ---------- */
 function analysis(){const all=(window._anShoots?_anShoots():[]).filter(s=>s.ends&&s.ends.length||s.score);
  if(!all.length)return card('Analysis','',empty('Score a round or link your official results to see your analysis.'));
  /* counts match Stats & PBs: full rounds only (partials are listed separately and never compared) */
- const cnt={},pc={};all.forEach(s=>{if(s.part)pc[s.round]=(pc[s.round]||0)+1;else cnt[s.round]=(cnt[s.round]||0)+1});Object.keys(pc).forEach(r=>{if(!(r in cnt))cnt[r]=0});const rounds=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]),rd=rounds.includes(S.anRound)?S.anRound:rounds[0];
+ const cnt={},pc={};all.forEach(s=>{if(s.part)pc[s.round]=(pc[s.round]||0)+1;else cnt[s.round]=(cnt[s.round]||0)+1});Object.keys(pc).forEach(r=>{if(!(r in cnt))cnt[r]=0});const rounds=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]);let rd=rounds.includes(S.anRound)?S.anRound:rounds[0];
+ /* 22 Oct 2026: one shared selection. On Full analysis the shoot shown in Personal bests (window._anSel, best.js) picks the round here,
+    and End by end shows that shoot's own ends against the round average. Display only; nothing stored changes. */
+ const sel=!window._anFree&&window._anSel||null;let selNote='',pick=null;
+ if(sel){if(rounds.includes(sel.round)){rd=sel.round;pick=all.find(s=>s.round==rd&&s.date==sel.d&&s.score==sel.sc)||null;
+   if(!pick)selNote=`${esc(sel.rd)}, ${fmtL(sel.d)} isn't in this analysis${sel.bow&&TB()&&sel.bow.toLowerCase()!=TB().toLowerCase()?` (it was shot ${esc(sel.bow)}; Analysis uses your ${esc(TB())} rounds only)`:''}. Showing your ${esc(rd)} averages.`}
+  else selNote=`${esc(sel.rd)}, ${fmtL(sel.d)} isn't in this analysis${sel.bow&&TB()&&sel.bow.toLowerCase()!=TB().toLowerCase()?` (it was shot ${esc(sel.bow)}; Analysis uses your ${esc(TB())} rounds only)`:''}. Showing ${esc(rd)} instead.`}
  const L=all.filter(s=>s.round==rd),F=L.filter(s=>!s.part),PT=L.filter(s=>s.part),EF=F.filter(s=>s.ends&&s.ends.length);
  /* end by end and half split only use full rounds with the usual number of ends for this round (odd-length records left out) */
  const ec={};EF.forEach(s=>ec[s.ends.length]=(ec[s.ends.length]||0)+1);const nStd=+(Object.keys(ec).sort((a,b)=>ec[b]-ec[a])[0]||0),E=EF.filter(s=>s.ends.length==nStd),oddN=EF.length-E.length;
  const last=E[E.length-1],prev=E[E.length-2],lastAny=L.filter(s=>s.ends&&s.ends.length).slice(-1)[0];S.targets=S.targets||{};const tg=S.targets[rd];
  const ra=typeof roundArrows=='function'?roundArrows(rd):null,mm=String(rd).match(/\/(720|900|1080|1440)\b/),isF=/field/i.test(rd),RMAX=ra?ra*(isF?6:10):mm?+mm[1]:(nStd&&last?nStd*last.ends[0].arrows.length*(isF?6:10):null);
  let h=`<div class="card st-card st-hero"><span class="kicker" style="color:${G}">Your round, broken down</span><label for="anr" class="small muted">Round</label><select id="anr">${rounds.map(r=>`<option value="${esc(r)}" ${r==rd?'selected':''}>${esc(r)} (${cnt[r]}${pc[r]?` + ${pc[r]} partial`:''})</option>`).join('')}</select>
- <p class="small muted" style="margin:6px 0 0">${plN(F.length,'full round','full rounds')} of this round${PT.length?`, plus ${PT.length} partial (left out of comparisons, averages and potential score)`:''}. Competition and practice, ghost matches included. Numbers only, no advice.</p></div>`;
+ ${selNote?`<p class="small" style="margin:6px 0 0"><b>Note:</b> ${selNote}</p>`:''}<p class="small muted" style="margin:6px 0 0">${plN(F.length,'full round','full rounds')} of this round${PT.length?`, plus ${PT.length} partial (left out of comparisons, averages and potential score)`:''}. Competition and practice, ghost matches included. Numbers only, no advice.</p></div>`;
  // 1 half split
  if(last){const half=s=>{const n=s.ends.length,k=Math.ceil(n/2);return[s.ends.slice(0,k),s.ends.slice(k)].map(x=>x.reduce((t,e)=>t+endSum(e.arrows),0))},a=half(last),b=prev?half(prev):null,tot=a[0]+a[1],pt=b?b[0]+b[1]:null;
   const keys=keysFor(rd),rc=s=>{const n=s.ends.length,k=Math.ceil(n/2);return[s.ends.slice(0,k),s.ends.slice(k)].map(x=>keys.map(q=>x.flatMap(e=>e.arrows).filter(v=>v==q).length))},R=rc(last);
@@ -104,11 +123,18 @@ function analysis(){const all=(window._anShoots?_anShoots():[]).filter(s=>s.ends
   ${mini(sc.slice(-10),F.slice(-10).map(s=>s.date.slice(5)),{target:tg,label:'Scores with target line'})}<p class="small muted" style="margin:0">Gold = full-round totals (last 10)${tg?', '+(CB()?'blue':'green')+' dashes = your target':''}. ${sc.length<5?'Rolling averages fill in after 3 and 5 full rounds.':''}</p>`:empty('Needs a full round of this round.'));
  // 3 per-end averages
  const n=E.length?Math.max(...E.map(s=>s.ends.length)):0,ea=[...Array(n)].map((_,i)=>{const v=E.filter(s=>s.ends[i]).map(s=>endSum(s.ends[i].arrows));return{m:mean(v),best:v.length?Math.max(...v):0,n:v.length}});
- if(E.length>=2&&n){const wk=ea.reduce((w,x,i)=>x.m<ea[w].m?i:w,0),mx=Math.max(...ea.map(x=>x.m),1),mnv=Math.min(...ea.map(x=>x.m)),pot0=Math.round(ea.reduce((t,x)=>t+x.best,0)),pot=RMAX?Math.min(pot0,RMAX):pot0;
-  h+=card('End by end',`Average of each end across ${plN(E.length,'full round','full rounds')}`,`<div class="st-bars">${ea.map((x,i)=>`<div class="st-bar${i==wk?' wk':''}" title="End ${i+1}: ${f1(x.m)}"><i style="height:${Math.max(6,(x.m-mnv*0.9)/(mx-mnv*0.9||1)*100)}%"></i><span>${i+1}</span></div>`).join('')}</div>
-  <p class="small" style="margin:6px 0 0">Lowest end on average: <b style="color:${RD}">end ${wk+1}</b> (${f1(ea[wk].m)}). Highest: end ${ea.reduce((w,x,i)=>x.m>ea[w].m?i:w,0)+1} (${f1(Math.max(...ea.map(x=>x.m)))}).</p>
+ const avgF=F.length?Math.round(mean(F.map(s=>s.score))):null,endsOf=s=>s.ends.map(e=>endSum(e.arrows));
+ if(pick&&pick.ends&&pick.ends.length){const v=endsOf(pick),same=E.length&&pick.ends.length==nStd,ref=same?ea.map(x=>x.m):(E.length?Array(v.length).fill(mean(E.map(s=>s.pts/s.ends.length))):null);
+  h+=card('End by end',`${esc(rd)}, ${fmtL(pick.date)}${avgF!=null&&F.length>1?` vs your average of ${avgF}`:''}`,endBars(v,ref,{refLab:same?'your average at each end':'your average end'})+endLine(v,'this shoot')+`<div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:8px">${stat(pick.score,'this shoot',G)}${stat(avgF!=null?avgF:'–','round average')}${stat(avgF!=null?sg(pick.score-avgF):'–','vs average')}</div><p class="small muted" style="margin:4px 0 0">Bars = this shoot's ends. ${ref?`Dashed line = ${same?`your average at each end across ${plN(E.length,'full round','full rounds')}`:'your average end score on this round'}.`:'Shoot this round again to see your average line.'}${pick.part?' This shoot is partial, so it is left out of the averages.':''}</p>`)}
+ else if(pick){h+=card('End by end',`${esc(rd)}, ${fmtL(pick.date)}${avgF!=null&&F.length>1?` vs your average of ${avgF}`:''}`,empty('No end-by-end data for this shoot (total only).')+(E.length>=2&&n?`<h3 style="margin:10px 0 4px;font-size:16px">Your average at each end on ${esc(rd)}</h3>`+endBars(ea.map(x=>x.m),null)+endLine(ea.map(x=>x.m),'on average'):''))}
+ else if(E.length>=2&&n){const wk=lowI(ea.map(x=>x.m)),pot0=Math.round(ea.reduce((t,x)=>t+x.best,0)),pot=RMAX?Math.min(pot0,RMAX):pot0;
+  h+=card('End by end',`Average of each end across ${plN(E.length,'full round','full rounds')}`,endBars(ea.map(x=>x.m),null)+endLine(ea.map(x=>x.m),'on average')+`
   <div class="stats" style="grid-template-columns:1fr 1fr;margin-top:8px">${stat(pot,'potential score',G)}${stat(Math.round(ea.reduce((t,x)=>t+x.m,0)),'sum of end averages')}</div><p class="small muted" style="margin:4px 0 0">Potential score adds your best score at each end number across these shoots${RMAX?`, capped at the round maximum of ${RMAX}`:''}. Full rounds of ${nStd} ends only${PT.length||oddN?` (${[PT.length?PT.length+' partial':'',oddN?oddN+' with a different number of ends':''].filter(Boolean).join(', ')} left out)`:''}.</p>`)}
- else h+=card('End by end','',empty('Needs 2 or more shoots of this round with end-by-end scores.'));
+ else if(lastAny){const v=endsOf(lastAny);h+=card('End by end',`${esc(rd)}, ${fmtL(lastAny.date)}${lastAny.part?' (partial)':''}`,endBars(v,null)+endLine(v,'this shoot')+`<p class="small muted" style="margin:4px 0 0">Only one shoot of ${esc(rd)} has end-by-end scores, so this shows that shoot. Averages need 2 or more.</p>`)}
+ else{/* fall back to the busiest round that has 2+ full shoots with ends, with a note, so the graph is never just missing */
+  const fb=rounds.map(r=>{const X=all.filter(s=>s.round==r&&!s.part&&s.ends&&s.ends.length),c={};X.forEach(s=>c[s.ends.length]=(c[s.ends.length]||0)+1);const k=+(Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||0);return{r,X:X.filter(s=>s.ends.length==k),k}}).find(x=>x.X.length>=2);
+  if(fb){const m=[...Array(fb.k)].map((_,i)=>mean(fb.X.map(s=>endSum(s.ends[i].arrows))));h+=card('End by end',`${esc(fb.r)}: average of each end across ${plN(fb.X.length,'full round','full rounds')}`,`<p class="small" style="margin:0 0 6px"><b>Note:</b> ${esc(rd)} has no end-by-end scores yet, so this shows ${esc(fb.r)}, your busiest round with them.</p>`+endBars(m,null)+endLine(m,'on average'))}
+  else h+=card('End by end','',empty('Needs a shoot with end-by-end scores.'))}
  // 4 target + ways to reach it
  const R0=ROUNDS[rd],nE=n||(R0&&R0.ends)||0,mxs=(R0&&R0.max)||null;
  let tb=`<div class="row" style="gap:8px;align-items:flex-end"><label style="flex:1">My target for this round<input id="antg" type="number" inputmode="numeric" min="1" ${mxs?`max="${mxs}"`:''} value="${tg||''}" placeholder="e.g. ${sc.length?Math.max(...sc)+5:600}"></label><button class="btn ghost" id="antgs" style="min-height:44px">Set</button></div>`;
@@ -120,7 +146,7 @@ function analysis(){const all=(window._anShoots?_anShoots():[]).filter(s=>s.ends
  const gs=done().filter(s=>s.round==rd&&plotted(s).length>=3).map(s=>({d:s.date,v:Math.round(groupStats(plotted(s)).r*faceMM(s).mm)})).slice(-10);
  h+=card('Group size','Average distance of arrows from the group centre',gs.length>1?mini(gs.map(x=>x.v),gs.map(x=>x.d.slice(5)),{fmt:v=>v+'mm',label:'Group size trend'})+`<p class="small muted" style="margin:0">Lower = tighter group. ${gs.length} plotted rounds of ${esc(rd)}.</p>`:empty('Plot arrows in 2 or more practice rounds of this round to see your group size trend.'));
  return h}
-function bindAnalysis(){const r=$('#anr');if(r)r.onchange=()=>{S.anRound=r.value.replace(/ \(\d+\)$/,'');save();rerender()};
+function bindAnalysis(){const r=$('#anr');if(r)r.onchange=()=>{S.anRound=r.value.replace(/ \(\d+\)$/,'');save();/* shared selection: the PB card follows this round when it has one */if(window.bsFollowRound)bsFollowRound(S.anRound);else window._anFree=true;rerender()};
  const b=$('#antgs');if(b)b.onclick=()=>{const v=parseInt($('#antg').value);const rd=$('#anr').value.replace(/ \(\d+\)$/,'');S.targets=S.targets||{};if(v>0)S.targets[rd]=v;else delete S.targets[rd];save();rerender()};
  const c=$('#gpch');if(c)c.onclick=ev=>{ev.preventDefault();S.hand=hand()=='L'?'R':'L';save();rerender()}}
 function rerender(){const y=scrollY;render();scrollTo(0,y)}/* render() redraws whichever screen is open (Stats or Full analysis) */

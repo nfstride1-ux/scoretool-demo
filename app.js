@@ -104,8 +104,13 @@ async function __loadReal(){await loadArrows();
  }catch(e){csvState='missing'}}
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
 const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
-const aliasKey=(O,n)=>{if(O[n])return n;const[f,...r]=String(n||'').toLowerCase().split(' '),l=r.pop()||'';return l?Object.keys(O).find(x=>{x=x.toLowerCase();return x.includes(l)&&x.includes(f.slice(0,4))}):undefined};const offFor=n=>OFF[aliasKey(OFF,n)]||[];
-const findReal=n=>{n=String(n||'');if(!n.split(' ')[1])return REAL[n]||[];/* one-word names have no surname to match */const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
+/* 22 Oct 2026: a name that doesn't match is retried with the tester's other names (names.js NM_VARIANTS, e.g. 'Joe Snook' -> Joseph Snook) */
+const nmAlts=n=>{const l=String(n||'').trim().toLowerCase();if(!l||typeof TESTERS=='undefined')return[];const V=typeof NM_VARIANTS!='undefined'?NM_VARIANTS:{};
+ const all=t=>[t.name,t.ad,...(V[t.id]||[])].filter(Boolean),t=TESTERS.find(t=>all(t).some(x=>x.toLowerCase()==l));return t?all(t).filter(x=>x.toLowerCase()!=l):[]};
+const aliasKey=(O,n)=>{const k=aliasKey1(O,n);if(k)return k;for(const a of nmAlts(n)){const x=aliasKey1(O,a);if(x)return x}return undefined};
+const aliasKey1=(O,n)=>{if(O[n])return n;const[f,...r]=String(n||'').toLowerCase().split(' '),l=r.pop()||'';return l?Object.keys(O).find(x=>{x=x.toLowerCase();return x.includes(l)&&x.includes(f.slice(0,4))}):undefined};const offFor=n=>OFF[aliasKey(OFF,n)]||[];
+const findReal=n=>{const r=findReal1(n);if(r.length)return r;for(const a of nmAlts(n)){const x=findReal1(a);if(x.length)return x}return r};
+const findReal1=n=>{n=String(n||'');if(!n.split(' ')[1])return REAL[n]||[];/* one-word names have no surname to match */const k=Object.keys(REAL).find(x=>x.toLowerCase().includes(n.split(' ')[1].toLowerCase())&&x.toLowerCase().includes(n.split(' ')[0].slice(0,4).toLowerCase()));return k?REAL[k]:[]};
 
 
 

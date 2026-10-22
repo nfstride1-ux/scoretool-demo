@@ -286,7 +286,7 @@ function rulesFind(){
 
 /* ---------- Full analysis: everything from the testers' Stats in one place ---------- */
 LABSEC.lab_analysis='myarch';
-E.lab_analysis=function(){let bc='',an='';try{bc=window.labBestCard&&labBestCard()||''}catch(e){}try{an=window.labAnalysisHTML?labAnalysisHTML():''}catch(e){an='<div class="card"><p class="small">The analysis could not be built from this data.</p></div>'}
+E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBestCard&&labBestCard()||''}catch(e){}try{an=window.labAnalysisHTML?labAnalysisHTML():''}catch(e){an='<div class="card"><p class="small">The analysis could not be built from this data.</p></div>'}
  app.innerHTML=`<div class="card"><span class="kicker">Everything in one place</span><p class="small" style="margin:0 0 10px">Built from your Archer's Diary results and rounds scored here. Real results only.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">📈 Stats &amp; PBs, with More detail</button><button class="btn ghost" data-go="analytics">📊 Analytics: trends across shoots</button></div></div>${bc}${an}`;
  bar('Full analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
 
