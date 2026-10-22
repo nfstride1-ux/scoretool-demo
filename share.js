@@ -10,7 +10,7 @@ function chip(a,fld){const v=val(a);if(a=='M')return['#475569',WHT];if(fld)retur
 function txt(g,t,x,y,o={}){g.font=`${o.w||400} ${o.s||28}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif`;g.fillStyle=o.c||INK;g.textAlign=o.a||'left';g.textBaseline='middle';g.fillText(String(t),x,y)}
 function box(g,x,y,w,h,f,st){if(f){g.fillStyle=f;g.fillRect(x,y,w,h)}if(st){g.strokeStyle=st;g.lineWidth=2;g.strokeRect(x+1,y+1,w-2,h-2)}}
 const W=1080,PAD=40;
-function head(g,s,y,band,bandInk,sub){box(g,0,0,W,y+0,BG);txt(g,'🎯 ScoreTool',PAD,46,{s:30,w:800,c:GOLD});txt(g,'Score sheet',W-PAD,46,{s:26,c:MUT,a:'right'});
+function head(g,s,y,band,bandInk,sub){box(g,0,0,W,y+0,BG);txt(g,'ScoreTool',PAD,46,{s:30,w:800,c:GOLD});txt(g,'Score sheet',W-PAD,46,{s:26,c:MUT,a:'right'});
  box(g,PAD,84,W-2*PAD,64,band);txt(g,s.round.length>58?s.round.slice(0,56)+'…':s.round,PAD+20,116,{s:28,w:800,c:bandInk});
  txt(g,myName(),PAD,184,{s:34,w:800});txt(g,s.date||'',W-PAD,184,{s:28,c:MUT,a:'right'});if(sub)txt(g,sub,PAD,226,{s:24,c:MUT});return sub?256:216}
 /* ABA: 4 columns like the paper sheet, running total restarting each 10-target block */

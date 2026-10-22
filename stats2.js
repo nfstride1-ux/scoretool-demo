@@ -1,3 +1,8 @@
+/* 'Field Red' is the round name some events used on Archer's Diary; it is kept apart from 'WA Field 24Mk Red' (stored data unchanged),
+   but listed right after it and labelled so the two aren't mistaken for duplicates. */
+const FRD=rs=>{if(!rs.includes('Field Red')||!rs.includes('WA Field 24Mk Red'))return rs;const o=rs.filter(r=>r!='Field Red');o.splice(o.indexOf('WA Field 24Mk Red')+1,0,'Field Red');return o};
+const FRL=(r,rs)=>r=='Field Red'&&rs.includes('WA Field 24Mk Red')?"Field Red \u00b7 event's own round name":r;
+const FRN=(r,rs)=>(r=='Field Red'||r=='WA Field 24Mk Red')&&rs.includes('Field Red')&&rs.includes('WA Field 24Mk Red')?`<p class="small muted" style="margin:6px 0 0">${r=='Field Red'?"These results were entered under the event's own round name, Field Red, so they're kept separate from WA Field 24Mk Red. The results don't say whether every target was marked.":'Some field results were entered under the event\'s own round name, Field Red. They are listed separately, just below this round.'}</p>`:'';
 /* Stats, rebuilt (Oct 2026): ONE round picker + ONE shoot picker at the top drive every card, from ONE list of shoots
    (official scoresheets + app sessions). Up front: Last shoot, How you're going, PB, Score history. Everything else sits behind
    'More detail'. Incomplete rounds (official sheets marked not finished, or app sessions with fewer ends than the round)
@@ -73,10 +78,10 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  if(!ST.r||!rc[ST.r])ST.r=rounds[0];const P=poolOf(L,ST.r),newest=P[P.length-1];let x=P.find(s=>s.id==ST.id);if(!x){x=newest;ST.id=x.id}
  const n=P.length,full=P.filter(s=>!s.inc),R=ROUNDS[Object.keys(ROUNDS).find(k=>canon(k)==ST.r)]||{};
  let h=`<div class="card dark" id="statpick"><span class="kicker">Stats</span><h2 style="margin:2px 0 8px">Pick a round and a shoot</h2>
- <label for="srd" class="small">Round</label><select id="srd">${rounds.map(r=>`<option value="${E(r)}" ${r==ST.r?'selected':''}>${E(r)} (${rc[r]})</option>`).join('')}</select>
+ <label for="srd" class="small">Round</label><select id="srd">${FRD(rounds).map(r=>`<option value="${E(r)}" ${r==ST.r?'selected':''}>${E(FRL(r,rounds))} (${rc[r]})</option>`).join('')}</select>
  <label for="ssh" class="small" style="margin-top:6px;display:block">Shoot</label><select id="ssh">${P.slice().reverse().map(s=>`<option value="${E(s.id)}" ${s.id==x.id?'selected':''}>${fmt(s.date)} · ${s.score} · ${SRC[s.src]}${s.inc?' · Incomplete':''}</option>`).join('')}</select>
  <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="incinc" ${incOn()?'checked':''} style="width:18px;height:18px"> Include incomplete rounds${nInc?` (${nInc})`:''}</label>
- <p class="small muted" style="margin:4px 0 0" id="statcount">${pl(n,'shoot')} of ${E(ST.r)}. Every card below uses these.</p></div>`;
+ <p class="small muted" style="margin:4px 0 0" id="statcount">${pl(n,'shoot')} of ${E(ST.r)}. Every card below uses these.</p>${FRN(ST.r,rounds)}</div>`;
  /* 1 Last shoot */
  const sums=x.ends.map(endSum),A=x.ends.flat(),apes=x.ends.map(e=>e.length);
  const ends=x.ends.length?(x.aba?`<div class="small" style="display:flex;flex-wrap:wrap;gap:4px">${sums.map((v,i)=>`${(h1=>(i==0||i==h1)&&sums.length>h1?`<span class="small muted" style="flex-basis:100%">${i<h1?'First half':'Second half'} · targets 1-${i<h1?h1:sums.length-h1}</span>`:'')(x.s&&ROUNDS[x.s.round]&&ROUNDS[x.s.round].halves?ROUNDS[x.s.round].halves[0].t:20)}<span class="adb ${v>=20?'k-y':v>=16?'k-b':v?'k-k':'k-m'}" title="target ${(h1=>i<h1?i+1:i-h1+1)(x.s&&ROUNDS[x.s.round]&&ROUNDS[x.s.round].halves?ROUNDS[x.s.round].halves[0].t:20)}">${v||'M'}</span>`).join('')}</div>`:endChart(sums,apes,x.dists.some(Boolean)?x.dists:null,'End by end',[],x.field)+`<h3 style="margin:10px 0 4px">Arrow values</h3>`+arrowTable(A,x.field))

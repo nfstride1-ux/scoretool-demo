@@ -9,7 +9,8 @@ const LABSEC={};
 const label=e=>((e.querySelector('.kicker,h2,h3,summary')||e).innerText||'').trim().toUpperCase();
 function keep(test){[...app.children].forEach((e,i)=>{if(!test(e,label(e),i))e.remove()})}
 function bindGo(){app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go))}
-function bar(title,back,backLbl){app.insertAdjacentHTML('afterbegin',`<div class="labbar">${back?`<button class="btn ghost labback" data-go="${back}">‹ ${h(backLbl)}</button>`:''}<h1>${h(title)}</h1></div>`);bindGo()}
+function bar(title,back,backLbl){app.insertAdjacentHTML('afterbegin',`<div class="labbar">${back?`<button class="btn ghost labback" data-go="${back}">‹ ${h(backLbl)}</button>`:''}<h1>${h(title)}</h1></div>`);bindGo();
+ /* no doubled headings: a card kicker that just repeats the screen title is hidden */const T=String(title).trim().toLowerCase();[...app.querySelectorAll('.kicker')].slice(0,3).forEach(k=>{if((k.textContent||'').trim().toLowerCase()==T)k.style.display='none'})}
 const row=(go,i,t,d,soon)=>`<button class="labrow${soon?' soon':''}" data-go="${go}"><span class="i" aria-hidden="true">${i}</span><span><b>${h(t)}</b><small>${h(d)}</small></span><span class="go" aria-hidden="true">›</span></button>`;
 function menu(title,rows){app.innerHTML=`<div class="labmenu">${rows.join('')}</div>`;bar(title)}
 /* a sub-screen built from an existing view: run it, keep some cards, add a back bar */
@@ -19,7 +20,7 @@ function sub(id,sec,title,back,backLbl,base,test,after){LABSEC[id]=sec;E[id]=fun
 const _nav=nav;nav=function(v){_nav(v);const s=secOf(view);document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==s))};
 
 /* top bar: Me button */
-function addMe(){const t=document.querySelector('.top');if(!t||t.querySelector('.labme'))return;const b=document.createElement('button');b.className='labme';b.textContent='Me';b.setAttribute('aria-label','Me and settings');b.onclick=()=>nav('lab_me');const hb=t.querySelector('.help-btn');hb?t.insertBefore(b,hb):t.appendChild(b);const tb=document.createElement('button');tb.className='labtheme';tb.onclick=()=>setTheme(curTheme()=='dark'?'light':'dark');t.insertBefore(tb,b);paintTheme(curTheme())}
+function addMe(){const t=document.querySelector('.top');if(!t||t.querySelector('.labme'))return;const b=document.createElement('button');b.className='labme';const who=(typeof TESTER!='undefined'&&TESTER)?(typeof testerName=='function'?testerName(TESTER.id):TESTER.short):'';b.textContent=who||'Me';b.title=who?`${who}'s app: Me, settings and switch archer`:'Me and settings';b.setAttribute('aria-label',b.title);b.onclick=()=>nav('lab_me');const hb=t.querySelector('.help-btn');hb?t.insertBefore(b,hb):t.appendChild(b);const tb=document.createElement('button');tb.className='labtheme';tb.onclick=()=>setTheme(curTheme()=='dark'?'light':'dark');t.insertBefore(tb,b);paintTheme(curTheme())}
 function curTheme(){return document.documentElement.getAttribute('data-theme')=='dark'?'dark':'light'}
 function setTheme(t){localStorage.setItem('scoretool.theme',t);paintTheme(t)}
 function paintTheme(t){document.documentElement.setAttribute('data-theme',t);const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t=='dark'?'#0b0f17':'#ffffff';document.querySelectorAll('.labtheme').forEach(b=>{b.textContent=t=='dark'?'☀️':'🌙';b.title=t=='dark'?'Switch to light mode':'Switch to dark mode';b.setAttribute('aria-label',b.title)})}
@@ -95,7 +96,10 @@ E.lab_squad=function(){squad();const n=app.children.length,tab=S._labsq||'board'
 
 /* ---------- Me (top bar) ---------- */
 LABSEC.lab_me='me';
-E.lab_me=()=>menu('Me',[
+const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='undefined')return'';const nm=t=>typeof testerName=='function'?testerName(t.id):t.short;
+ return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
+E.lab_me=()=>{menuMe();const w=whoCard();if(w){app.querySelector('.labbar').insertAdjacentHTML('afterend',w);if(typeof bindTesterPicker=='function')bindTesterPicker(app)}};
+const menuMe=()=>menu('Me',[
  row('lab_profile','🪪','Profile & card','Display name, archer card, badges, best moments'),
  row('lab_people','🧑‍🏫','Coaches & parents','Your details, coach access, parent link'),
  row('lab_settings','⚙️','Settings & help','Settings, linked apps, help guides')]);
@@ -186,19 +190,24 @@ E.lab_calc=function(){const C=S.calc=S.calc||{gr:'400',fps:'280',ibo:'340',dl:'2
 /* 3D rules: only what the official documents say, with links */
 LABSEC.lab_rules='tools';
 const RULES={
- ABA:{t:'ABA National 3D Round (Australian Bowhunters Association)',rows:[['A zone','20','14','8'],['B zone','18','12','6'],['C zone (hair/hide line)','16','10','4']],head:['Zone','1st arrow','2nd arrow','3rd arrow'],
+ ABA:{t:'ABA National 3D Round (Australian Bowhunters Association)',rows:[['A zone','20','14','8'],['B zone','18','12','6'],['C zone (hair/hide line)','16','10','4'],['Miss, or only the rock or tree section hit','0','0','0']],head:['Zone','1st arrow','2nd arrow','3rd arrow'],
+  cap:'3-arrow round: all three columns. 2-arrow round: 1st and 2nd arrow columns. 1-arrow round: 1st arrow column. Only the first arrow to score counts.',
+  cases:[['Arrow on a line','Scores the lower zone. It must go into the higher zone, however slightly.'],['Arrow embedded in another arrow','Same score as that arrow'],['Arrow through the face, still in the butt','Pushed back by the Group Captain and scored'],['Skid or glance off the ground, or big deflection, into the target','No score'],['Bounce-out or pass-through the group can\'t agree on','Re-shoot'],['Shot from the wrong peg','Lose your highest-scoring arrow'],['More arrows shot than set','Lose the highest-value arrow or arrows']],
   notes:['A round is 20 targets, shot as 3-arrow, 2-arrow or 1-arrow rounds. Only the first arrow to score counts.','Grading score = a 3-arrow round + a 1-arrow round (or a 2-arrow + a 1-arrow, or two 1-arrow rounds).','Distances are unmarked: seniors 20 to 50 m, juniors 13 to 40 m, cubs 8 to 25 m.','A and B zone sizes depend on the target group, from 40/80 mm (group 1) to 150/300 mm (group 5).','In ScoreTool, Score › ABA Interclub 3D uses this scoring.'],
   src:[['ABA Rules for National Archery Games, consolidated 1 Jan 2026 v2 (Rule 13 Scoring; National 3D Round)','https://www.bowhunters.org.au/national-rules-of-shoot/'],['ABA: Types of field archery','https://www.bowhunters.org.au/types-of-field-archery/']]},
  IBO:{t:'IBO 3-D (International Bowhunting Organization)',rows:[['11 ring (centred in the 10, about 25% of its size)','11'],['10 ring','10'],['Vital area (8 ring)','8'],['Body','5'],['Miss, or horn not touching body colour','0']],head:['Area','Points'],
+  cases:[['Arrow touching the line of a higher area','Higher score'],['Legs or hooves in a different colour','Body (5)'],['Extra material around the animal outline','No score'],['Vanes, feathers or nock collar only','Cannot score'],['More than one scoring area visible','The host marks at the stake which counts; if not posted, either can be used'],['Arrow pulled before both scorekeepers record it','0']],
   notes:['An arrow touching the line of a higher scoring area gets the higher score. Vanes, feathers and nock collars cannot score.','Distances are unmarked. Maximum by stake: Blue 50 yd, Green 45, Red 40, Yellow 35, Orange 30, White 25, Neon Pink 20.','Two scorekeepers must agree each score before arrows are pulled. Arrows pulled early score 0.'],
   src:[['IBO Rules and Class Definitions 2026 (II. Targets and scoring areas)','https://iboarchery.com/wp-content/uploads/2026-Rules-Doc.pdf'],['IBO Rules and Regulations','https://iboarchery.com/rules-and-regulations']]},
  ASA:{t:'ASA (Archery Shooters Association)',rows:[['12 ring (lower 12 is in play)','12'],['10 ring (5-inch circle inside the 8)','10'],['8 ring','8'],['Body','5'],['Miss','0']],head:['Area','Points'],
+  cases:[['Upper 12, called before shooting','12 (the lower 12 then scores 10 on that target)'],['Shaft touching the next higher line','Higher value'],['14 ring','Special events only, such as pro shoot-downs'],['Number of 12s left blank on the card','Counts as zero'],['Missing or wrong card information or signature','Minus 10 points']],
   notes:['The upper 12 counts only when the shooter calls it before shooting. Then the lower 12 scores 10 on that target.','The 14 ring (upper rear of the 8) is only used in special events such as pro shoot-downs.','Targets are Delta McKenzie with the ASA Pro 12-ring.'],
   src:[['ASA scoring images','https://asaarchery.com/rules/scoring-images/'],['ASA scoring system','https://asaarchery.com/about-asa/'],['ASA Pro/Am Rules 2026','https://asaarchery.com/rules/asa-pro-am-rules/']]}};
 E.lab_rules=function(){const k=S._rules||'ABA',R=RULES[k],F=(window.RULES_DATA||{})[k];
  app.innerHTML=`<div class="labseg" role="group" aria-label="Organisation">${Object.keys(RULES).map(x=>`<button data-r="${x}" aria-pressed="${x==k}">${x}</button>`).join('')}</div>
  <div class="card"><span class="kicker">Scoring at a glance</span><h2>${h(R.t)}</h2>
- <table class="labtbl"><thead><tr>${R.head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${R.rows.map(r=>`<tr>${r.map((c,i)=>i?`<td><b>${c}</b></td>`:`<th>${h(c)}</th>`).join('')}</tr>`).join('')}</tbody></table></div>
+ <table class="labtbl"><thead><tr>${R.head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${R.rows.map(r=>`<tr>${r.map((c,i)=>i?`<td><b>${c}</b></td>`:`<th>${h(c)}</th>`).join('')}</tr>`).join('')}</tbody></table>${R.cap?`<p class="small muted" style="margin:6px 0 0">${h(R.cap)}</p>`:''}
+ ${R.cases?`<h3 style="margin:12px 0 4px;font-size:16px">Special cases</h3><table class="labtbl"><thead><tr><th>Case</th><th>Score</th></tr></thead><tbody>${R.cases.map(c=>`<tr><th>${h(c[0])}</th><td>${h(c[1])}</td></tr>`).join('')}</tbody></table><p class="small muted" style="margin:6px 0 0">From the rule book sections listed below.</p>`:''}</div>
  ${F?`<div class="card"><span class="kicker">Full rules · plain English</span><h2>${h(F.doc)}</h2>
  ${F.note?`<p class="small muted">${h(F.note)}</p>`:''}
  <label for="rsq">Find a rule</label><input id="rsq" type="search" placeholder="e.g. bounce, line, let down, range finder" autocomplete="off">
@@ -227,7 +236,13 @@ const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_dia
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';
 function inner(){if(view=='lab_leagues'&&window._lgv)return['Leagues',()=>{window._lgv=null;window._lgE=null;nav('lab_leagues')}];
  if(view=='lab_opt'&&S._tuneId&&(S.tune||[]).some(t=>t.id==S._tuneId))return['Arrow optimizer',()=>{S._tuneId=null;save();nav('lab_opt')}];return null}
-function scoringCtl(){if($('#labfl'))return;const t=app.querySelector('.ad-title');
+/* Discard card (22 Oct 2026): throw away the card being scored, after a confirm. It is removed from this phone, and its id is
+   listed in scoretool.cal.<tester>.discarded so it can never be sent to Archery Calendar My events. */
+function discardCtl(){if($('#labdiscard')||!cur)return;const fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0);if(fin)return;
+ const host=app.querySelector('.ad')||app;host.insertAdjacentHTML('beforeend','<button type="button" class="ad-discard" id="labdiscard">Discard card</button>');
+ $('#labdiscard').onclick=()=>{if(!confirm('Discard this card? Its arrows are deleted from this phone and it is never sent to Archery Calendar.'))return;const c=cur;
+  S.sessions=S.sessions.filter(x=>x!==c);if(window.calDiscard)calDiscard(c.id);fix=null;sv='sheet';justDone=false;cur=null;save();nav('score')}}
+function scoringCtl(){discardCtl();if($('#labfl'))return;const t=app.querySelector('.ad-title');
  const fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0);
  if(!t){/* ABA 3D scorer: card layout, so a normal top bar */const lb=fin?'‹ Score':'Finish later';app.insertAdjacentHTML('afterbegin',`<div class="labbar"><button class="btn ghost labback" id="labfl"${fin?'':' title="Every target is already saved. Carry on later from Score or Home."'}>${lb}</button><h1>${fin?'Score sheet':'Scoring'}</h1></div>`)}else t.insertAdjacentHTML('afterbegin',fin?'<button class="labfl" id="labfl" aria-label="Close this score sheet and go to Score">‹ Score</button>':'<button class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Score or Home.">Finish later</button>');
  $('#labfl').onclick=()=>{if(!fin&&!arrowsIn(cur)&&isNew(cur))S.sessions=S.sessions.filter(x=>x!==cur);fix=null;sv='sheet';justDone=false;cur=null;save();nav('score')}}

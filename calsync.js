@@ -22,7 +22,8 @@ const maxOf=s=>{const R=ROUNDS[s.round];if(!isFull(s))return null;const m=bugsOn
 const sig=s=>JSON.stringify([s.date,s.round,total(s),maxOf(s),s.loc||null]);
 /* first run for this archer: everything already finished is marked as 'before the update' and never sent */
 function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(finished).map(s=>s.id))}
-function todo(){const base=new Set(get('base')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>finished(s)&&!base.has(s.id)&&sent[s.id]!==sig(s))}
+function todo(){const base=new Set(get('base')||[]),gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>finished(s)&&!base.has(s.id)&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
+window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
 async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
   body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:String(s.round).slice(0,120),p_score:total(s),p_max:maxOf(s),p_location:s.loc?String(s.loc).slice(0,120):null})});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
