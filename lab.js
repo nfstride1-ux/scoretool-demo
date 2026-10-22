@@ -119,7 +119,7 @@ LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
  row('lab_opt','🎯','Arrow optimizer & tuning','Plot practice groups. Compare before and after a change'),
  row('lab_calc','🧮','Calculators','Arrow speed, kinetic energy, momentum, FOC'),
- row('lab_rules','🦌','3D scoring & rules','Scoring rings for ABA, IBO and ASA, with sources')]);
+ row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO and ASA, with sources')]);
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
 LABSEC.lab_opt='tools';
@@ -216,8 +216,14 @@ const RULES={
   cases:[['Upper 12, called before shooting','12 (the lower 12 then scores 10 on that target)'],['Shaft touching the next higher line','Higher value'],['14 ring','Special events only, such as pro shoot-downs'],['Number of 12s left blank on the card','Counts as zero'],['Missing or wrong card information or signature','Minus 10 points']],
   notes:['The upper 12 counts only when the shooter calls it before shooting. Then the lower 12 scores 10 on that target.','The 14 ring (upper rear of the 8) is only used in special events such as pro shoot-downs.','Targets are Delta McKenzie with the ASA Pro 12-ring.'],
   src:[['ASA scoring images','https://asaarchery.com/rules/scoring-images/'],['ASA scoring system','https://asaarchery.com/about-asa/'],['ASA Pro/Am Rules 2026','https://asaarchery.com/rules/asa-pro-am-rules/']]}};
-E.lab_rules=function(){const k=S._rules||'ABA',R=RULES[k],F=(window.RULES_DATA||{})[k];
- app.innerHTML=`<div class="labseg" role="group" aria-label="Organisation">${Object.keys(RULES).map(x=>`<button data-r="${x}" aria-pressed="${x==k}">${x}</button>`).join('')}</div>
+/* Rules tabs: WA and AA (rules_wa_aa.js) + the 3D books. The chosen tab and discipline live in memory only, nothing is saved. */
+let RTAB=null,RDISC='target';const RORGS=['WA','AA','ABA','IBO','ASA'];
+E.lab_rules=function(){if(!RTAB)RTAB=RORGS.includes(S._rules)?S._rules:'WA';const k=RTAB,seg=`<div class="labseg" role="group" aria-label="Rule book">${RORGS.map(x=>`<button data-r="${x}" aria-pressed="${x==k}">${x}</button>`).join('')}</div>`;
+ if(k=='WA'||k=='AA'){app.innerHTML=seg+(window.rulesWaAaHTML?rulesWaAaHTML(k,RDISC):'<div class="card"><p class="small">Rules could not load. Reload the app.</p></div>');
+  bar('Rules','tools','Tools');app.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RTAB=b.dataset.r;render()});
+  app.querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>{RDISC=b.dataset.rd;render()});rulesFind();return}
+ const R=RULES[k],F=(window.RULES_DATA||{})[k];
+ app.innerHTML=`${seg}
  <div class="card"><span class="kicker">Scoring at a glance</span><h2>${h(R.t)}</h2>
  <table class="labtbl"><thead><tr>${R.head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${R.rows.map(r=>`<tr>${r.map((c,i)=>i?`<td><b>${c}</b></td>`:`<th>${h(c)}</th>`).join('')}</tr>`).join('')}</tbody></table>${R.cap?`<p class="small muted" style="margin:6px 0 0">${h(R.cap)}</p>`:''}
  ${R.cases?`<h3 style="margin:12px 0 4px;font-size:16px">Special cases</h3><table class="labtbl"><thead><tr><th>Case</th><th>Score</th></tr></thead><tbody>${R.cases.map(c=>`<tr><th>${h(c[0])}</th><td>${h(c[1])}</td></tr>`).join('')}</tbody></table><p class="small muted" style="margin:6px 0 0">From the rule book sections listed below.</p>`:''}</div>
@@ -229,7 +235,8 @@ E.lab_rules=function(){const k=S._rules||'ABA',R=RULES[k],F=(window.RULES_DATA||
  <p class="lab-note">Always check the event's own rules on the day. This is a plain-English summary; the official document wins if anything differs.</p>
  <p class="labsrc">Documents: ${F.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${h(l[0])}</a>`).join(' · ')}<br>Last checked: ${h(window.RULES_CHECKED||'')}</p></div>`:''}
  <div class="card"><span class="kicker">Coming soon</span><p class="small muted" style="margin:0">Pictures of each target's rings, and links from archerycalendars.com 3D events to these pages.</p></div>`;
- bar('3D scoring & rules','tools','Tools');app.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{S._rules=b.dataset.r;save();render()});
+ bar('Rules','tools','Tools');app.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RTAB=b.dataset.r;render()});rulesFind()};
+function rulesFind(){
  const q=$('#rsq');if(q)q.oninput=()=>{const v=q.value.trim().toLowerCase(),L=[...app.querySelectorAll('.rsec')];let n=0;
   L.forEach(d=>{const m=!v||v.split(/\s+/).every(w=>d.dataset.t.includes(w));d.hidden=!m;d.open=!!v&&m;if(m)n++});
   $('#rscount').textContent=v?(n?`${n} section${n==1?'':'s'} match "${q.value.trim()}"`:`Nothing matches "${q.value.trim()}". Try another word.`):`${L.length} sections. Tap one to open it.`}};
