@@ -6,6 +6,7 @@
 import subprocess,sys,time,os,json,re,base64
 from urllib.parse import urlparse,parse_qs,unquote
 from playwright.sync_api import sync_playwright
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nav_compat  # old-tab navigation (tests only)
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -63,7 +64,7 @@ try:
   J.fill('#nmme','b1tch');J.click('#nmmego');J.wait_for_timeout(200);chk('rude name refused',J.inner_text('#nmmeerr').strip()!='')
   if SHOT:J.screenshot(path=OUT+'/2-refused.png')
   J.fill('#nmme','  Joey  ');J.click('#nmmego');J.wait_for_timeout(600);J.evaluate("nav('home')");J.wait_for_timeout(500)
-  chk('home (personal) greets with the real first name',"G'day Joseph" in J.text_content('#app') and 'Joey' not in J.text_content('#app .kicker'))
+  chk('home (personal) greets with the real first name',"G'day Joseph" in J.text_content('#app') and 'Joey' not in J.evaluate("(document.querySelector('#app .kicker')||document.querySelector('#app > p.muted')).textContent"))  # new layout: greeting line instead of the old kicker
   chk('name posted to the names topic: id + name only',any(json.loads(m['message']).get('n')=='Joey' and set(json.loads(m['message']))<={'k','id','n','nt','t'} for m in RELAY.get(NT,[])))
   # ---------- change on Me ----------
   J.evaluate("nav('me')");J.wait_for_timeout(500)

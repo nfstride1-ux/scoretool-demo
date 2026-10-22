@@ -59,8 +59,8 @@ try:
   # ---------- one home each ----------
   T('home');chk('Home: no rank card',pg.locator('#rank-slot,#rankcard,#realrank').count()==0 and 'Grand Master' not in home)
   chk('Home: no badges',pg.locator('.irow').count()==0 and 'BADGES' not in home)
-  chk('Home: wins of the day once',home.count('WINS OF THE DAY')==1)
-  chk('Home: competition scores once',home.count('COMPETITION SCORES')==1)
+  chk('Home: wins of the day once',home.count('WINS OF THE DAY')<=1)  # new layout: may live in My archery, never twice
+  chk('Home: competition scores once',home.count('COMPETITION SCORES')<=1)
   T('rewards');chk('Ranks: no profile card, no badges',pg.locator('.pcard').count()==0 and 'BADGES' not in ranks)
   chk('Ranks: rank shown',pg.locator('#realrank').count()==1 and 'Grand Master Bowman' in ranks)
   T('me');chk('Me: badges, no rank',pg.locator('.pcard').count()==1 and 'BADGES' in me and 'Grand Master' not in me and pg.locator('.pcard .pill').count()==0)
@@ -72,7 +72,8 @@ try:
   chk('B1 half split not 529/531',(pg.inner_text('#h1'),pg.inner_text('#h2'))!=('529','531'))
   chk('B1 1060 not in history chart',E("statPool().every(s=>s.score!=1060)"))
   chk('B1 Wins of the day not from the 1060','2026-10-11' not in E("document.createElement('div').innerHTML") and E("(()=>{const L=realShoots().filter(x=>!x.incomplete).slice(-1)[0];return L.date!='2026-10-11'||L.score!=1060})()"))
-  T('home');chk('B1 Home wins card not the 1060','2026-10-11' not in pg.inner_text('#winsday'))
+  E("nav('lab_latest')");pg.wait_for_timeout(700)  # new layout: the wins card is in My archery > Latest shoot
+  chk('B1 Home wins card not the 1060','2026-10-11' not in pg.inner_text('#winsday'))
   chk('B1 Analytics leaves the 1060 out',E("(()=>{const A=_anShoots();return A.some(s=>s.score==1060&&s.part)})()") and E("S.incInc")==False)
   E("window._af={range:'all',round:'WA 90/1440',bow:'all',kind:'all'}");pg.click('nav [data-v=stats]');pg.wait_for_timeout(400);E("nav('analytics')");pg.wait_for_timeout(700)
   chk('B1 Analytics total excludes 1060','1060' not in pg.inner_text('#app'))
@@ -115,7 +116,8 @@ try:
   T('rewards');lbl=E("aaLabel(rankFor(S.profile))");pills=pg.eval_on_selector_all('.lrow.me .pill','e=>e.map(x=>x.textContent)')
   chk('B7 one rank name (Ranks; league shows no rank)',lbl=='Grand Master Bowman (provisional)' and pills==[] and 'Grand Master Bowman' in pg.inner_text('#realrank'))
   # arrow counts
-  T('home');wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
+  E("nav('lab_arrows')");pg.wait_for_timeout(700)  # new layout: the arrows card is in My archery > Practice arrows
+  wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
   chk("B8 Today's arrows = shared count",int(pg.locator('#volring text').first.text_content())==E('arrowDays()[today()]||0'))
   ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
   # 782 / compare grammar / season

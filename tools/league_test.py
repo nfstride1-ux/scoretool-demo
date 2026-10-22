@@ -57,8 +57,10 @@ try:
   chk('merge: newest entry per archer per week wins',mg[1]=='X,X,X' and mg[3]=='[["10","10","10"],["10","9","9"]]')
   # ---------- create: real names in Who's in, Phill left out ----------
   H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300)
-  lc=H.inner_text('#lgcard')
-  chk('league card: Six 300s at 18 m on the vertical 3-spot, no Vegas','Six 300s at 18 m on the vertical 3-spot' in lc and 'Vegas' not in lc)
+  lc=H.text_content('#lgcard')
+  # go-live rule (22 Oct): a new user sees no leagues and no Onion Shed card; the format and final rules sit in "New league"
+  chk('go-live: new user sees no leagues, no Onion Shed shown','not in any leagues yet' in lc and 'Onion Shed' not in lc)
+  chk('league card: six 300s at 18 m on the vertical 3-spot, no Vegas','six 300s at 18 m on the vertical 3-spot' in lc.lower() and 'Vegas' not in lc)
   chk('final rules shown before a league is created','Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).' in lc)
   H.click('#lgnew summary')
   tk=H.evaluate("[...document.querySelectorAll('#lgnew .h2htk')].map(l=>l.textContent.trim())")
@@ -67,7 +69,8 @@ try:
   H.click('#h2hnew summary');tk2=H.evaluate("[...document.querySelectorAll('#h2hnew .h2htk')].map(l=>l.textContent.trim())")
   chk("match setup lists real names, Phill still available there",'Phill Arthur' in tk2 and 'Logan Wolfe' in tk2 and not any(x.startswith('Tester ') for x in tk2))
   H.click('#h2hnew summary')
-  chk('league name defaults to Onion Shed Challenge',H.input_value('#lgname')=='Onion Shed Challenge')
+  chk('go-live: league name has no default (host types it)',H.input_value('#lgname')=='')
+  H.fill('#lgname','Onion Shed Challenge')
   for t_ in ['logan','joseph','steven','michael','dana']:H.check(f'#lgnew [data-lgop="{t_}"]')
   H.click('#lggo');H.wait_for_timeout(600);code=H.evaluate("S.leagues[S.leagues.length-1].code")
   chk('league created, week 1 current',H.locator('#lgview').count()==1 and 'Week 1 of 6 is current' in H.inner_text('#lgview'))

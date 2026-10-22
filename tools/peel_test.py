@@ -3,6 +3,7 @@
 # club-rule tick), chip switching, day and event totals, score sheet, offline + local only (no relay), colours. Port 8787.
 import subprocess,sys,time,os,json,colorsys,re
 from playwright.sync_api import sync_playwright
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nav_compat  # old-tab navigation (tests only)
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

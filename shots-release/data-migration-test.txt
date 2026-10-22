@@ -1,0 +1,14 @@
+OLD keys: 16 ['scoretool.dname.dana', 'scoretool.dname.estiaan', 'scoretool.dname.joseph', 'scoretool.dname.logan', 'scoretool.dname.michael', 'scoretool.dname.nate', 'scoretool.dname.nathe', 'scoretool.dname.phill', 'scoretool.dname.posted.logan', 'scoretool.dname.posted.nathe', 'scoretool.dname.steven', 'scoretool.dname.tahuri', 'scoretool.names', 'scoretool.tester', 'scoretool.v1', 'scoretool.v1.logan']
+old reload churn (keys differing between two old loads): []
+AFTER UPGRADE (load only): old keys byte-identical 16 of 16 | changed: [] | new keys: ['scoretool.cal.nathe.base']
+caches before: ['scoretool-v2026-10-21-1945-darnie-full-casual-seed'] after: ['scoretool-v2026-10-21-1945-darnie-full-casual-seed'] sw: http://127.0.0.1:8793/stserve/sw.js
+new layout tabs: ['home', 'score', 'myarch', 'clubs', 'tools'] TEST VERSION shown: False
+AFTER USING NEW SCREENS: byte-identical old keys 15 of 16
+   scoretool.v1 lost/changed/new fields: ([], [], ['targets', 'presetSeeded', 'squad', 'social', 'presetTop', 'card', 'coachInvites', 'coaches', 'coachSeeded'])
+prompt shown after first new finish: False
+dbg [None, True, False, 'score', True, True]
+old sessions 3 still identical: 3 | sessions now 4
+calendar queue for nathe (old finished never sent): {'baselineFinished': 2, 'newFinishedId': 's1792668997453', 'inBaseline': False}
+logan key byte-identical: True
+service worker after settling: caches ['scoretool-v2026-10-21-1945-darnie-full-casual-seed']
+page errors: []

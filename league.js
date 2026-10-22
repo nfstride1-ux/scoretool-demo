@@ -100,10 +100,10 @@ async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
 /* ---------- screens ---------- */
 function lgCard(){if(!TESTER)return'';const me=h2hMe(),L=lgAll().slice().reverse();
- return`<div class="card" id="lgcard"><span class="kicker">League</span><h3>Onion Shed Challenge</h3><p class="small muted" style="margin:2px 0 8px">Six 300s at 18 m on the vertical 3-spot. Cumulative total, then one shoot-up final.</p><p class="small" id="lgrules" style="margin:0 0 8px">${LG_FINTXT}</p>
+ return`<div class="card" id="lgcard"><span class="kicker">Leagues</span><h3>Your leagues</h3>${L.length?'':'<p class="small muted" style="margin:2px 0 8px">You are not in any leagues yet. Join one with the code from its host, or start your own.</p>'}
  ${L.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(lg.name)}</b><div class="small muted">${lg.fin?'Final shoot-up':'Week '+lgWeek(lg)+' of 6'} · ${lgArchers(lg).length} archers</div></span><button class="btn ghost" data-lgopen="${lg.code}">Open</button></div>`).join('')}
- <details id="lgnew"><summary>New league</summary><label for="lgname">League name</label><input id="lgname" maxlength="40" value="Onion Shed Challenge">
+ <details id="lgnew"><summary>New league</summary><label for="lgname">League name</label><input id="lgname" maxlength="40" placeholder="League name"><p class="small muted" style="margin:6px 0">Format: six 300s at 18 m on the vertical 3-spot, cumulative total, then one shoot-up final. <span id="lgrules">${LG_FINTXT}</span></p>
  <fieldset class="h2hops nm-real"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me&&!LG_EXCL.includes(t.id)).map(t=>`<label class="h2htk"><input type="checkbox" data-lgop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
  <p class="small muted" style="margin:4px 0">You plus up to 9 others (10 archers max). Others can also join with the league code.</p>
  <details><summary class="small">Week dates (optional)</summary>${[1,2,3,4,5,6].map(w=>`<label for="lgd${w}">${w<6?'Week '+w:'Day 6 (together)'}</label><input type="date" id="lgd${w}">`).join('')}</details>
@@ -166,7 +166,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(q('#lgnext'))q('#lgnext').onclick=()=>{lg.cw=w+1;lg.cwt=Date.now();lg.dirty=1;save();lgTick(true);lgView(code)};
  if(q('#lgforce'))q('#lgforce').onclick=()=>{if(done6<lgArchers(lg).length&&!confirm('Start the shoot-up now? Archers without a day-6 300 are left out.'))return;if(lgForce(code))suLadderView(lgFinCode(lg))};
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
- q('#lgrf').onclick=()=>lgTick(true);q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav('score')};
+ q('#lgrf').onclick=()=>lgTick(true);q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
  if(q('#lgdel'))q('#lgdel').onclick=()=>{if(!confirm('Remove this league from this phone? Other phones keep it.'))return;S.leagues=lgAll().filter(l=>l.code!=code);S.matches=h2hAll().filter(m=>m.code!=lgFinCode(lg));save();window._lgv=null;nav('score')};
  scrollTo(0,0)}
 window.lgView=lgView;window.lgEntryCard=lgEntryCard;
