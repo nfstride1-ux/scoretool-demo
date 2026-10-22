@@ -20,7 +20,7 @@ function drawABA(s){const R=ROUNDS[s.round]||{},HS=abaHalves(s),A=s.aba||[],hd=s
  const cols=HS.flatMap((o,h)=>abaBlocks(o.H.t).map(bk=>({o,h,bk}))),rows=[];for(let i=0;i<cols.length;i+=4)rows.push(cols.slice(i,i+4));
  const rowHt=r=>60+rowH*(Math.max(...r.map(c=>c.bk.to-c.bk.from+1))+1)+24;
  const H=256+rows.reduce((t,r)=>t+rowHt(r),0)+40+64*(HS.length+1)+80,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');box(g,0,0,W,H,BG);
- let y=head(g,{...s,round:R.custom?s.round+' · 3D':'ABA Interclub 3D'},0,GOLD,BLK,meta||null);const cw=(W-2*PAD-3*12)/4;
+ const EV=window.abaEvOf?abaEvOf(s):null,OFF=EV?!!EV.official:!!(s.src=='paper'||s.pg);let y=head(g,{...s,round:EV?EV.name+' · ABA scoring':R.custom?s.round+' · 3D':'ABA 3D · Interclub scoring'},0,GOLD,BLK,[meta,OFF?'':'Not official'+(EV&&EV.fun?' (fun shoot)':'')].filter(Boolean).join(' · ')||null);const cw=(W-2*PAD-3*12)/4;
  rows.forEach(r=>{r.forEach(({o,h,bk},ci)=>{const x=PAD+ci*(cw+12),q=bk.q,n=bk.to-bk.from+1;box(g,x,y,cw,60,PANEL,LINE);txt(g,(HS.length>1?(h?'Second half ':'First half '):'')+bk.from+'-'+bk.to,x+cw/2,y+30,{s:22,w:800,a:'center'});
   for(let j=0;j<n;j++){const t=q*10+j,v=o.v[t],yy=y+60+j*rowH,a=A[o.i0+t]||{};box(g,x,yy,cw,rowH,null,LINE);txt(g,t+1,x+16,yy+rowH/2,{s:20,c:MUT});
    if(v!=null){txt(g,v,x+cw*0.5,yy+rowH/2,{s:28,w:800,a:'center',c:v>=20?GOLD:v?INK:MUT});txt(g,o.rn[t],x+cw-14,yy+rowH/2,{s:22,c:MUT,a:'right'});if(a.k)txt(g,hitCodeS(a),x+cw*0.5+34,yy+rowH/2-12,{s:14,c:MUT})}}

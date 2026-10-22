@@ -17,17 +17,31 @@ function takeHash(){const m=/^#stcal=([0-9a-f]{48})$/.exec(location.hash||'');if
  history.replaceState(history.state,'',location.pathname+location.search)}
 takeHash();addEventListener('hashchange',takeHash);
 function adoptPending(){const p=sessionStorage.getItem('scoretool.cal.pending');if(p&&WHO()&&okTok(p)){put('link',p);put('prompted',1);sessionStorage.removeItem('scoretool.cal.pending')}}
+/* Event ties (23 Oct 2026): a score can be tied to an Archery Calendar event. Kept under the NEW key scoretool.cal.<tester>.events
+   ({sessionId:{id,name,club,date,fun,official,send}}); the score record itself is never changed. A tie made by the archer ('send')
+   also sends that score to My events, even if it was shot before the link or isn't finished (the total so far, marked partial). */
+const evs=()=>get('events')||{};
+window.calEvOf=s=>{if(!WHO()||!s||!s.id)return null;try{seedNathe()}catch(e){}return evs()[s.id]||null};
+window.calSetEv=(id,o)=>{if(!WHO()||!id)return;const E=evs();if(o)E[id]=o;else delete E[id];put('events',E);setTimeout(tick,50)};
+/* Nathe asked (23 Oct) for his 18 Oct 2026 score to show on that day's Melville 3D in My events: tie it once, his own score only */
+function seedNathe(){if(WHO()!='nathe'||get('mel1018'))return;const E=evs();let n=0;
+ (S.sessions||[]).filter(s=>s&&!s.sample&&s.date=='2026-10-18'&&ROUNDS[s.round]&&ROUNDS[s.round].aba&&Array.isArray(s.ends)&&arrowsIn(s)>0&&!E[s.id])
+  .forEach(s=>{E[s.id]={id:'ad-melville-3d-2026-10-18',name:'3D - Bowmen of Melville',club:'Bowmen of Melville',date:'2026-10-18',fun:1,send:1};n++});
+ if(n){put('events',E);put('mel1018',1)}}
+const forced=s=>{const e=s&&s.id&&evs()[s.id];return !!(e&&e.send&&!s.sample&&Array.isArray(s.ends)&&ROUNDS[s.round]&&arrowsIn(s)>0)};
+const tiedRound=s=>{const e=evs()[s.id];if(!e)return null;const R=ROUNDS[s.round],n=s.ends.filter(x=>x&&x.length).length;
+ return (e.name+(R.aba?' · ABA scoring':'')+(isFull(s)?'':' (partial: '+n+' of '+R.ends+(R.aba?' targets)':' ends)'))).slice(0,120)};
 const finished=s=>s&&!s.sample&&Array.isArray(s.ends)&&ROUNDS[s.round]&&(isDone(s)||(!!s.finished&&arrowsIn(s)>0));
 const maxOf=s=>{const R=ROUNDS[s.round];if(!isFull(s))return null;const m=bugsOn(s)?R.ends*R.ape*6:R.max;return m>0&&m<=5000?m:null};
-const sig=s=>JSON.stringify([s.date,s.round,total(s),maxOf(s),s.loc||null]);
+const sig=s=>{const t=tiedRound(s);return JSON.stringify(t?[s.date,t,total(s),maxOf(s),evs()[s.id].club||null]:[s.date,s.round,total(s),maxOf(s),s.loc||null])};
 /* first run for this archer: everything already finished is marked as 'before the update' and never sent */
 function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(finished).map(s=>s.id))}
-function todo(){const base=new Set(get('base')||[]),gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>finished(s)&&!base.has(s.id)&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
+function todo(){const base=new Set(get('base')||[]),gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>(forced(s)||finished(s)&&!base.has(s.id))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
 window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
 async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
-  body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:String(s.round).slice(0,120),p_score:total(s),p_max:maxOf(s),p_location:s.loc?String(s.loc).slice(0,120):null})});
+  body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:String(tiedRound(s)||s.round).slice(0,120),p_score:total(s),p_max:maxOf(s),p_location:(c=>c?String(c).slice(0,120):null)(tiedRound(s)?evs()[s.id].club:s.loc)})});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
-async function tick(){try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return;adoptPending();baseline();const L=todo();if(!L.length)return;
+async function tick(){try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return;adoptPending();baseline();seedNathe();const L=todo();if(!L.length)return;
  const tok=get('link');if(!okTok(tok)){maybePrompt();return}
  if(!navigator.onLine)return;state.busy=true;const sent=get('sent')||{};
  for(const s of L){const r=await send(s,tok);if(r=='ok'){sent[s.id]=sig(s);put('sent',sent);state.live=true;state.err=''}

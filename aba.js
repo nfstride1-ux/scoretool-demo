@@ -90,8 +90,18 @@ function grid(s,live){const HS=halves(s),A=s.aba||[],nx=live?targetIdx():-1;
  <div class="aba-tots">${HS.map((o,h)=>`<div class="list-item row"><span>${halfTag(o,HS)}${o.H.n==3?'3 Arrow':o.H.n==1?'1 Arrow':o.H.n+' Arrow'} Total <span class="small muted">(${o.sub.join(' + ')})</span></span><b id="abah${h}">${o.tot}</b></div>`).join('')}
  ${HS.length>1?`<div class="list-item row" style="font-size:18px"><span><b>ROUND TOTAL</b></span><b id="abaround">${HS.reduce((t,o)=>t+o.tot,0)}</b></div>`:''}</div>`}
 window.abaGrid=grid;
+/* Sheet heading (23 Oct 2026). 'ABA Interclub' is the scoring format, not the event. Tied to a calendar event: the event name is the title,
+   'ABA Interclub scoring' the subtitle. 'Official Score Sheet' only for official shoots: the typed paper Interclub sheet, Peel State Titles
+   cards, or an event the archer marked official. Anything else says it isn't official. */
+const evOf=s=>window.calEvOf?window.calEvOf(s):null;window.abaEvOf=evOf;
+const isOfficial=s=>{const e=evOf(s);return e?!!e.official:!!(s.src=='paper'||s.pg)};
+function sheetHead(s){const R=ROUNDS[s.round]||{},e=evOf(s);
+ if(R.custom&&!e)return`<b>${escA(s.round)}</b><div class="small" style="color:#ff6b6b">3D practice score sheet · ABA scoring</div>`;
+ const off=isOfficial(s),title=e?e.name:off?'ABA INTERCLUB':'ABA 3D score sheet',sub=e?(R.custom?escA(s.round)+' · ABA scoring':'ABA Interclub scoring'):off?'':'ABA Interclub scoring';
+ return`<b id="abatitle">${escA(title)}</b>${sub?`<div class="small muted" id="abasub">${sub}</div>`:''}<div class="small" id="abaoff" style="color:${off?'#ff6b6b':'inherit'}">${off?'Official Score Sheet':e&&e.fun?'Fun shoot - not official':'Not an official score sheet'}</div>`}
+window.abaSheetHead=sheetHead;
 function paper(s){const hd=s.abaHead||{},HS=halves(s);
- return`<div class="card aba-sheet" id="abapaper"><div style="text-align:center"><b>${ROUNDS[s.round]&&ROUNDS[s.round].custom?escA(s.round):'ABA INTERCLUB'}</b><div class="small" style="color:#ff6b6b">${ROUNDS[s.round]&&ROUNDS[s.round].custom?'3D practice score sheet · ABA scoring':'Official Score Sheet'}</div></div>
+ return`<div class="card aba-sheet" id="abapaper"><div style="text-align:center">${sheetHead(s)}</div>
  <div class="aba-hd"><div><span class="small muted">Name</span><b>${escA(hd.name||S.profile||'')}</b></div><div><span class="small muted">Date</span><b>${escA(s.date)}</b></div><div><span class="small muted">ABA #</span>${escA(hd.no||'')}</div><div><span class="small muted">Grade</span>${escA(hd.grade||'')}</div><div><span class="small muted">Division</span>${escA(hd.div||'')}</div><div><span class="small muted">Target</span>${escA(hd.target||'')}</div></div>
  <p class="small muted" style="margin:6px 0 0" id="abahow">${HS.map((o,h)=>`${hName(h,HS.length)}: ${o.H.desc}`).join('. ')}. ${HS.every(o=>o.H.t==HS[0].H.t)?(HS.length>1?'Each half is targets 1-':'Targets 1-')+HS[0].H.t:HS.map((o,h)=>hName(h,HS.length)+' targets 1-'+o.H.t).join(', ')}. Points: 1A 20, 1B 18, 1C 16 · 2A 14, 2B 12, 2C 10 · 3A 8, 3B 6, 3C 4.</p>
  <table class="aba-pts"><tr><th>Arrow</th><th>A</th><th>B</th><th>C</th></tr>${PTS.map((r,k)=>`<tr><th>${k+1}</th>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>
@@ -106,7 +116,7 @@ function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fi
  const hd=cur.abaHead=cur.abaHead||{},fresh=!doneT&&!fin;
  const li=[...cur.ends.keys()].filter(j=>cur.ends[j].length).pop(),LW=li!=null?where(R,li,cur):null,LH=LW?HS[LW.h]:null;
  const last=li==null?'':`<div class="list-item" id="abalast" style="margin:4px 0">Last: ${hName(LW.h,HS.length).toLowerCase()} target ${LW.tn} scored <b>${val(cur.ends[li][0])}</b>${(A[li]||{}).k?' ('+hitCode(A[li])+')':' (no score)'} · running total for targets ${(b=>b.from+'-'+b.to)(blocks(LW.H.t)[Math.floor((LW.tn-1)/10)])} <b>${LH.rn[LW.tn-1]}</b></div>`;
- const top=`<div class="card" id="abacard"><span class="kicker">${R.custom?escA(cur.round)+' · 3D':'ABA Interclub 3D'}</span>
+ const EV=evOf(cur),top=`<div class="card" id="abacard"><span class="kicker">${EV?escA(EV.name)+' · ABA scoring':R.custom?escA(cur.round)+' · 3D':'ABA 3D · Interclub scoring'}</span>
  <div class="row" style="justify-content:space-between;align-items:flex-end;margin:6px 0"><div><div class="small muted" id="abahalf">${fin?'Round':(W.n>1?'3-arrow half':'1-arrow half')+(cur.abaClub&&W.h==0?' (club rule)':'')+' · target '+(i+1)+' of '+R.ends+' in the round'}</div><b style="font-size:30px" id="abatg">${fin?'Done':`<span style="font-size:17px">${hName(W.h,HS.length)} · </span>Target ${W.tn} of ${W.H.t}`}</b></div><div style="text-align:right"><div class="small muted">Total</div><b style="font-size:30px;color:var(--gold)" id="abatot">${tot}</b>${fin?'':`<div class="small muted" id="abamax">max possible ${maxP}</div>`}</div></div>
  ${fresh?`<label id="abaclubl" class="small muted" style="display:flex;align-items:center;gap:6px;margin:0 0 4px;padding:0;font-size:12px;line-height:1.3;font-weight:400;min-height:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><input type="checkbox" id="abaclub" ${cur.abaClub?'checked':''} style="width:16px;height:16px;min-height:0;min-width:0;margin:0;padding:0;flex:none;accent-color:#ffd84d"> Club rule: first half 1 arrow</label>`:cur.abaClub?'<div class="small muted" id="abaclubon" style="font-size:12px;margin:0 0 4px">Club rule on: both halves 1 arrow.</div>':''}
  ${fin?'':`<div class="list-item" id="abarule" style="margin:4px 0;border-left:4px solid ${W.n>1?'#ffd84d':'#3b82f6'};padding-left:8px">${W.n>1?'Tap the score of your first arrow to hit. A hit moves straight to the next target. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0). Then it moves to the next target.'}${HS.length>1&&W.h==1?` First half done: ${HS[0].tot}.`:''}</div>`}
@@ -118,9 +128,9 @@ function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fi
  ${last}`;
  const head=`<details style="margin-top:8px"><summary class="small">Sheet details (name, ABA #, grade, division, target)</summary>${[['name','Name',S.profile||''],['no','ABA #',''],['grade','Grade',''],['div','Division',''],['target','Target','']].map(([k2,l,ph])=>`<label class="small" for="abh-${k2}">${l}</label><input id="abh-${k2}" data-abh="${k2}" value="${escA(hd[k2]||'')}" placeholder="${escA(ph)}">`).join('')}</details>`;
  /* no distance input: ABA 3D distances are unmarked and Nathe doesn't want them estimated. Old sessions may still carry a .d value; it is ignored. */
- app.innerHTML=top+(window._abaView=='sheet'?'</div>'+paper(cur):pad+`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" id="abaundo" ${doneT||t.m?'':'disabled'}>↶ Undo</button>${fin?'':`<button class="btn ghost" id="abafin" ${doneT?'':'disabled title="Score at least one target first" style="opacity:.45"'}>Finish early</button>`}</div>${!fin&&!doneT?'<p class="small muted" id="abafinnote" style="margin:4px 0 0;font-size:12px">Finish early works once a target is scored. To leave now, tap Exit round.</p>':''}<div></div></div><div class="card" id="abalive"><span class="kicker">Your sheet so far</span>${grid(cur,true)}</div><div class="card">${head}</div>`)+
+ app.innerHTML=top+(window._abaView=='sheet'?'</div>'+paper(cur):pad+`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" id="abaundo" ${doneT||t.m?'':'disabled'}>↶ Undo</button>${fin?'':`<button class="btn ghost" id="abafin" ${doneT?'':'disabled title="Score at least one target first" style="opacity:.45"'}>Finish early</button>`}</div>${!fin&&!doneT?'<p class="small muted" id="abafinnote" style="margin:4px 0 0;font-size:12px">Finish early works once a target is scored. To leave now, tap Exit round.</p>':''}<div></div></div><div class="card" id="abalive"><span class="kicker">Your sheet so far</span>${grid(cur,true)}</div><div class="card">${head}</div>`)+evCard(cur)+
  `<p class="small muted" style="margin:0 4px 12px">ABA National Rules (1 Jan 2026), rule 13: 1A = 20, 1B = 18, 1C = 16, 2A = 14, 2B = 12, 2C = 10, 3A = 8, 3B = 6, 3C = 4. The first arrow to score counts; no more arrows once one scores. Up to 20 a target.</p>`;
- app.querySelectorAll('[data-abv]').forEach(b=>b.onclick=()=>{window._abaView=b.dataset.abv;abaScore(R)});
+ app.querySelectorAll('[data-abv]').forEach(b=>b.onclick=()=>{window._abaView=b.dataset.abv;abaScore(R)});evBind(cur,()=>abaScore(R));
  app.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>abaHit(b.dataset.z));
  app.querySelectorAll('[data-abh]').forEach(x=>x.onchange=()=>{hd[x.dataset.abh]=x.value.trim();if(x.dataset.abh=='no')hd.noTyped=!!hd.no;save()});
  /* the club rule is set per round (off by default) and can be changed until target 1 is scored; changing it restarts target 1's arrows */
@@ -130,6 +140,24 @@ function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fi
  const shb=$('#shsheet');if(shb)shb.onclick=()=>shareSheet(cur);
  const d=$('#abadone');if(d)d.onclick=()=>{cur=null;sv='sheet';window._abaView='score';score()}}
 window.abaScore=abaScore;
+/* Event card: tie this score to an Archery Calendar event on its date (list from archerycalendars.com, Australia). Tying it also sends the
+   score to My events once linked. Stored under scoretool.cal.<tester>.events only; the score itself is not changed. */
+let EVL=null,EVO=false;
+function evCard(s){if(!window.calSetEv||typeof TESTER=='undefined'||!TESTER)return'';const e=evOf(s);
+ const list=EVO?(EVL==null?'<p class="small muted">Loading events…</p>':EVL.err?`<p class="small">${EVL.err}</p>`:(EVL.on[s.date]||[]).length?(EVL.on[s.date]).map(x=>`<button class="btn ghost full" style="margin:4px 0;text-align:left" data-ev="${escA(x.id)}">${escA(x.name)}<div class="small muted">${escA([x.org,x.state,x.discipline].filter(Boolean).join(' · '))}</div></button>`).join(''):`<p class="small muted">No Australian events on Archery Calendar on ${escA(s.date)}.</p>`):'';
+ return`<div class="card" id="abaev"><span class="kicker">Event</span>${e?`<p style="margin:2px 0"><b>${escA(e.name)}</b> · ${escA(e.date||s.date)}</p><p class="small" style="margin:2px 0 6px">${e.official?'Official shoot':'Fun shoot - not official'}</p>
+ <label class="small" style="display:flex;align-items:center;gap:6px;margin:0 0 6px"><input type="checkbox" id="abaevoff" ${e.official?'checked':''} style="width:18px;height:18px;min-height:0;margin:0;flex:none"> Official or sanctioned shoot</label>`:'<p class="small" style="margin:2px 0 6px">Not tied to an event. Pick the shoot this was, and the sheet is headed with its name. It is also added to My events on Archery Calendar once linked.</p>'}
+ <div class="row" style="gap:6px;justify-content:flex-start"><button class="btn ghost" id="abaevpick">${e?'Change event':'Pick event'}</button>${e?'<button class="btn ghost" id="abaevnone">Not at an event</button>':''}</div>${list}</div>`}
+async function evLoad(){try{const r=await fetch('https://archerycalendars.com/data/events.json',{cache:'no-cache'});const j=await r.json(),A=Array.isArray(j)?j:(j.events||[]),on={};
+  A.filter(x=>x&&x.start_date&&(x.country_code=='AUS'||x.country=='Australia')).forEach(x=>{const a=new Date(x.start_date+'T00:00'),b=new Date((x.end_date||x.start_date)+'T00:00');if(!(b>=a)||b-a>40*864e5)return;
+   for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');(on[k]=on[k]||[]).push(x)}});
+  Object.values(on).forEach(L=>L.sort((p,q)=>(q.discipline=='3D')-(p.discipline=='3D')||(q.state=='WA')-(p.state=='WA')||String(p.name).localeCompare(q.name)));EVL={on}}
+ catch(e){EVL={err:'Couldn’t load events. Check the connection and try again.'}}}
+function evBind(s,again){const p=$('#abaevpick');if(p)p.onclick=async()=>{EVO=!EVO;again();if(EVO&&(!EVL||EVL.err)){EVL=null;again();await evLoad();again()}};
+ const n=$('#abaevnone');if(n)n.onclick=()=>{window.calSetEv(s.id,null);EVO=false;again()};
+ const o=$('#abaevoff');if(o)o.onchange=()=>{const e=evOf(s);if(!e)return;e.official=o.checked?1:0;e.fun=o.checked?0:1;window.calSetEv(s.id,e);again()};
+ app.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{const x=((EVL&&EVL.on[s.date])||[]).find(y=>y.id==b.dataset.ev);if(!x)return;
+  window.calSetEv(s.id,{id:x.id,name:String(x.name).replace(/\s+–\s+/g,' - '),club:x.org||x.host||'',date:s.date,fun:1,send:1});EVO=false;again()})}
 /* Nathe's 17 May 2025 Interclub, typed from his paper sheet (every value read clearly; halves add to 392 and 390). Zones follow from the
    points: 20 can only be arrow 1 A and 18 only arrow 1 B. Saved once on his phone, marked as from a paper sheet. */
 const P3=[20,20,20,20,20,20,18,20,20,18, 20,18,20,18,20,20,20,20,20,20],P1=[20,20,18,18,20,20,20,20,20,18, 20,18,20,18,20,20,20,20,20,20];
