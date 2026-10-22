@@ -28,7 +28,7 @@ const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
 function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,24);
  if(n.length<2)return'Type a name (at least 2 characters).';if(!/^[A-Za-z0-9 '_-]+$/.test(n))return'Use letters, numbers, spaces, \' - and _ only.';if(nmRude(n))return'Please use a different name.';
  if(jr&&/\s/.test(n))return'Under-16s go by nickname only: one word, no surname.';
- if(lgArchers(lg).length>=H2H_MAX)return'This league is full (10 archers).';
+ if(lgArchers(lg).length>=h2hCap(lg))return'This league is full (10 archers).';
  if(lgArchers(lg).some(id=>lgName(id).toLowerCase()==n.toLowerCase()))return'Someone in this league already has that name.';
  const L='abcdefghjkmnpqrstuvwxyz23456789';let id;do{id='g'+Array.from(crypto.getRandomValues(new Uint32Array(6)),x=>L[x%L.length]).join('')}while((lg.order||[]).includes(id));
  lg.gn=lg.gn||{};lg.gn[id]={n,j:jr?1:0,t:Date.now(),by:h2hMe()};lg.order=lg.order||[];lg.order.push(id);lg.dirty=1;save();lgTick(true);return''}
@@ -39,7 +39,7 @@ const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
 const lgHas=e=>!!(e&&e.e&&e.e.some(x=>x&&x.length));
 const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=10);
 const lgToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,H2H_MAX)}
+function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,h2hCap(lg))}
 /* current week: by the week dates if set, else the first week not yet shot by everyone (or the host's 'Next week') */
 function lgWeek(lg){const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(LG_W,n||1))}
  let w=Math.max(1,Math.min(LG_W,lg.cw||1));const A=lgArchers(lg);while(w<LG_W&&A.length&&A.every(id=>lgDoneE(lgEnt(lg,id,w))))w++;return w}
@@ -92,8 +92,8 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
   if((d.cwt||0)>(lg.cwt||0)){lg.cw=Math.max(1,Math.min(LG_W,+d.cw||1));lg.cwt=d.cwt;ch=true}}
  if((fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
-  if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<H2H_MAX){lg.order.push(id);ch=true}}}
- lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<H2H_MAX){lg.order.push(id);ch=true}
+  if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
+ lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}
  lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=LG_W))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
  return ch}
@@ -113,7 +113,7 @@ function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h
  for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);return lg}
 async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(code.length!=8)return'Type the 8-character league code.';if(lgGet(code)){lgView(code);return''}
  const L=await h2hPoll(lgTopic(code));const s=(L||[]).filter(d=>d.k=='ls'&&d.code==code);if(!s.length)return'No league found with that code yet. Ask the host to open the league, then try again.';
- const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<H2H_MAX)lg.order.push(me);
+ const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<h2hCap(lg))lg.order.push(me);
  lgAll().push(lg);save();lgTick(true);lgView(code);return''}
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
 /* Onion Shed Challenge (22 Oct 2026, Nathe): before the go-live change the league card was titled 'Onion Shed Challenge' for everyone,
@@ -121,12 +121,22 @@ window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=l
    fixed league record (one code, host Nathe) ADDED once to each member's own leagues list, never replacing anything: skipped when the
    phone already has this code or a league with the same name, and not re-added if the member removes it. Phill and anyone who is
    not a member (new users) never get it. Scores, weeks and standings sync on the league's own ntfy topic like any other league. */
-const LG_PRESET={code:'ONIONSHD',name:'Onion Shed Challenge',host:'nathe',members:['nathe','logan','steven','joseph','michael','dana','tahuri','estiaan','nate'],
+const LG_PRESET={code:'ONIONSHD',name:'Onion Shed Challenge',host:'nathe',members:['nathe','logan','steven','joseph','michael','dana','tahuri','estiaan','nate','darnie'],
+ /* 22 Oct 2026 (Nathe): Danie (darnie) joins and scores himself; Leslie Anderson is an added shooter scored by the host, with a fixed id so every phone agrees */
+ gn:{gleslie:{n:'Leslie Anderson',j:0,t:Date.UTC(2026,9,22,13,45),by:'nathe'}},
  /* relay posts older than this are browser tests from the release checks (22 Oct 2026) and are ignored */
  since:Date.UTC(2026,9,22,12,52)};
-function lgSeed(){if(!TESTER||typeof S=='undefined'||!S)return;const me=TESTER.id,P=LG_PRESET;if(!P.members.includes(me)||LG_EXCL.includes(me)||S.lgPreset==P.code)return;
+/* additive, idempotent: a phone that already holds this league gets any preset member or added shooter it is missing, appended to the
+   end of order (nothing removed or reordered, scores untouched). order and gn only ever grow in lgMerge, so an older host snapshot can't drop them. */
+function lgPresetFix(){if(typeof S=='undefined'||!S||!Array.isArray(S.leagues))return false;const P=LG_PRESET;let ch=false;
+ for(const lg of S.leagues){if(!lg||lg.code!=P.code)continue;lg.order=lg.order||[];
+  for(const id of P.members)if(!LG_EXCL.includes(id)&&!lg.order.includes(id)){lg.order.push(id);ch=true}
+  for(const id in P.gn){lg.gn=lg.gn||{};if(!lg.gn[id]){lg.gn[id]={...P.gn[id]};ch=true}if(!lg.order.includes(id)){lg.order.push(id);ch=true}}
+  if(ch)lg.dirty=1}
+ return ch}
+function lgSeed(){if(!TESTER||typeof S=='undefined'||!S)return;const me=TESTER.id,P=LG_PRESET;if(lgPresetFix())save();if(!P.members.includes(me)||LG_EXCL.includes(me)||S.lgPreset==P.code)return;
  const L=S.leagues=S.leagues||[];S.lgPreset=P.code;
- if(!L.some(l=>l.code==P.code||String(l.name||'').trim().toLowerCase()==P.name.toLowerCase()))L.push({code:P.code,name:P.name,host:P.host,order:P.members.slice(),weeks:[],wt:0,cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),preset:1});
+ if(!L.some(l=>l.code==P.code||String(l.name||'').trim().toLowerCase()==P.name.toLowerCase()))L.push({code:P.code,name:P.name,host:P.host,order:P.members.slice(),weeks:[],wt:0,cw:1,cwt:0,grp:{},gn:JSON.parse(JSON.stringify(P.gn)),sc:{},status:'active',created:Date.now(),preset:1}),lgPresetFix();
  save()}
 try{lgSeed()}catch(e){console.error(e)}window.lgSeed=lgSeed;window.LG_PRESET=LG_PRESET;
 /* ---------- screens ---------- */
@@ -164,7 +174,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
   :`<p class="small" style="margin:0 0 6px">Shared phone, group ${gk+1}: ${G[gk].map(id=>esc(lgName(id))).join(', ')}. Any member's phone can score the group.</p><button class="btn alt" data-lgsg="${gk}">Score group ${gk+1} on this phone</button>`;
- const GS=lgArchers(lg).filter(lgIsG),ced=lgCanEd(lg)&&!lg.fin,full=lgArchers(lg).length>=H2H_MAX;
+ const GS=lgArchers(lg).filter(lgIsG),ced=lgCanEd(lg)&&!lg.fin,full=lgArchers(lg).length>=h2hCap(lg);
  const addC=ced?`<div class="card" id="lgadd">${GS.length?`<p class="small" style="margin:0 0 6px">Shooters you score for: ${GS.map(id=>esc(lgName(id))).join(', ')}.</p><button class="btn alt" data-lgguests="1">Score added shooters, week ${w}</button>`:''}
   <details id="lgaddd" style="margin-top:${GS.length?8:0}px"><summary class="btn ghost" style="display:inline-block">Add a shooter</summary>${full?'<p class="small muted" style="margin:6px 0 0">This league is full (10 archers).</p>':`<p class="small muted" style="margin:6px 0">For someone without the app. You enter their 300s each week.</p>
   <label for="lggname">Name</label><input id="lggname" maxlength="24" autocomplete="off"><label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lggjr"> Under 16 (nickname only)</label>

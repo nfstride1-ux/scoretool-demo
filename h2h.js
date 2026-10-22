@@ -11,6 +11,8 @@ const H2H_BASE='https://ntfy.sh',H2H_NS='scoretool-h2h-q7m4';
 const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2hInbox=id=>H2H_NS+'-in-'+id;
 const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||ROUNDS[r].vegas&&!ROUNDS[r].league)&&!ROUNDS[r].custom);
 const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
+/* Onion Shed Challenge has no archer limit (Nathe, 22 Oct 2026): its league record and its final match are uncapped; everything else keeps H2H_MAX */
+const H2H_NOCAP=['ONIONSHD'],h2hCap=m=>m&&(H2H_NOCAP.includes(m.code)||H2H_NOCAP.includes(m.lg))?1e9:H2H_MAX;window.h2hCap=h2hCap;
 const H2H_MODES={total:'Highest total',sets:'Set points (2 for a set win, 1 for a draw, first to 6)'};
 const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
 const h2hAll=()=>S.matches=S.matches||[],h2hGet=c=>h2hAll().find(m=>m.code==c);
@@ -97,7 +99,7 @@ const h2hJoinLink=c=>location.origin+location.pathname+'#join='+c;
 const h2hEndsOf=(m,id)=>id==h2hMe()&&!m.lg&&!m.cs?((h2hSess(m)||{ends:[]}).ends.filter(e=>e&&e.length)):((((m.ops||{})[id]||{}).ends)||[]);
 const h2hDoneOf=(m,id)=>id==h2hMe()&&!m.lg&&!m.cs?h2hMyDone(m):!!((m.ops||{})[id]||{}).done;
 /* rank by total, then 10s (incl. X), then Xs; the same on all three = shared place (shown as =2) */
-function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).slice(0,H2H_MAX),cnt=(E,f)=>E.flat().filter(f).length;
+function h2hBoard(m){const R=ROUNDS[m.round]||{ape:3,ends:20},ids=(m.order||[]).slice(0,h2hCap(m)),cnt=(E,f)=>E.flat().filter(f).length;
  const rows=ids.map(id=>{const E=h2hEndsOf(m,id);return{id,nm:(m.names&&m.names[id])||h2hShort(id),E,tot:E.reduce((t,e)=>t+endSum(e),0),n:E.filter(e=>e.length==R.ape).length,done:h2hDoneOf(m,id),t10:cnt(E,x=>x=='X'||x=='10'),x:cnt(E,x=>x=='X'),me:id==h2hMe()}});
  const vx=!!R.vegas;/* Vegas 300 seeding: ties split on X count */rows.sort((a,b)=>b.tot-a.tot||(vx?b.x-a.x||b.t10-a.t10:b.t10-a.t10||b.x-a.x)||ids.indexOf(a.id)-ids.indexOf(b.id));
  rows.forEach((r,i)=>{const p=rows[i-1];r.rank=p&&p.tot==r.tot&&p.t10==r.t10&&p.x==r.x?p.rank:i+1});
@@ -108,7 +110,7 @@ function h2hGResult(m){const b=h2hBoard(m);if(!b.fin)return'';const L=b.rows.fil
  return L.length==1?(L[0].me?'▲ You win':`▲ ${esc(L[0].nm)} wins`):`▲ Tie for 1st: ${L.map(r=>esc(r.me?'You':r.nm)).join(', ')}`}
 function h2hApplyG(m,d){if(d.code!=m.code)return false;if(window.suApply&&suApply(m,d))return true;if(m.lg||m.cs)return false;const me=h2hMe();m.order=m.order||[];m.ops=m.ops||{};
  if(d.k=='hd'){if(d.nm)nmLearn(d.host,d.nm,d.nt,d.t);if(Array.isArray(d.inv))m.inv=d.inv.filter(x=>typeof x=='string').slice(0,H2H_MAX-1);if(d.host&&!m.order.includes(d.host))m.order.unshift(d.host);return true}
- if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<H2H_MAX){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
+ if(d.k=='st'&&d.by&&d.by!=me){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);if(!m.order.includes(d.by))m.order.push(d.by);if(m.order.indexOf(d.by)<h2hCap(m)){m.ops[d.by]={ends:(d.ends||[]).slice(0,60),done:!!d.done,t:d.t};m.seen=Date.now()}return true}
  if(d.k=='cl'&&d.by==m.host&&!m.closed){m.closed=true;return true}return false}
 function h2hCreateG(T){const me=h2hMe();if(T.length>H2H_MAX-1)return;const w=($('#h2hwhen')||{}).value||'',need=(ROUNDS[$('#h2hrd').value]||{}).vegas?Math.max(2,Math.min(H2H_MAX,parseInt(($('#h2hneed')||{}).value)||0)):0;
  const m={code:h2hCode(),round:$('#h2hrd').value,mode:'total',g:1,host:me,a:me,opp:me,order:[me],ops:{},inv:T.slice(),need,when:w,created:Date.now(),status:'active'};h2hAll().push(m);save();

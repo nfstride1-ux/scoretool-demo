@@ -42,10 +42,10 @@ function suLadder(m){const S0=((m.su||{}).seeds)||[],n=S0.length,M=[];if(n<2)ret
 const suDone=m=>{const L=suLadder(m);return!!(L.length&&L[L.length-1].res.winner)};
 window.suKeepPolling=m=>suIsV(m)&&!m.closed&&!(m.su&&suDone(m));
 window.suApply=function(m,d){if(!suIsV(m)||d.code!=m.code)return false;const me=h2hMe();
- if(d.k=='su'&&d.by==m.host&&Array.isArray(d.seeds)){const sd=d.seeds.filter(x=>typeof x=='string').slice(0,H2H_MAX);/* the host's seeding wins */if(JSON.stringify(sd)!=JSON.stringify((m.su||{}).seeds)){m.su={seeds:sd,t:d.t};return true}return false}
- if(d.k=='sm'&&Number.isInteger(d.i)&&d.i>=0&&d.i<H2H_MAX){const L=suLadder(m)[d.i];if(!L||!(d.by==m.host||d.by==L.A||d.by==L.B))return false;m.smt=m.smt||{};if((m.smt[d.i]||0)>=(d.t||0))return false;
+ if(d.k=='su'&&d.by==m.host&&Array.isArray(d.seeds)){const sd=d.seeds.filter(x=>typeof x=='string').slice(0,h2hCap(m));/* the host's seeding wins */if(JSON.stringify(sd)!=JSON.stringify((m.su||{}).seeds)){m.su={seeds:sd,t:d.t};return true}return false}
+ if(d.k=='sm'&&Number.isInteger(d.i)&&d.i>=0&&d.i<h2hCap(m)){const L=suLadder(m)[d.i];if(!L||!(d.by==m.host||d.by==L.A||d.by==L.B))return false;m.smt=m.smt||{};if((m.smt[d.i]||0)>=(d.t||0))return false;
   m.smt[d.i]=d.t||0;m.sm=m.sm||{};const v=typeof d.s=='string'&&(d.s==L.A||d.s==L.B)?d.s:null;if(v)m.sm[d.i]=v;else delete m.sm[d.i];return true}
- if(d.k=='lm'&&d.by&&d.by!=me&&Number.isInteger(d.i)&&d.i>=0&&d.i<H2H_MAX){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);const cl=a=>Array.isArray(a)?a:[];
+ if(d.k=='lm'&&d.by&&d.by!=me&&Number.isInteger(d.i)&&d.i>=0&&d.i<h2hCap(m)){if(d.nm)nmLearn(d.by,d.nm,d.nt,d.t);const cl=a=>Array.isArray(a)?a:[];
   /* one-phone scoring for this match: only the chosen scorer may post the other archer's arrows */
   const tg=typeof d.for=='string'?d.for:d.by,sc=(m.sm||{})[d.i],hf=!!(m.cs&&d.by==m.host&&(m.nmo||[]).includes(tg)&&!sc);if(tg!=d.by&&sc!=d.by&&!hf)return false;if(tg==d.by&&sc&&sc!=d.by)return false;
   m.lad=m.lad||{};m.lad[d.i]=m.lad[d.i]||{};m.lad[d.i][tg]={e:cl(d.e).slice(0,SU_ENDS).map(x=>cl(x).slice(0,SU_APE).map(String)),c:cl(d.c).slice(0,SU_ENDS),so:cl(d.so).slice(0,3).map(String)};return true}
