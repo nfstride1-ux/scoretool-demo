@@ -218,6 +218,7 @@ const CS_TYPES=[['solo','Just me'],['casual','Casual shoot'],['league','League s
 const _csScore=score;score=function(){const o=_csScore.apply(this,arguments);try{csDecorate()}catch(e){console.error(e)}return o};
 function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const first=$('#rd').closest('.card');if(!first)return;const mode=window._csMode||'solo';
  first.insertAdjacentHTML('afterbegin',`<div id="cstype0"><label>What are you shooting?</label>${csSeg('cstp',CS_TYPES,mode)}</div>`);
+ if(mode!='solo'){const mr=$('#myrcard');if(mr)mr.remove()}
  if(mode=='casual'){[...first.children].forEach(x=>{if(x.id!='cstype0')x.remove()});first.insertAdjacentHTML('beforeend',csSetupHtml());csBindSetup(first)}
  else if(mode=='league'){[...first.children].forEach(x=>{if(x.id!='cstype0')x.remove()});first.insertAdjacentHTML('beforeend',`<p class="small" id="csleague" style="margin:8px 0 0">League shoots are scored inside your league, below. Open your league and tap Score my week.</p>`)}
  const lc=$('#lgcard');if(mode=='league'&&lc){const p=lc.parentNode;p.insertBefore(lc,first.nextSibling)}
