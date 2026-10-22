@@ -1,0 +1,108 @@
+390 home emoji => 
+390 header =>  SCORETOOL
+DEMO · not live
+Darnie
+?
+390 tools emoji => 
+390 clubs emoji => 
+390 an70 => ['5 full rounds of this round, plus 1 partial (left out of comparisons, averages and potential score). Competition and practice, ghost matches includ', 'HALF SPLIT 2023-09-17 · 1397 +6 VS LAST 695 1st half +11 702 2nd half −5 \tX\t10\t9\t8\t7 1st h', 'Lowest end on average: end 2 (54.3). Highest: end 19 (60.0).  1418 pot', 'Potential score adds your best score at each end number across these shoots, capped at the round maximum of 1440. Full rounds of 24 ends only (1 partial, 2 with a different number of ends left out).  TARGET LINE YOU SET ']
+390 kicker ANALYSIS count => 2
+390 an720 => ['WA 50/720 (222 + 3 partial)', '222 full rounds of this round, plus 3 partial (left out of comparisons, averages and potential score)', 'none 6 months last shot 2025-04-06 9.57 avg']
+390 anfield 6m => ['ast 5 391.0 6 months 5.50 avg arrow 5.49 last roun']
+390 analytics backs => ['‹ My archery']
+390 analytics pb => ['ws 9.71 avg arrow 0 PBs beaten 9.87 best', 'No earlier PB was beaten in this period (1 round shot for the first time); your best here: 592 Double Aus Indoor 18m']
+390 squad heads => ['SQUADS', 'NEW SQUAD', 'SAFE SQUADS']
+390 league heads => ['LEAGUES']
+390 fieldred => petition
+16 Apr 2022 · 390 · Competition
+Include incomplete rounds (8)
+
+5 shoots of Field Red. Every card below uses these.
+
+These results were entered under the event's own round name, Field Red, so they're kept separate from WA Field 24Mk Red. The results don't say whether every target was marked.
+390 scorehead => End 1 of 12
+·
+WA 720
+·
+70m
+·
+122cm face
+·
+Sight not set
+End
+26
+Prog
+26
+390 discard => {'sessions_before': 0, 'after': 0, 'cur': True, 'view': 'score', 'discarded': '["s1792670616904"]'}
+390 vegas => [0, 'End 1 of 10\n·\nVegas 300\n·\n20yd\n·\n40cm 3-spot\n·\nSight not set\nEnd\n0\nProg\n0']
+390 who => WHOSE APP
+THIS IS DARNIE'S APP
+
+On a shared phone, switch to your own name. Each archer's scores stay separate.
+
+Nathe
+Phill
+Logan
+Snookie
+Joe
+Choongy
+Dana
+Tahuri
+Estiaan
+Nate
+390 errs => []
+390 cal reqs => []
+1366 home emoji => 
+1366 header =>  SCORETOOL
+DEMO · not live
+Darnie
+?
+1366 tools emoji => 
+1366 clubs emoji => 
+1366 an70 => ['5 full rounds of this round, plus 1 partial (left out of comparisons, averages and potential score). Competition and practice, ghost matches includ', 'HALF SPLIT 2023-09-17 · 1397 +6 VS LAST 695 1st half +11 702 2nd half −5 \tX\t10\t9\t8\t7 1st h', 'Lowest end on average: end 2 (54.3). Highest: end 19 (60.0).  1418 pot', 'Potential score adds your best score at each end number across these shoots, capped at the round maximum of 1440. Full rounds of 24 ends only (1 partial, 2 with a different number of ends left out).  TARGET LINE YOU SET ']
+1366 kicker ANALYSIS count => 2
+1366 an720 => ['WA 50/720 (222 + 3 partial)', '222 full rounds of this round, plus 3 partial (left out of comparisons, averages and potential score)', 'none 6 months last shot 2025-04-06 9.57 avg']
+1366 anfield 6m => ['ast 5 391.0 6 months 5.50 avg arrow 5.49 last roun']
+1366 analytics backs => ['‹ My archery']
+1366 analytics pb => ['ws 9.71 avg arrow 0 PBs beaten 9.87 best', 'No earlier PB was beaten in this period (1 round shot for the first time); your best here: 592 Double Aus Indoor 18m']
+1366 squad heads => ['SQUADS', 'NEW SQUAD', 'SAFE SQUADS']
+1366 league heads => ['LEAGUES']
+1366 fieldred => petition
+16 Apr 2022 · 390 · Competition
+Include incomplete rounds (8)
+
+5 shoots of Field Red. Every card below uses these.
+
+These results were entered under the event's own round name, Field Red, so they're kept separate from WA Field 24Mk Red. The results don't say whether every target was marked.
+1366 scorehead => End 1 of 12
+·
+WA 720
+·
+70m
+·
+122cm face
+·
+Sight not set
+End
+26
+Prog
+26
+1366 discard => {'sessions_before': 0, 'after': 0, 'cur': True, 'view': 'score', 'discarded': '["s1792670634411"]'}
+1366 vegas => [0, 'End 1 of 10\n·\nVegas 300\n·\n20yd\n·\n40cm 3-spot\n·\nSight not set\nEnd\n0\nProg\n0']
+1366 who => WHOSE APP
+THIS IS DARNIE'S APP
+
+On a shared phone, switch to your own name. Each archer's scores stay separate.
+
+Nathe
+Phill
+Logan
+Snookie
+Joe
+Choongy
+Dana
+Tahuri
+Estiaan
+Nate
+1366 errs => []
+1366 cal reqs => []

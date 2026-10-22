@@ -1,0 +1,8 @@
+keys ['scoretool.v1.logan', 'scoretool.tester', 'scoretool.v1.darnie', 'scoretool.cal.darnie.base', 'scoretool.cal.logan.base'] darnie sessions [0, 2]
+old keys 5 old reload churn []
+AFTER NEW LOAD: identical 5 of 5 changed [] new keys []
+AFTER BROWSING new screens: changed []
+OLD app same browsing changed []
+sessions identical: True
+logan identical: True
+errs []

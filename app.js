@@ -226,7 +226,10 @@ function latestWins(L){if(L.kind=='practice')return{s:L.s,label:L.s.round};const
  if(o){const ge=o.ends.filter(e=>!e.flag);return{s:{id:'off',date:L.date,round:o.round,ends:ge.map(e=>e.arrows),dists:ge.map(e=>e.dist)},label:o.round}}return null}
 /* ---------- arrow volume (300-a-day idea from George Ryles notes; not shown) ---------- */
 function dayArrows(){const m={};const add=(d,n)=>{if(n>0)m[d]=(m[d]||0)+n};S.sessions.filter(s=>!s.sample).forEach(s=>add(s.date,arrows(s).length));
- offRounds().forEach(o=>add(normDate(o.date),o.ends.filter(e=>!e.flag).reduce((t,e)=>t+e.arrows.length,0)));Object.entries(S.vol||{}).forEach(([d,n])=>add(d,n));return m}
+ offRounds().forEach(o=>add(normDate(o.date),o.ends.filter(e=>!e.flag).reduce((t,e)=>t+e.arrows.length,0)));Object.entries(S.vol||{}).forEach(([d,n])=>add(d,n));
+ /* 22 Oct 2026 (Nathe): every arrow plotted in an Arrow optimizer tuning session counts too (all session types, before and after groups),
+    on the day it was plotted (p[2], new arrows only) or the session's date. Read at display time; undo/clear/delete takes it back off. */
+ (S.tune||[]).forEach(t=>{if(!t)return;[...(t.before||[]),...(t.after||[])].forEach(p=>{if(Array.isArray(p))add(typeof p[2]=='string'?p[2]:t.date,1)})});return m}
 /* ONE definition of arrow counts, used by Home, Today's arrows, Ranks (XP) and Following: arrows from app sessions + official scoresheets
    (ends that are all misses on a sheet are treated as sheet errors and not counted) + arrows added by hand. A week starts on Monday. */
 function arrowDays(name){if(!name||name==S.profile)return(window.rewardDayArrows||dayArrows)();const m={};offFor(name).forEach(o=>{const d=normDate(o.date),n=o.ends.filter(e=>!e.flag).reduce((t,e)=>t+e.arrows.length,0);if(n)m[d]=(m[d]||0)+n});return m}

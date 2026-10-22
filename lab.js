@@ -160,7 +160,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  ${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
  <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>`;
  bar('Tuning session','lab_opt','Arrow optimizer');
- const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3)]);save();render()};
+ const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()};
  app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{T.grp=b.dataset.g;save();render()});
  $('#tun').onclick=()=>{(one||g=='before'?T.before:T.after).pop();save();render()};
  $('#tclr').onclick=()=>{if(confirm('Clear these arrows?')){if(one||g=='before')T.before=[];else T.after=[];save();render()}};
