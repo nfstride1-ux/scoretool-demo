@@ -117,3 +117,19 @@ html.standalone #shell{top:0;bottom:auto;height:var(--apph,100dvh)!important}
 .callist{margin:10px 0;border-top:1px solid var(--line)}.calrow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px}
 .calrow input{width:22px;height:22px;min-height:0;margin:0;flex:none;accent-color:#1d4ed8}
 @media print{.calov,.calsend,.calst{display:none!important}}
+
+/* score photos (23 Oct 2026) */
+.phbox{margin-top:6px}.phbox:empty{display:none}.phbox svg{width:16px;height:16px;vertical-align:-3px}
+.phfin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}.phfin p{flex-basis:100%}
+.phadd{display:inline-flex!important;align-items:center;gap:6px;background:var(--blue);color:#fff;border-color:var(--blue)}
+.phskip{min-height:40px}
+.phrow{display:flex;gap:10px;align-items:center;margin:0 0 8px}
+.phthumb{flex:0 0 auto;width:56px;height:56px;padding:0;border:2px solid var(--gold);border-radius:50%;overflow:hidden;background:#0b1830;cursor:pointer}
+.phthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.phmeta{display:flex;flex-direction:column;gap:4px;min-width:0}.phmeta .small{color:var(--blue)}
+.phbtns{display:flex;flex-wrap:wrap;gap:6px}
+.phbtn{min-height:36px!important;padding:6px 10px!important;font-size:13px;display:inline-flex!important;align-items:center;gap:6px}
+.phov{position:fixed;inset:0;z-index:70;background:rgba(7,10,16,.95);display:flex;flex-direction:column;align-items:center;padding:10px 10px calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
+.phov-bar{width:100%;max-width:640px}.phov-bar .btn{background:#fff;color:#0b1830}
+.phov img{max-width:100%;max-height:calc(100vh - 90px);object-fit:contain;border:2px solid var(--gold);border-radius:10px;background:#fff}
+@media print{.phbox,.phov{display:none!important}}
