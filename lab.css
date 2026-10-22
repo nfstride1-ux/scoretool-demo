@@ -105,5 +105,4 @@ html{background:var(--topbg,var(--bg))}
    so it always equals the visible screen. Safe-area padding stays on the tab bar only. */
 html.standalone,html.standalone body{height:var(--apph,100%)}
 html.standalone #shell{top:0;bottom:auto;height:var(--apph,100dvh)!important}
-/* fix 4 (22 Oct 2026): shell reaches the true bottom on every iPhone; extra tab bar padding keeps the labels above the home indicator */
-html.standalone .tabs{padding-bottom:calc(6px + env(safe-area-inset-bottom,0px) + var(--apx,0px))!important}
+/* fix 5 (22 Oct 2026): fix 4 extra tab padding removed; shell height (--apph) now comes from the screen height when the app runs under the status bar */
