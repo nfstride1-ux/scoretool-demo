@@ -118,12 +118,13 @@ sub('lab_settings','me','Settings & help','lab_me','Me',()=>me(),(e,t)=>['settin
 LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
  row('lab_opt','🎯','Arrow optimizer & tuning','Plot practice groups. Compare before and after a change'),
+ row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
  row('lab_calc','🧮','Calculators','Arrow speed, kinetic energy, momentum, FOC'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO and ASA, with sources')]);
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
-LABSEC.lab_opt='tools';
-const CHANGES=['Just a group','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
+LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';
+const CHANGES=['Just a group','Bare shaft vs fletched','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
 const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};
 function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length;
  const mr=P.reduce((a,p)=>a+Math.hypot(p[0]-cx,p[1]-cy),0)/P.length;let es=0;P.forEach(a=>P.forEach(b=>{es=Math.max(es,Math.hypot(a[0]-b[0],a[1]-b[1]))}));
@@ -138,13 +139,20 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
   <div><label for="td">Distance</label><input id="td" placeholder="e.g. 18m or 20yd"></div>
   <div><label for="tf">Face</label><select id="tf">${Object.keys(FACES).map(f=>`<option ${f=='40cm'?'selected':''}>${f}</option>`).join('')}</select></div></div>
   <p class="small muted">Setup: ${b?h(b.name):'none (add one in My archery › Setups & sight marks)'}</p>
+  ${(()=>{const a=window.arrowSetup&&arrowSetup();return a?`<label class="row" style="gap:8px;justify-content:flex-start;align-items:center;margin:4px 0 8px"><input type="checkbox" id="tarw" style="width:22px;height:22px" checked> <span>Use my arrow setup <span class="small muted">(${h(arwSum(a))})</span></span></label>`:`<p class="small muted">Arrow setup: none yet. <button class="btn ghost" data-go="lab_chooser" style="min-height:32px;padding:4px 10px">Arrow chooser</button></p>`})()}
+  <div id="thandw" hidden><label for="thand">Bow hand</label><select id="thand"><option value="R">Right-handed archer</option><option value="L">Left-handed archer</option></select></div>
   <button class="btn alt full" id="tgo">Start plotting</button></div>
   ${mine.length?`<div class="card"><span class="kicker">Past sessions</span>${mine.slice().reverse().map(t=>{const B=gstats(t.before,FACES[t.face]),A=gstats(t.after,FACES[t.face]);return row('x" data-tune="'+t.id,'🎯',t.name||t.change,`${t.date} · ${t.change}${t.dist?' · '+t.dist:''} · ${B?B.n:0} before${A?' / '+A.n+' after':''}`)}).join('')}</div>`:''}
   <p class="small muted">Records where your arrows land. It gives no tuning advice; that's your coach's job.</p>`;
   bar('Arrow optimizer','tools','Tools');
-  $('#tgo').onclick=()=>{const t={id:'t'+Date.now(),archer:S.profile,date:new Date().toLocaleDateString('en-CA'),name:$('#tn').value.trim(),change:$('#tc').value,dist:$('#td').value.trim(),face:$('#tf').value,bow:b?b.id:null,bowName:b?b.name:'',before:[],after:[],grp:'before'};S.tune.push(t);S._tuneId=t.id;save();render()};
+  const tcs=()=>{$('#thandw').hidden=$('#tc').value!='Bare shaft vs fletched'};$('#tc').onchange=tcs;tcs();
+  $('#tgo').onclick=()=>{const t={id:'t'+Date.now(),archer:S.profile,date:new Date().toLocaleDateString('en-CA'),name:$('#tn').value.trim(),change:$('#tc').value,dist:$('#td').value.trim(),face:$('#tf').value,bow:b?b.id:null,bowName:b?b.name:'',before:[],after:[],grp:'before'};
+   /* new sessions only: a snapshot of the Arrow chooser setup, and the bow hand for a bare-shaft test. Old sessions are never rewritten. */
+   const aw=$('#tarw');if(aw&&aw.checked&&window.arrowSetup){const a=arrowSetup();if(a)t.arrow=a}if(t.change=='Bare shaft vs fletched')t.hand=$('#thand').value;
+   S.tune.push(t);S._tuneId=t.id;save();render()};
   app.querySelectorAll('[data-tune]').forEach(x=>x.onclick=()=>{S._tuneId=x.dataset.tune;save();render()});return}
- const rcm=FACES[T.face]||20,g=T.grp||'before',B=gstats(T.before,rcm),A=gstats(T.after,rcm),one=T.change=='Just a group';
+ const rcm=FACES[T.face]||20,g=T.grp||'before',B=gstats(T.before,rcm),A=gstats(T.after,rcm),one=T.change=='Just a group',bare=T.change=='Bare shaft vs fletched';
+ const LB=bare?'Fletched':'Before',LA=bare?'Bare':'After';
  const rings=[...Array(10)].map((_,i)=>`<circle cx="0" cy="0" r="${(10-i)/10}" fill="${i>=8?'#ffd84d':'#fff'}" stroke="${i%2?'#94a3b8':'#1e293b'}" stroke-width="0.006"/>`).join('');
  const dots=T.before.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="0.035" fill="#1d4ed8" stroke="#fff" stroke-width="0.01"/>`).join('')+T.after.map(p=>`<rect x="${p[0]-.032}" y="${p[1]-.032}" width="0.064" height="0.064" fill="#111" stroke="#fff" stroke-width="0.01"/>`).join('');
  const cen=(S2,c)=>S2?`<path d="M${S2.cx/rcm-.06} ${S2.cy/rcm}h.12M${S2.cx/rcm} ${S2.cy/rcm-.06}v.12" stroke="${c}" stroke-width="0.012"/>`:'';
@@ -152,13 +160,13 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  let cmp='';if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
  app.innerHTML=`<div class="card"><span class="kicker">${h(T.date)} · ${h(T.change)}${T.dist?' · '+h(T.dist):''} · ${h(T.face)} face${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||T.change)}</h2>
  <div class="labgrid2"><div>
- ${one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">● Before</button><button data-g="after" aria-pressed="${g=='after'}">■ After</button></div>`}
+ ${one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">● ${LB}</button><button data-g="after" aria-pressed="${g=='after'}">■ ${LA}</button></div>`}
  <svg class="tface" id="tface" viewBox="-1.05 -1.05 2.1 2.1" role="img" aria-label="Tuning face. Tap where each arrow landed.">${rings}${dots}${cen(B,'#1d4ed8')}${cen(A,'#111')}</svg>
  <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${one?'group':g}</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">🗑 Delete</button></div>
  </div><div>
- <table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● Before',B)}${one?'':line('■ After',A)}</tbody></table>
+ <table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● '+LB,B)}${one?'':line('■ '+LA,A)}</tbody></table>
  ${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
- <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>`;
+ <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>${arwCard(T,one)}${bare?bareCard(T,B,A):''}`;
  bar('Tuning session','lab_opt','Arrow optimizer');
  const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()};
  app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{T.grp=b.dataset.g;save();render()});
@@ -166,7 +174,41 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  $('#tclr').onclick=()=>{if(confirm('Clear these arrows?')){if(one||g=='before')T.before=[];else T.after=[];save();render()}};
  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
  $('#tdel').onclick=()=>{if(confirm('Delete this tuning session?')){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
- $('#tnote').onchange=e=>{T.note=e.target.value;save()}};
+ $('#tnote').onchange=e=>{T.note=e.target.value;save()};
+ const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};
+ app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go))};
+/* Arrow setup in a tuning session (22 Oct 2026, Nathe): new sessions carry a snapshot of the Arrow chooser setup (t.arrow);
+   'Use my current arrow setup for After' adds t.arrowAfter, so the session shows exactly what changed. Old sessions show nothing. */
+function arwSum(a){return[a.model&&a.spine?a.model+' '+a.spine:(a.spine?'spine '+a.spine:''),a.len?a.len+'"':'',a.pt!=null?a.pt+' gr point':''].filter(Boolean).join(' · ')}
+function arwCard(T,one){const a=T.arrow;if(!a)return'';const b=T.arrowAfter;
+ const F=[['Spine',x=>x.spine?(x.model?x.model+' ':'')+x.spine:'-'],['Length',x=>x.len!=null?x.len+'"':'-'],['Point',x=>x.pt!=null?x.pt+' gr':'-'],['FOC',x=>x.foc!=null?x.foc.toFixed(1)+'%':'-'],['Total weight',x=>x.tw!=null?x.tw+' gr':'-'],['Speed',x=>x.fps!=null?x.fps+' fps'+(x.fpsSrc=='estimate'?' (estimate)':''):'-']];
+ const rows=F.map(([n,f])=>{const v0=f(a),v1=b?f(b):'';const ch=b&&v0!=v1;return`<tr><th>${n}</th><td>${h(v0)}</td>${b?`<td>${ch?`<b>${h(v0)} → ${h(v1)}</b>`:'<span class="muted">same</span>'}</td>`:''}</tr>`}).join('');
+ const changed=b?F.filter(([n,f])=>f(a)!=f(b)).map(([n,f])=>`${n.toLowerCase()} ${f(a)} → ${f(b)}`):[];
+ return`<div class="card"><span class="kicker">Arrow setup</span>${b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
+ <table class="labtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${b?'<th>After</th>':''}</tr></thead><tbody>${rows}</tbody></table>
+ <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
+ <p class="small muted" style="margin:6px 0 0">Saved with this session when it started. Change your arrow in the Arrow chooser, then tap the button to record the After setup.</p></div>`}
+/* Bare shaft vs fletched: reading and next step, only from Easton's Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test, p. 5;
+   Adjustments Within the Bow and Arrow System, p. 10). The guide gives the left/right reading for a right-handed archer only. */
+function bareCard(T,B,A){const S2=window.ARROW_SRC||{},tm=S2.eastonTM?`<a href="${S2.eastonTM[1]}" target="_blank" rel="noopener">${h(S2.eastonTM[0])}</a>`:'Easton Arrow Tuning and Maintenance Guide';
+ const head=`<div class="card" id="barecard"><span class="kicker">Bare shaft reading</span>`,tail=`<p class="small muted" style="margin:8px 0 0">Easton's Bare Shaft Planing Test: three fletched arrows, then two bare shafts aimed the same, at 15 to 20 yards or metres. It is written for finger release.</p><p class="labsrc">${tm}</p></div>`;
+ if(!B||!A||B.n<3||A.n<2)return head+`<p style="margin:2px 0 0">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the reading.</p>`+tail;
+ const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,out=[];
+ if(Math.abs(dy)>sp)out.push(`<p>Bare shafts are <b>${cm(Math.abs(dy))} cm ${dy<0?'higher':'lower'}</b> than the fletched group. Easton: ${dy<0?'move the nocking point <b>up</b>':'move the nocking point <b>down</b>'} until they hit at the same height${dy>0?' (slightly lower is sometimes wanted)':''}.</p>`);
+ if(T.hand!='R'){out.push(`<p>Side to side, bare shafts are ${cm(Math.abs(dx))} cm ${dx>=0?'right':'left'} of the fletched group. Easton's guide gives the weak or stiff reading for right-handed archers only, so no reading is shown for a left-handed archer. Ask your coach.</p>`);return head+out.join('')+tail}
+ if(Math.abs(dx)<=sp){out.push(`<p>Side to side, the bare shafts are within the fletched group's average spread. Easton: "Your equipment is basically tuned when the bare shafts and fletched shafts impact at the same or very near the same location."</p>`);return head+out.join('')+tail}
+ const weak=dx>0,fw=window.arrowFocWith,pt=fw&&fw({dpt:weak?-25:25}),ct=weak&&fw&&fw({dlen:-0.25});
+ const focTxt=r=>r?(r.to.toFixed(1)==r.from.toFixed(1)?`FOC about the same (${r.from.toFixed(1)}% → ${r.to.toFixed(2)}%)`:`FOC ${r.from.toFixed(1)}% → <b>${r.to.toFixed(1)}%</b>`):'FOC: set up your arrow in the Arrow chooser to see this';
+ const m=(T.dist||'').match(/(\d+(?:\.\d+)?)\s*(m|yd|y)/i),d=m?+m[1]:NaN,far=isFinite(d)&&d>=18&&d<=20&&Math.abs(dx)>15;
+ out.push(`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${weak?'right':'left'}</b> of the fletched group. For a right-handed archer Easton reads this as <b>${weak?'weak':'stiff'}</b>.</p>`);
+ return head+out.join('')+`</div><div class="card" id="nextcard"><span class="kicker">Next step to try</span><p class="small" style="margin:2px 0 8px">Starting points from Easton's guide. Change one thing at a time, then shoot the test again.</p>
+ <table class="labtbl"><tbody>
+ <tr><th>${weak?'Lighter':'Heavier'} point or insert</th><td>${weak?'−':'+'}25 gr is a first step to try (Easton's chart counts 25 gr as 3 lb of bow weight)<br><span class="small">${focTxt(pt)}</span></td></tr>
+ <tr><th>Cushion plunger</th><td>${weak?'Increase':'Decrease'} spring tension<br><span class="small">FOC unchanged</span></td></tr>
+ <tr><th>Draw weight</th><td>${weak?'Decrease':'Increase'} it slightly, if your bow weight is adjustable<br><span class="small">FOC unchanged (the formula has no draw weight in it)</span></td></tr>
+ <tr><th>Cut length</th><td>${weak?`Cut 1/4" shorter (Gold Tip's step), only if the arrow still reaches about 1" past the rest (Easton). A shorter arrow acts stiffer: Easton's chart asks for a weaker spine as length drops.<br><span class="small">${focTxt(ct)}</span>`:`Don't cut: a shorter arrow acts stiffer on Easton's chart. If nothing else works, the chart's answer is a weaker spine.`}</td></tr>
+ </tbody></table>${far?`<p class="lab-note" style="margin-top:8px">More than 15 cm (6 in) at ${d} ${m[2]}: Easton says the equipment needs changing to get a good tune, which may mean a ${weak?'stiffer':'weaker'} spine.</p>`:''}
+ <p class="small muted" style="margin:8px 0 0">These are starting points, not answers. Confirm with another bare-shaft test.</p><p class="labsrc">${tm}${S2.gt?` · <a href="${S2.gt[1]}" target="_blank" rel="noopener">${h(S2.gt[0])}</a>`:''}${S2.easton?` · <a href="${S2.easton[1]}" target="_blank" rel="noopener">${h(S2.easton[0])}</a>`:''}</p></div>`}
 
 /* Calculators: standard physics. Speed estimate is the common IBO-rating rule of thumb, clearly marked. */
 LABSEC.lab_calc='tools';
@@ -196,6 +238,7 @@ E.lab_calc=function(){const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60'
  <div class="card"><span class="kicker">FOC (front of centre)</span>${inp('len','Arrow length','inches, nock groove to end of shaft')}${inp('bp','Balance point','inches from the nock groove, point on')}
   <p>FOC <span class="labout">${f(foc)}%</span></p><p class="labsrc">FOC = (balance point − length ÷ 2) ÷ length × 100.</p></div></div>`;
  bar('Calculators','tools','Tools');
+ {const fr=window._acFrom;window._acFrom=null;app.querySelector('.labbar').insertAdjacentHTML('afterend',fr?`<p class="lab-note" id="acfrom">From the Arrow chooser: ${h(fr.sent.join(', '))} filled in.${fr.left.length?' Still to enter yourself: '+h(fr.left.join(', '))+'.':''} <button class="btn ghost" data-go="lab_chooser" style="min-height:32px;padding:4px 10px">Arrow chooser</button></p>`:`<p class="small muted" style="margin:0 0 10px">Choosing a new arrow? <button class="btn ghost" data-go="lab_chooser" style="min-height:32px;padding:4px 10px">Arrow chooser</button></p>`);bindGo()}
  app.querySelectorAll('[data-c]').forEach(i=>i.onchange=e=>{const k=i.dataset.c,val=e.target.value.trim();
   if(k=='fpsU'&&!C.fpsU&&isFinite(vAuto)&&+val==vAuto)return;if(k=='grU'&&!C.grU&&+val==gr0)return;
   C[k]=val;if(['ibo','dl','dw','sg','gr'].includes(k))C.spdOn=1;save();render()})};
