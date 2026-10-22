@@ -106,3 +106,14 @@ html{background:var(--topbg,var(--bg))}
 html.standalone,html.standalone body{height:var(--apph,100%)}
 html.standalone #shell{top:0;bottom:auto;height:var(--apph,100dvh)!important}
 /* fix 5 (22 Oct 2026): fix 4 extra tab padding removed; shell height (--apph) now comes from the screen height when the app runs under the status bar */
+/* Send past rounds to Archery Calendar (calsync.js): status line, button, full-screen picker with Back */
+.calst{display:flex;align-items:center;gap:4px;margin-top:4px;color:var(--blue)}.calst-on{color:var(--gold)}.calst svg{width:15px;height:15px}
+.calsend{margin-top:6px;min-height:36px!important;padding:6px 10px!important;font-size:13px;display:inline-flex;align-items:center;gap:6px}.calsend svg{width:16px;height:16px}
+.calov{position:fixed;inset:0;z-index:60;background:rgba(7,10,16,.92);overflow:auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
+.calov-in{max-width:520px;margin:0 auto;background:var(--card);color:var(--ink);border:2px solid var(--blue);border-radius:14px;padding:12px 14px}
+.calov-in .kicker{color:var(--gold)}.calov-in h2{margin:6px 0 8px}.calback{margin-bottom:8px}
+.calevb{display:flex!important;flex-direction:column;align-items:flex-start!important;text-align:left!important;justify-content:flex-start!important;gap:2px;margin:6px 0}
+.calov-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.calov-act .btn,.calov .btn{display:inline-flex;align-items:center;gap:6px}.calov svg{width:16px;height:16px}
+.callist{margin:10px 0;border-top:1px solid var(--line)}.calrow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.calrow input{width:22px;height:22px;min-height:0;margin:0;flex:none;accent-color:#1d4ed8}
+@media print{.calov,.calsend,.calst{display:none!important}}
