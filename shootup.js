@@ -18,7 +18,7 @@
 const SU_LANC={ends:4,ape:3,xv:11,t12:true,so:'lanc'},SU_LEAGUE={ends:3,ape:3,xv:10,t12:false,so:'pick1'};
 const SU_ENDS=4,SU_APE=3,SU_N=SU_ENDS*SU_APE;
 const suR=m=>(m&&m.sur)||(m&&m.lg?SU_LEAGUE:SU_LANC),suMax=R=>R.ends*(R.t12?12+R.xv*(R.ape-1):R.xv*R.ape);
-const suVal=(a,R=SU_LANC)=>a=='12'?(R.t12?12:0):a=='X'?R.xv:a=='M'?0:(+a||0);
+const suVal=(a,R=SU_LANC)=>a=='12'?(R.t12||R.d3?12:0):a=='X'?R.xv:a=='M'?0:(+a||0);
 const suSum=(L,R=SU_LANC)=>L.reduce((t,a)=>t+suVal(a,R),0);
 const suIsV=m=>!!(m&&(m.cs||ROUNDS[m.round]&&ROUNDS[m.round].vegas));
 /* casual shoot match play (casual.js, 21 Oct 2026): m.cs = the casual shoot code. Same ladder; the host also scores the name-only
@@ -68,9 +68,9 @@ function suStart(m){if(m.host!=h2hMe()||m.su)return;const seeds=suSeedsNow(m);if
 const suCurI=L=>{const k=L.findIndex(x=>!x.res.winner);return k<0?null:k};
 function suMine(m,i,id){const LL=suLadder(m),L=LL[i];id=id||h2hMe();return L&&L.A&&suCurI(LL)==i&&(L.A==id||L.B==id)&&(m.local||((m.sm||{})[i]?m.sm[i]==h2hMe():(id==h2hMe()||suHostFor(m,id))))&&!L.res.winner&&!L.res.needPick?L:null}
 function suCur(s,R=SU_LANC){const n=suFlat(s).length;return n<R.ends*R.ape?Math.floor(n/R.ape):-1}
-function suCanKey(m,i,k,id){const L=suMine(m,i,id);if(!L)return false;const me=id||h2hMe(),R=suR(m),s=suPeek(m,i,me),e=suCur(s,R);if(k=='12'&&!R.t12)return false;
- if(e>=0)return k!='12'||s.c[e]===-1;
- if(L.res.phase!='so')return false;if(R.so=='pick1')return s.so.length==0;const o=suPeek(m,i,me==L.A?L.B:L.A),kk=s.so.length;if(kk>2||kk>L.res.soK)return false;if(kk>0&&o.so[kk-1]==null)return false;return k!='12'||kk<2}
+function suCanKey(m,i,k,id){const L=suMine(m,i,id);if(!L)return false;const me=id||h2hMe(),R=suR(m),s=suPeek(m,i,me),e=suCur(s,R);if(k=='12'&&!R.t12&&!R.d3)return false;
+ if(e>=0)return k!='12'||R.d3||s.c[e]===-1;
+ if(L.res.phase!='so')return false;if(R.so=='pick1')return s.so.length==0;const o=suPeek(m,i,me==L.A?L.B:L.A),kk=s.so.length;if(kk>2||kk>L.res.soK)return false;if(kk>0&&o.so[kk-1]==null)return false;return k!='12'||R.d3||kk<2}
 function suKey(code,i,k,id){const m=h2hGet(code);id=id||h2hMe();if(!m||!suCanKey(m,i,k,id))return false;const s=suSt(m,i,id),e=suCur(s,suR(m));
  if(e>=0){const E=s.e[e]=s.e[e]||[];E.push(k);if(s.c[e]===-1)s.c[e]=E.length-1}else s.so.push(k);save();suPost(m,i,id);if(window._suAct)delete window._suAct[code+'|'+i];suMatchView(code,i);return true}
 function suCall(code,i,id){const m=h2hGet(code);id=id||h2hMe();if(!m||!suMine(m,i,id)||!suR(m).t12)return false;const s=suSt(m,i,id),e=suCur(s,suR(m));if(e<0||s.c[e]!=null)return false;s.c[e]=-1;save();suPost(m,i,id);suMatchView(code,i);return true}
@@ -101,8 +101,8 @@ const cI=suCurI(L);
   const who=(id,t,alt)=>`<div class="row su-who"><span>${id?suName(id):`<span class="muted">${alt}</span>`} <span class="small muted">${id?'seed '+suSeedOf(m,id):''}</span></span><b>${x.A&&(x.res.na+x.res.nb)?t:''}</b></div>`;
   return`<button class="su-card${x.i===cI?' live':''}${r.winner?' done':''}" data-sui="${x.i}"><span class="kicker">${suTitle(x,L.length)}</span>${who(x.B,r.tb,'')}${who(x.A,r.ta,'Winner of match '+x.i)}<div class="small">${tag}${st}</div></button>`};
  app.innerHTML=`<div id="suview"><div class="card dark"><span class="kicker">${suLbl(m)} · ${esc(window.rdLabel?rdLabel(m.round):m.round)}</span><h1>${done?suLbl(m)+' result':suLbl(m)+' ladder'}</h1>
- <p class="small" style="margin:0">${m.lg?'Final shoot-up. ':''}Each match: ${RS.ends} ends of ${RS.ape}, total score.${RS.keys&&!RS.keys.includes('X')?'':' X scores '+RS.xv+'.'}${RS.t12?' The 12 dot counts only when called, once per end.':' No 12 dot.'}</p>${done?`<p style="font-size:22px;font-weight:800;margin:6px 0 0">▲ ${suName(fin.res.winner)} wins</p>`:''}</div>
- <div class="card"><h3>Seeding</h3><table class="ad-tab su-seed" style="width:100%"><thead><tr><th>Seed</th><th>Archer</th><th>${m.lg||m.cs?'Total':'300'}</th><th>X</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${suSeedOf(m,r.id)}</td><td>${esc(r.nm)}${r.me?' (you)':''}</td><td>${r.tot}</td><td>${r.x}</td></tr>`).join('')}</tbody></table></div>
+ <p class="small" style="margin:0">${m.lg?'Final shoot-up. ':''}Each match: ${RS.d3?RS.ends+' targets, one score each':RS.ends+' ends of '+RS.ape}, total score.${RS.keys&&!RS.keys.includes('X')?'':' X scores '+RS.xv+'.'}${RS.d3?'':RS.t12?' The 12 dot counts only when called, once per end.':' No 12 dot.'}</p>${done?`<p style="font-size:22px;font-weight:800;margin:6px 0 0">▲ ${suName(fin.res.winner)} wins</p>`:''}</div>
+ <div class="card"><h3>Seeding</h3><table class="ad-tab su-seed" style="width:100%"><thead><tr><th>Seed</th><th>Archer</th><th>${m.lg||m.cs?'Total':'300'}</th>${RS.d3?'':'<th>X</th>'}</tr></thead><tbody>${rows.map(r=>`<tr><td>${suSeedOf(m,r.id)}</td><td>${esc(r.nm)}${r.me?' (you)':''}</td><td>${r.tot}</td>${RS.d3?'':`<td>${r.x}</td>`}</tr>`).join('')}</tbody></table></div>
  <div class="card"><h3>${suLbl(m)} order</h3><p class="small muted" style="margin:0 0 6px">Lowest seed starts at the bottom; each winner moves up to the next seed, final at the top.</p><div class="su-ladder">${L.slice().reverse().map(card).join('<div class="su-up small">↑ winner moves up</div>')}</div>
  <p class="small muted">Tap a match to watch it, or to score if you're in it.</p><div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap"><button class="btn ghost" id="surf">Refresh now</button><button class="btn ghost" id="suback">${m.cs?'Back to the shoot':'Leaderboard'}</button></div></div></div>`;
  app.querySelectorAll('[data-sui]').forEach(x=>x.onclick=()=>suMatchView(code,+x.dataset.sui));$('#surf').onclick=()=>h2hTick(true);if(m.local)$('#surf').remove();$('#suback').onclick=()=>{if(m.cs&&window.csView)return csView(m.cs);if(m.lg&&window.lgView)return lgView(m.lg);window._suBoard=code;h2hView(code)}}
@@ -118,11 +118,11 @@ function suMatchView(code,i){const m=h2hGet(code);if(!m||!m.su)return;suM=m;cons
  else if(mine){const s=suPeek(m,i,act),e=suCur(s,RS),so=e<0,keys=RS.keys||(RS.t12?['12']:[]).concat(['X','10','9','8','7','6','M']);
   ctl=`${m.cs?'':suFace(RS.t12,!!m.lg)}${one?`<div class="row lc-chips" style="gap:6px;justify-content:center">${ctrl.map(id=>`<button class="lc-chip${id==act?' on':''}" data-suact="${esc(id)}">${suName(id)}</button>`).join('')}</div>`:''}
   <p class="small" id="sucs" style="text-align:center;margin:6px 0">${one?'Scoring <b>'+suName(act)+'</b>. ':''}${so?(RS.so=='pick1'?'Shoot-off: one arrow each. Higher arrow wins; same ring, the host picks closest to centre.':s.so.length<2?'Shoot-off arrow '+(s.so.length+1)+': 12 in play (called).':'Shoot-off arrow 3: no 12.'):`End ${e+1} of ${RS.ends}, arrow ${(s.e[e]||[]).length+1}.${RS.t12?' A 12-dot hit without a call scores the ring it lies in.':''}`}${so&&r.phase!='so'?' Waiting for the other archer.':''}</p>
-  <div class="ad-pad su-pad" style="--cols:${keys.length}">${keys.map(k=>`<button class="${k=='12'?'su-k12':RS.fld?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k)}" data-suk="${k}" aria-label="score ${k}" ${suCanKey(m,i,k,act)?'':'disabled'}>${k}</button>`).join('')}</div><button class="btn ghost" id="suundo" style="margin-top:6px">Undo</button>`}
+  <div class="ad-pad su-pad" style="--cols:${keys.length}">${keys.map(k=>`<button class="${RS.kc&&RS.kc[k]?RS.kc[k]:k=='12'?'su-k12':RS.fld?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k)}" data-suk="${k}" aria-label="score ${k}" ${suCanKey(m,i,k,act)?'':'disabled'}>${k}</button>`).join('')}</div><button class="btn ghost" id="suundo" style="margin-top:6px">Undo</button>`}
  else ctl=L.A&&suCurI(LL)==i?'<p class="small muted">Watching live. Only the two archers in this match can score it.</p>':L.A?'<p class="small muted">Result in.</p>':'<p class="small muted">Waiting for the match below to finish.</p>';
  if(r.winner&&suCurI(LL)!=null)ctl+=`<button class="btn alt" id="sunext" style="margin-top:6px">Next match</button>`;
  app.innerHTML=`<div id="suview" data-sui="${i}"><div class="card dark"><span class="kicker">${suLbl(m)} · ${suTitle(L)}</span><h1>${L.A?`${suName(L.A)} v ${suName(L.B)}`:suTitle(L)}</h1>
- <p class="small" style="margin:0">${r.phase=='so'||r.needPick?'Shoot-off':r.winner?'Result':'End '+r.endNo+' of '+RS.ends} · total score · X ${RS.xv}${RS.t12?' · 12 when called':''} · max ${suMax(RS)}</p></div>
+ <p class="small" style="margin:0">${r.phase=='so'||r.needPick?'Shoot-off':r.winner?'Result':(RS.d3?'Target ':'End ')+r.endNo+' of '+RS.ends} · total score${RS.d3?'':' · X '+RS.xv}${RS.t12?' · 12 when called':''} · max ${suMax(RS)}</p></div>
  <div class="su-panels">${panel(L.A,r.ta,'Winner of match '+i)}${panel(L.B,r.tb,'')}</div><div class="card">${ctl}
  <div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px"><button class="btn ghost" id="sulad">Ladder</button><button class="btn ghost" id="surf">Refresh now</button></div></div></div>`;
  app.querySelectorAll('[data-suk]').forEach(b=>b.onclick=()=>suKey(code,i,b.dataset.suk,act));app.querySelectorAll('[data-sucall]').forEach(b=>b.onclick=()=>suCall(code,i,b.dataset.sucall));const u=$('#suundo');if(u)u.onclick=()=>suUndo(code,i,act);

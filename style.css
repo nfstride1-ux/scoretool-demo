@@ -23,7 +23,7 @@ label{font-weight:700;display:block;margin:10px 0 4px}
 .dark .stat{background:var(--night2)}
 .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
 .keypad button{min-height:56px;border-radius:12px;border:0;font:800 22px var(--disp);cursor:pointer}
-.k-y{background:#ffd84d;color:#000}.k-r{background:#d62828;color:#fff}.k-b{background:#1d4ed8;color:#fff}.k-k{background:#111;color:#fff}.k-w{background:#fff;color:#000;border:2px solid #333!important}.k-m{background:#64748b;color:#fff}.k-u{background:var(--blue-bg);color:var(--blue)}
+.k-y{background:#ffd84d;color:#000}.k-r{background:#d62828;color:#fff}.k-b{background:#1d4ed8;color:#fff}.k-k{background:#111;color:#fff}.k-w{background:#fff;color:#000;border:2px solid #333!important}.k-m{background:#64748b;color:#fff}.k-n{background:#1e2f5c;color:#fff;border:1px solid #5ab0ff!important}.k-u{background:var(--blue-bg);color:var(--blue)}
 .ends{width:100%;border-collapse:collapse;font-size:15px}.ends td,.ends th{padding:6px;border-bottom:1px solid var(--line);text-align:center}
 .arrow{display:inline-block;min-width:26px;padding:2px 4px;border-radius:6px;font-weight:800;margin:1px}
 .tabs{position:relative;flex:none;background:var(--night);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:6}
