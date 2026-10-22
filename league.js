@@ -16,7 +16,23 @@ const LG_RL='300 (18 m)',rdLabel=r=>r==LG_R?LG_RL:r;window.rdLabel=rdLabel;
 const LG_FINTXT='Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).';
 const lgAll=()=>S.leagues=S.leagues||[],lgGet=c=>lgAll().find(l=>l.code==c);
 const lgTopic=c=>H2H_NS+'-lg-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
-const lgName=id=>h2hShort(id);
+/* Added shooters (22 Oct 2026, Nathe): people who won't score themselves (no app). The host, or Nathe as admin, adds them by name
+   (under-16s by nickname only) and enters and edits their weekly 300s. Stored in lg.gn {id:{n,j,t,by}} (ids 'g' + 6 characters, never
+   a tester id) and in lg.order like anyone else, so they're in the table, the 10-archer max and the day-6 shoot-up seeding. They sync
+   in the league snapshot (gn), accepted only from the host or the admin. Nothing existing is changed: they are only added. */
+const LG_ADMIN='nathe',lgIsG=id=>/^g[a-z0-9]{6}$/.test(String(id||'')),lgCanEd=lg=>!!lg&&(lg.host==h2hMe()||h2hMe()==LG_ADMIN);
+const lgGuest=id=>{if(!lgIsG(id)||typeof S=='undefined'||!S)return null;for(const l of S.leagues||[]){const g=(l.gn||{})[id];if(g&&g.n)return g}return null};
+const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
+/* shoot-up and other views name archers through testerName: an added shooter shows by the name the host gave */
+{const _tn=testerName;testerName=function(id){const g=lgGuest(id);return g?g.n:_tn(id)}}
+function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,24);
+ if(n.length<2)return'Type a name (at least 2 characters).';if(!/^[A-Za-z0-9 '_-]+$/.test(n))return'Use letters, numbers, spaces, \' - and _ only.';if(nmRude(n))return'Please use a different name.';
+ if(jr&&/\s/.test(n))return'Under-16s go by nickname only: one word, no surname.';
+ if(lgArchers(lg).length>=H2H_MAX)return'This league is full (10 archers).';
+ if(lgArchers(lg).some(id=>lgName(id).toLowerCase()==n.toLowerCase()))return'Someone in this league already has that name.';
+ const L='abcdefghjkmnpqrstuvwxyz23456789';let id;do{id='g'+Array.from(crypto.getRandomValues(new Uint32Array(6)),x=>L[x%L.length]).join('')}while((lg.order||[]).includes(id));
+ lg.gn=lg.gn||{};lg.gn[id]={n,j:jr?1:0,t:Date.now(),by:h2hMe()};lg.order=lg.order||[];lg.order.push(id);lg.dirty=1;save();lgTick(true);return''}
+window.lgAddGuest=lgAddGuest;
 const lgV=a=>a=='X'?10:a=='M'?0:(+a||0),lgTot=E=>E.flat().reduce((t,a)=>t+lgV(a),0),lgXs=E=>E.flat().filter(a=>a=='X').length;
 const lgEnc=E=>E.map(e=>e.map(a=>a=='10'?'T':a).join('')).join('/'),lgDec=s=>String(s||'').split('/').filter(x=>x!=='').slice(0,10).map(e=>[...e].slice(0,3).map(c=>c=='T'?'10':c).filter(a=>LG_KEYS.includes(a)));
 const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
@@ -39,7 +55,7 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
  for(const id of lgArchers(lg))if(started(id)&&where(old,id)!=where(N,id))ok=false;if(!ok)return false;
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
-function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();return lgHas(e)&&e.by&&e.by!=me?e.by:null}
+function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;save();
@@ -63,18 +79,20 @@ function lgFinal(lg){let seeds=lg.fin&&lg.fin.length>=2?lg.fin:null;if(!seeds&&l
 function lgForce(code){const lg=lgGet(code);if(!lg||lg.host!=h2hMe()||lg.fin)return false;const seeds=lgTable(lg).filter(r=>lgDoneE(lgEnt(lg,r.id,LG_W))).map(r=>r.id);if(seeds.length<2)return false;
  lg.fin=seeds;lg.fint=Date.now();lg.dirty=1;save();lgFinal(lg);lgTick(true);return true}
 /* ---------- relay: snapshots, merge, offline queue ---------- */
-function lgSnapParts(lg){const me=h2hMe(),head={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,order:lgArchers(lg),cw:lg.cw||1,cwt:lg.cwt||0,grp:lg.grp||{},fin:lg.fin||null,fint:lg.fint||0,...h2hNm()};
+function lgSnapParts(lg){const me=h2hMe(),head={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,order:lgArchers(lg),cw:lg.cw||1,cwt:lg.cwt||0,grp:lg.grp||{},fin:lg.fin||null,fint:lg.fint||0,gn:lg.gn||{},...h2hNm()};
  const items=[];for(const id in lg.sc||{})for(const w in lg.sc[id]){const e=lg.sc[id][w];if(e&&e.e)items.push([id,w,{e:lgEnc(e.e),u:e.u||0,by:e.by||'',f:e.f||'vert'}])}
  const parts=[];let cur={};const size=o=>JSON.stringify(o).length;
  for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size({...head,sc:c2})>3400){parts.push(cur);cur={};(cur[id]={})[w]=v}else cur=c2}
  parts.push(cur);const t=Date.now();return parts.map((sc,k)=>({...head,sc,part:k+1,np:parts.length,t}))}
-function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
+function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;if(lg.code==LG_PRESET.code&&(d.t||0)<LG_PRESET.since)return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
   if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){lg.weeks=d.weeks.slice(0,LG_W).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
   if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=LG_W&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
   if((d.cwt||0)>(lg.cwt||0)){lg.cw=Math.max(1,Math.min(LG_W,+d.cw||1));lg.cwt=d.cwt;ch=true}}
+ if((fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
+  if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<H2H_MAX){lg.order.push(id);ch=true}}}
  lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<H2H_MAX){lg.order.push(id);ch=true}
  lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=LG_W))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
@@ -98,8 +116,21 @@ async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A
  const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<H2H_MAX)lg.order.push(me);
  lgAll().push(lg);save();lgTick(true);lgView(code);return''}
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
+/* Onion Shed Challenge (22 Oct 2026, Nathe): before the go-live change the league card was titled 'Onion Shed Challenge' for everyone,
+   but no league record was ever stored or synced, so when the card became a generic 'Your leagues' list it vanished. It is now a
+   fixed league record (one code, host Nathe) ADDED once to each member's own leagues list, never replacing anything: skipped when the
+   phone already has this code or a league with the same name, and not re-added if the member removes it. Phill and anyone who is
+   not a member (new users) never get it. Scores, weeks and standings sync on the league's own ntfy topic like any other league. */
+const LG_PRESET={code:'ONIONSHD',name:'Onion Shed Challenge',host:'nathe',members:['nathe','logan','steven','joseph','michael','dana','tahuri','estiaan','nate'],
+ /* relay posts older than this are browser tests from the release checks (22 Oct 2026) and are ignored */
+ since:Date.UTC(2026,9,22,12,52)};
+function lgSeed(){if(!TESTER||typeof S=='undefined'||!S)return;const me=TESTER.id,P=LG_PRESET;if(!P.members.includes(me)||LG_EXCL.includes(me)||S.lgPreset==P.code)return;
+ const L=S.leagues=S.leagues||[];S.lgPreset=P.code;
+ if(!L.some(l=>l.code==P.code||String(l.name||'').trim().toLowerCase()==P.name.toLowerCase()))L.push({code:P.code,name:P.name,host:P.host,order:P.members.slice(),weeks:[],wt:0,cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),preset:1});
+ save()}
+try{lgSeed()}catch(e){console.error(e)}window.lgSeed=lgSeed;window.LG_PRESET=LG_PRESET;
 /* ---------- screens ---------- */
-function lgCard(){if(!TESTER)return'';const me=h2hMe(),L=lgAll().slice().reverse();
+function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().slice().reverse();
  return`<div class="card" id="lgcard"><span class="kicker">Leagues</span><h3>Your leagues</h3>${L.length?'':'<p class="small muted" style="margin:2px 0 8px">You are not in any leagues yet. Join one with the code from its host, or start your own.</p>'}
  ${L.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(lg.name)}</b><div class="small muted">${lg.fin?'Final shoot-up':'Week '+lgWeek(lg)+' of 6'} · ${lgArchers(lg).length} archers</div></span><button class="btn ghost" data-lgopen="${lg.code}">Open</button></div>`).join('')}
@@ -133,7 +164,12 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
   :`<p class="small" style="margin:0 0 6px">Shared phone, group ${gk+1}: ${G[gk].map(id=>esc(lgName(id))).join(', ')}. Any member's phone can score the group.</p><button class="btn alt" data-lgsg="${gk}">Score group ${gk+1} on this phone</button>`;
- const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}" data-lgrow="${esc(r.id)}"><td>${r.tie?'=':''}${r.rk}</td><td>${k==0&&r.t>0&&!r.tie?'▲ ':''}${esc(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table></div>
+ const GS=lgArchers(lg).filter(lgIsG),ced=lgCanEd(lg)&&!lg.fin,full=lgArchers(lg).length>=H2H_MAX;
+ const addC=ced?`<div class="card" id="lgadd">${GS.length?`<p class="small" style="margin:0 0 6px">Shooters you score for: ${GS.map(id=>esc(lgName(id))).join(', ')}.</p><button class="btn alt" data-lgguests="1">Score added shooters, week ${w}</button>`:''}
+  <details id="lgaddd" style="margin-top:${GS.length?8:0}px"><summary class="btn ghost" style="display:inline-block">Add a shooter</summary>${full?'<p class="small muted" style="margin:6px 0 0">This league is full (10 archers).</p>':`<p class="small muted" style="margin:6px 0">For someone without the app. You enter their 300s each week.</p>
+  <label for="lggname">Name</label><input id="lggname" maxlength="24" autocomplete="off"><label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lggjr"> Under 16 (nickname only)</label>
+  <button class="btn alt" id="lggadd" style="margin-top:6px">Add</button><p class="small" id="lggmsg2" role="alert" style="margin:4px 0 0"></p>`}</details></div>`:'';
+ const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}" data-lgrow="${esc(r.id)}"><td>${r.tie?'=':''}${r.rk}</td><td>${k==0&&r.t>0&&!r.tie?'▲ ':''}${esc(r.nm)}${r.id==me?' (you)':''}${lgIsG(r.id)?' <span class="lg-gtag">scored by host</span>':''}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table></div>
  <p class="small muted" style="margin:4px 0 0">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting. Every week: ${LG_RL}, ${LG_FACE.toLowerCase()}.</p>`;
  /* how this week is scored (host): a clear choice per archer, own phone or a shared phone for the group. Saved on tap. (Coach re-test, 20 Oct) */
  const GA=lgGroups(lg,w),seg=(id,g,lab,on,dis)=>`<button type="button" class="lg-seg${on?' on':''}" data-lggb="${esc(id)}" data-g="${g}" aria-pressed="${on}" ${dis?'disabled':''}>${lab}</button>`;
@@ -146,7 +182,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
  <p class="small" style="margin:0">${lg.fin?'All six 300s are in. Final shoot-up.':w<6?`Week ${w} of 6 is current${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}. One 300 each, at home or together.`:`Day 6${lg.weeks&&lg.weeks[5]?' · '+wk(lg.weeks[5]):''}: everyone shoots the 6th 300 together. Then the shoot-up final.`}</p></div>
  ${fm?`<div class="card"><button class="btn alt" id="lgfin">${lgFinDone(lg)?'Final result':'Open the final shoot-up'}</button></div>`:`<div class="card" id="lgmine">${mine}</div>`}
- ${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}
+ ${addC}${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}
  <div class="card"><h3>League table</h3>${tab}</div>
  ${host&&!lg.fin?`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${!(lg.weeks||[]).some(Boolean)&&w<6?`<button class="btn ghost" id="lgnext">Move to week ${w+1}</button>`:''}${w==6&&done6>=2?`<button class="btn ghost" id="lgforce">Start shoot-up now</button>`:''}</div>${w==6?`<p class="small muted">The final starts by itself when every archer's day-6 300 is in (${done6} of ${lgArchers(lg).length}).</p>`:''}</div>`:''}
  <div class="card"><p class="small" style="margin:0">League code <b id="lgcode">${esc(code)}</b>. Share it so others can join.</p>${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}
@@ -154,6 +190,9 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  const q=s=>app.querySelector(s);
  if(q('[data-lgme]'))q('[data-lgme]').onclick=()=>{window._lgE={code,w,ids:[me]};window._lgAct=me;lgView(code)};
  if(q('[data-lgsg]'))q('[data-lgsg]').onclick=()=>{window._lgE={code,w,ids:G[gk].slice()};window._lgAct=null;lgView(code)};
+ if(q('[data-lgguests]'))q('[data-lgguests]').onclick=()=>{window._lgE={code,w,ids:GS.slice()};window._lgAct=null;lgView(code)};
+ if(q('#lggjr'))q('#lggjr').onchange=e=>{q('label[for=lggname]').textContent=e.target.checked?'Nickname':'Name'};
+ if(q('#lggadd'))q('#lggadd').onclick=()=>{const m=lgAddGuest(code,q('#lggname').value,q('#lggjr').checked);if(m){q('#lggmsg2').textContent=m;return}lgView(code)};
  app.querySelectorAll('[data-lgid]').forEach(b=>b.onclick=()=>{window._lgAct=b.dataset.lgid;lgView(code)});
  const act=q('#lgentry .lc-chip.on')&&q('#lgentry .lc-chip.on').dataset.lgid;
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;lgKey(code,w,act,b.dataset.lgk)});

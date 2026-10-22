@@ -22,8 +22,8 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
     and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts.
     21 Oct 2026: Archer's Diary has him as Danie Oosthuizen (Whiteman Park Archers WA, AD member 8704, compound, Open and 50+), NOT
     Danie-Louis Oosthuizen (same club). History = his full Archer's Diary compound history, 2015 to 2026 (501 scoresheets, same load
-    as Estiaan, Nathe 21 Oct 2026). His crawl stays paused in the scores database; this file is a one-off load. Nickname stays Darnie (names.js). */
- {id:'darnie',name:'Danie Oosthuizen',short:'Darnie',bow:'Compound',data:true,guest:true}];
+    as Estiaan, Nathe 21 Oct 2026). His crawl stays paused in the scores database; this file is a one-off load. 22 Oct 2026 (Nathe): shown as Danie everywhere; id, link and stored data stay 'darnie'. */
+ {id:'darnie',name:'Danie Oosthuizen',short:'Danie',bow:'Compound',data:true,guest:true}];
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';
@@ -34,5 +34,5 @@ function testerLink(id){return location.origin+location.pathname+'?tester='+id}
 function testerPicker(){return`<div class="card dark"><span class="kicker">Tester sign-in</span><h1>Who's testing?</h1><p>Pick your name. Your scores are saved on this phone, separate from the other testers.</p>
 ${TESTERS.map(t=>`<button class="btn full" style="margin:8px 0" data-tester="${t.id}">${t.name}</button>`).join('')}<p class="small muted">You can change this later in Me.</p></div>`}
 function bindTesterPicker(root){(root||document).querySelectorAll('[data-tester]').forEach(b=>b.onclick=()=>setTester(b.dataset.tester))}
-function testerCard(){return`<div class="card"><span class="kicker">Tester</span><h2>Testing as ${TESTER?TESTER.name:'nobody'}</h2><p class="small muted">Each tester's data is kept separate on this phone.</p>
-<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>!TESTER||t.id!=TESTER.id).map(t=>`<button class="btn ghost" data-tester="${t.id}">Switch to ${t.short}</button>`).join('')}</div></div>`}
+function testerCard(){return`<div class="card"><span class="kicker">Tester</span><h2>Testing as ${TESTER?TESTER.name:'nobody'}</h2><p class="small muted">${TESTER&&TESTER.id=='nathe'?"Each tester's data is kept separate on this phone.":'Your scores are kept separate on this phone.'}</p>
+<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTER&&TESTER.id=='nathe'?TESTERS.filter(t=>t.id!=TESTER.id).map(t=>`<button class="btn ghost" data-tester="${t.id}">Switch to ${t.short}</button>`).join(''):''}</div></div>`}

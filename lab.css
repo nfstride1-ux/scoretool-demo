@@ -93,3 +93,10 @@
 @media (max-width:520px){.labwho,.labme{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.labtheme{min-width:36px;padding:0 6px;margin-right:6px}.logo .ic{width:22px;height:22px}}
 @media (max-width:400px){.top .demo-pill,.top .lab-pill{font-size:10px;padding:3px 6px}}
 @media (max-width:520px){.labme{flex-shrink:0;padding:6px 9px;font-size:13px;margin-right:6px}.top .logo{font-size:20px;min-width:0}.help-btn{flex-shrink:0}}
+.lg-gtag{display:inline-block;font-size:11px;font-weight:600;line-height:1.3;padding:1px 6px;margin-left:4px;border-radius:99px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--chip-b);white-space:nowrap;vertical-align:1px}
+/* 22 Oct 2026 (Nathe's iPhone): a blank band showed under the tab bar. The shell is now pinned to the screen edges (position:fixed,
+   inset 0) instead of sized by 100vh/100dvh, which iOS can get wrong in the home-screen app; the tab bar sits flush at the bottom and
+   its background runs down through the home-indicator safe area (padding uses env(safe-area-inset-bottom)). */
+html{background:var(--topbg,var(--bg))}
+#shell{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important}
+@media print{#shell{position:static}}
