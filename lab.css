@@ -100,11 +100,8 @@
 html{background:var(--topbg,var(--bg))}
 #shell{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important}
 @media print{#shell{position:static}}
-/* 22 Oct 2026, fix 2 (Nathe's iPhone, home-screen app): iOS sizes the position:fixed containing block (and 100%/100dvh) to the SMALL,
-   toolbar-present viewport even in the home-screen app where there is no toolbar, so the shell stopped short and left a band under
-   the tab bar. Only in the home-screen app, size html, body and the shell to the LARGE viewport (100lvh, 100vh fallback), anchored
-   at the top. Safari tabs, desktop and Android keep the inset:0 layout. Refs: github.com/acoyfellow/my-ax/commit/b418360,
-   github.com/anomalyco/opencode/pull/46703, github.com/GarrickZ2/grove/pull/20 */
-html.standalone,html.standalone body{height:100vh;height:100lvh}
-html.standalone #shell{top:0;bottom:auto;height:100vh!important;height:100lvh!important}
-@media (display-mode:standalone){html,body{height:100vh;height:100lvh}#shell{top:0;bottom:auto;height:100vh!important;height:100lvh!important}}
+/* 22 Oct 2026, fix 3: 100lvh overshot on some iPhones (tab bar pushed under the home indicator) and fixed/dvh fell short on others.
+   The shell height now comes from the real window height measured by script (--apph, set in index.html on load/resize/orientation),
+   so it always equals the visible screen. Safe-area padding stays on the tab bar only. */
+html.standalone,html.standalone body{height:var(--apph,100%)}
+html.standalone #shell{top:0;bottom:auto;height:var(--apph,100dvh)!important}
