@@ -3,11 +3,11 @@
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
-ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-fix1022')
-URL=sys.argv[1] if len(sys.argv)>1 else 'http://localhost:8767/'
+ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.environ.get('SHOTS') or os.path.join(ROOT,'shots-fix1022');os.makedirs(SH,exist_ok=True)
+PORT=os.environ.get('PORT','8767');URL=sys.argv[1] if len(sys.argv)>1 else f'http://localhost:{PORT}/'
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
-srv=subprocess.Popen([sys.executable,'-m','http.server','8767'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+srv=subprocess.Popen([sys.executable,'-m','http.server',PORT],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 OLD="(()=>{const d=JSON.parse(localStorage.getItem('scoretool.v1')||'{}');return JSON.stringify({b:(d.bows||[]).filter(x=>x.id=='bOLD'),s:d.sessions,t:d.tune,u:d.setup})})()"
 with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--headless=new'])
@@ -39,7 +39,31 @@ with sync_playwright() as p:
     chk(tag+' saved',pg.get_by_text('Concept X 40').count()>0 and pg.locator('#mbform').count()==0)
     st=pg.evaluate("JSON.parse(localStorage.getItem('scoretool.v1')).bowSpec")
     chk(tag+' attached to existing setup',list(st.keys())==['bOLD'])
-    if w==390:pg.screenshot(path=os.path.join(SH,'mybows-390.png'))
+    n=pg.evaluate("fetch('data/bow_specs.json').then(r=>r.json()).then(j=>j.bows.length)");chk(tag+' long list (>200)',n>200)
+    pg.click('#mbadd');pg.wait_for_timeout(300);pg.click('#mb_q_compound');pg.keyboard.type('title 38',delay=20);pg.wait_for_timeout(200)
+    chk(tag+' search keeps focus',pg.evaluate("document.activeElement.id")=='mb_q_compound')
+    chk(tag+' search grouped by maker',pg.locator('#mb_res_compound .mbgrp').count()==1 and pg.locator('#mb_res_compound [data-pk=mathews-title-38]').count()==1)
+    if w==390:pg.screenshot(path=os.path.join(SH,'mybows-search-390.png'))
+    pg.click('[data-pk=mathews-title-38]');pg.wait_for_timeout(300)
+    chk(tag+' Title 38 filled',pg.input_value('#mb_speed')=='330' and pg.input_value('#mb_kind')=='IBO' and pg.input_value('#mb_ata')=='38' and pg.input_value('#mb_bh')=='7')
+    pg.fill('#mb_q_compound','reckoning 36');pg.wait_for_timeout(200);pg.click('[data-pk=bowtech-reckoning-gen-2-36]');pg.wait_for_timeout(300)
+    chk(tag+' speed standard not stated',pg.input_value('#mb_kind')=='' and pg.get_by_text("doesn't say whether it is IBO or ATA").count()==1)
+    pg.fill('#mb_q_compound','concept fx');pg.wait_for_timeout(200);pg.click('[data-pk=hoyt-concept-fx]');pg.wait_for_timeout(300)
+    chk(tag+' retailer source labelled',pg.get_by_text("Not the maker's own page").count()==1 and pg.input_value('#mb_kind')=='ATA')
+    pg.fill('#mb_q_compound','');pg.click('[data-mk=Darton]');pg.wait_for_timeout(200)
+    chk(tag+' maker shortcut',pg.locator('#mb_res_compound [data-pk^=darton-]').count()==8 and pg.locator('#mb_res_compound .mbgrp').count()==1)
+    pg.click('#mbcancel');pg.wait_for_timeout(300)
+    pg.click('#mbadd');pg.wait_for_timeout(300);pg.click('[data-ty=recurve]');pg.wait_for_timeout(300)
+    pg.click('#mb_q_riser');pg.keyboard.type('xceed 2 25',delay=20);pg.wait_for_timeout(200);pg.click('[data-pk=riser-hoyt-xceed-2-25]');pg.wait_for_timeout(300)
+    chk(tag+' riser filled',pg.input_value('#mb_riser')=='Hoyt Xceed 2 25' and pg.input_value('#mb_riserLen')=='25' and pg.input_value('#mb_fit')=='ILF (Grand Prix)')
+    pg.fill('#mb_q_limbs','astonix');pg.wait_for_timeout(200);pg.click('[data-pk=limbs-kinetic-astonix]');pg.wait_for_timeout(300)
+    chk(tag+' limbs filled',pg.input_value('#mb_limbs')=='Kinetic Astonix' and '66"' in (pg.get_attribute('#mb_limbLen','placeholder') or '') and '14-44' in (pg.get_attribute('#mb_limbLb','placeholder') or '') and pg.input_value('#mb_riserLen')=='25')
+    pg.fill('#mb_limbLen','68"');pg.fill('#mb_limbLb','34');pg.fill('#mb_dw','36');pg.fill('#mb_dl','28')
+    if w==390:pg.screenshot(path=os.path.join(SH,'mybows-recurve-390.png'),full_page=True)
+    pg.click('#mbsave');pg.wait_for_timeout(400)
+    chk(tag+' recurve saved',pg.get_by_text('Hoyt Xceed 2 25 Kinetic Astonix').count()>0)
+    chk(tag+' no emoji after search',not any(ord(c)>0x1F000 for c in pg.inner_text('#app')))
+    if w==390:pg.screenshot(path=os.path.join(SH,'mybows-390.png'),full_page=True)
     pg.click('.labback');pg.wait_for_timeout(300);pg.click('nav [data-v=tools]');pg.wait_for_timeout(400)
     pg.get_by_text('Arrow chooser').first.click();pg.wait_for_timeout(500)
     pg.select_option('#ac_mybow','bOLD');pg.wait_for_timeout(500)
