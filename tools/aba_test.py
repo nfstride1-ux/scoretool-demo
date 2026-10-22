@@ -68,7 +68,7 @@ try:
   chk('no file sharing: the PNG downloads instead',E('window._lastShare.how')=='downloaded' and d.suggested_filename.endswith('.png') and os.path.getsize(pth)>20000 and open(pth,'rb').read(8)==b'\x89PNG\r\n\x1a\n')
   chk('seed note kept, no stale wording','3-arrow half' in (s['abaNote'] or ''))
   E("cur=null;sv='sheet';score()");pg.wait_for_timeout(300)
-  opts=pg.eval_on_selector_all('#rd option','o=>o.map(x=>x.textContent)')
+  opts=pg.eval_on_selector_all('#rd option','o=>o.map(x=>x.value)')
   chk('one ABA round in the picker, no 1-/2-arrow rounds',[o for o in opts if 'ABA' in o]==[IC])
   chk('round max 800, 20 a target',E(f"ROUNDS['{IC}'].max")==800 and E(f"ROUNDS['{IC}'].ends")==40)
   chk('rule 13 values',E("[1,2,3].map(k=>['A','B','C'].map(z=>abaPts(3,k,z)))")==[[20,18,16],[14,12,10],[8,6,4]])

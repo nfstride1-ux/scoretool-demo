@@ -39,6 +39,8 @@ const CS3D_MAX=60,cs3dName=(t,n)=>{const T=CS3D[t]||CS3D.aba3;n=Math.max(1,Math.
 function cs3dReg(name){if(typeof name!='string')return false;if(ROUNDS[name])return!!ROUNDS[name].d3;const m=name.match(/^3D (.+) \((2 x )?(\d+) targets\)$/);if(!m)return false;
  const t=Object.keys(CS3D).find(k=>CS3D[k].l==m[1]),n=+m[3];if(!t||!!CS3D[t].half!=!!m[2]||n<1||n>CS3D_MAX||cs3dName(t,n)!=name)return false;const T=CS3D[t],top=+T.k[0];
  ROUNDS[name]={ends:T.half?2*n:n,ape:1,face:T.o+' 3D animal',max:top*(T.half?2*n:n),d3:t,d3n:n,practice:true,legacy:true};return true}
+/* arrows a target, for the picker label: ABA n-arrow types, IBO and ASA one arrow */
+const cs3dPer=k=>({aba3:3,aba2:2,aba1:1}[k]||1);
 const cs3d=cs=>{const R=ROUNDS[cs.round];return R&&R.d3?CS3D[R.d3]:null};
 const cs3dK=(cs,ei)=>{const R=ROUNDS[cs.round],T=CS3D[R.d3];return T.half&&ei>=R.d3n?CS3D.aba1.k:T.k};
 const cs3dCol=(cs,k)=>{const T=cs3d(cs),i=T.k.indexOf(k),c=k=='M'||i<0?'m':T.c[i];return{g:'k-y',b:'k-b',n:'k-n',m:'k-m'}[c]};
@@ -175,9 +177,9 @@ function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.d
  return`<div id="cssetup"><h2 style="margin:6px 0 2px">Casual shoot</h2><p class="small muted" style="margin:0 0 8px">A one-off shoot with friends. Not part of any league. 1 to ${CS_MAX} people.</p>
  <label for="csname">Name (optional)</label><input id="csname" maxlength="40" placeholder="Casual shoot" value="${esc(D.name)}">
  <label>Discipline</label>${csSeg('csdisc',Object.entries(CS_DISC),D.disc)}
- ${is3?`<label for="cs3t">Round</label><select id="cs3t">${Object.entries(CS3D).map(([k,T])=>`<option value="${k}" ${k==D.d3t?'selected':''}>${esc(T.l)}</option>`).join('')}</select>
+ ${is3?`<label for="cs3t">Round</label><select id="cs3t">${Object.entries(CS3D).map(([k,T])=>`<option value="${k}" ${k==D.d3t?'selected':''}>${esc(T.l+' ('+(T.half?'3 + 1 arrows':plN(cs3dPer(k),'arrow','arrows'))+' a target)')}</option>`).join('')}</select>
  <label for="cs3n">${CS3D[D.d3t].half?'Targets each half':'Number of targets'}</label><input id="cs3n" type="number" inputmode="numeric" min="1" max="${CS3D_MAX}" value="${esc(D.d3n)}" style="max-width:120px">`
- :`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option ${r==D.round?'selected':''}>${esc(r)}</option>`).join('')}</select>`}
+ :`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option value="${esc(r)}" ${r==D.round?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>`}
  ${ind?`<label>Face</label>${csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3)}`:''}
  <p class="small" id="csfacetxt" style="margin:6px 0">${esc(csFaceTxt(tmp))} · keys ${csKeys(tmp,0).join(' ')}</p>
  <label for="csdt">Date</label><input id="csdt" type="date" value="${esc(D.date||today())}">

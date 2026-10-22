@@ -189,7 +189,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
   ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="lg-grow"><span class="lg-gname">${esc(lgName(id))}${st?' <span class="small muted">(started)</span>':''}</span><span class="lg-segs" role="group" aria-label="How ${esc(lgName(id))} is scored">${seg(id,'',k==null?'&#10003; Own phone':'Own phone',k==null,st)}${[0,1,2].map(g=>seg(id,g,k===g?'&#10003; Phone '+(g+1):'Phone '+(g+1),k===g,st)).join('')}</span></div>`}).join('')}
   <p class="small" id="lggmsg" role="alert" style="margin:6px 0 0"></p></div>`:'';
  const done6=lgArchers(lg).filter(id=>lgDoneE(lgEnt(lg,id,LG_W))).length;
- app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
+ app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
  <p class="small" style="margin:0">${lg.fin?'All six 300s are in. Final shoot-up.':w<6?`Week ${w} of 6 is current${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}. One 300 each, at home or together.`:`Day 6${lg.weeks&&lg.weeks[5]?' · '+wk(lg.weeks[5]):''}: everyone shoots the 6th 300 together. Then the shoot-up final.`}</p></div>
  ${fm?`<div class="card"><button class="btn alt" id="lgfin">${lgFinDone(lg)?'Final result':'Open the final shoot-up'}</button></div>`:`<div class="card" id="lgmine">${mine}</div>`}
  ${addC}${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}
