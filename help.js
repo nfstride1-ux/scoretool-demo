@@ -30,12 +30,15 @@ const HELP_GUIDES=[
   'Past sessions are on the <b>Score</b> screen, under Just me.',
   'An unfinished round shows <b>Incomplete</b> and how far it got, like 6 of 12 ends.',
   'After you finish, tap <b>Add a photo</b> if you like, or <b>Skip</b>. Change or remove it later in Past sessions.',
+  'At the end of a round, under the score, you see how this shoot compares with your earlier shoots of the same round: score vs your average and PB, score by end, Xs and 10s, and your arrow plot vs your usual group. <b>Open</b> in Past sessions shows the same view.',
+  'Tap <b>Finish session</b> when you are done. Your arrows are already saved as you go, so this only closes the round.',
   'Linked to Archery Calendar? Finished rounds show in your My events. Older rounds have a <b>Send</b> button: pick the event, or <b>None of these</b>.']},
  {id:'stats',i:'bars',t:'Stats and analysis',shot:'stats',steps:[
   'Tap <b>My archery</b>, then <b>Stats &amp; PBs</b>.',
   'Pick a round to see your last shoot, trend and personal bests.',
   'Tap <b>More detail</b> for the full picture.',
-  '<b>Full analysis</b> has end by end and half split for the shoot you picked.']},
+  '<b>Full analysis</b> has end by end and half split for the shoot you picked.',
+  '<b>Arrow plot</b> in Analytics shows your plotted arrows as dots. On 3-spot faces every arrow is measured from its own spot. The group centre and offset in mm tell you which way to move your sight.']},
  {id:'myarch',i:'bow',t:'Diary, setups and bows',shot:'myarch',steps:[
   '<b>My archery</b> holds your Diary, Practice arrows, Setups &amp; sight marks, My bows and My arrows.',
   '<b>Past competition results</b>: your official scores from past competitions show in Stats, My best scores and Rankings. They are kept separate from rounds you score in ScoreTool.',

@@ -117,7 +117,7 @@ function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
 const _nmRender=render;render=function(){if(TESTER&&S.unlocked&&S.profile&&!/^#(share|coach)=/.test(location.hash)&&nmNeedPrompt())return nmScreen();return _nmRender()};
 const _nmMe=me;me=function(){_nmMe();const c=document.createElement('div');c.className='card';c.id='nmcard';
  c.innerHTML=`<span class="kicker">Display name</span><h2>${esc(myName())}</h2>${nmForm('nmme','Save display name')}`;app.prepend(c);
- nmBindForm('nmme',()=>me())};
+ nmBindForm('nmme',()=>render())};/* render, not me(): keeps the lab_profile back button and title (sweep 23 Oct) */
 /* safety net, social views only: scrub real names from text and visible attributes (never touches data-* attributes) */
 const NM_SOCIAL='#h2hview,#h2hcard,.h2hchip,#leaguecard,#lgview,#lgcard,#suview',NM_SOCIAL_VIEWS=['squad','badges','profile','recap'];
 const nmSocial=el=>{if(!el||!el.closest)return false;if(el.closest('.nm-real'))return false;/* setup tick lists show real names (Nathe, 20 Oct) */if(el.closest(NM_SOCIAL))return true;return typeof view!='undefined'&&NM_SOCIAL_VIEWS.includes(view)&&!!el.closest('#app')};

@@ -680,13 +680,16 @@ function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeU
 function shareData(){const L=window.statShoots?statShoots().filter(x=>!x.inc):done().map(s=>({date:s.date,round:s.round,score:total(s),ends:s.ends}));return{n:S.profile,s:L.slice(-10).map(x=>[x.date,x.round,x.score,x.ends&&x.ends.length?x.ends.flat().length:(typeof roundArrows=='function'&&roundArrows(x.round))||0,0]),b:badges().filter(x=>x[2]).map(x=>x[1]),st:streak()}}
 function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This share link is invalid.</div>';return}
  const real=findReal(D.n);
- app.innerHTML=`<div class="card dark"><span class="kicker">Parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
+ let pv=null;try{pv=sessionStorage.getItem('scoretool.shprev')}catch(e){}app.innerHTML=`${pv?'<button class="btn ghost labback" id="shpvback" style="margin:0 0 8px">‹ Back</button>':''}<div class="card dark"><span class="kicker">Parent view · read only</span><h1>${D.n}</h1><div class="stats"><div class="stat"><b>${D.s.length}</b>sessions</div><div class="stat"><b>${D.st}</b>wk streak</div><div class="stat"><b>${D.s.reduce((t,x)=>t+x[3],0)}</b>arrows</div></div></div>
  <div class="card"><h3>Progress</h3>${lineChart([{name:'Session score',data:D.s.map(x=>x[2]),c:'#1d4ed8'}],{labels:D.s.map(x=>x[0].slice(5))})}${D.s.some(x=>x[4])?'<p class="small"><span class="sample">Includes sample data</span></p>':''}</div>
  <div class="card" id="sharelist"><h3>Last ${plN(D.s.length,'session','sessions')}</h3>${D.s.slice().reverse().map(x=>`<div class="list-item row"><span>${esc(x[1])}<br><span class="small muted">${esc(x[0])}</span></span><b>${x[2]}</b></div>`).join('')||'<p class="small muted">No sessions yet.</p>'}</div>
  <div class="card"><h3>Badges earned</h3><p>${D.b.join(' · ')||'None yet'}</p></div>
  ${real.length?`<div class="card"><h3>Official results</h3>${real.slice(-5).reverse().map(r=>`<div class="list-item"><b>${r.score}</b> · ${r.round} · ${r.date}</div>`).join('')}</div>`:''}
  
- <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`}
+ <a class="btn full" href="${location.href.split('#')[0]}">Open my own ScoreTool</a>`
+ /* the tester's own Preview gets a way back to where they came from (sweep 23 Oct); a parent opening the link sees no back */
+ const bk=$('#shpvback');if(bk)bk.onclick=()=>{try{sessionStorage.removeItem('scoretool.shprev')}catch(e){}history.replaceState(null,'',location.href.split('#')[0]);$('#tabs').hidden=false;nav(pv)}}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href*="#share="]');if(a&&typeof view!='undefined'&&!location.hash.startsWith('#share=')){try{sessionStorage.setItem('scoretool.shprev',view)}catch(e){}}},true);
 
 loadReal().then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
 addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach='))render();else nav(location.hash=='#plot'?'score':'home')});
