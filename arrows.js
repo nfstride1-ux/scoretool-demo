@@ -38,7 +38,7 @@ function form(){const s=EDIT.s,b=window.arrowBuild?arrowBuild(s):null;
 E.lab_myarrows=function(){const L=window.myArrows();
  app.innerHTML=`<div class="labbar"><button class="btn ghost labback" data-go="myarch">‹ My archery</button><h1>My arrows</h1></div>
  ${EDIT?form():''}
- <div class="card" id="malist"><span class="kicker">Saved</span>${L.length?L.map(o=>{const n=marksOn(o.id);return`<div class="marow" data-id="${h(o.id)}" style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span class="i" aria-hidden="true">${ic('arrow')}</span><div style="flex:1"><b>${h(o.name)}</b><br><span class="small muted">${h(sum(o))||'no details yet'}</span>${n?`<br><span class="small">${n}</span>`:''}</div><button class="btn ghost" data-ed="${h(o.id)}" style="padding:6px 12px">Edit</button></div>`}).join('')
+ <div class="card" id="malist"><span class="kicker">Saved</span>${L.length?L.map(o=>{const n=marksOn(o.id);return`<div class="marow" data-id="${h(o.id)}" style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span class="i" aria-hidden="true">${ic('arrow')}</span><div style="flex:1"><b>${h(o.name)}</b><br><span class="small muted">${h(sum(o))||'no details yet'}</span>${window.arrowCalcLine&&arrowCalcLine(o)?`<br><span class="small macalc">${h(arrowCalcLine(o))}</span>`:''}${n?`<br><span class="small">${n}</span>`:''}</div><button class="btn ghost" data-ed="${h(o.id)}" style="padding:6px 12px">Edit</button></div>`}).join('')
   :'<p class="muted">No arrow sets yet.</p>'}
   ${EDIT?'':'<button class="btn alt full" id="maadd" style="margin-top:10px">Add an arrow set</button>'}
   <p class="small muted" style="margin-top:8px">Add each arrow set once. The same list is the Arrow set choice in Setups &amp; sight marks, and each set keeps its own sight marks for each bow.</p></div>`;
@@ -58,7 +58,7 @@ E.lab_myarrows=function(){const L=window.myArrows();
    const changed=BASE.some(k=>String(a[k]??'')!=(s[k]||''));if(!r&&changed)r=setRec(a);
    if(r)BASE.forEach(k=>{const v=s[k]||'';if(String(r[k]??'')==v)return;if(v)r[k]=v;else delete r[k]})}
   else{r={id:'as'+Date.now(),archer:S.profile,name:s.name};BASE.forEach(k=>{if(s[k])r[k]=s[k]});S.arrowSets.push(r)}
-  const id=EDIT.id||r.id,old=info(id),ni={};EXTRA.forEach(k=>{if(s[k])ni[k]=s[k]});
+  const id=EDIT.id||r.id,old=info(id),ni={};EXTRA.forEach(k=>{if(s[k])ni[k]=s[k]});if(old.calc)ni.calc=old.calc;/* results saved from the Calculators stay */
   if(JSON.stringify(old)!=JSON.stringify(ni)){S.arrowInfo=S.arrowInfo||{};const P=S.arrowInfo[S.profile]=S.arrowInfo[S.profile]||{};if(Object.keys(ni).length)P[id]=ni;else delete P[id]}
   save();EDIT=null;render()}};
 /* (c) A 'My arrows' dropdown in the Calculators, the Arrow chooser and the Arrow optimizer. Picking a set fills the same boxes the

@@ -60,7 +60,8 @@ const HELP_GUIDES=[
   '<b>Arrow optimizer &amp; tuning</b>: plot groups before and after a change.',
   '<b>Arrow chooser</b>: fill in from the top down (bow, draw weight, draw length, speed rating, what it\'s for, arrow length, point weight). The result is at the bottom: a starting spine and cut length from the makers\' charts, with the working shown.',
   '<b>What it\'s for</b>: Indoor lists fat shafts only (like SuperDrive 23 and X23), Target and Field list thin outdoor shafts, and Hunting uses Easton\'s hunting chart.',
-  '<b>Calculators</b>: arrow speed, kinetic energy, momentum, FOC.',
+  '<b>Calculators</b>: arrow speed, kinetic energy, momentum, FOC. Pick an arrow from My arrows in the speed or FOC card and tap <b>Save to this arrow</b> to keep the FOC, total weight, speed, bow and date on it (shown in My arrows). Your shaft, spine, length and points only change if you changed them in the calculator and confirm.',
+  '<b>Is this arrow right?</b> (under the calculators): says if the FOC is too low, good or high for what the arrow is for, from Easton\'s published FOC ranges, and if the spine is too stiff, about right or too weak, from the maker\'s chart (the same chart and adjustments as the Arrow chooser). It shows the range it used. A guide only: confirm by bare-shaft or paper tuning.',
   '<b>My arrows</b> dropdown (Calculators, Arrow chooser and Arrow optimizer): pick a saved arrow set to fill in its length, weights and balance point. You can still change any box.',
   '<b>Rules</b>: World Archery, Archery Australia, ABA, IBO and ASA.']},
  {id:'settings',i:'gear',t:'Settings, light or dark, and help',shot:'settings',steps:[

@@ -256,6 +256,9 @@ window.arrowFocWith=function(d){const{st}=parsed();if(!isFinite(st.len)||!isFini
 /* the same FOC and total-weight maths for a saved arrow (My arrows): o = {len, pt, gpi, ins, nock, vanes, vpos, bp} as typed */
 window.arrowBuild=function(o){const st={};['len','pt','gpi','ins','nock','vanes','vpos','bp'].forEach(k=>st[k]=num(o&&o[k]));if(!isFinite(st.len))return null;const b=build(st);return{foc:isFinite(b.foc)?b.foc:NaN,tw:b.tw,meas:b.meas,missing:b.missing}};
 window.ARROW_SRC=SRC;
+/* the same maker charts and chart-weight adjustments for any setup (the Calculators' 'Is this arrow right?' card); reads only */
+window.arrowCharts=function(o){const st=Object.assign({bow:'compound',use:'target',limb:'carbon',hand:'R'},o||{});['dw','dl','len','pt','ibo','ins'].forEach(k=>st[k]=num(st[k]));
+ if(!isFinite(st.len))st.len=st.dl;return results(st)};
 
 /* ---------- Page ---------- */
 let OPEN=null;

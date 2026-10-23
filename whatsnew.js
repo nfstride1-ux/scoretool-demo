@@ -3,9 +3,12 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1735-arrowcheck',d:'2026-10-23',items:[
+  ['arrow','Save calculator results to an arrow',"Pick an arrow in the speed or FOC calculator and tap Save to this arrow. It keeps the FOC, total weight, speed, the bow and the date on that arrow, and My arrows shows them. Your shaft, spine, length and points are only changed if you changed them in the calculator and say yes.",'this release'],
+  ['check','Is this arrow right?',"After the calculators, a plain-words check: FOC too low, good or high for indoor, outdoor target, field, 3D or hunting, and spine too stiff, about right or too weak from the maker's chart for your bow. It shows the range it used and the source. It is a guide: confirm it by bare-shaft or paper tuning.",'this release']]},
  {v:'v2026-10-23-1533-ausindoor',d:'2026-10-23',items:[
-  ['target','Australian Indoor 18m',"The 30-arrow Australian Indoor round is in the round list. Pick the face before you start: vertical 3-spot (the traffic light), triangular 3-spot or the single 40cm face. It is the same round whichever face you shoot, so your PBs and averages stay together. Works in Just me, Casual shoots and head-to-head.",'this release'],
-  ['check','Plotting on the traffic light',"Arrows plotted on the vertical 3-spot are measured from the spot they hit, so the plot, group patterns and your scores all agree. Older sessions are not changed.",'this release']]},
+  ['target','Australian Indoor 18m',"The 30-arrow Australian Indoor round is in the round list. Pick the face before you start: vertical 3-spot (the traffic light), triangular 3-spot or the single 40cm face. It is the same round whichever face you shoot, so your PBs and averages stay together. Works in Just me, Casual shoots and head-to-head.",'3a1ec58'],
+  ['check','Plotting on the traffic light',"Arrows plotted on the vertical 3-spot are measured from the spot they hit, so the plot, group patterns and your scores all agree. Older sessions are not changed.",'3a1ec58']]},
  {v:'v2026-10-23-1447-sweep',d:'2026-10-23',items:[
   ['target','3-spot groups fixed',"Group patterns, the arrow plot and the end-of-shoot view now measure every 3-spot arrow from the spot it was shot at, then overlay them on one spot. A tight Vegas round now shows as a tight group in the gold. Your arrows are not changed.",'148a6a6'],
   ['target','Arrow plot',"Analytics shows a real dot for each plotted arrow on the right face, with soft shading, your group centre and a sight guide in mm.",'ea202d1'],
