@@ -16,7 +16,7 @@ def start(b,dark=False):
   for _ in range(3):
     if pg.locator('nav [data-v=home]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)
-  pg.evaluate("m=>{S.bows=(S.bows||[]).filter(x=>x.id!='blegacy');S.bows.unshift({id:'blegacy',archer:S.profile,name:'Hoyt concept x',extra:['8m','10m'],marks:m});S.bowSel=S.bowSel||{};S.bowSel[S.profile]='blegacy';delete S.arrowSets;delete S.arrowSel;save()}",LEG)
+  pg.evaluate("m=>{S.bows=(S.bows||[]).filter(x=>x.id!='blegacy');S.bows.unshift({id:'blegacy',archer:S.profile,name:'Hoyt concept x',extra:['8m','10m'],marks:m});S.bowSel=S.bowSel||{};S.bowSel[S.profile]='blegacy';delete S.arrowSets;delete S.arrowSel;save();localStorage.setItem('scoretool.seed.nathe.ace-sightmarks-20261023','1')}",LEG)  # ACE seed (sightseed_test) marked done here
   pg.reload();pg.wait_for_timeout(1200)
   pg.add_style_tag(content='nav.tabs button:not([data-v=home]):not([data-v=score]):not([data-v=myarch]):not([data-v=clubs]):not([data-v=tools]){display:none!important}')
   if dark:pg.evaluate("document.documentElement.setAttribute('data-theme','dark')")

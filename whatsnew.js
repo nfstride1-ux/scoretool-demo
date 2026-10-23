@@ -3,9 +3,13 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1216-aceseed',d:'2026-10-23',items:[
+  ['bow','Full sight mark sheets',"Sight marks now show every distance you have a mark for, even 2 m to 120 m. Long lists scroll, with the headings kept at the top.",'this release'],
+  ['gear','More arrow set details',"Arrow details also hold total weight, speed, sight height, sight radius and the distances you sighted in at.",'this release'],
+  ['check','Setup screen keeps its place',"Changing the bow setup or arrow set in Setups & sight marks stays on that screen, with the back button.",'this release']]},
  {v:'v2026-10-23-1145-arrowsets',d:'2026-10-23',items:[
-  ['bow','Sight marks for each arrow set',"In Sight marks, pick an Arrow set as well as the bow setup. Each set has its own marks. Your marks from before are under Arrows 1, unchanged.",'this release'],
-  ['gear','Arrow set details',"Save the shaft, spine, length and point for each set, or fill them from the Arrow chooser.",'this release']]},
+  ['bow','Sight marks for each arrow set',"In Sight marks, pick an Arrow set as well as the bow setup. Each set has its own marks. Your marks from before are under Arrows 1, unchanged.",'cd136d5'],
+  ['gear','Arrow set details',"Save the shaft, spine, length and point for each set, or fill them from the Arrow chooser.",'cd136d5']]},
  {v:'v2026-10-23-1140-arrowuse',d:'2026-10-23',items:[
   ['bow','Arrow chooser by use',"Pick Target, Indoor, Field, 3D or Hunting. Indoor lists fat shafts only, like SuperDrive 23 and X23. Hunting uses Easton's hunting chart.",'f8ef253'],
   ['search','Result at the bottom',"Fill in from the top down. The result sits under everything it uses, and shows how the chart weight was worked out.",'f8ef253'],
