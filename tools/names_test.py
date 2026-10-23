@@ -50,7 +50,7 @@ try:
     chk(f'rejected ({why}): {s!r}',not C(s)['ok'])
   chk('rule messages are plain words',C('A')['msg']=='Use at least 2 characters.' and C('Joe!')['msg'].startswith('Use letters'))
   # ---------- first open: default nicknames are pre-set (Nathe, 20 Oct), so no prompt and no 'Tester N' ----------
-  DEFS={'nathe':'Nathe','phill':'Phill','logan':'Logan','steven':'Snookie','joseph':'Joe','michael':'Choongy','dana':'Dana','tahuri':'Tahuri','estiaan':'Estiaan','nate':'Nate','darnie':'Darnie'}
+  DEFS={'nathe':'Nathe','phill':'Phill','logan':'Logan','steven':'Snookie','joseph':'Joe','michael':'Choongy','dana':'Dana','tahuri':'Tahuri','estiaan':'Estiaan','nate':'Nate','darnie':'Danie'}  # 22 Oct 2026: Darnie is shown as Danie
   chk('first open: no display-name screen (a default nickname is set)',J.locator('#nmscreen').count()==0 and J.locator('#tabs').is_visible())
   chk('default nicknames for every archer, no Tester N',J.evaluate("Object.fromEntries(TESTERS.map(t=>[t.id,testerName(t.id)]))")==DEFS)
   chk('own default nickname is mine until I change it',J.evaluate("myName()")=='Joe')
@@ -165,7 +165,7 @@ try:
   rk=L.evaluate("nav('rewards')") or L.inner_text('#app');chk('Ranks shows nicknames, never Tester N','Tester ' not in rk)
   # Darnie: an archer who is not a tester
   cd_,D=phone(b,'darnie')
-  chk('Darnie has his own link and opens straight into the app as Darnie',D.evaluate("TESTER&&TESTER.id")=='darnie' and D.locator('#nmscreen').count()==0 and D.evaluate("myName()")=='Darnie')
+  chk('Darnie has his own link and opens straight into the app as Danie',D.evaluate("TESTER&&TESTER.id")=='darnie' and D.locator('#nmscreen').count()==0 and D.evaluate("myName()")=='Danie')
   D.evaluate("nav('me')");D.wait_for_timeout(400);chk('Darnie gets no tester suggestion prompt','Send a suggestion' not in D.inner_text('#app'))
   L.evaluate("cur=null;sv='sheet';nav('score')");L.wait_for_timeout(300)
   chk('Darnie can be picked in matches and groups',L.locator('[data-h2hop="darnie"]').count()==1 and L.locator('[data-lgop="darnie"]').count()==1)
