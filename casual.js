@@ -2,7 +2,7 @@
    the league table, no leaderboard and nothing added up across shoots. It just keeps that shoot's scores.
    Setup (Score tab, 'Casual shoot'): pick Target, Indoor, Field or 3D (see CS3D below), then a round from the app's own ROUNDS list:
      Target = every standard outdoor round (faces from faceR: 122 cm, 80 cm, 80 cm 6-ring per distance block; practice rounds any face)
-     Indoor = rounds where indoor3() is true, plus Vegas 300; face is the vertical 3-spot or Vegas 3-spot only (face3R, keys X 10-6 M)
+     Indoor = rounds where indoor3() is true, plus Vegas 300; face is the vertical 3-spot or Vegas 3-spot only (face3R, keys X 10-6 M); Australian Indoor 18m can also be the single 40cm face (keys X 10-1 M)
      Field  = rounds where isFld() is true; keys 6 5 (gold) 4 3 2 1 (black) and M, the same as the main field scorer
    (the league round 'Vegas 300 (18 m)', custom/3D practice rounds and legacy rounds are left out).
    People: 1 to 10. The host is in by default ('I'm shooting too'). Others are typed freely. When a typed name matches someone
@@ -46,15 +46,15 @@ const cs3dK=(cs,ei)=>{const R=ROUNDS[cs.round],T=CS3D[R.d3];return T.half&&ei>=R
 const cs3dCol=(cs,k)=>{const T=cs3d(cs),i=T.k.indexOf(k),c=k=='M'||i<0?'m':T.c[i];return{g:'k-y',b:'k-b',n:'k-n',m:'k-m'}[c]};
 try{for(const x of[...(S.casual||[]),...(S.sessions||[]),...(S.matches||[])])cs3dReg(x&&x.round)}catch(e){}
 /* face for end ei: the same faceR / face3R the main scorer uses (indoor always on a 3-spot) */
-function csFace(cs,ei){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F))return face3R(F,{face3:cs.face3=='vegas'?'vegas':'vert'});return F}
+function csFace(cs,ei){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F))return cs.face3=='single'&&cs.round==AUSI?F:face3R(F,{face3:cs.face3=='vegas'?'vegas':'vert'});return F}
 /* score keys: the main scorer's rule (app.js score()), highest first */
 function csKeys(cs,ei){const R=ROUNDS[cs.round]||{};if(R.d3)return cs3dK(cs,ei||0);const FR=csFace(cs,ei||0);if(isFld(FR))return['6','5','4','3','2','1','M'];const xk=R.xs===false?[]:['X'];
  return[...xk,...(isSpot(FR)?['10','9','8','7','6']:isSix(FR)?['10','9','8','7','6','5']:['10','9','8','7','6','5','4','3','2','1']),'M']}
 const csKcol=(cs,k)=>cs3d(cs)?cs3dCol(cs,k):cs.disc=='field'||isFld(csFace(cs,0))?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k);
-const csFaceTxt=cs=>{const R=ROUNDS[cs.round];if(!R)return'';if(R.d3){const T=CS3D[R.d3];return T.o+' 3D animal'+(T.half?', '+R.d3n+' targets 3-arrow then '+R.d3n+' targets 1-arrow':'')+(T.o=='ABA'?', first arrow to score counts':'')}if(R.vegas)return'Vegas 3-spot';const F=faceR(R,0);if(isFld(F))return'Field face, gold 6 and 5, black 4 to 1';if(indoor3(R,F))return cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot';
+const csFaceTxt=cs=>{const R=ROUNDS[cs.round];if(!R)return'';if(R.d3){const T=CS3D[R.d3];return T.o+' 3D animal'+(T.half?', '+R.d3n+' targets 3-arrow then '+R.d3n+' targets 1-arrow':'')+(T.o=='ABA'?', first arrow to score counts':'')}if(R.vegas)return'Vegas 3-spot';const F=faceR(R,0);if(isFld(F))return'Field face, gold 6 and 5, black 4 to 1';if(indoor3(R,F))return cs.round==AUSI?f3Name(AUSI,cs.face3):cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot';
  const L=[...new Set((R.blocks||[{}]).map((b,k)=>{let e=0;for(let j=0;j<k;j++)e+=+R.blocks[j].ends;return faceR(R,e).face}))].filter(Boolean);return L.length?L.join(' / '):R.face}
 const csR=cs=>ROUNDS[cs.round]||{ends:10,ape:3};
-const csEndFace=(cs,ei)=>{const R0=ROUNDS[cs.round]||{};if(R0.d3){const T=CS3D[R0.d3];return T.half?(ei<R0.d3n?'3-arrow half':'1-arrow half'):T.l}const R=R0,F=faceR(R,ei),sz=(String(F.face||'').match(/^\d+(-\d+)?/)||[''])[0];if(isFld(F))return sz+'cm field face';if(R.vegas||indoor3(R,F))return(sz?sz+'cm ':'')+(R.vegas||cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot');return F.face||''};
+const csEndFace=(cs,ei)=>{const R0=ROUNDS[cs.round]||{};if(R0.d3){const T=CS3D[R0.d3];return T.half?(ei<R0.d3n?'3-arrow half':'1-arrow half'):T.l}const R=R0,F=faceR(R,ei),sz=(String(F.face||'').match(/^\d+(-\d+)?/)||[''])[0];if(isFld(F))return sz+'cm field face';if(R.vegas||indoor3(R,F))return(sz?sz+'cm ':'')+(R.vegas?'Vegas 3-spot':cs.round==AUSI?f3Name(AUSI,cs.face3).replace(/^Single 40cm/,'single'):cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot');return F.face||''};
 const csP=(cs,id)=>(cs.ppl||[]).find(p=>p.id==id);
 const csNameOnly=(cs,id)=>{const p=csP(cs,id);return!!(p&&!p.tid)};
 /* names: social views use the nickname for app users; name-only friends show the name the host typed (tester real names swapped) */
@@ -91,7 +91,7 @@ function csNameCheck(raw){const n=nmClean(raw);if(n.length<2)return{ok:false,n,m
 const csNid=()=>'n'+h2hCode().slice(0,6).toLowerCase();
 function csCreate(o){const me=csMe();if(!me)return null;const P=[];if(o.self)P.push({id:me,tid:me});for(const p of o.ppl||[]){if(P.length>=CS_MAX)break;if(p.tid){if(!P.some(x=>x.id==p.tid))P.push({id:p.tid,tid:p.tid,n:''})}else{const c=csNameCheck(p.n);if(c.ok&&!P.some(x=>!x.tid&&x.n.toLowerCase()==c.n.toLowerCase()))P.push({id:csNid(),n:c.n})}}
  if(P.length<1||!ROUNDS[o.round])return null;const t=Date.now(),code='C'+h2hCode(),disc=csDisc(o.round);
- const cs={code,name:nmClean(o.name||'').slice(0,40)||'Casual shoot',disc,round:o.round,face3:disc=='indoor'&&!ROUNDS[o.round].vegas?(o.face3=='vegas'?'vegas':'vert'):null,date:o.date||today(),host:me,ppl:P,pt:t,sc:{},fin:0,fint:0,
+ const cs={code,name:nmClean(o.name||'').slice(0,40)||'Casual shoot',disc,round:o.round,face3:disc=='indoor'&&!ROUNDS[o.round].vegas?(o.face3=='vegas'?'vegas':o.face3=='single'&&o.round==AUSI?'single':'vert'):null,date:o.date||today(),host:me,ppl:P,pt:t,sc:{},fin:0,fint:0,
   mp:{on:!!o.mp&&P.length>=2,ask:0,seeds:null,t},status:'active',created:t,dirty:1,invq:P.filter(p=>p.tid&&p.tid!=me).map(p=>p.tid)};csAll().push(cs);save();csTick(true);return cs}
 function csAdd(code,p){const cs=csGet(code);if(!cs||!csHost(cs)||cs.ppl.length>=CS_MAX||csFin(cs))return'This shoot already has 10 people.';
  if(p.tid){if(cs.ppl.some(x=>x.tid==p.tid))return'Already in this shoot.';cs.ppl.push({id:p.tid,tid:p.tid,n:''});cs.invq=[...(cs.invq||[]),p.tid]}
@@ -145,7 +145,7 @@ function csMerge(cs,d){if(!d||d.code!=cs.code||(d.t||0)<H2H_RESET)return false;c
  if(fromHost&&typeof d.round=='string'&&ROUNDS[d.round]){if(!cs.host&&typeof d.host=='string'){cs.host=d.host;ch=true}
   if(Array.isArray(d.ppl)&&(d.pt||0)>(cs.pt||0)){cs.ppl=d.ppl.slice(0,CS_MAX).filter(p=>p&&typeof p.id=='string'&&p.id.length<=16).map(p=>typeof p.tid=='string'&&nmIdx(p.tid)>=0?{id:p.tid,tid:p.tid,n:''}:{id:p.id,n:nmClean(String(p.n||'')).slice(0,16)||'Archer'});cs.pt=d.pt;ch=true}
   for(const k of['name','round','disc','date'])if(typeof d[k]=='string'&&d[k]&&cs[k]!=d[k]){cs[k]=k=='name'?nmClean(d[k]).slice(0,40):d[k];ch=true}
-  const f3=d.face3=='vegas'?'vegas':d.face3=='vert'?'vert':null;if(cs.face3!=f3){cs.face3=f3;ch=true}
+  const f3=d.face3=='vegas'?'vegas':d.face3=='vert'?'vert':d.face3=='single'?'single':null;if(cs.face3!=f3){cs.face3=f3;ch=true}
   if((d.fint||0)>(cs.fint||0)){cs.fin=d.fin?1:0;cs.fint=d.fint;ch=true}
   if(d.mp&&typeof d.mp=='object'&&(d.mp.t||0)>((cs.mp||{}).t||0)){cs.mp={on:!!d.mp.on,ask:d.mp.ask?1:0,seeds:Array.isArray(d.mp.seeds)?d.mp.seeds.filter(x=>typeof x=='string').slice(0,CS_MAX):null,t:d.mp.t};ch=true}}
  const R=csR(cs);cs.sc=cs.sc||{};for(const id in d.sc||{}){const p=csP(cs,id);if(!p)continue;/* only the host (for themselves and name-only friends) or the linked archer themselves */
@@ -180,7 +180,7 @@ function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.d
  ${is3?`<label for="cs3t">Round</label><select id="cs3t">${Object.entries(CS3D).map(([k,T])=>`<option value="${k}" ${k==D.d3t?'selected':''}>${esc(T.l+' ('+(T.half?'3 + 1 arrows':plN(cs3dPer(k),'arrow','arrows'))+' a target)')}</option>`).join('')}</select>
  <label for="cs3n">${CS3D[D.d3t].half?'Targets each half':'Number of targets'}</label><input id="cs3n" type="number" inputmode="numeric" min="1" max="${CS3D_MAX}" value="${esc(D.d3n)}" style="max-width:120px">`
  :`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option value="${esc(r)}" ${r==D.round?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>`}
- ${ind?`<label>Face</label>${csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3)}`:''}
+ ${ind?`<label>Face</label>${D.round==AUSI?csSeg('csf3',F3AUS,D.face3):csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3=='single'?'vert':D.face3)}`:''}
  <p class="small" id="csfacetxt" style="margin:6px 0">${esc(csFaceTxt(tmp))} · keys ${csKeys(tmp,0).join(' ')}</p>
  <label for="csdt">Date</label><input id="csdt" type="date" value="${esc(D.date||today())}">
  <fieldset class="h2hops"><legend>Who's shooting (${n} of ${CS_MAX})</legend>

@@ -55,7 +55,7 @@ try:
   challenge(J,'logan','total')
   if SHOT:J.screenshot(path=OUT+'/1-start-match.png')
   chk('opponent list has every other archer (10: testers plus Darnie), not just the squad',J.locator('[data-h2hop]').count()==10 and J.locator('#h2hmdw').is_visible())
-  chk('round list is the indoor rounds',J.eval_on_selector_all('#h2hrd option','o=>o.map(x=>x.value)')==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
+  chk('round list is the indoor rounds',J.eval_on_selector_all('#h2hrd option','o=>o.map(x=>x.value)')==['Indoor WA 18m','Australian Indoor 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
   J.click('#h2hgo');J.wait_for_timeout(500)
   chk('Joseph: scorer opens with the match chip',J.locator('#h2hchip').count()==1 and 'vs' not in J.inner_text('#h2hchip').lower() or 'Zap' in J.inner_text('#h2hchip'))
   chk('invite sent to Logan\'s inbox',any('-in-logan' in t for t in RELAY))

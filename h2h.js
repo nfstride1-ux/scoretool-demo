@@ -9,7 +9,7 @@
    a 1v1 format). The order of first appearance on the topic decides who is in when two join at once. */
 const H2H_BASE='https://ntfy.sh',H2H_NS='scoretool-h2h-q7m4';
 const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2hInbox=id=>H2H_NS+'-in-'+id;
-const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||ROUNDS[r].vegas&&!ROUNDS[r].league)&&!ROUNDS[r].custom);
+const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||r==AUSI||ROUNDS[r].vegas&&!ROUNDS[r].league)&&!ROUNDS[r].custom);
 const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
 /* Onion Shed Challenge has no archer limit (Nathe, 22 Oct 2026): its league record and its final match are uncapped; everything else keeps H2H_MAX */
 const H2H_NOCAP=['ONIONSHD'],h2hCap=m=>m&&(H2H_NOCAP.includes(m.code)||H2H_NOCAP.includes(m.lg))?1e9:H2H_MAX;window.h2hCap=h2hCap;
@@ -40,7 +40,7 @@ window.h2hChip=function(s){const m=h2hGet(s.h2h);if(!m)return'';const c=m.g?null
  return`<button class="ad-small h2hchip" id="h2hchip" onclick="h2hView('${m.code}')" aria-label="Open head-to-head match">⚔ ${m.g?'Match night · ':''}${esc(h2hLine(m))}${r?' · '+r:''}</button>`};
 /* Start a session for a match (same as Score > Start, tagged with the match code) */
 function h2hStart(m){const r=m.round;S.lastRound=r;sv='entry';justDone=false;fix=null;if(typeof PZ!='undefined'){PZ.k=1;PZ.cx=PZ.cy=0}
- cur={id:'s'+Date.now(),date:today(),round:r,ends:[[]],pos:[[]],note:'',h2h:m.code};if(indoor3(ROUNDS[r],faceR(ROUNDS[r],0)))cur.face3=S.face3||'vert';
+ cur={id:'s'+Date.now(),date:today(),round:r,ends:[[]],pos:[[]],note:'',h2h:m.code};if(indoor3(ROUNDS[r],faceR(ROUNDS[r],0)))cur.face3=f3Pref(r);
  S.sessions.push(cur);m.sid=cur.id;m.status='active';save();h2hPost(h2hTopic(m.code),h2hState(m));m.sent=JSON.stringify(h2hState(m).ends)+h2hMyDone(m);save();history.pushState({scoring:1},'');score();scrollTo(0,0)}
 window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicker">Head-to-head</span><h3>Shoot against another tester</h3><p class="small muted">Pick your tester name in Me first.</p></div>`;
  const L=h2hAll().filter(m=>!m.lg&&!m.cs).slice().reverse(),inv=L.filter(m=>m.status=='invite'),act=L.filter(m=>m.status!='invite'&&m.status!='declined').slice(0,6),me=h2hMe();
@@ -48,7 +48,7 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
  ${inv.map(m=>`<div class="list-item" data-inv="${m.code}"><b>${esc(h2hShort(m.opp))} ${m.g?'invited you to a match night':'challenged you'}</b><div class="small muted">${esc(m.round)} · ${esc(m.mode=='sets'?'Set points':'Highest total')}${m.when?' · '+esc(h2hWhen(m.when)):''}</div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-h2hacc="${m.code}">Accept and start</button><button class="btn ghost" data-h2hno="${m.code}">Not now</button></div></div>`).join('')}
  ${act.map(m=>{if(m.g){const r=h2hResult(m);return`<div class="list-item row"><span><b>Match night · ${esc(m.round)}</b><div class="small muted">${esc(h2hLine(m))}${m.when?' · '+esc(h2hWhen(m.when)):''}${r?' · <b>'+r+'</b>':m.status=='full'?' · match full':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}const c=h2hCalc(m),r=h2hResult(m,c);return`<div class="list-item row"><span><b>vs ${esc(h2hShort(m.opp))}</b><div class="small muted">${esc(m.round)} · ${esc(h2hLine(m))}${r?' · <b>'+r+'</b>':m.status=='declined-by-opp'?' · they said not now':!m.op?' · waiting for them to accept':''}</div></span>${h2hDelBtn(m)}<button class="btn ghost" data-h2hopen="${m.code}">Open</button></div>`}).join('')}
  <details id="h2hnew"><summary class="btn full" style="list-style:none;text-align:center;margin-top:6px">Start a match</summary>
- <label for="h2hrd">Round</label><select id="h2hrd">${H2H_ROUNDS().map(r=>`<option value="${esc(r)}" ${r=='Indoor WA 18m'?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>
+ <label for="h2hrd">Round</label><select id="h2hrd">${H2H_ROUNDS().map(r=>`<option value="${esc(r)}" ${r=='Indoor WA 18m'?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select><div id="h2hf3"></div>
  <fieldset class="h2hpm"><legend>Scoring</legend><label class="h2htk"><input type="radio" name="h2hpm" value="multi" checked> Each archer scores on their own phone</label><label class="h2htk"><input type="radio" name="h2hpm" value="one"> Score everyone on one phone</label></fieldset>
  <div id="h2hnw"><label for="h2hneed">Shooters</label><input type="number" id="h2hneed" min="2" max="${H2H_MAX}" value="2" inputmode="numeric"></div><div id="h2hnames" hidden></div><p class="small" id="h2hnerr" role="alert" style="margin:4px 0;font-weight:600"></p>
  <fieldset class="h2hops nm-real"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me).map(t=>`<label class="h2htk"><input type="checkbox" data-h2hop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
@@ -60,7 +60,7 @@ window.h2hCard=function(){if(!TESTER)return`<div class="card"><span class="kicke
 window.h2hBind=function(){const g=$('#h2hgo'),ticked=()=>[...app.querySelectorAll('[data-h2hop]:checked')].map(x=>x.dataset.h2hop);
  const one=()=>!!app.querySelector('[name=h2hpm][value=one]:checked'),need=()=>Math.max(2,Math.min(H2H_MAX,parseInt(($('#h2hneed')||{}).value)||2));
  const names=()=>{const w=$('#h2hnames');if(!w)return;const old=[...w.querySelectorAll('input')].map(x=>x.value);w.innerHTML=Array.from({length:need()},(_,k)=>`<label for="h2hnm${k}">Shooter ${k+1}</label><input id="h2hnm${k}" data-h2hnm maxlength="16" autocomplete="off" value="${esc(old[k]||'')}">`).join('')};
- const sync=()=>{const o=one(),v=!!(ROUNDS[$('#h2hrd').value]||{}).vegas,n=o?0:ticked().length;$('#h2hnames').hidden=!o;$('.h2hops').hidden=o;$('#h2hophint').hidden=o;$('#h2hnw').hidden=!(o||v);if(o)names();
+ const sync=()=>{const o=one(),v=!!(ROUNDS[$('#h2hrd').value]||{}).vegas,n=o?0:ticked().length;$('#h2hnames').hidden=!o;$('.h2hops').hidden=o;$('#h2hophint').hidden=o;$('#h2hnw').hidden=!(o||v);if(o)names();const fw=$('#h2hf3');if(fw){/* Australian Indoor face (traffic light etc.), for archers scoring on their own phone */fw.innerHTML=!o&&typeof f3Row=='function'?f3Row($('#h2hrd').value):'';if(fw.innerHTML)f3Bind(fw,sync)}
   $('#h2hmdw').hidden=n!=1;$('#h2hwhw').hidden=n==1;if(n!=1)$('#h2hmd').value='total';g.textContent=o?'Start one-phone match':n==1?'Send challenge and start scoring':'Create match night';
   app.querySelectorAll('[data-h2hop]').forEach(x=>{if(!x.checked)x.disabled=n>=H2H_MAX-1})};
  if(g){app.querySelectorAll('[data-h2hop],[name=h2hpm],#h2hrd').forEach(x=>x.onchange=sync);$('#h2hneed').oninput=sync;sync()}

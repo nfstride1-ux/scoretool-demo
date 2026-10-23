@@ -68,7 +68,7 @@ try:
   # ---------- disciplines: rounds and faces from the app's own helpers ----------
   R=L.evaluate("({t:csRounds('target'),i:csRounds('indoor'),f:csRounds('field')})")
   print('ROUNDS',json.dumps(R))
-  chk('Indoor = Indoor WA rounds + Vegas 300 (league 300 left out)',R['i']==['Indoor WA 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
+  chk('Indoor = Indoor WA rounds + Vegas 300 (league 300 left out)',R['i']==['Indoor WA 18m','Australian Indoor 18m','Indoor WA 25m','Indoor WA Combined 25m + 18m','Vegas 300'])
   chk('Field = the 3 WA field rounds',R['f']==['WA Field 24 Marked','WA Field 24 Unmarked','WA Field 12 Unmarked + 12 Marked'])
   chk('Target = the outdoor and practice rounds, no indoor/field/league',all(r not in R['t'] for r in R['i']+R['f']+['Vegas 300 (18 m)']) and 'WA 720 (70m)' in R['t'] and 'WA 70/1440 (70/60/50/30m)' in R['t'])
   L.click('[data-csdisc="indoor"]');L.wait_for_timeout(200)

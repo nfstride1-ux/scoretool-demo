@@ -20,7 +20,7 @@ SEED=r"""(()=>{const R=ROUNDS['Vegas 300'];let r=11;const rnd=()=>{r=(r*16807)%2
  S.sessions=(S.sessions||[]).filter(x=>!/^gp/.test(x.id));S.sessions.push(s);save();return[total(s),s.ends.flat().filter(a=>a=='X').length]})()"""
 AUDIT=r"""(()=>{let r=5;const rnd=()=>{r=(r*16807)%2147483647;return r/2147483647};const out=[];
  for(const name of Object.keys(ROUNDS)){const R=ROUNDS[name];if(R.aba||R.custom)continue;
-  for(const f3 of [null,'vegas','vert','bugs']){const s={id:'au',round:name,date:'2026-10-23',ends:[],pos:[],ff:[]};const F0=faceR(R,0);
+  for(const f3 of [null,'vegas','vert','bugs','single']){if(f3=='single'&&name!=AUSI)continue;/* Australian Indoor single 40cm face */const s={id:'au',round:name,date:'2026-10-23',ends:[],pos:[],ff:[]};const F0=faceR(R,0);
    if(f3=='bugs'){if(!/field/.test(F0.face||''))continue;s.bugs=true}else if(f3){if(!indoor3(R,F0))continue;s.face3=f3}
    const n=R.ends||(R.blocks||[]).reduce((t,b)=>t+(b.ends||0),0)||1;let bad=0,cnt=0,mmBad=0;
    for(let i=0;i<Math.min(n,40);i++){let F=faceR(R,i);if(!F)break;if(use3({...s,pos:f3?[]:[[{x:0,y:0}]]},R,F))F=face3R(F,s);if(bugsOn(s))F={...F,bugs:true};const fs=isFld(F)?[80,60,40,20][i%4]:0;s.ff[i]=fs?{f:fs}:null;
