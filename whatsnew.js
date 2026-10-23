@@ -3,9 +3,16 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1447-sweep',d:'2026-10-23',items:[
+  ['target','3-spot groups fixed',"Group patterns, the arrow plot and the end-of-shoot view now measure every 3-spot arrow from the spot it was shot at, then overlay them on one spot. A tight Vegas round now shows as a tight group in the gold. Your arrows are not changed.",'148a6a6'],
+  ['target','Arrow plot',"Analytics shows a real dot for each plotted arrow on the right face, with soft shading, your group centre and a sight guide in mm.",'ea202d1'],
+  ['bars','This shoot vs your usual',"Under your score at the end of a round: score vs your average and PB, score by end, Xs and 10s, and your plot vs your usual group for the same round. Open in Past sessions shows the same view.",'9e65b26'],
+  ['check','Finish session',"A clear Finish session button closes the round. Your arrows were already saved as you went, so nothing is saved twice.",'9e65b26'],
+  ['arrow',"Today's arrows","Tap the number to edit it in place. Set, +/- and Reset no longer jump to Home.",'8c18895'],
+  ['check','Small fixes',"Parent view Preview has a back button, and saving your display name keeps the Profile back button.",'91821d0']]},
  {v:'v2026-10-23-1341-brand',d:'2026-10-23',items:[
-  ['check','Plainer wording',"Screens now call your official scores past competition results. Your scores and settings are not changed.",'this release'],
-  ['globe','Apps I use',"Apps I use no longer suggests example apps. Add the links you use with Paste link or Find in store.",'this release']]},
+  ['check','Plainer wording',"Screens now call your official scores past competition results. Your scores and settings are not changed.",'36c0212'],
+  ['globe','Apps I use',"Apps I use no longer suggests example apps. Add the links you use with Paste link or Find in store.",'36c0212']]},
  {v:'v2026-10-23-1333-sightest',d:'2026-10-23',items:[
   ['target','Estimate other marks',"In Setups & sight marks, tap Estimate other marks once you have 3 or more marks. Empty distances show an estimate marked est. Confirm each one on the range.",'957373b'],
   ['check','Your marks stay yours',"Estimates never change a mark you typed. Type over an estimate to make it your own mark, or tap Clear estimates to remove them all.",'957373b']]},
