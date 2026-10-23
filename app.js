@@ -445,7 +445,7 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
  ${secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
  <div class="ad-sum">${hiStats(arrowsAll,s)}&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${early?arrowsIn(s)*per+' <span class="small">('+arrowsIn(s)+' arrows shot)</span>':fullMax}</span></div></div>
- ${fin?roundSummary(s)+`<div class="ad-sheet" style="padding:10px">${window.phBoxHtml&&s.id?phBoxHtml(s.id,'fin'):''}${noteBox(s)}<button class="btn full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
+ ${fin?roundSummary(s)+(window.shootCompareHTML?shootCompareHTML(s):'')+`<div class="ad-sheet" style="padding:10px">${window.phBoxHtml&&s.id?phBoxHtml(s.id,'fin'):''}${noteBox(s)}<button class="btn alt full" id="finsess" style="margin-top:10px">${window.icon?icon('check'):''} Finish session</button><button class="btn ghost full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
  <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:'')+(window.shareSheet?`<button class="ad-fin" id="shsheet">Share</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';score()});
@@ -453,6 +453,8 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  if($('#finnow'))$('#finnow').onclick=()=>{if(!confirm(`Finish round now? ${arrowsIn(s)} arrows, ${total(s)} points.`))return;while(s.ends.length>1&&!s.ends[s.ends.length-1].length){s.ends.pop();if(s.pos)s.pos.length=Math.min(s.pos.length,s.ends.length)}s.finished=true;fix=null;justDone=false;sv='sheet';save();score()};
  if($('#shsheet'))$('#shsheet').onclick=()=>shareSheet(s);if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
+ /* Finish session (23 Oct 2026, Steven): the round is already saved arrow by arrow, so this only closes the sheet and shows the done state (no save, no second copy) */
+ if($('#finsess'))$('#finsess').onclick=()=>{const id=s.id;cur=null;sv='sheet';fix=null;justDone=false;if(window.shotDone&&id)shotDone(id);else nav('score')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
 const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)','AA 50/1440 (50/40/30/20m)':'AA 50/1440'};
 function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;

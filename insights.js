@@ -97,6 +97,30 @@ function endBars(v,ref,o={}){if(!v.length)return'';const W=340,H=132,top=18,bot=
  if(ref&&ref.length){const pts=ref.map((r,i)=>[(i*bw).toFixed(1)+','+Y(r).toFixed(1),((i+1)*bw).toFixed(1)+','+Y(r).toFixed(1)].join(' ')).join(' ');g+=`<polyline points="${pts}" fill="none" stroke="${B}" stroke-width="2" stroke-dasharray="5 4"/>`}
  return g+`</svg>`+(ref?`<p class="small muted" style="margin:2px 0 0"><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="${B}" stroke-width="2" stroke-dasharray="5 4"/></svg> ${o.refLab||'your average'}</p>`:'')}
 const endLine=(v,w)=>{const wk=lowI(v),hi=highI(v);return`<p class="small" style="margin:6px 0 0">Lowest end ${w}: <b style="color:${RD}">&#9660; end ${wk+1}</b> (${f1(v[wk])}). Highest: end ${hi+1} (${f1(v[hi])}).</p>`};
+/* ---------- This shoot vs your usual (23 Oct 2026, Nathe/Steven) ----------
+   On the end-of-shoot screen and Past sessions > Open: this shoot against the archer's EARLIER full shoots of the same round
+   (same shoot list and round names as Full analysis). Comparisons are hidden when there is no earlier shoot; the plot only shows
+   plotted arrows. Display only: nothing stored changes. */
+function shootCompareHTML(sess){try{if(!sess||!sess.ends)return'';const R0=ROUNDS[sess.round]||{};if(R0.aba)return'';
+ const all=window._anShoots?_anShoots():[],me=all.find(o=>o.s===sess),rd=me?me.round:sess.round;
+ const ord=o=>o.date+(o.s&&o.s.id?'|'+o.s.id:''),meK=sess.date+'|'+(sess.id||'');
+ const prev=all.filter(o=>o.round==rd&&!o.part&&o.s!==sess&&ord(o)<meK&&(o.ends&&o.ends.length||o.score));
+ const v=sess.ends.filter(e=>e&&e.length).map(endSum),sc=total(sess),A=sess.ends.flat(),keys=keysFor(rd+(bugsOn(sess)||/field/i.test((faceR(R0,0)||{}).face||'')?' field':''));
+ let h='';
+ if(prev.length){const ps=prev.map(o=>o.score),avg=mean(ps),pb=Math.max(...ps);
+  h+=card('This shoot vs your usual',`${esc(rd)} · ${plN(prev.length,'earlier shoot','earlier shoots')}`,`<div class="stats" style="grid-template-columns:1fr 1fr 1fr">${stat(sc,'this shoot',G)}${stat(f1(avg).replace(/\.0$/,''),'your average<span class="small" style="display:block;color:'+(sc>=avg?GR:RD)+'">'+sg(sc-avg)+'</span>')}${stat(pb,(sc>pb?'previous PB':'your PB')+'<span class="small" style="display:block;color:'+(sc>=pb?GR:RD)+'">'+sg(sc-pb)+'</span>')}</div>`);
+  /* end by end: earlier full shoots with the same number of ends */
+  const E=prev.filter(o=>o.ends&&o.ends.length==sess.ends.length);
+  if(E.length&&v.length==sess.ends.length){const ref=v.map((_,i)=>mean(E.map(o=>endSum(o.ends[i].arrows))));
+   h+=card('Score by end','vs your average ends',endBars(v,ref,{refLab:`your average at each end (${plN(E.length,'shoot','shoots')})`})+endLine(v,'this shoot'))}
+  /* top two scores (X and 10 + X, or 6s and 5s on field): earlier shoots with arrows, or the published counts on target rounds */
+  const fld=keys[0]=='6',cnt=a=>fld?[a.filter(x=>x=='6').length,a.filter(x=>x=='5').length]:[a.filter(x=>x=='X').length,a.filter(x=>x=='X'||x=='10').length];
+  const P2=prev.map(o=>o.ends&&o.ends.length?cnt(o.ends.flatMap(e=>e.arrows)):(!fld&&(o.tens||o.xs)?[o.xs||0,o.tens||0]:null)).filter(Boolean);
+  if(P2.length&&A.length){const me2=cnt(A),av=[0,1].map(i=>mean(P2.map(x=>x[i]))),lab=fld?['6s','5s']:['Xs','10s + Xs'];
+   h+=card(fld?'6s and 5s':'Xs and 10s',`vs your average (${plN(P2.length,'shoot','shoots')})`,`<div class="stats" style="grid-template-columns:1fr 1fr">${[0,1].map(i=>stat(me2[i],lab[i]+`<span class="small" style="display:block">average ${f1(av[i]).replace(/\.0$/,'')} <span style="color:${me2[i]>=av[i]?GR:RD}">${sg(me2[i]-av[i])}</span></span>`)).join('')}</div>`)}}
+ if(window.shotPlotCard)h+=shotPlotCard(sess,prev.map(o=>o.s).filter(Boolean));
+ return h?`<div class="shcmp">${h}</div>`:''}catch(e){console.warn('shootCompare',e);return''}}
+window.shootCompareHTML=shootCompareHTML;
 /* ---------- Analysis ---------- */
 function analysis(){const all=(window._anShoots?_anShoots():[]).filter(s=>s.ends&&s.ends.length||s.score);
  if(!all.length)return card('Analysis','',empty('Score a round or link your official results to see your analysis.'));
