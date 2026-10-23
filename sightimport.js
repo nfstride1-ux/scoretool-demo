@@ -1,5 +1,5 @@
 /* Import sight marks (23 Oct 2026, Nathe). Setups & sight marks > Import sight marks: paste text (one distance and mark per
-   line), or pick a CSV / text file or a Precision Cut Archery PDF. Everything is read on the phone (works offline, nothing is
+   line), or load a PDF, CSV or text file with range and mark columns. Everything is read on the phone (works offline, nothing is
    uploaded). A preview shows every row before anything is saved, into the bow setup and arrow set picked on the import screen.
    Default: only empty marks are filled and the archer's own marks are kept. "Replace existing marks" is a separate choice and
    asks before it overwrites anything. Marks are stored exactly as written (text, no rounding). */
@@ -29,7 +29,7 @@ function parseText(txt){const rows={},notes=[];let skipped=0;
  for(const line of String(txt||'').split(/\r?\n/)){const r=parseLine(line);if(!r.length){if(/\d/.test(line)&&!/^[^\d]*$/.test(line))skipped++;continue}
   for(const [d,v,h] of r){if(!d){skipped++;continue}if(rows[d])notes.push(`${d} was listed twice; the last one is used.`);rows[d]={v:v||'',h:h||''}}}
  return{rows,notes,skipped}}
-/* ---------- PDF (small offline text reader: enough for Precision Cut sheets made on a phone) ---------- */
+/* ---------- PDF (small offline text reader: enough for sight mark sheets made on a phone: range and mark columns) ---------- */
 async function inflate(bytes){const ds=new DecompressionStream('deflate');const s=new Blob([bytes]).stream().pipeThrough(ds);return new Uint8Array(await new Response(s).arrayBuffer())}
 const L1=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return s};
 async function pdfObjects(buf){const u=new Uint8Array(buf),s=L1(u),objs={},re=/(\d+)\s+0\s+obj\b/g;let m;const starts=[];
@@ -119,13 +119,13 @@ function plan(){const b=myBows().find(x=>x.id==st.bow),a=mySets().find(x=>x.id==
 function draw(){const d=document.getElementById('simpov');if(!d)return;const B=myBows(),A=mySets(),P=st.rows?plan():null;
  d.querySelector('.calov-in').innerHTML=`<button class="btn ghost labback calback" id="simpback" type="button">\u2039 Sight marks</button>
  <span class="kicker">Gear</span><h2>Import sight marks</h2>
- <p class="small muted" style="margin:0 0 8px">Paste your marks, or pick a CSV or a Precision Cut PDF. It is read on this phone and works offline. Nothing is saved until you check the preview and tap Save.</p>
+ <p class="small muted" style="margin:0 0 8px">Paste your marks, or load a PDF or CSV with range and mark columns. It is read on this phone and works offline. Nothing is saved until you check the preview and tap Save.</p>
  <label for="simpbow">Bow setup</label><select id="simpbow">${B.map(x=>`<option value="${esc(x.id)}" ${x.id==st.bow?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
  <label for="simpset" style="margin-top:8px">Arrow set</label><select id="simpset">${A.map(x=>`<option value="${esc(x.id)}" ${x.id==st.set?'selected':''}>${esc(x.name)}</option>`).join('')}<option value="__new">+ New arrow set</option></select>
  <label for="simptxt" style="margin-top:10px">Paste marks</label>
  <textarea id="simptxt" rows="6" style="width:100%;font:inherit;box-sizing:border-box" placeholder="One per line: distance, vertical mark (horizontal optional)&#10;18m 32.35&#10;20, 33.10, 1.5">${esc(st.text||'')}</textarea>
  <div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn" id="simpread" type="button">Read pasted marks</button>
- <label class="btn ghost" for="simpfile" style="margin:0;cursor:pointer">Pick a file (CSV, text, PDF)</label><input id="simpfile" type="file" accept=".csv,.txt,.pdf,text/csv,text/plain,application/pdf" style="position:absolute;opacity:0;width:1px;height:1px"></div>
+ <label class="btn ghost" for="simpfile" style="margin:0;cursor:pointer">Load PDF or CSV</label><input id="simpfile" type="file" accept=".csv,.txt,.pdf,text/csv,text/plain,application/pdf" style="position:absolute;opacity:0;width:1px;height:1px"></div>
  ${st.msg?`<p class="small" id="simpmsg" role="status" style="margin:8px 0 0;font-weight:700">${esc(st.msg)}</p>`:''}
  ${P?`<h3 style="margin:14px 0 4px">Preview: ${P.rows.length} distance${P.rows.length==1?'':'s'}${st.src?` from ${esc(st.src)}`:''}</h3>
  <fieldset style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:6px 0"><legend class="small" style="font-weight:700">Marks you already have</legend>
@@ -148,7 +148,7 @@ function bind(){const d=document.getElementById('simpov');
  d.querySelector('#simpread').onclick=()=>{st.text=d.querySelector('#simptxt').value;setRows(parseText(st.text),'pasted text')};
  d.querySelector('#simpfile').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;st.msg='Reading '+f.name+' \u2026';draw();
   try{let txt;if(/\.pdf$/i.test(f.name)||f.type=='application/pdf'){if(typeof DecompressionStream=='undefined')throw new Error('This phone cannot read PDFs here. Paste the marks or use a CSV.');txt=await pdfText(await f.arrayBuffer())}else txt=await f.text();
-   const r=parseText(txt);setRows(r,f.name);if(!Object.keys(r.rows).length&&/\.pdf$/i.test(f.name)){st.msg='No marks found in this PDF. Precision Cut sheets work; for other PDFs paste the marks or use a CSV.';draw()}}
+   const r=parseText(txt);setRows(r,f.name);if(!Object.keys(r.rows).length&&/\.pdf$/i.test(f.name)){st.msg='No marks found in this PDF. It needs a column of ranges and a column of marks; otherwise paste the marks or use a CSV.';draw()}}
   catch(err){st.rows=null;st.msg=(err&&/phone/.test(err.message))?err.message:'Could not read this file. Paste the marks or use a CSV.';draw()}};
  d.querySelectorAll('[name=simpmode]').forEach(r=>r.onchange=()=>{st.replace=r.value=='replace'&&r.checked;draw()});
  const c=d.querySelector('#simpclear');if(c)c.onclick=()=>{st.rows=null;st.msg='';st.text='';st.replace=false;draw()};

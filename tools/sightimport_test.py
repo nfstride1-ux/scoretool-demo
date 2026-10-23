@@ -1,11 +1,11 @@
-# Import sight marks (Setups & sight marks > Import sight marks): paste text, CSV/text file, Precision Cut PDF (read on the phone,
+# Import sight marks (Setups & sight marks > Import sight marks): paste text, CSV/text file, PDF (read on the phone,
 # offline). Preview before saving; default only fills empty marks (keeps the archer's own); "Replace existing marks" asks first.
-# Fixture: tools/fixtures/precisioncut-ace-sightmarks.pdf (Nathe's sheet, same values as tools/nathe_ace_sightmarks.json).
+# Fixture: tools/fixtures/ace-sightmarks-sheet.pdf (Nathe's sheet, same values as tools/nathe_ace_sightmarks.json).
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-sightimport');os.makedirs(SH,exist_ok=True)
-EXP=json.load(open(os.path.join(ROOT,'tools','nathe_ace_sightmarks.json')));PDF=os.path.join(ROOT,'tools','fixtures','precisioncut-ace-sightmarks.pdf')
+EXP=json.load(open(os.path.join(ROOT,'tools','nathe_ace_sightmarks.json')));PDF=os.path.join(ROOT,'tools','fixtures','ace-sightmarks-sheet.pdf')
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);
 srv=subprocess.Popen([sys.executable,'-m','http.server','8812'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
@@ -34,13 +34,13 @@ with sync_playwright() as p:
   ctx.set_offline(True)
   import base64;B=base64.b64encode(open(PDF,'rb').read()).decode()
   got=pg.evaluate("async b=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));const t=await sightImportPdfText(u.buffer);return [t,sightImportParse(t).rows]}",B)
-  rows={d:v['v'] for d,v in got[1].items()};chk('Precision Cut PDF offline: all 119 rows exact',rows==EXP)
+  rows={d:v['v'] for d,v in got[1].items()};chk('Sheet PDF offline: all 119 rows exact',rows==EXP)
   chk('PDF: no horizontal values',not any(v['h'] for v in got[1].values()))
   chk('PDF text has title',('Target Sight Marks' in got[0]) and ('Ace' in got[0]))
   if os.path.exists('/workspace/nathe-ace-sightmarks.pdf'):  # his other sheet (not committed): 119 rows + spec block skipped
     B2=base64.b64encode(open('/workspace/nathe-ace-sightmarks.pdf','rb').read()).decode()
     r2=pg.evaluate("async b=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));return sightImportParse(await sightImportPdfText(u.buffer)).rows}",B2)
-    chk('second Precision Cut layout (with spec table): 119 rows, 2..120',sorted(int(d[:-1]) for d in r2)==list(range(2,121)) and r2['30m']['v']=='38.15' and r2['2m']['v']=='66.50')
+    chk('second sheet layout (with spec table): 119 rows, 2..120',sorted(int(d[:-1]) for d in r2)==list(range(2,121)) and r2['30m']['v']=='38.15' and r2['2m']['v']=='66.50')
   pg.evaluate("nav('lab_gear')");pg.wait_for_timeout(500)  # opening the screen once (diary fills its empty lists)
   S0=nathe(pg);other0=pg.evaluate("localStorage.getItem('scoretool.v1.phill')")
   # UI: open import from the sight marks screen
@@ -48,7 +48,9 @@ with sync_playwright() as p:
     tag='dark' if dark else 'light'
     if dark:pg.evaluate("document.documentElement.setAttribute('data-theme','dark')")
     pg.evaluate("nav('lab_gear')");pg.wait_for_timeout(600)
+    chk(tag+' button says Load PDF or CSV',pg.inner_text('#simpopen').strip()=='Load PDF or CSV')
     pg.click('#simpopen');pg.wait_for_timeout(300)
+    chk(tag+' no third-party app name on the import screen','precision' not in pg.inner_text('#simpov').lower() and pg.locator('label[for=simpfile]').inner_text().strip()=='Load PDF or CSV')
     chk(tag+' import screen with back button',pg.locator('#simpov #simpback').is_visible())
     chk(tag+' bow and set default to current',pg.input_value('#simpbow')=='bt' and pg.input_value('#simpset')=='as-x')
     pg.set_input_files('#simpfile',PDF);pg.wait_for_timeout(1500)

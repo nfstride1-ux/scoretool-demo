@@ -1,5 +1,5 @@
 # One-time sight marks seed for tester nathe (23 Oct 2026): NEW arrow set 'ACE' under his EXISTING bow 'Hoyt concept x', vertical
-# marks 2-120 m exactly as printed on his Precision Cut sheet "Concept x - Ace (85 m density altitude)"
+# marks 2-120 m exactly as printed on his sight mark sheet "Concept x - Ace (85 m density altitude)"
 # (tools/nathe_ace_sightmarks.json = pdftotext -layout of that sheet). Fake profile with both of his sets (SuperDrive 23's = the
 # renamed default set in b.marks, SuperDrive mini in b.setMarks) plus another bow and another tester: all byte-identical.
 # Also: every row exact, no horizontal marks, no bow created, bow missing -> nothing + no flag (retries), flag only after

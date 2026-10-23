@@ -1,5 +1,5 @@
 /* One-time sight marks seed for tester 'nathe' (23 Oct 2026, from Nathe via Archery Coach). Runs only on Nathe's own app,
-   once. Source: his Precision Cut Archery sheet "Target Sight Marks, Concept x (Axcel Achieve XP Compound) - Ace (85 m density
+   once. Source: his sight mark sheet "Target Sight Marks, Concept x (Axcel Achieve XP Compound) - Ace (85 m density
    altitude)", 23 Oct 2026 12:10 AWST. Vertical marks for every metre 2-120 m copied exactly as printed (text, no rounding);
    the sheet has no horizontal marks.
    - Finds his EXISTING bow setup 'Hoyt concept x' by name (case and spaces ignored). Never creates a bow. Not found: does
@@ -23,7 +23,7 @@ function run(){try{
  let a=ex,added=false;
  if(ex&&(ex.id=='arrows1'||has(ex))){ /* an ACE set already has marks on this bow: leave it */ }
  else{
-  if(!a){a={id:'as-nathe-ace-20261023',archer:me,name:SET,src:'Precision Cut Archery sheet, 23 Oct 2026 12:10 AWST (Concept x - Ace, 85 m density altitude)'};S.arrowSets=sets;sets.push(a)}
+  if(!a){a={id:'as-nathe-ace-20261023',archer:me,name:SET,src:'Sight mark sheet, 23 Oct 2026 12:10 AWST (Concept x - Ace, 85 m density altitude)'};S.arrowSets=sets;sets.push(a)}
   const m={};for(const d in MARKS)m[d]={v:MARKS[d]};b.setMarks=b.setMarks||{};b.setMarks[a.id]=m;added=true;
   save();
   const back=JSON.parse(localStorage.getItem(KEY)||'null'),bb=back&&(back.bows||[]).find(x=>x.id==b.id);

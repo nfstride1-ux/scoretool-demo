@@ -3,9 +3,11 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1312-loadpdf',d:'2026-10-23',items:[
+  ['clip','Load PDF or CSV',"The sight marks button is now Load PDF or CSV. It reads any sheet with a column of ranges and a column of marks, and you can still paste marks.",'this release']]},
  {v:'v2026-10-23-1222-sightimport',d:'2026-10-23',items:[
-  ['clip','Import sight marks',"In Setups & sight marks, tap Import sight marks. Paste your marks, or pick a CSV or a Precision Cut PDF. It works offline.",'this release'],
-  ['check','Check before saving',"A preview shows every distance first. Your own marks are kept unless you choose Replace existing marks, and it asks before replacing.",'this release']]},
+  ['clip','Import sight marks',"In Setups & sight marks, tap Load PDF or CSV. Load a PDF or CSV with range and mark columns, or paste your marks. It works offline.",'52c7493'],
+  ['check','Check before saving',"A preview shows every distance first. Your own marks are kept unless you choose Replace existing marks, and it asks before replacing.",'52c7493']]},
  {v:'v2026-10-23-1216-aceseed',d:'2026-10-23',items:[
   ['bow','Full sight mark sheets',"Sight marks now show every distance you have a mark for, even 2 m to 120 m. Long lists scroll, with the headings kept at the top.",'0485eec'],
   ['gear','More arrow set details',"Arrow details also hold total weight, speed, sight height, sight radius and the distances you sighted in at.",'0485eec'],
