@@ -61,6 +61,46 @@ E.lab_myarrows=function(){const L=window.myArrows();
   const id=EDIT.id||r.id,old=info(id),ni={};EXTRA.forEach(k=>{if(s[k])ni[k]=s[k]});
   if(JSON.stringify(old)!=JSON.stringify(ni)){S.arrowInfo=S.arrowInfo||{};const P=S.arrowInfo[S.profile]=S.arrowInfo[S.profile]||{};if(Object.keys(ni).length)P[id]=ni;else delete P[id]}
   save();EDIT=null;render()}};
+/* (c) A 'My arrows' dropdown in the Calculators, the Arrow chooser and the Arrow optimizer. Picking a set fills the same boxes the
+   archer types into (it writes only what typing would, plus which set was picked); every box stays editable afterwards.
+   Nothing is written until the archer picks a set. Old tuning sessions are never rewritten; a new session gets a snapshot. */
+const num=v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:NaN};
+const sv=x=>String(Math.round(x*100)/100);
+const apick=(id,sel,lbl)=>{const L=window.myArrows();if(!L.length)return`<p class="small muted" id="${id}w" style="margin:0 0 8px">Add your arrows in <a href="#" data-myarr="1">My archery › My arrows</a> to fill these in.</p>`;
+ return`<div id="${id}w" style="margin:0 0 8px"><label for="${id}">${lbl}</label><select id="${id}"><option value="">None, I'll type them</option>${L.map(o=>`<option value="${h(o.id)}"${o.id==sel?' selected':''}>${h(o.name)}</option>`).join('')}</select></div>`};
+const bindA=()=>app.querySelectorAll('[data-myarr]').forEach(a=>a.onclick=e=>{e.preventDefault();EDIT=null;nav('lab_myarrows')});
+const note=(id,t)=>{const w=$('#'+id+'w');if(w&&t)w.insertAdjacentHTML('beforeend',`<p class="lab-note" id="${id}note" style="margin:6px 0 0">${h(t)}</p>`)};
+/* balance point: the measured one, or (with FOC worked out) the point that gives that FOC, from the same formula */
+const bpOf=o=>{const L=num(o.len);if(isFinite(num(o.bp)))return num(o.bp);return isFinite(L)&&o.foc!=null?L*(o.foc/100+.5):NaN};
+const said=(o,f,left)=>`From ${o.name}: ${f.length?f.join(', ')+' filled in':'nothing to fill in'}.${left.length?' Not saved for this set: '+left.join(', ')+'.':''} Change any box to override.`;
+let NOTE={};
+/* Calculators: each card gets its own dropdown */
+const _ca=E.lab_calc;if(_ca)E.lab_calc=function(){_ca();const C=S.calc||{};const cards=[...app.querySelectorAll('.labgrid2 > .card')];if(cards.length<3)return;
+ const at=(c,id,sel)=>{const k=c.querySelector('#c_myboww')||c.querySelector('.kicker');k.insertAdjacentHTML('afterend',apick(id,sel,'My arrows'))};
+ at(cards[0],'c_arrS',C.arrS);at(cards[1],'c_arrK',C.arrK);at(cards[2],'c_arrF',C.arrF);bindA();
+ ['c_arrS','c_arrK','c_arrF'].forEach(id=>{note(id,NOTE[id]);delete NOTE[id]});
+ const go=(id,key,fill)=>{const p=$('#'+id);if(!p)return;p.onchange=()=>{const o=p.value?window.myArrow(p.value):null;C[key]=p.value;if(o){const f=[],left=[];fill(o,f,left);NOTE[id]=said(o,f,left)}S.calc=C;save();render()}};
+ go('c_arrS','arrS',(o,f,l)=>{if(o.weight){C.gr=String(o.weight);C.spdOn=1;f.push('arrow weight '+o.weight+' gr'+(o.wt?'':' (worked out)'))}else l.push('total weight')});
+ go('c_arrK','arrK',(o,f,l)=>{if(o.weight){C.grU=String(o.weight);f.push('arrow weight '+o.weight+' gr'+(o.wt?'':' (worked out)'))}else l.push('total weight')});
+ go('c_arrF','arrF',(o,f,l)=>{const L=num(o.len),b=bpOf(o);if(isFinite(L)){C.len=sv(L);f.push('length '+sv(L)+'"')}else l.push('length');
+  if(isFinite(b)){C.bp=sv(b);f.push('balance point '+sv(b)+'"'+(isFinite(num(o.bp))?'':' (worked out from the part weights)'))}else l.push('balance point or FOC parts')})};
+/* Arrow chooser: writes only its own inputs (scoretool.arrowchooser.<tester>), the same boxes the archer types into */
+const _ch=E.lab_chooser;if(_ch)E.lab_chooser=function(){_ch();const K='scoretool.arrowchooser.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest');
+ let R={};try{R=JSON.parse(localStorage.getItem(K)||'{}')||{}}catch(e){}
+ const card=app.querySelector('.acf');if(!card)return;const k=card.querySelector('#ac_myboww')||card.querySelector('h2');if(!k)return;
+ k.insertAdjacentHTML('afterend',apick('ac_myarr',R.arrowId,'My arrows'));bindA();note('ac_myarr',NOTE.ac_myarr);delete NOTE.ac_myarr;
+ const p=$('#ac_myarr');if(p)p.onchange=()=>{const o=p.value?window.myArrow(p.value):null;R.arrowId=p.value;
+  if(o){const f=[],l=[];[['len','length','"'],['pt','point weight',' gr'],['gpi','shaft weight',' gr/in','gpiU'],['ins','insert',' gr'],['nock','nock',' gr'],['vanes','vanes',' gr'],['vpos','vane position','"'],['bp','balance point','"']].forEach(([s,n,u,t])=>{const x=num(o[s]);if(isFinite(x)){R[t||s]=sv(x);f.push(n+' '+sv(x)+u)}else if(['len','pt','gpi'].includes(s))l.push(n)});
+   NOTE.ac_myarr=said(o,f,l)}
+  localStorage.setItem(K,JSON.stringify(R));render()}};
+/* Arrow optimizer: a new session can carry a snapshot of a My arrows set (t.arrow, the same shape the Arrow setup card shows) */
+const snapOf=o=>({bow:'',name:o.name,setId:o.id,spine:o.spine?String(o.spine):'',model:o.shaft||'',len:isFinite(num(o.len))?num(o.len):null,pt:isFinite(num(o.pt))?num(o.pt):null,foc:o.foc,tw:o.weight||null,fps:isFinite(num(o.fps))?Math.round(num(o.fps)):null,fpsSrc:isFinite(num(o.fps))?'measured':''});
+const _op=E.lab_opt;if(_op)E.lab_opt=function(){_op();const g=$('#tgo');if(!g)return;
+ g.insertAdjacentHTML('beforebegin',apick('t_myarr','','Arrow set for this session'));bindA();
+ const p=$('#t_myarr'),aw=$('#tarw');if(p)p.onchange=()=>{const w=$('#t_myarrnote');if(w)w.remove();const o=p.value?window.myArrow(p.value):null;if(o){if(aw)aw.checked=false;note('t_myarr','This session will save '+o.name+': '+(sum(o)||'no details yet')+'.')}};
+ if(aw)aw.addEventListener('change',()=>{if(aw.checked&&p)p.value=''});
+ const o0=g.onclick;g.onclick=function(){const o=p&&p.value?window.myArrow(p.value):null;const n0=(S.tune||[]).length;o0.apply(this,arguments);
+  if(o&&(S.tune||[]).length>n0){const t=S.tune[S.tune.length-1];if(t&&t.id==S._tuneId&&!t.arrow){t.arrow=snapOf(o);save();render()}}}};
 /* My archery menu: a My arrows row after My bows */
 const _ma=E.myarch;if(_ma)E.myarch=function(){_ma();const g=app.querySelector('[data-go=lab_mybows]')||app.querySelector('[data-go=lab_gear]');if(g&&!app.querySelector('[data-go=lab_myarrows]')){
  g.insertAdjacentHTML('afterend',`<button class="labrow" data-go="lab_myarrows"><span class="i" aria-hidden="true">${ic('arrow')}</span><span><b>My arrows</b><small>Each arrow set once: shaft, spine, length, weights, fletching and FOC</small></span><span class="go" aria-hidden="true">›</span></button>`);

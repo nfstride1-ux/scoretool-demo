@@ -73,6 +73,8 @@ with sync_playwright() as p:
     face=pg.locator('#tface').bounding_box();cx=face['x']+face['width']/2;cy=face['y']+face['height']/2;u=face['width']/2.1
     for dx,dy in [(-.04,0),(.04,.02),(0,-.03)]:pg.mouse.click(cx+dx*u,cy+dy*u);pg.wait_for_timeout(150)
     pg.click('[data-g=after]');pg.wait_for_timeout(200)
+    # the page re-renders after the switch, so measure the face again before plotting
+    face=pg.locator('#tface').bounding_box();cx=face['x']+face['width']/2;cy=face['y']+face['height']/2;u=face['width']/2.1
     for dx,dy in [(.35,0),(.38,.02)]:pg.mouse.click(cx+dx*u,cy+dy*u);pg.wait_for_timeout(150)
     t=pg.inner_text('#app').lower()
     chk(tag+' reads weak','reads this as weak' in t and 'next step to try' in t);chk(tag+' next step FOC shown','FOC ' in pg.inner_text('#nextcard'))

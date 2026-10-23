@@ -3,10 +3,13 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1324-arrowpick',d:'2026-10-23',items:[
+  ['arrow','Pick from My arrows',"The Calculators, the Arrow chooser and the Arrow optimizer each have a My arrows choice. Pick a set to fill in its length, weights and balance point. You can still change any box.",'this release'],
+  ['target','Arrow set in tuning sessions',"A new tuning session can save the arrow set you pick, so you can see later what you shot. Old sessions are not changed.",'this release']]},
  {v:'v2026-10-23-1316-myarrows',d:'2026-10-23',items:[
-  ['arrow','My arrows',"My archery now has My arrows. Add each arrow set once: shaft, spine, length, point and total weight, and fletching. Your sets with sight marks are already there.",'this release'],
-  ['calc','FOC for each arrow set',"Add the part weights, or a measured balance point, and My arrows works out FOC with the same Easton formula as the Arrow chooser.",'this release'],
-  ['target','One list for sight marks',"The Arrow set choice in Setups & sight marks is the same list as My arrows.",'this release']]},
+  ['arrow','My arrows',"My archery now has My arrows. Add each arrow set once: shaft, spine, length, point and total weight, and fletching. Your sets with sight marks are already there.",'88b86f9'],
+  ['calc','FOC for each arrow set',"Add the part weights, or a measured balance point, and My arrows works out FOC with the same Easton formula as the Arrow chooser.",'88b86f9'],
+  ['target','One list for sight marks',"The Arrow set choice in Setups & sight marks is the same list as My arrows.",'88b86f9']]},
  {v:'v2026-10-23-1312-loadpdf',d:'2026-10-23',items:[
   ['clip','Load PDF or CSV',"The sight marks button is now Load PDF or CSV. It reads any sheet with a column of ranges and a column of marks, and you can still paste marks.",'952cb79']]},
  {v:'v2026-10-23-1222-sightimport',d:'2026-10-23',items:[

@@ -56,6 +56,7 @@ const HELP_GUIDES=[
   '<b>Arrow chooser</b>: fill in from the top down (bow, draw weight, draw length, speed rating, what it\'s for, arrow length, point weight). The result is at the bottom: a starting spine and cut length from the makers\' charts, with the working shown.',
   '<b>What it\'s for</b>: Indoor lists fat shafts only (like SuperDrive 23 and X23), Target and Field list thin outdoor shafts, and Hunting uses Easton\'s hunting chart.',
   '<b>Calculators</b>: arrow speed, kinetic energy, momentum, FOC.',
+  '<b>My arrows</b> dropdown (Calculators, Arrow chooser and Arrow optimizer): pick a saved arrow set to fill in its length, weights and balance point. You can still change any box.',
   '<b>Rules</b>: World Archery, Archery Australia, ABA, IBO and ASA.']},
  {id:'settings',i:'gear',t:'Settings, light or dark, and help',shot:'settings',steps:[
   'Tap your name at the top, then <b>Settings &amp; help</b>.',
