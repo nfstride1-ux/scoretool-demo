@@ -8,7 +8,7 @@ const GOLD='#ffc629',BLUE='#60a5fa',MUT='#9aa7ba';
 const myBow=()=>{const r=findReal(S.profile||'').filter(x=>x.division).slice(-1)[0];return r?bowOf(r.division):(S.bow||'Compound')};
 /* One list of shoots, shared with Stats (same rounds, same names, same incomplete rule). ABA 3D arrows (0-20 points) stay out of the per-arrow charts. */
 function shoots(){const mb=myBow();return(window.statShoots?statShoots():[]).map(x=>{const r=x.r||{},ends=x.ends.length&&!x.aba?x.ends.map((a,i)=>({dist:distLabel((x.dists||[])[i],x.round),arrows:a.map(String)})):null;
- const o={date:x.date,round:x.round,bow:r.division?bowOf(r.division):mb,kind:x.src=='practice'?'practice':'comp',score:x.score,part:!!x.inc,ends,club:x.club||'',event:x.event||'',tens:parseInt(r.tens)||0,xs:parseInt(r.xs)||0,pos:x.s?(x.s.pos||[]).flat().filter(Boolean):[],aba:!!x.aba};
+ const o={s:x.s||null,date:x.date,round:x.round,bow:r.division?bowOf(r.division):mb,kind:x.src=='practice'?'practice':'comp',score:x.score,part:!!x.inc,ends,club:x.club||'',event:x.event||'',tens:parseInt(r.tens)||0,xs:parseInt(r.xs)||0,pos:x.s?(x.s.pos||[]).flat().filter(Boolean):[],aba:!!x.aba};
  o.field=!!x.field||/field/i.test(x.round);o.na=ends?ends.reduce((t,e)=>t+e.arrows.length,0):(o.part||o.aba?null:roundArrows(x.round));o.pts=ends?ends.reduce((t,e)=>t+endSum(e.arrows),0):o.score;return o})}
 function filt(all){const now=today(),yr=now.slice(0,4),d90=new Date(Date.now()-90*864e5).toLocaleDateString('en-CA');
  return all.filter(s=>(S.incInc||!s.part)&&(AF.range=='all'||(AF.range=='season'?s.date.startsWith(yr):s.date>=d90))&&(AF.round=='all'||s.round==AF.round)&&(AF.bow=='all'||s.bow==AF.bow)&&(AF.kind=='all'||s.kind==AF.kind))}
@@ -68,13 +68,10 @@ function view(){const all=shoots();markPB(all);const L=filt(all);
  const cl={};known.filter(s=>s.kind=='comp').forEach(s=>{const k=(s.club||'Unknown').replace(/ (Archery Club|Archers?|Club)? ?Inc$/,'').replace(/ Archery Club$/,'');(cl[k]=cl[k]||[]).push(s)});
  const cr=Object.entries(cl).sort((a,b)=>b[1].length-a[1].length);
  if(cr.length)h+=card('By club','Club listed on each result',hbars(cr.map(([k,v])=>[k,v.reduce((t,s)=>t+s.pts,0)/v.reduce((t,s)=>t+s.na,0),`${v.length} shoot${v.length>1?'s':''}`]),f2)+'<p class="small muted" style="margin:4px 0 0">Average arrow, full rounds with a known length.</p>');
- // 10 heatmap
- const P=L.flatMap(s=>s.pos||[]).filter(p=>p&&isFinite(p.x)&&isFinite(p.y));
- if(P.length){const N=15,gr={};P.forEach(p=>{const i=Math.min(N-1,Math.max(0,Math.floor((p.x+1.1)/2.2*N))),j=Math.min(N-1,Math.max(0,Math.floor((p.y+1.1)/2.2*N)));gr[i+','+j]=(gr[i+','+j]||0)+1});const mx=Math.max(...Object.values(gr)),cs=2.2/N;
-  let g=`<svg viewBox="-1.1 -1.1 2.2 2.2" width="70%" style="display:block;margin:auto" role="img" aria-label="Arrow heatmap">${[1,.8,.6,.4,.2].map((r,i)=>`<circle r="${r}" fill="${['#e2e8f0','#1e293b','#1d4ed8','#b91c1c','#ca8a04'][i]}" opacity=".35"/>`).join('')}`;
-  for(const k in gr){const[i,j]=k.split(',').map(Number);g+=`<rect x="${-1.1+i*cs}" y="${-1.1+j*cs}" width="${cs}" height="${cs}" fill="${GOLD}" opacity="${(.15+.85*gr[k]/mx).toFixed(2)}"/>`}
-  h+=card('Arrow heatmap',`${P.length} plotted arrows`,g+'</svg><p class="small muted" style="margin:4px 0 0">Brighter = more arrows landed there.</p>')}
- else h+=card('Arrow heatmap','','<p class="small muted">Plot arrows on the target when scoring practice to see where they land. Official results don\'t include arrow positions.</p>');
+ // 10 arrow plot (23 Oct 2026, Steven): every plotted arrow as a dot at its real place on the right face (3-spot arrows on one spot,
+ // field arrows on a gold and black field face), soft shading, group centre and a sight move guide. Plotted arrows only.
+ const PS=[...new Set(L.map(s=>s.s).filter(x=>x&&(x.pos||[]).some(e=>(e||[]).some(Boolean))))],pc=window.shotPlotCards&&PS.length?shotPlotCards(PS,{title:'Arrow plot',multi:true}):'';
+ h+=pc||card('Arrow plot','','<p class="small muted">Plot arrows on the target when scoring practice to see where they land. Official results don\'t include arrow positions.</p>');
  // 11 notes
  h+=noteInsights();
  return h}

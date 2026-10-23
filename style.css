@@ -229,3 +229,15 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 #cstype0{margin-bottom:6px}
 .inc-prog{font-weight:700;margin-left:4px;white-space:nowrap}
 .vadnum{display:inline-block;min-width:32px;min-height:28px;padding:0 6px;margin:0 1px;border:1px solid var(--blue);border-radius:8px;background:var(--blue-bg);color:var(--blue);font:700 13px var(--body);cursor:pointer;vertical-align:baseline}
+/* arrow plots, this shoot vs usual, session finished (23 Oct 2026) */
+.shwrap{max-width:320px;margin:4px auto 6px}.shplot{display:block;width:100%;height:auto;border-radius:12px;background:#0b1f4d}
+.shkey{margin:2px 0 8px;line-height:1.6}.shk-dot,.shk-x,.shk-u{display:inline-block;vertical-align:-2px;margin:0 2px 0 6px}
+.shk-dot{width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #0b1f4d}
+.shk-x{width:12px;height:12px;background:linear-gradient(#ffc629,#ffc629) center/12px 3px no-repeat,linear-gradient(#ffc629,#ffc629) center/3px 12px no-repeat}
+.shk-u{width:10px;height:10px;border-radius:50%;border:2.5px solid #5ab0ff}
+.shg-tab{border:1px solid var(--line,#d8dee9);border-radius:10px;overflow:hidden}.shg-row{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;font-size:14px}
+.shg-row+.shg-row{border-top:1px solid var(--line,#d8dee9)}.shg-row span{color:var(--muted,#64748b);flex:0 0 auto}.shg-row b{text-align:right;min-width:0;overflow-wrap:anywhere}
+.shg-guide{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--blue-bg,#eaf1ff);border-left:4px solid #ffc629}.shg-guide p{margin:4px 0}
+.shcmp{margin-top:10px;padding:0 10px;color:var(--ink)}.shcmp .card h3,.shcmp .stat{color:var(--ink)}.shcmp .card{margin-left:0;margin-right:0}
+.shdone{text-align:center}.shdone-ic{width:56px;height:56px;margin:6px auto 4px;color:#ffc629}.shdone-ic svg{width:56px;height:56px}
+.shdone-act{display:grid;gap:8px;margin-top:12px}
