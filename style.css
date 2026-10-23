@@ -228,3 +228,4 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .cs-tab td:first-child,.cs-tab th:first-child{text-align:left}
 #cstype0{margin-bottom:6px}
 .inc-prog{font-weight:700;margin-left:4px;white-space:nowrap}
+.vadnum{display:inline-block;min-width:32px;min-height:28px;padding:0 6px;margin:0 1px;border:1px solid var(--blue);border-radius:8px;background:var(--blue-bg);color:var(--blue);font:700 13px var(--body);cursor:pointer;vertical-align:baseline}
