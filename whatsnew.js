@@ -3,9 +3,12 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1341-brand',d:'2026-10-23',items:[
+  ['check','Plainer wording',"Screens now call your official scores past competition results. Your scores and settings are not changed.",'this release'],
+  ['globe','Apps I use',"Apps I use no longer suggests example apps. Add the links you use with Paste link or Find in store.",'this release']]},
  {v:'v2026-10-23-1333-sightest',d:'2026-10-23',items:[
-  ['target','Estimate other marks',"In Setups & sight marks, tap Estimate other marks once you have 3 or more marks. Empty distances show an estimate marked est. Confirm each one on the range.",'this release'],
-  ['check','Your marks stay yours',"Estimates never change a mark you typed. Type over an estimate to make it your own mark, or tap Clear estimates to remove them all.",'this release']]},
+  ['target','Estimate other marks',"In Setups & sight marks, tap Estimate other marks once you have 3 or more marks. Empty distances show an estimate marked est. Confirm each one on the range.",'957373b'],
+  ['check','Your marks stay yours',"Estimates never change a mark you typed. Type over an estimate to make it your own mark, or tap Clear estimates to remove them all.",'957373b']]},
  {v:'v2026-10-23-1324-arrowpick',d:'2026-10-23',items:[
   ['arrow','Pick from My arrows',"The Calculators, the Arrow chooser and the Arrow optimizer each have a My arrows choice. Pick a set to fill in its length, weights and balance point. You can still change any box.",'f81fa58'],
   ['target','Arrow set in tuning sessions',"A new tuning session can save the arrow set you pick, so you can see later what you shot. Old sessions are not changed.",'f81fa58']]},
@@ -68,7 +71,7 @@ window.WHATSNEW=[
   ['bars','Stats redesign',"One round picker, four main cards and More detail, in plain words.",'cd86e07']]},
  {v:'v2026-10-17',d:'2026-10-17',items:[
   ['search','Zoom button',"One small button on the target: Z1, Z2, then Reset. Pinch still works.",'43dba93'],
-  ['medal','My best scores',"Your best full round for each round, end by end, from Archer's Diary.",'7c03766'],
+  ['medal','My best scores',"Your best full round for each round, end by end, from your past competition results.",'7c03766'],
   ['ghost','Ghost match',"Shoot against a past score, end by end, or against top-ranked archers.",'be54eb3 c46826e']]}
 ];
 (function(){

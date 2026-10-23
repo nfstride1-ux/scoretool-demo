@@ -1,4 +1,4 @@
-/* My best scores: every Archer's Diary scoresheet for Nathe (data/my_scoresheets.json, end by end, real data only)
+/* My best scores: every official scoresheet for Nathe (data/my_scoresheets.json, end by end, real data only)
    merged with the official results already in the app (archer_scores.csv). One drop-down, grouped by discipline,
    best full round per round name; opening it shows the ends. Can be used as the ghost in a Ghost match. */
 (function(){
@@ -10,7 +10,7 @@ const isMe=()=>!!BS;
 if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;if(typeof view!='undefined'&&(view=='stats'||view=='lab_analysis')&&$('#bscard'))render()}).catch(()=>{});
 const BOW=d=>(String(d||'').match(/Compound|Recurve|Longbow|Barebow/i)||['Other'])[0].replace(/^./,c=>c.toUpperCase());
 const DISC=['Outdoor','Indoor','Field','Clout'],DN={Outdoor:'Outdoor target',Indoor:'Indoor',Field:'Field',Clout:'Clout'};
-/* Archer's Diary round -> ScoreTool round with the same ends (for Ghost match). 1440s shot in 3-arrow ends at 50/30 m are paired into 6s. */
+/* Official results round -> ScoreTool round with the same ends (for Ghost match). 1440s shot in 3-arrow ends at 50/30 m are paired into 6s. */
 const GHOST_MAP={'WA 90/1440':'WA 90/1440 (90/70/50/30m)','WA 70/1440':'WA 70/1440 (70/60/50/30m)','WA 60/1440':'WA 60/1440 (60/50/40/30m)',
  'WA 70/720':'WA 720 (70m)','WA 60/720':'WA 720 (60m)','WA 50/720':'WA 720 (50m Compound)','WA 60/900 (Canberra)':'WA 60/900 (60/50/40m)',
  'Short Canberra':'Short Canberra (50/40/30m)','Junior Canberra':'Junior Canberra (40/30/20m)','WA Indoor 18m':'Indoor WA 18m','WA Indoor 25m':'Indoor WA 25m',
@@ -19,7 +19,7 @@ const anRoundOf=rd=>{const a=(typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[rd])|
 const v=a=>a=='X'?10:a=='M'||!a?0:+a;
 const fmt=d=>{const x=new Date(d+'T00:00');return isNaN(x)?d:x.getDate()+' '+x.toLocaleString('en-AU',{month:'short'})+' '+x.getFullYear()};
 function entries(){if(!BS||!isMe())return[];const L=BS.sheets.map(s=>({...s,bow:BOW(s.div),src:'ad'}));
- /* keep results already in the app that Archer's Diary MyEvents doesn't list (same date + score = same shoot) */
+ /* keep results already in the app that the official results list doesn't have (same date + score = same shoot) */
  const seen=new Set(L.map(s=>s.d+'|'+s.sc));
  (typeof findReal=='function'?findReal(S.profile||''):[]).forEach(r=>{const d=normDate(r.date);if(seen.has(d+'|'+r.score))return;seen.add(d+'|'+r.score);
   const ind=/indoor/i.test(r.round),fld=/field/i.test(r.round),cl=/clout/i.test(r.round);

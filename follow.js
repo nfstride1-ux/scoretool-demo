@@ -1,4 +1,4 @@
-/* ScoreTool demo: Follow (Strava-style). No backend yet, so the directory is empty: NO sample people.
+/* ScoreTool demo: Follow (follow other archers). No backend yet, so the directory is empty: NO sample people.
    Data model, ready for sync (S.social, saved locally now, mirrored to the server later):
    profile.isSubscriber: only active ScoreTool subscribers appear in search and can be followed.
    S.social={privacy:'public'|'friends', following:[{id,name,since,status:'active'|'requested'}],

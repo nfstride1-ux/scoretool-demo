@@ -50,13 +50,13 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
 if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
-/* a tester renamed to his Archer's Diary name (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
+/* a tester renamed to his name in the official results (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
 if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
 if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
-/* ---------- importer for /data/archer_scores.csv (from Archer's Diary) ---------- */
+/* ---------- importer for /data/archer_scores.csv (official competition results) ---------- */
 function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
  if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}
  else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=''}else f+=c}
@@ -69,8 +69,8 @@ async function loadArrows(){try{const r=await fetch('data/arrows.csv',{cache:'no
   const ar=g('arrows').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);o.ends.push({dist:g('distance'),arrows:ar,flag:ar.length>0&&ar.every(a=>a=='M')})}
  for(const k in OFF)OFF[k].sort((a,b)=>a.date<b.date?1:-1)}catch(e){}}
 async function loadReal(){await _loadReal();if(TESTER&&TESTER.id!='nathe'){const is=(k,n)=>{const a=k.toLowerCase(),[f,l]=n.toLowerCase().split(' ');return a.includes(l)&&a.includes(f.slice(0,4))},mine=k=>(typeof TESTERS!='undefined'?TESTERS:[TESTER]).some(t=>t&&t.name&&is(k,t.name));/* keep the 3 testers' data: they share the preset squad */for(const k in REAL)if(!mine(k))delete REAL[k];for(const k in OFF)if(!mine(k))delete OFF[k];csvState=Object.keys(REAL).length?'ok':'empty'}}
-/* Nathe's official scores come from ONE source: his Archer's Diary scoresheets (data/my_scoresheets.json), compound only.
-   His Archer's Diary account also lists entries in the Recurve (2020-26) and Longbow (2023-25) divisions under his name; those are
+/* Nathe's official scores come from ONE source: his official scoresheets (data/my_scoresheets.json), compound only.
+   His official results also list entries in the Recurve (2020-26) and Longbow (2023-25) divisions under his name; those are
    kept in the file but left out here (see window._excluded). Sheet round names are mapped to the AA names the app's rating tables use. */
 const SHEET_ALIAS={'2014 AWA Field Course Red':'WA Field 24Mk Red','Field 24Mk Red':'WA Field 24Mk Red','Field Red 24t MK':'WA Field 24Mk Red','AWA Unmarked Field Course Red':'WA Field 24Umk Red','BBMC C3 50/300 50m (80cm, 6 Ring) (3 x 10)':'BBMC C3 50/300 50m (80cm, 6 Ring)',
  '2014 AWA Field Course Blue':'WA Field 24Mk Blue','Field 24Mk Blue':'WA Field 24Mk Blue','Field Blue 24t MK':'WA Field 24Mk Blue','WA Field 24T Mkd Blue':'WA Field 24Mk Blue',
@@ -198,10 +198,10 @@ function gate(){return`<div class="card dark gate"><span class="kicker">Members 
 <ul><li>Arrow-by-arrow scoring with AA rounds</li><li>Your progress charts and personal bests</li><li>Badges, streaks and "Wins of the day"</li><li>Arrow plotting with group centre</li><li>Coach squad invites and a parent share link</li></ul>
 <p class="small muted">Payments aren't switched on in this demo. Card, Apple Pay and Google Pay via Stripe will come later.</p>
 <button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
-function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their official results from Archer's Diary.</p>
+function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their past competition results.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
-function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> results loaded from Archer's Diary.</p>`:
- `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The Archer's Diary import is still being collected, so official results will appear here once it's added.</p>`}
+function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> competition results loaded.</p>`:
+ `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The past competition results are still being collected, so official results will appear here once it's added.</p>`}
 function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(location.hash.startsWith('#coach=')) return renderCoachLanding();
@@ -261,7 +261,7 @@ function home(){const d=done(),real=findReal(S.profile),L=latestShoot();
  else if(LC){h+=`<div class="card" id="winsday"><span class="kicker">Wins of the day · ${LC.date} <span class="real">${LC.kind}</span></span><h2>${LC.round}: ${LC.score}</h2><p class="small muted">No arrow-by-arrow data for this shoot yet, so end-by-end wins aren't available.</p></div>`}
  else{const last=d[d.length-1];if(last)h+=`<div class="card"><span class="kicker">Wins of the day · ${last.date}</span><h2>3 things you did well</h2>${winsFor(last).map(w=>`<div class="win"><i>${w[0]}</i><div>${w[1]}</div></div>`).join('')}</div>`}
  const dr=S.sessions.filter(x=>!x.sample&&ROUNDS[x.round]&&!isDone(x)&&!x.finished&&arrowsIn(x)>0);if(dr.length)h+=`<div class="card" style="border:2px solid #2563eb"><span class="kicker">Unfinished rounds</span>${dr.map(x=>`<div class="list-item row"><span><b>${esc(x.round)}</b><span class="small muted"> · ${fmtD(x.date)} · ${total(x)} so far (${arrowsIn(x)} arrows)</span></span><button class="btn" data-resume="${x.id}" style="padding:4px 10px">Resume</button></div>`).join('')}</div>`;h+=volCard();
- h+=`<div class="card"><span class="kicker">Official results · Archer's Diary</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
+ h+=`<div class="card"><span class="kicker">Official results · Past competitions</span><h2>Competition scores</h2>${real.length?real.slice(-6).reverse().map(r=>`<div class="list-item"><div class="row"><b>${r.score}</b><span class="real">official</span></div><div class="small">${r.round} · ${r.event} · ${r.date}${r.division?' · '+r.division:''}${r.incomplete?' <span class="sample">incomplete, not counted</span>':''}</div>${r.url?`<a class="small" href="${r.url}" target="_blank" rel="noopener">Source</a>`:''}${noteBox(r)}</div>`).join(''):csvNote()}</div>`;
  h+=`<button class="btn ghost full" onclick="nav('squad')" style="margin-bottom:8px">👥 My squad</button>`;h+=noteInsights();h+=`<button class="btn alt full" id="go">✍️ Start a new session</button>`;app.innerHTML=h;
  $('#go').onclick=()=>nav('score');
  if($('#bank'))$('#bank').onclick=()=>{S.best.push({date:LC.date,text:winsFor(W.s).map(w=>w[1]).join(' '),total:LC.score,round:LC.round});save();$('#bank').textContent='Saved ✓'};
@@ -573,7 +573,7 @@ function summaryCard(L,i,o){const subs=(o.subs||'').split(';').map(x=>x.split(':
  if(!part&&pb!=null)cells.push(st(o.score>=pb?'PB':'−'+(pb-o.score),o.score>=pb?'best on round':'vs PB '+pb));
  if(rank)cells.push(st(rank+'/'+full.length,'on this round'));
  return`<div class="card"><span class="kicker">Official round · result <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}${x.ends.length?'':' · '+x.score}${/Recurve/.test(x.division||'')?' (Recurve)':''}</option>`).join('')}</select>
- <p class="small muted">${esc(o.event)} · ${esc(o.division||'')} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
+ <p class="small muted">${esc(o.event)} · ${esc(o.division||'')} · <a href="${o.url}" target="_blank" rel="noopener">Scoresheet</a></p>
  ${part?'<p class="small"><span class="sample">Partial round</span> Not a full round, so it isn\'t averaged, ranked or compared with your PB.</p>':''}
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr">${cells.join('')}</div>
  ${!part&&pb!=null&&o.score<pb?`<p class="small muted" style="margin:4px 0 0">PB ${pb} on ${pbD}.</p>`:''}
@@ -585,7 +585,7 @@ function officialCard(){const L=offRounds();if(!L.length)return'';const i=Math.m
  const dists=[...new Set(good.map(e=>e.dist))],third=Math.max(1,Math.floor(sums.length/3)),fe=sums.slice(0,third),le=sums.slice(-third),av=a=>a.reduce((x,y)=>x+y,0)/a.length;
  const fake={id:'off',date:o.date,round:o.round,ends:good.map(e=>e.arrows),dists:good.map(e=>e.dist)};const gl=sums.map((_,j)=>endLabel(fake,j).match(/end (\d+)/)[1]);
  return`<div class="card"><span class="kicker">Official round · real arrows <span class="real">official</span></span><label for="os">Pick a round</label><select id="os">${L.map((x,j)=>`<option value="${j}" ${j==i?'selected':''}>${x.date} · ${x.round}${x.ends.length?'':' · '+x.score}${/Recurve/.test(x.division||'')?' (Recurve)':''}</option>`).join('')}</select>
- <p class="small muted">${o.event} · ${plN(good.length,'end','ends')} · ${plN(all.length,'arrow','arrows')} · total ${sums.reduce((a,b)=>a+b,0)} · <a href="${o.url}" target="_blank" rel="noopener">Archer's Diary</a></p>
+ <p class="small muted">${o.event} · ${plN(good.length,'end','ends')} · ${plN(all.length,'arrow','arrows')} · total ${sums.reduce((a,b)=>a+b,0)} · <a href="${o.url}" target="_blank" rel="noopener">Scoresheet</a></p>
  ${flagged.length?`<p class="small"><span class="sample">Flagged</span> ${flagged.map(e=>e.dist).join(', ')}: ${flagged.length} end(s) with every arrow a miss. That's most likely a scoresheet error, so it's left out of these stats and isn't treated as real form.</p>`:''}
  <h3>End by end${dists.length>1?' (by distance)':' at '+dists[0]}</h3>${endChart(sums,good.map(e=>e.arrows.length),dists.length>1?fake.dists:null,'',flagged.map(e=>e.dist))}${dists.length>1&&flagged.length?`<p class="small muted" style="margin:2px 0">* Subtotal of the ends shown. ${flagged.length} flagged end(s) at ${[...new Set(flagged.map(e=>e.dist))].join(', ')} left out.</p>`:''}
  <h3>Arrow values</h3><div class="stats"><div class="stat"><b>${pc(a=>a=='X')}%</b>X</div><div class="stat"><b>${pc(a=>a=='10')}%</b>10</div><div class="stat"><b>${pc(a=>a=='9')}%</b>9</div></div>
@@ -653,9 +653,9 @@ function estRating(real){if(typeof aaRating!='function')return'';loadNext();cons
  const nx=(NEXT||[]).map(x=>`<li><a href="https://archerycalendars.com/#/shoot/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">${esc(x.name)}</a> · ${fmtD(x.start_date)} · ${x.state||'AUS'}</li>`).join('');
  return`<div class="card"><h3>AA classification progress</h3><p class="small muted" style="margin:0">Archery Australia rating and levels · ${yr}. Rating = a number that puts every round on the same scale, so different rounds can be compared.</p>${body||'<p class="small muted">No supported rounds yet.</p>'}
  ${nx?`<h3 style="margin-top:10px">Next chance</h3><p class="small muted" style="margin:0">Upcoming registered tournaments, state/national events and Archery Australia ranking events (WA first) from archerycalendars.com.</p><ul class="small" style="padding-left:18px">${nx}</ul>`:''}
- <details style="margin-top:8px"><summary class="small"><b>How this works</b></summary><p class="small">Ratings use the Archery Australia rating model (J. Park), the one Archer's Diary uses, calculated on this phone from round, score and bow type. They're within about 0.3 of Archer's Diary outdoors; indoor can read up to 1.5 higher.</p>
+ <details style="margin-top:8px"><summary class="small"><b>How this works</b></summary><p class="small">Ratings use the Archery Australia rating model (J. Park), the one used for official AA ratings, calculated on this phone from round, score and bow type. They're within about 0.3 of the official ratings outdoors; indoor can read up to 1.5 higher.</p>
  <p class="small">Levels and event rules: AA Shooting Rules v7.2, Schedule 4A.1 and rules 4.2.3 (outdoor) and 4.2.4 (indoor). You need 3 rounds at the level in the calendar year. White to Gold can be shot at a club-calendar shoot, open tournament or Archery Australia ranking event. Master and Grand Master need at least 1 of the 3 at an open tournament or Archery Australia ranking event. Elite Bronze, Silver and Gold need all 3 at an open tournament or Archery Australia ranking event. Outdoors, those rounds need 72+ arrows with at least 30 at the minimum distance for your class. The rules don't separate state and national ranking events here; both count. Three AA members must take part in shooting and scoring. Event types are guessed from the event name, so tick the box if it's wrong. Official claims go through your club.</p>
- <p class="small"><a href="https://www.archersdiary.com/RatingCalculator.aspx" target="_blank" rel="noopener">Archer's Diary calculator</a> · <a href="https://archery.org.au/wp-content/uploads/2026/07/SHOOTINGRULES-AA-2026-07-01.pdf" target="_blank" rel="noopener">AA Shooting Rules</a></p></details></div>`}
+ <p class="small"><a href="https://www.archersdiary.com/RatingCalculator.aspx" target="_blank" rel="noopener">Online rating calculator</a> · <a href="https://archery.org.au/wp-content/uploads/2026/07/SHOOTINGRULES-AA-2026-07-01.pdf" target="_blank" rel="noopener">AA Shooting Rules</a></p></details></div>`}
 
 function me(){const b=badges(),url=location.href.split('#')[0]+'#share='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(shareData())))));
  app.innerHTML=`${window.meTop?meTop():''}<div class="card"><div class="row"><span class="kicker">Badges</span><button class="btn ghost" style="padding:6px 12px;min-height:36px" onclick="nav('badges')">View all</button></div>${iconRow(b,30)}</div>

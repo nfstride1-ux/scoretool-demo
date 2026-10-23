@@ -140,7 +140,7 @@ const EXPECT=(()=>{const m={};R.forEach(r=>{const n=nEnds(r);if(!n)return;(m[r.r
 const isInc=r=>{const n=nEnds(r);return n>0&&EXPECT[r.r]!=null&&n<EXPECT[r.r]};
 function endsOf(r,s=S){const out=[];r.ds.forEach(d=>{const dl=distLab(d,r);if(s.dist.length&&!s.dist.includes(dl))return;d.e.forEach(e=>{if(e[2]==null)return;if(s.end.length&&!s.end.includes(+e[0]))return;out.push({r,dl,n:+e[0],ar:arrows(e[1]),t:e[2]})})});return out}
 const tog=(arr,v)=>arr.includes(v)?arr.filter(x=>x!==v):[...arr,v];
-function chips(key,items,lab,colorOf){return`<div class="flab"><span>${lab}</span><span><a data-all="${key}">All</a> · <a data-clear="${key}">Clear</a></span></div><div class="chips ${items.length<9?'wrap':''}">${items.map(v=>`<button class="chip ${S[key].includes(v.v)?'on':''}" data-k="${key}" data-v="${esc(v.v)}"${key==='dist'&&/D\d/.test(v.v)?` title="${esc(v.v)}: part ${esc(v.v.replace(/.*D/,''))} of the course. Archer's Diary doesn't record a distance for field/3D targets, so parts are numbered."`:''}>${colorOf?`<span class="dot" style="background:${colorOf(v.v)}"></span>`:''}${esc(v.l)}${v.n!=null?` <span class="tiny" style="opacity:.7">${v.n}</span>`:''}</button>`).join('')}</div>`}
+function chips(key,items,lab,colorOf){return`<div class="flab"><span>${lab}</span><span><a data-all="${key}">All</a> · <a data-clear="${key}">Clear</a></span></div><div class="chips ${items.length<9?'wrap':''}">${items.map(v=>`<button class="chip ${S[key].includes(v.v)?'on':''}" data-k="${key}" data-v="${esc(v.v)}"${key==='dist'&&/D\d/.test(v.v)?` title="${esc(v.v)}: part ${esc(v.v.replace(/.*D/,''))} of the course. Competition results don't record a distance for field/3D targets, so parts are numbered."`:''}>${colorOf?`<span class="dot" style="background:${colorOf(v.v)}"></span>`:''}${esc(v.l)}${v.n!=null?` <span class="tiny" style="opacity:.7">${v.n}</span>`:''}</button>`).join('')}</div>`}
 // ---------- mix & match ----------
 
 function keyOf(el,seen){const t=(el.dataset.key||el.id||((el.querySelector('h1,h2,.kicker')||{}).textContent)||el.className||'x').trim();const n=(seen[t]=(seen[t]||0)+1);return t+'#'+n}
@@ -283,7 +283,7 @@ function targetSvg(A,cx,cy,fld){const R=40,S=260,k=S/2/R,c=S/2;let s=`<svg viewB
  s+=`<path d="M${c+cx*k-7} ${c-cy*k}h14M${c+cx*k} ${c-cy*k-7}v14" stroke="#38bdf8" stroke-width="2.4"/>`;return s+'</svg>'}
 const fieldOnly=()=>{const rs=sel();return rs.length>0&&rs.every(isFld)};
 function plotCards(){if(SAMPLE.fld!==fieldOnly())SAMPLE=makeSample(SPAT,fieldOnly());const tg=`<label class="row small" style="gap:8px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="smp" ${SAMPLE_ON?'checked':''} style="width:20px;height:20px">Show 1 sample plotted score (to test group patterns)</label>`;
- if(!SAMPLE_ON)return card2('Arrow plots','Arrow heatmap · Group size · Group pattern',tg+`<div class="note">🎯 These fill in from rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>`);
+ if(!SAMPLE_ON)return card2('Arrow plots','Arrow heatmap · Group size · Group pattern',tg+`<div class="note">🎯 These fill in from rounds shot in ScoreTool. Past competition results have arrow values only.</div>`);
  const F=sampleFig(),badge='<span class="sample-badge">Sample - not real data</span>',name=p=>(PATS.find(x=>x[0]===p)||[0,p])[1];
  const showCauses=SVIEW==='coach';
  return`<div class="card sample-card">${badge}<h2 style="margin-top:6px">Arrow plots</h2>${tg}
@@ -394,7 +394,7 @@ function distSvg(G,E,fld){const keys=fld?FKEYS:WKEYS;const ser=G.map(g=>{const c
 function sheet(r){const sh=$('#sheet');const a=byId[r.m];
  sh.innerHTML=`<div class="pane"><div class="row"><div class="av" style="background:${a.c}">${a.ini}</div><div class="sp"><h2 style="margin:0">${esc(r.r)}</h2><div class="muted tiny">${esc(a.name)} · ${fmt(r.dt)} · ${esc(r.ev)}${r.rt!=null?' · rating '+r.rt:''}</div></div><div class="big">${r.t??'–'}</div></div>
  ${r.ds.length?r.ds.map(d=>`<div class="flab" style="margin-top:14px"><span>${esc(distLab(d,r))}${d.f?' · '+esc(d.f):''}</span><span style="color:var(--ink)">${d.t??''}</span></div><table class="ends${isFld(r)?' fld':''}">${d.e.map(e=>`<tr><td class="muted">${e[0]}</td><td>${arrows(e[1]).map(x=>`<span class="arrow a-${esc(x.toLowerCase())}">${esc(x)}</span>`).join('')}</td><td><b>${e[2]??''}</b></td></tr>`).join('')}</table>`).join(''):'<div class="note" style="margin-top:12px">No end-by-end sheet saved for this score.</div>'}
- <div class="note" style="margin-top:12px">🎯 Arrow plots appear here for rounds shot in ScoreTool. Archer's Diary history has arrow values only.</div>
+ <div class="note" style="margin-top:12px">🎯 Arrow plots appear here for rounds shot in ScoreTool. Past competition results have arrow values only.</div>
  <button class="btn full" style="width:100%;margin-top:12px" id="close">Close</button></div>`;
  sh.classList.remove('hidden');$('#close').onclick=()=>sh.classList.add('hidden');sh.onclick=e=>{if(e.target===sh)sh.classList.add('hidden')}}
 // ---------- saved combos ----------
@@ -435,11 +435,11 @@ function rank(){const W=wide();
  app.querySelectorAll('[data-l]').forEach(el=>el.onclick=()=>{RL=el.dataset.l;rank()});app.querySelectorAll('[data-rr]').forEach(el=>el.onchange=e=>{RRm[el.dataset.rr]=e.target.value;rank()});
 }
 let _w=wide();addEventListener('resize',()=>{if(wide()!==_w){_w=wide();render()}});
-function about(){app.innerHTML=`<div class="card"><span class="kicker">Playground</span><h1>Coach mode</h1><p>This is a try-out of Phil's view-only coach mode, built from the squad's real Archer's Diary scores (compound, from 2024).</p>
- <div class="note">🎯 <b>Group patterns &amp; arrow plots</b> come later, from rounds the testers shoot in ScoreTool. Archer's Diary history has arrow values per end, not where each arrow landed.</div>
+function about(){app.innerHTML=`<div class="card"><span class="kicker">Playground</span><h1>Coach mode</h1><p>This is a try-out of Phil's view-only coach mode, built from the squad's real competition scores (compound, from 2024).</p>
+ <div class="note">🎯 <b>Group patterns &amp; arrow plots</b> come later, from rounds the testers shoot in ScoreTool. Past competition results have arrow values per end, not where each arrow landed.</div>
  <p class="small muted">Data built ${esc(D.generated)} · ${R.length} squad scores · rankings window from ${fmt(D.window_from)}. View-only: no edits, no exports. Saved combos stay on this device.</p></div>
  <div class="card"><h2>How these numbers are worked out</h2><ul class="small" style="padding-left:18px;margin:6px 0;line-height:1.6">
- <li><b>Scores</b> are the official totals from Archer's Diary. Each scoresheet's ends are checked against its total when the page is built.</li>
+ <li><b>Scores</b> are the official competition totals. Each scoresheet's ends are checked against its total when the page is built.</li>
  <li><b>Arrow values:</b> X counts as 10, M (miss) counts as 0, and every other value counts as its number. Averages per arrow use every arrow shot, misses included.</li>
  <li><b>Latest</b> is the most recent date. <b>Best per round</b> is the highest total on that exact round name; if two are equal, the earlier one is shown.</li>
  <li><b>Trend</b> (Squad page): the last 10 scores that have an AA rating are split into an older half and a newer half. Up means the newer half's average rating is more than 1 point higher, Down means more than 1 lower, otherwise Steady. It needs 4+ rated scores.</li>

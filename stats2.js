@@ -1,4 +1,4 @@
-/* 'Field Red' is the round name some events used on Archer's Diary; it is kept apart from 'WA Field 24Mk Red' (stored data unchanged),
+/* 'Field Red' is the round name some events used in official results; it is kept apart from 'WA Field 24Mk Red' (stored data unchanged),
    but listed right after it and labelled so the two aren't mistaken for duplicates. */
 const FRD=rs=>{if(!rs.includes('Field Red')||!rs.includes('WA Field 24Mk Red'))return rs;const o=rs.filter(r=>r!='Field Red');o.splice(o.indexOf('WA Field 24Mk Red')+1,0,'Field Red');return o};
 const FRL=(r,rs)=>r=='Field Red'&&rs.includes('WA Field 24Mk Red')?"Field Red \u00b7 event's own round name":r;
@@ -74,7 +74,7 @@ function tipFor(P,x){if(x&&x.aba&&x.s&&window.aba3DBlocks){const b=aba3DBlocks(a
 function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L),rc={};RL.forEach(o=>rc[o.r]=o.n);
  const rounds=RL.map(o=>o.r);
  const nInc=L.filter(x=>x.inc).length;
- if(!rounds.length){app.innerHTML=`<div class="card"><span class="kicker">Stats</span><h2>No scores yet</h2><p class="small muted">Score a round in the app, or your official results from Archer's Diary show here once they load.</p>${nInc?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="incinc" style="width:18px;height:18px"> Include incomplete rounds (${nInc})</label>`:''}</div>`;bind();return}
+ if(!rounds.length){app.innerHTML=`<div class="card"><span class="kicker">Stats</span><h2>No scores yet</h2><p class="small muted">Score a round in the app, or your past competition results show here once they load.</p>${nInc?`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="incinc" style="width:18px;height:18px"> Include incomplete rounds (${nInc})</label>`:''}</div>`;bind();return}
  if(!ST.r||!rc[ST.r])ST.r=rounds[0];const P=poolOf(L,ST.r),newest=P[P.length-1];let x=P.find(s=>s.id==ST.id);if(!x){x=newest;ST.id=x.id}
  const n=P.length,full=P.filter(s=>!s.inc),R=ROUNDS[Object.keys(ROUNDS).find(k=>canon(k)==ST.r)]||{};
  let h=`<div class="card dark" id="statpick"><span class="kicker">Stats</span><h2 style="margin:2px 0 8px">Pick a round and a shoot</h2>

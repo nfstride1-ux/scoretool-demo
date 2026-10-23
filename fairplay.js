@@ -1,5 +1,5 @@
 /* ScoreTool demo: fair-play nudge for self-logged practice arrows only.
-   Official Archer's Diary scores are never checked or held.
+   Official competition scores are never checked or held.
    Thresholds (generous on purpose, so normal shooting never trips them):
    - Scored ends: an end finished less than (arrows per end x 10 s) after the previous end
      (6-arrow end: under 60 s; 3-arrow end: under 30 s). Shooting, walking and scoring an end takes minutes.

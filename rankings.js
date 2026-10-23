@@ -1,4 +1,4 @@
-// National ranking card. Data: data/rankings.json (snapshot of Archer's Diary official AA National Rankings).
+// National ranking card. Data: data/rankings.json (snapshot of the official AA National Rankings).
 (function(){
 let R=null;fetch('data/rankings.json').then(r=>r.json()).then(j=>{R=j;if(typeof render==='function'&&document.querySelector('#rank-slot'))render()}).catch(()=>{});
 const D={outdoor:'Outdoor (target)',indoor:'Indoor',field:'Field',clout:'Clout'};
@@ -14,6 +14,6 @@ window.rankCard=function(name){
  let h=`<div class="card" id="rank-slot"><span class="kicker">National ranking</span><h2>Archery Australia</h2>`;
  if(!rows.length)h+=`<p><b>Not currently ranked.</b></p><p class="small muted">To appear, shoot a round at an AA or World Archery registered tournament or an Archery Australia ranking event. Club shoots don't count.</p>`;
  else h+=rows.map(x=>`<div class="row" style="padding:6px 0;border-bottom:1px solid #0001"><span><b>${D[x.discipline]}</b><br><span class="small muted">${x.division} · ${x.age_class} ${x.gender}</span></span><span style="text-align:right"><b>${ord(x.class_rank)}</b> of ${x.class_size}<br><span class="small muted">rating ${x.rating}</span></span></div>`).join('');
- h+=`<p class="small muted">Rank within class, as of ${asof}. Ratings drop 2 points a month (5 for field and clout), so ranks change without new scores. Source: <a href="${src}" target="_blank" rel="noopener">Archer's Diary official AA rankings</a>.</p></div>`;
+ h+=`<p class="small muted">Rank within class, as of ${asof}. Ratings drop 2 points a month (5 for field and clout), so ranks change without new scores. Source: <a href="${src}" target="_blank" rel="noopener">official AA National Rankings</a>.</p></div>`;
  return h};
 })();

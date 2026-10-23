@@ -78,7 +78,7 @@ function setupScores(){const L=(typeof myBows=='function'?myBows():[]);if(!L.len
  const rows=L.map(b=>{const m=ss.filter(s=>s.bow==b.id);if(!m.length)return`<tr><th>${h(b.name)}</th><td colspan="3" class="muted">No rounds scored with this setup yet</td></tr>`;
   const by={};m.forEach(s=>{(by[s.round]=by[s.round]||[]).push(total(s))});
   return Object.entries(by).map(([r,v],k)=>`<tr><th>${k?'':h(b.name)}</th><td>${h(r)}</td><td>${v.length}</td><td>${Math.max(...v)} best · ${Math.round(v.reduce((a,x)=>a+x,0)/v.length)} avg</td></tr>`).join('')}).join('');
- return`<div class="card"><span class="kicker">Scores per setup</span><h2>Which setup scores best</h2><table class="labtbl"><thead><tr><th>Setup</th><th>Round</th><th>Rounds</th><th>Scores</th></tr></thead><tbody>${rows}</tbody></table><p class="small muted">Rounds you score in ScoreTool remember the setup picked here. Official Archer's Diary results don't record a setup, so they aren't in this table.</p></div>`}
+ return`<div class="card"><span class="kicker">Scores per setup</span><h2>Which setup scores best</h2><table class="labtbl"><thead><tr><th>Setup</th><th>Round</th><th>Rounds</th><th>Scores</th></tr></thead><tbody>${rows}</tbody></table><p class="small muted">Rounds you score in ScoreTool remember the setup picked here. Official competition results don't record a setup, so they aren't in this table.</p></div>`}
 
 /* ---------- Clubs & leagues ---------- */
 const SC=()=>_score();SC.sc=1;
@@ -287,7 +287,7 @@ function rulesFind(){
 /* ---------- Full analysis: everything from the testers' Stats in one place ---------- */
 LABSEC.lab_analysis='myarch';
 E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBestCard&&labBestCard()||''}catch(e){}try{an=window.labAnalysisHTML?labAnalysisHTML():''}catch(e){an='<div class="card"><p class="small">The analysis could not be built from this data.</p></div>'}
- app.innerHTML=`<div class="card"><span class="kicker">Everything in one place</span><p class="small" style="margin:0 0 10px">Built from your Archer's Diary results and rounds scored here. Real results only.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">📈 Stats &amp; PBs, with More detail</button><button class="btn ghost" data-go="analytics">📊 Analytics: trends across shoots</button></div></div>${bc}${an}`;
+ app.innerHTML=`<div class="card"><span class="kicker">Everything in one place</span><p class="small" style="margin:0 0 10px">Built from your past competition results and rounds scored here. Real results only.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">📈 Stats &amp; PBs, with More detail</button><button class="btn ghost" data-go="analytics">📊 Analytics: trends across shoots</button></div></div>${bc}${an}`;
  bar('Full analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
 
 /* ---------- Back buttons: every screen below a section names its parent and goes there (works on a direct load) ---------- */

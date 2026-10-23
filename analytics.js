@@ -1,4 +1,4 @@
-/* Stats → Analytics. Real data only (Archer's Diary results + arrows, and this phone's scored practice). Describes numbers, never advises.
+/* Stats → Analytics. Real data only (official competition results + arrows, and this phone's scored practice). Describes numbers, never advises.
    Lightweight inline SVG. Total-only shoots count wherever a total is enough and are left out of arrow-level charts. */
 (function(){
 const AF=window._af=window._af||{range:'season',round:'all',bow:'all',kind:'all'};

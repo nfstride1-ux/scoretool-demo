@@ -1,7 +1,7 @@
 /* Tester profiles. Each tester's data lives in its own localStorage key so testing never mixes.
-   Nathe keeps the original key. Every tester with data:true gets his own real Archer's Diary history (data/sheets_<id>.json,
+   Nathe keeps the original key. Every tester with data:true gets his own real official results history (data/sheets_<id>.json,
    data/ad_<id>.json, built from scores.db); bow = the only bow that feeds his stats (other bows are kept in the file, left out).
-   ad = the archer's name on Archer's Diary when it differs. data:false = no confirmed Archer's Diary match yet, so the profile starts empty.
+   ad = the archer's name in the official results when it differs. data:false = no confirmed official results match yet, so the profile starts empty.
    Names only, no contact details. Real names show in personal places (sign-in, home, Me, score sheets, coach summary, parent and
    coach links, suggestions); social and competitive views (h2h, match night, squad, league, badges, share images) show the
    tester's chosen nickname instead (names.js). junior:true = under 16. */
@@ -11,17 +11,17 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
  {id:'steven',name:'Steven Snook',short:'Steven',bow:'Compound',data:true},
  {id:'joseph',name:'Joseph Snook',short:'Joseph',bow:'Compound',data:true,junior:true},
  {id:'michael',name:'Michael Choong',short:'Michael',bow:'Compound',data:true},
- /* Dana: listed as 'Dana Matete' in Phil's group; Archer's Diary has him as Dana Chapman-Bureny (Gosnells, male, compound, member 32545), the only Dana at Gosnells. */
+ /* Dana: listed as 'Dana Matete' in Phil's group; The official results list him as Dana Chapman-Bureny (Gosnells, male, compound, member 32545), the only Dana at Gosnells. */
  {id:'dana',name:'Dana Chapman-Bureny',short:'Dana',bow:'Compound',data:true},
  {id:'tahuri',name:'Tahuri Burney',short:'Tahuri',ad:'Tahuri Engelen-Burney',bow:'Compound',data:true,junior:true},
- /* Estiaan Cronje (Gosnells, AD member 19190, Open compound): added 20 Oct 2026. He stopped shooting; history = the 6 months before his last recorded shoot (16 Feb to 16 Aug 2025). */
+ /* Estiaan Cronje (Gosnells, member 19190, Open compound): added 20 Oct 2026. He stopped shooting; history = the 6 months before his last recorded shoot (16 Feb to 16 Aug 2025). */
  {id:'estiaan',name:'Estiaan Cronje',short:'Estiaan',bow:'Compound',data:true},
- /* Nate Evans (Kalamunda, AD member 20536): confirmed tester 18 Oct 2026. His scores were removed from scores.db at his earlier request, so his profile stays empty until they are pulled again. */
+ /* Nate Evans (Kalamunda, member 20536): confirmed tester 18 Oct 2026. His scores were removed from scores.db at his earlier request, so his profile stays empty until they are pulled again. */
  {id:'nate',name:'Nate Evans',short:'Nate',bow:'Compound',data:false},
  /* Darnie (20 Oct 2026, Nathe): an archer who is NOT a tester. He can be scored, picked in matches, match nights, leagues and groups,
     and has his own link (?tester=darnie), but he isn't in the testers squad and gets no tester suggestion prompts.
-    21 Oct 2026: Archer's Diary has him as Danie Oosthuizen (Whiteman Park Archers WA, AD member 8704, compound, Open and 50+), NOT
-    Danie-Louis Oosthuizen (same club). History = his full Archer's Diary compound history, 2015 to 2026 (501 scoresheets, same load
+    21 Oct 2026: The official results list him as Danie Oosthuizen (Whiteman Park Archers WA, member 8704, compound, Open and 50+), NOT
+    Danie-Louis Oosthuizen (same club). History = his full official compound history, 2015 to 2026 (501 scoresheets, same load
     as Estiaan, Nathe 21 Oct 2026). His crawl stays paused in the scores database; this file is a one-off load. 22 Oct 2026 (Nathe): shown as Danie everywhere; id, link and stored data stay 'darnie'. */
  {id:'darnie',name:'Danie Oosthuizen',short:'Danie',bow:'Compound',data:true,guest:true}];
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;

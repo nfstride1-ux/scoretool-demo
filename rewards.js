@@ -1,6 +1,6 @@
 /* ScoreTool demo: teen rewards (rarity badges, ranks, cheers, cards, league, seasons, recap).
    Uses only real stored data: the archer's own logged sessions, added arrows, notes, and official
-   results/arrows imported from Archer's Diary (data/*.csv, read-only). No sample people, no fake numbers. */
+   results/arrows from official competition results (data/*.csv, read-only). No sample people, no fake numbers. */
 const SVGI=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const ICON={
  dayone:SVGI('<path d="M5 19 19 5"/><path d="M15 5h4v4"/><path d="M5 15v4h4"/>'),
@@ -28,7 +28,7 @@ const BADGE_DEFS=[
  ['flawless','flawless','Flawless','legendary','A perfect end: every arrow a 10 or X'],
  ['unbreak','unbreak','Unbreakable','mythic','Practise 12 weeks in a row']];
 const isTen=a=>a=='X'||a=='10';
-/* Every end we have for an archer: own scored sessions + official arrows from Archer's Diary. */
+/* Every end we have for an archer: own scored sessions + official arrows from competition results. */
 function allEnds(name){const own=name==S.profile;const E=[];
  if(own)(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach(e=>E.push({date:s.date,arrows:e.map(String),src:'session',round:s.round})));
  offFor(name).forEach(o=>o.ends.forEach(e=>{if(!e.flag)E.push({date:normDate(o.date),arrows:e.arrows,src:'official',round:o.round})}));return E}
@@ -74,7 +74,7 @@ window.EXTRA_VIEWS={badges:badgesView};
 /* ---------- Rank tiers from real Archery Australia classifications ----------
    AA Shooting Rules v7.2 (July 2026) 4.1 + Schedule 4A.1: a classification needs THREE rounds in the
    calendar year at or above the rating level for your category (bow type + age/gender), rating from the
-   Archer's Diary calculator (ratings.js reproduces it). Only verified official results from Archer's Diary count.
+   official online rating calculator (ratings.js reproduces it). Only verified official competition results count.
    Game tier = ScoreTool's own label for each AA level; the I-III split inside a band is ScoreTool's, not AA's. */
 const TIER_OF={'White':'Bronze','Black':'Silver','Blue':'Gold','Red':'Platinum','Gold':'Diamond','Master':'Champion','Grand Master':'Champion','Elite Bronze':'Elite','Elite Silver':'Elite','Elite Gold':'Elite'};
 const FIXED_DIV={'Master':'II','Grand Master':'I','Elite Bronze':'III','Elite Silver':'II','Elite Gold':'I'};
@@ -105,7 +105,7 @@ function emblem(rk,size=64){const t=rk&&rk.state=='ranked'?rk.tier.toLowerCase()
  const pips=rk&&rk.state=='ranked'?({I:3,II:2,III:1}[rk.div]):0;
  return`<svg width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="${rk&&rk.state=='ranked'?rk.tier+' '+rk.div:'Unranked'}"><defs><linearGradient id="eg${t}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C}"/><stop offset="1" stop-color="${C}" stop-opacity=".35"/></linearGradient></defs><path d="M32 3 57 15v18c0 14-11 24-25 28C18 57 7 47 7 33V15z" fill="url(#eg${t})" stroke="${C}" stroke-width="2"/><circle cx="32" cy="29" r="11" fill="none" stroke="#0b0f17" stroke-width="3"/><circle cx="32" cy="29" r="4" fill="#0b0f17"/>${[...Array(pips)].map((_,k)=>`<rect x="${32-(pips*8-3)/2+k*8}" y="46" width="5" height="5" fill="#0b0f17" transform="rotate(45 ${32-(pips*8-3)/2+k*8+2.5} 48.5)"/>`).join('')}</svg>`}
 function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
- if(rk.state=='none')body=`<p><b>Unranked.</b> Your AA classification comes from official scores in Archer's Diary. Shoot a round at a registered club or tournament shoot and it'll count.</p>`;
+ if(rk.state=='none')body=`<p><b>Unranked.</b> Your AA classification comes from official competition scores. Shoot a round at a registered club or tournament shoot and it'll count.</p>`;
  else if(rk.state=='provisional')body=`<p><span class="est">Provisional</span> ${esc(rk.why)}</p>`;
  else if(rk.state=='placement')body=`<p><b>Rounds towards your first rating: ${rk.n} of 3</b> in ${yr}.</p><div class="bar"><i style="width:${rk.n/3*100}%"></i></div><p class="small muted">Archery Australia needs three official rounds in the calendar year to set a classification, so it shows after round 3.${rk.best!=null?` Best rating so far: ${rk.best}.`:''}</p>`;
  else if(rk.state=='below')body=`<p><b>Unranked</b> · ${rk.toWhite} rating points to <b>White</b>.</p>`;
@@ -234,7 +234,7 @@ function appName(u){try{const x=new URL(u),k=appKind(u);if(k=='ios'){const m=x.p
  try{const h=new URL(u).hostname.replace(/^www\.|^app\.|^m\./,'').split('.')[0];return h.charAt(0).toUpperCase()+h.slice(1)}catch(e){return''}}
 function normUrl(u){u=((u||'').match(/(https?:\/\/\S+|[\w-]+(\.[\w-]+)+\/?\S*)/)||[''])[0].replace(/[).,]+$/,'');if(u&&!/^https?:\/\//i.test(u))u='https://'+u;try{const x=new URL(u);return/^https?:$/.test(x.protocol)?x.href:''}catch(e){return''}}
 let appEdit=null,appFormShut=false;/* Cancel collapses the add form for this visit; 'Add an app' opens it again */
-const APP_EXAMPLES=[['Garmin Connect','https://connect.garmin.com/','Other'],["Archer's Diary",'https://archersdiary.com/','Other'],['ArtemisLite','https://play.google.com/store/apps/details?id=com.vapeldoorn.artemislite','Tuning'],['Archery Sight Mark','https://play.google.com/store/apps/details?id=com.tucanadesigns.android.archerysightmark','Sight marks'],['CoachNow','https://coachnow.com/','Video'],['Onform','https://onform.com/','Video']];
+const APP_EXAMPLES=[];/* no named example apps: the archer adds their own links */
 const STORE_ICON={ios:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-label="App Store"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3-.8-1.6 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6 0 0-2.5-1-2.5-3.6zM14.1 5.5c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"/></svg>',play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-label="Google Play"><path d="M4 2.5v19l10-9.5zM15.5 13.4l2.6 2.5-11 6.2zM15.5 10.6 7.1 1.9l11 6.2zM19.4 9l2.1 1.2c.8.5.8 1.2 0 1.6L19.4 13l-2.7-2.5z"/></svg>'};
 function appIcon(a){const k=appKind(a.url);if(STORE_ICON[k])return`<span style="display:inline-flex;width:28px;justify-content:center">${STORE_ICON[k]}</span>`;let o='';try{o=new URL(a.url).origin}catch(e){}return`<img src="${esc(o)}/favicon.ico" alt="" width="20" height="20" style="margin:0 4px;vertical-align:-4px;border-radius:4px" onerror="this.style.visibility='hidden'">`}
 /* Sync-ready record (matches a future user_apps table: id uuid, user_id, url, name, category, kind, created_at, updated_at, deleted). */
@@ -245,7 +245,7 @@ function otherAppsCard(){const L=S.apps=S.apps||[],e=appEdit!=null?L[appEdit]:nu
  return`<div class="card" id="oapps"><span class="kicker">Linked apps</span><h2>Apps I use</h2>
  ${L.length?L.map((a,i)=>`<div class="list-item row"><span style="min-width:0">${appIcon(a)}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(a.name)}</b> ↗</a>${a.cat?` <span class="pill t-none">${esc(a.cat)}</span>`:''}<br><span class="small muted" style="word-break:break-all">${esc(a.url)}</span></span><span style="flex:0 0 auto"><button class="btn ghost" data-ae="${i}" style="padding:4px 10px;min-height:34px">Edit</button> <button class="btn ghost" data-ad="${i}" style="padding:4px 10px;min-height:34px">Delete</button></span></div>`).join(''):'<p class="muted">Add the apps you use for sight marks, video and tuning.</p>'}
  ${appFormShut&&!e?'<button class="btn full" id="aopen" style="margin-top:6px">Add an app</button>':`<div id="aform">${e?'':`<button class="btn full" id="apaste" style="margin-top:6px">Paste link</button><p class="small muted" style="margin:6px 0 0">${isIOS()?'Copy the app\'s link (in the App Store tap Share, then Copy Link), then tap Paste.':'Copy the app\'s link, then tap Paste. On Android you can also Share a Play Store or web link straight to ScoreTool once it\'s installed.'}</p>`}
- ${e?'':`<p class="small" style="margin:10px 0 4px"><b>Examples</b> (tap to fill in, then Add):</p><div style="display:flex;flex-wrap:wrap;gap:6px">${APP_EXAMPLES.map((x,i)=>`<button class="btn ghost" data-aex="${i}" style="padding:6px 10px;min-height:34px">+ ${esc(x[0])}</button>`).join('')}</div>`}
+ ${e||!APP_EXAMPLES.length?'':`<p class="small" style="margin:10px 0 4px"><b>Examples</b> (tap to fill in, then Add):</p><div style="display:flex;flex-wrap:wrap;gap:6px">${APP_EXAMPLES.map((x,i)=>`<button class="btn ghost" data-aex="${i}" style="padding:6px 10px;min-height:34px">+ ${esc(x[0])}</button>`).join('')}</div>`}
  <label for="au">${e?'Edit link':'Or type or paste it here'}</label><input id="au" type="url" inputmode="url" placeholder="Paste the app's link" value="${e?esc(e.url):''}">
  <label for="an2">Name</label><input id="an2" placeholder="Filled in from the link" value="${e?esc(e.name):''}">
  <label for="ac2">Category (optional)</label><select id="ac2"><option value="">None</option>${APP_CATS.map(c=>`<option ${e&&e.cat==c?'selected':''}>${c}</option>`).join('')}</select>

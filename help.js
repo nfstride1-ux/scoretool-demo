@@ -38,6 +38,7 @@ const HELP_GUIDES=[
   '<b>Full analysis</b> has end by end and half split for the shoot you picked.']},
  {id:'myarch',i:'bow',t:'Diary, setups and bows',shot:'myarch',steps:[
   '<b>My archery</b> holds your Diary, Practice arrows, Setups &amp; sight marks, My bows and My arrows.',
+  '<b>Past competition results</b>: your official scores from past competitions show in Stats, My best scores and Rankings. They are kept separate from rounds you score in ScoreTool.',
   '<b>Practice arrows</b> counts today\'s arrows toward your daily goal.',
   '<b>Sight marks</b>: pick the bow setup, then the <b>Arrow set</b>. Each set of arrows has its own marks for that bow. <b>+ New arrow set</b> adds one; your marks from before are under <b>Arrows 1</b>.',
   '<b>Load PDF or CSV</b> (in Sight marks): load a PDF or CSV with range and mark columns, or paste marks, then pick the bow setup and arrow set. Check the preview, then tap <b>Save</b>. Your own marks are kept unless you choose <b>Replace existing marks</b>.',

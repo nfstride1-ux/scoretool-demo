@@ -84,7 +84,7 @@ function safe(){return`<div class="card"><span class="kicker">Safe squads</span>
  <li>No chat, comments or photos. Only preset cheers (Dialled, Clutch, On fire, GOAT, Respect, and Bullseye on PB posts).</li><li>Only first name, last initial and a player card (initials, rank, badges) are shown. No photo, club or contact details.</li>
  <li>Leaderboards rank effort and badges, and improvement against your own average. Raw scores stay hidden unless the admin turns them on.</li>
  <li>"Hasn't logged lately" reminders go only to the admin, never to the squad.</li><li>Anyone can leave at any time. Admins can remove members.</li>
- <li>✓ verified means the score came from Archer's Diary or was plotted arrow by arrow; keypad-only practice shows as self-logged.</li></ul></div>`}
+ <li>✓ verified means the score came from official competition results or was plotted arrow by arrow; keypad-only practice shows as self-logged.</li></ul></div>`}
 
 /* Squads section for the Following tab: squad card(s) with a mini top 3 (this week's arrows, effort not scores). */
 window.squadMini=function(){seedSquad();const Q=S.squad,ins=Q&&(Q.members.some(m=>m.name==S.profile)||myAdult());
