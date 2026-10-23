@@ -43,7 +43,7 @@ with sync_playwright() as p:
     pg.locator('.acshaft',has_text='X10 600').first.click();pg.wait_for_timeout(300)
     pg.click('#acfoc summary');pg.wait_for_timeout(200)
     fill(pg,'ins',0);fill(pg,'nock',6);fill(pg,'vanes',12);fill(pg,'vpos',1.5)
-    foc=pg.inner_text('#acfoc');tw=7.0*28+100+6+12
+    foc=pg.inner_text('#acfocres');tw=7.0*28+100+6+12
     A=(7.0*28*14+100*28+12*1.5)/tw;F=100*(A-14)/28
     chk(tag+f' FOC worked out {F:.1f}',f'{F:.1f}%' in foc);chk(tag+f' total weight {round(tw)}',f'{round(tw)} gr' in foc)
     if w==390:pg.evaluate("document.getElementById('acfocout').scrollIntoView({block:'center'})");pg.wait_for_timeout(200);pg.screenshot(path=os.path.join(SH,'arrowchooser-foc-390.png'))
