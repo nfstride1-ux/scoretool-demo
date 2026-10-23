@@ -3,7 +3,7 @@
 (function(){
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const SECTION={home:'home',score:'score',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',me:'me'};
+const SECTION={home:'home',score:'score',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',whatsnew:'me',me:'me'};
 const secOf=v=>v.startsWith('lab_')?(LABSEC[v]||'home'):(SECTION[v]||v);
 const LABSEC={};
 const label=e=>((e.querySelector('.kicker,h2,h3,summary')||e).innerText||'').trim().toUpperCase();
@@ -293,7 +293,7 @@ E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBe
 /* ---------- Back buttons: every screen below a section names its parent and goes there (works on a direct load) ---------- */
 const TOP=new Set(['home','score','myarch','clubs','tools']);
 const PAR={stats:['Stats & PBs','myarch','My archery'],analytics:['Analytics','myarch','My archery'],badges:['Badge collection','lab_season','Season & badges'],recap:['Monthly recap','lab_season','Season & badges'],
- follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home']};
+ follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],whatsnew:['What\'s new','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home']};
 Object.assign(LABSEC,{lab_analysis:'myarch'});
 const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?(view=='profile'?'lab_profile':'lab_season'):v;
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';

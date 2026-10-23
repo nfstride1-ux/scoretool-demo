@@ -9,6 +9,7 @@ pre=['./','index.html','version.json']+refs
 pre+=['fonts/'+f for f in sorted(os.listdir(os.path.join(ROOT,'fonts'))) if f.endswith('.woff2')]
 pre+=['icons/'+f for f in sorted(os.listdir(os.path.join(ROOT,'icons')))]
 pre+=['data/'+f for f in sorted(os.listdir(os.path.join(ROOT,'data'))) if re.search(r'\.(json|csv)$',f)]
+pre+=['help/g/'+f for f in sorted(os.listdir(os.path.join(ROOT,'help','g'))) if f.endswith('.webp')]  # themed help guide pictures (light + dark)
 seen=[];[seen.append(u) for u in pre if u not in seen and (u=='./' or os.path.exists(os.path.join(ROOT,u)))]
 missing=[u for u in pre if u!='./' and not os.path.exists(os.path.join(ROOT,u))]
 if missing:print('skipped (not found):',missing)

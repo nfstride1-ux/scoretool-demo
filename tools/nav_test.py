@@ -36,11 +36,11 @@ def run(b,tag,mobile):
   pg.mouse.click(bx['x']+bx['width']/2,bx['y']+bx['height']/2);pg.wait_for_timeout(300)
   chk(f'{tag} plot adds arrow',pg.evaluate('cur.ends.flat().length')==1)
   chk(f'{tag} keypad above nav',pg.evaluate("(()=>{const p=document.querySelector('.ad-pad').getBoundingClientRect();return p.bottom<=document.getElementById('tabs').getBoundingClientRect().top})()"))
-  # full-screen modal (help poster)
-  pg.evaluate("nav('help')");pg.wait_for_timeout(600);pg.locator('.poster').first.click();pg.wait_for_timeout(300)
-  m=pg.evaluate("(()=>{const r=document.querySelector('.poster-full').getBoundingClientRect();return [r.top,r.bottom,innerHeight]})()")
-  chk(f'{tag} modal covers screen',m[0]==0 and round(m[1])==m[2]);pg.locator('.poster-full').click();pg.wait_for_timeout(200)
-  chk(f'{tag} modal closes',pg.locator('.poster-full').count()==0)
+  # help guides (23 Oct 2026: the old full-screen poster images were replaced by themed guide cards)
+  pg.evaluate("()=>{window._hgOpen=null;nav('help')}");pg.wait_for_timeout(600);pg.locator('details.hg summary').nth(1).click();pg.wait_for_timeout(400)
+  m=pg.evaluate("(()=>{const d=document.querySelectorAll('details.hg')[1],r=d.getBoundingClientRect(),i=[...d.querySelectorAll('img')].find(x=>getComputedStyle(x).display!='none');return [d.open,r.width<=innerWidth+1,!!i]})()")
+  chk(f'{tag} help guide opens and fits',m[0] and m[1] and m[2]);pg.locator('details.hg summary').nth(1).click();pg.wait_for_timeout(200)
+  chk(f'{tag} help guide closes',not pg.evaluate("document.querySelectorAll('details.hg')[1].open"))
   if mobile:
     pg.click('nav [data-v=follow]');pg.wait_for_timeout(500);inp=pg.locator('#app input[type=text],#app input:not([type]),#app input[type=search]').first
     if inp.count():inp.click();pg.wait_for_timeout(150);hid=pg.evaluate(GEO)['disp']=='none';pg.evaluate('document.activeElement.blur()');pg.wait_for_timeout(200);g=pg.evaluate(GEO);chk(f'{tag} bar hides while typing, back after',hid and g['disp']!='none' and g['nb']==g['h'])
