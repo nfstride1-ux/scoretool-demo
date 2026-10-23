@@ -20,8 +20,13 @@ window.bindProfileExtra=function(after){const a=$('#pxby'),h=$('#pxh');if(a)a.on
 const _me=me;me=function(){_me.apply(this,arguments);const c=$('#coachcard');if(c&&!$('#pxcard')){c.insertAdjacentHTML('beforebegin',profileExtraCard());bindProfileExtra()}};
 /* ---------- shared helpers ---------- */
 const keysFor=r=>/field|bugs/i.test(r)?['6','5','4','3']:['X','10','9','8','7'];
-function faceMM(s){const R=ROUNDS[s.round]||{};const ff=(s.ff||[]).find(Boolean);if(ff&&!s.bugs)return{mm:ff.f*5,known:true,size:ff.f};const F=faceR(R,0)||{};const m=String(F.face||R.face||'').match(/(\d+)cm/);return m&&!/field/i.test(F.face||'')?{mm:+m[1]*5,known:true,size:+m[1]}:{mm:610,known:false,size:122}}
-function plotted(s){if(s.bugs)return[];return(s.pos||[]).flat().filter(p=>p&&isFinite(p.x)&&isFinite(p.y))}
+function faceMM(s){const q=window.shotPts&&plotted(s).find(p=>p.mm);if(q)return{mm:q.mm,known:true,size:q.mm/5};const R=ROUNDS[s.round]||{};const ff=(s.ff||[]).find(Boolean);if(ff&&!s.bugs)return{mm:ff.f*5,known:true,size:ff.f};const F=faceR(R,0)||{};const m=String(F.face||R.face||'').match(/(\d+)cm/);return m&&!/field/i.test(F.face||'')?{mm:+m[1]*5,known:true,size:+m[1]}:{mm:610,known:false,size:122}}
+/* plotted arrows mapped onto ONE face (23 Oct 2026): 3-spot arrows (Vegas, WA 18 / Aus Indoor triple) become offsets from the spot each
+   arrow was shot at, field arrows stay on their field face, multi-face rounds are scaled to the first face's mm. Stored data is untouched;
+   the mapping is shotview.js shotPts(), shared with the arrow plot and the end-of-shoot view. Bugs Eyes stays out of group maths. */
+function plotted(s){if(window.shotPts){const P=shotPts(s),L=(P.target.length>=P.field.length?P.target:P.field).filter(p=>p.k!='bugs'),ref=(L.find(p=>p.mm)||{}).mm;
+  return L.map(p=>ref&&p.mm&&p.mm!=ref?{...p,x:p.x*p.mm/ref,y:p.y*p.mm/ref}:p)}
+ if(s.bugs)return[];return(s.pos||[]).flat().filter(p=>p&&isFinite(p.x)&&isFinite(p.y))}
 function ellipse(p){const c=groupStats(p);let xx=0,yy=0,xy=0;p.forEach(q=>{const dx=q.x-c.cx,dy=q.y-c.cy;xx+=dx*dx;yy+=dy*dy;xy+=dx*dy});const n=Math.max(1,p.length-1);xx/=n;yy/=n;xy/=n;
  const tr=xx+yy,dt=xx*yy-xy*xy,l1=tr/2+Math.sqrt(Math.max(0,tr*tr/4-dt)),l2=tr/2-Math.sqrt(Math.max(0,tr*tr/4-dt)),ang=Math.atan2(l1-xx,xy||1e-9)*180/Math.PI;
  return{...c,a:Math.sqrt(Math.max(l1,0))*2,b:Math.sqrt(Math.max(l2,0))*2,ang:Math.abs(xy)<1e-9?(xx>=yy?0:90):ang,w:Math.sqrt(xx)*4,h:Math.sqrt(yy)*4}}
@@ -51,7 +56,8 @@ function patternData(){const ses=done().filter(s=>plotted(s).length>=6);if(!ses.
  const rows=ses.map(s=>{const p=plotted(s),e=ellipse(p),fm=faceMM(s);return{s,p,e,fm,dir:dirOf(e),off:Math.hypot(e.cx,e.cy)*fm.mm}});return rows}
 function patternSVG(r){const e=r.e,R=ROUNDS[r.s.round]||{},fr=faceR(R,0);
  const pts=r.p.map(q=>({x:q.x,y:q.y}));const ex=`<ellipse cx="${e.cx}" cy="${e.cy}" rx="${Math.max(e.a,0.03)}" ry="${Math.max(e.b,0.03)}" transform="rotate(${-e.ang} ${e.cx} ${e.cy})" fill="${G}33" stroke="${G}" stroke-width="0.012" stroke-dasharray="0.03 0.02"/><path d="M0 0L${e.cx} ${e.cy}" stroke="#0b0f17" stroke-width="0.026"/><path d="M0 0L${e.cx} ${e.cy}" stroke="${PF}" stroke-width="0.012"/><circle cx="${e.cx}" cy="${e.cy}" r="0.03" fill="${PF}" stroke="#0b0f17" stroke-width="0.012"/>`;
- return faceSVG(pts,'gpface','-1.05 -1.05 2.1 2.1',fr,ex).replace('style="touch-action:none;','style="max-width:300px;margin:auto;')}
+ const k=(r.p[0]||{}).k,F1=k=='spot'?{...fr,face:'40cm 3-spot',tri:false,vert:false}:k=='six'?fr:{...fr,col:false},hw=k=='spot'?0.56:k=='six'?0.66:1.05;
+ return faceSVG(pts,'gpface',`${-hw} ${-hw} ${2*hw} ${2*hw}`,F1,ex).replace('style="touch-action:none;','style="max-width:300px;margin:auto;')}
 function patternCard(opt={}){const rows=patternData();
  if(!rows)return card('Group pattern','Where your group sits',empty('Plot at least 6 arrows on the target in a practice round to see your group pattern. Official results don\'t include arrow positions.'));
  const L=rows[rows.length-1],e=L.e,u=L.fm.known?'mm':'mm (122cm face assumed)',mm=v=>Math.round(v*L.fm.mm);
