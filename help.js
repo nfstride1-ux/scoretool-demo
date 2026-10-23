@@ -41,6 +41,7 @@ const HELP_GUIDES=[
   '<b>Practice arrows</b> counts today\'s arrows toward your daily goal.',
   '<b>Sight marks</b>: pick the bow setup, then the <b>Arrow set</b>. Each set of arrows has its own marks for that bow. <b>+ New arrow set</b> adds one; your marks from before are under <b>Arrows 1</b>.',
   '<b>Load PDF or CSV</b> (in Sight marks): load a PDF or CSV with range and mark columns, or paste marks, then pick the bow setup and arrow set. Check the preview, then tap <b>Save</b>. Your own marks are kept unless you choose <b>Replace existing marks</b>.',
+  '<b>Estimate other marks</b> (in Sight marks, once you have 3 or more marks): fills the empty distances with estimates, shown as <i>est.</i> in grey. Your own marks are never changed. Confirm each estimate on the range, then type it in to make it your mark. Past your longest mark the estimates are less sure, and they stop at 1.5 times your longest mark. Tap <b>Clear estimates</b> to remove them.',
   'A full sight mark sheet shows every distance it has, in a list you can scroll. <b>Arrow details</b> also hold total weight, speed, sight height, sight radius and the distances you sighted in at.',
   '<b>My bows</b> adds make, model and specs from the maker\'s own page.',
   '<b>My arrows</b> lists each arrow set once: shaft, spine, length, point and total weight, fletching and FOC. Tap <b>Edit</b> to add details. It is the same list as the Arrow set choice in Sight marks.',

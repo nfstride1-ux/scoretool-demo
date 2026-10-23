@@ -3,9 +3,12 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1333-sightest',d:'2026-10-23',items:[
+  ['target','Estimate other marks',"In Setups & sight marks, tap Estimate other marks once you have 3 or more marks. Empty distances show an estimate marked est. Confirm each one on the range.",'this release'],
+  ['check','Your marks stay yours',"Estimates never change a mark you typed. Type over an estimate to make it your own mark, or tap Clear estimates to remove them all.",'this release']]},
  {v:'v2026-10-23-1324-arrowpick',d:'2026-10-23',items:[
-  ['arrow','Pick from My arrows',"The Calculators, the Arrow chooser and the Arrow optimizer each have a My arrows choice. Pick a set to fill in its length, weights and balance point. You can still change any box.",'this release'],
-  ['target','Arrow set in tuning sessions',"A new tuning session can save the arrow set you pick, so you can see later what you shot. Old sessions are not changed.",'this release']]},
+  ['arrow','Pick from My arrows',"The Calculators, the Arrow chooser and the Arrow optimizer each have a My arrows choice. Pick a set to fill in its length, weights and balance point. You can still change any box.",'f81fa58'],
+  ['target','Arrow set in tuning sessions',"A new tuning session can save the arrow set you pick, so you can see later what you shot. Old sessions are not changed.",'f81fa58']]},
  {v:'v2026-10-23-1316-myarrows',d:'2026-10-23',items:[
   ['arrow','My arrows',"My archery now has My arrows. Add each arrow set once: shaft, spine, length, point and total weight, and fletching. Your sets with sight marks are already there.",'88b86f9'],
   ['calc','FOC for each arrow set',"Add the part weights, or a measured balance point, and My arrows works out FOC with the same Easton formula as the Arrow chooser.",'88b86f9'],
