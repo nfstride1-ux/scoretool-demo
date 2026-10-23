@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-24-0545-calmine',d:'2026-10-24',items:[
+  ['calendar','Calendar opens My events',"The Calendar tile on Home now opens your My events on archerycalendars.com, so you see your own calendar straight away. Sign in there if it asks.",'this release']]},
  {v:'v2026-10-23-1735-arrowcheck',d:'2026-10-23',items:[
   ['arrow','Save calculator results to an arrow',"Pick an arrow in the speed or FOC calculator and tap Save to this arrow. It keeps the FOC, total weight, speed, the bow and the date on that arrow, and My arrows shows them. Your shaft, spine, length and points are only changed if you changed them in the calculator and say yes.",'this release'],
   ['check','Is this arrow right?',"After the calculators, a plain-words check: FOC too low, good or high for indoor, outdoor target, field, 3D or hunting, and spine too stiff, about right or too weak from the maker's chart for your bow. It shows the range it used and the source. It is a guide: confirm it by bare-shaft or paper tuning.",'this release']]},

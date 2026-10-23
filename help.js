@@ -68,6 +68,7 @@ const HELP_GUIDES=[
   'Tap your name at the top, then <b>Settings &amp; help</b>.',
   'Pick <b>Light</b> or <b>Dark</b>. The target-face button at the top switches too.',
   '<b>Add to my Archery Calendar</b> links your scores to your My events.',
+  'The <b>Calendar</b> tile on Home opens your My events on archerycalendars.com.',
   'A tick turns on colour-blind safe colours.',
   '<b>What\'s new</b> lists each update. <b>Send a suggestion</b> goes straight to Nathe.']}];
 const FORM_URL='https://formsubmit.co/nfshold@gmail.com';
