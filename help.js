@@ -39,6 +39,7 @@ const HELP_GUIDES=[
  {id:'myarch',i:'bow',t:'Diary, setups and bows',shot:'myarch',steps:[
   '<b>My archery</b> holds your Diary, Practice arrows, Setups &amp; sight marks and My bows.',
   '<b>Practice arrows</b> counts today\'s arrows toward your daily goal.',
+  '<b>Sight marks</b>: pick the bow setup, then the <b>Arrow set</b>. Each set of arrows has its own marks for that bow. <b>+ New arrow set</b> adds one; your marks from before are under <b>Arrows 1</b>.',
   '<b>My bows</b> adds make, model and specs from the maker\'s own page.',
   'Rankings &amp; classification and Season, badges &amp; recap are here too.']},
  {id:'clubs',i:'shield',t:'Clubs and leagues',shot:'clubs',steps:[
