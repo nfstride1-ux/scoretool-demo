@@ -3,8 +3,12 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-23-1316-myarrows',d:'2026-10-23',items:[
+  ['arrow','My arrows',"My archery now has My arrows. Add each arrow set once: shaft, spine, length, point and total weight, and fletching. Your sets with sight marks are already there.",'this release'],
+  ['calc','FOC for each arrow set',"Add the part weights, or a measured balance point, and My arrows works out FOC with the same Easton formula as the Arrow chooser.",'this release'],
+  ['target','One list for sight marks',"The Arrow set choice in Setups & sight marks is the same list as My arrows.",'this release']]},
  {v:'v2026-10-23-1312-loadpdf',d:'2026-10-23',items:[
-  ['clip','Load PDF or CSV',"The sight marks button is now Load PDF or CSV. It reads any sheet with a column of ranges and a column of marks, and you can still paste marks.",'this release']]},
+  ['clip','Load PDF or CSV',"The sight marks button is now Load PDF or CSV. It reads any sheet with a column of ranges and a column of marks, and you can still paste marks.",'952cb79']]},
  {v:'v2026-10-23-1222-sightimport',d:'2026-10-23',items:[
   ['clip','Import sight marks',"In Setups & sight marks, tap Load PDF or CSV. Load a PDF or CSV with range and mark columns, or paste your marks. It works offline.",'52c7493'],
   ['check','Check before saving',"A preview shows every distance first. Your own marks are kept unless you choose Replace existing marks, and it asks before replacing.",'52c7493']]},

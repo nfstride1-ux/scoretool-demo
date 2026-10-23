@@ -20,6 +20,7 @@ trophy:'<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h
 shield:'<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path class="g" d="M9 12l2 2 4-4"/>',
 flag:'<path d="M5 21V4"/><path class="g" d="M5 4h12l-2 4 2 4H5"/>',
 swords:'<path d="M4 4l10 10M14 4L4 14"/><path class="g" d="M14 14l5 5M4 14l-1 4 4-1M10 14l-6 5"/>',
+arrow:'<path d="M5 19L19 5"/><path d="M13.5 5H19v5.5"/><path class="g" d="M5 19l1-4M5 19l4-1M8 16l1-4M8 16l4-1"/>',
 clip:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path class="g" d="M8.5 12h7M8.5 16h5"/>',
 follow:'<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5"/><path class="g" d="M15 15h6M18 12v6"/>',
 card:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16c.6-1.6 1.9-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path class="g" d="M14.5 10h4M14.5 14h3"/>',

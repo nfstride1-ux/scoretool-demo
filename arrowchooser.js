@@ -253,6 +253,8 @@ window.arrowSetup=function(){const{st}=parsed();if(!isFinite(st.len)||!isFinite(
   foc:isFinite(b.foc)?+b.foc.toFixed(1):null,tw:isFinite(b.tw)?Math.round(b.tw):null,fps:isFinite(fps)?Math.round(fps):null,fpsSrc:isFinite(st.fps)?'measured':isFinite(fps)?'estimate':''}};
 /* FOC after a change (point grains / length inches), for the tuning 'Next step to try' card */
 window.arrowFocWith=function(d){const{st}=parsed();if(!isFinite(st.len)||!isFinite(st.pt)||!isFinite(st.gpi))return null;const a=build(st),b=build(st,d);return isFinite(a.foc)&&isFinite(b.foc)?{from:a.foc,to:b.foc,meas:a.meas}:null};
+/* the same FOC and total-weight maths for a saved arrow (My arrows): o = {len, pt, gpi, ins, nock, vanes, vpos, bp} as typed */
+window.arrowBuild=function(o){const st={};['len','pt','gpi','ins','nock','vanes','vpos','bp'].forEach(k=>st[k]=num(o&&o[k]));if(!isFinite(st.len))return null;const b=build(st);return{foc:isFinite(b.foc)?b.foc:NaN,tw:b.tw,meas:b.meas,missing:b.missing}};
 window.ARROW_SRC=SRC;
 
 /* ---------- Page ---------- */
