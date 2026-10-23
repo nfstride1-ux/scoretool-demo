@@ -37,6 +37,7 @@ function renderGear(){seedBows();const L=myBows(),b=curBow(),AL=mySets(),a=curSe
  ${b?`<div class="smwrap"${bowDists(b,M).length>14?' style="max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;margin-top:10px"':''}><table style="width:100%;margin-top:${bowDists(b,M).length>14?0:10}px;border-collapse:collapse"><thead style="position:sticky;top:0;background:var(--card,#fff);z-index:1"><tr><th style="text-align:left">Distance</th><th>Vertical</th><th>Horizontal <span class="small muted">(optional)</span></th></tr></thead><tbody>
  ${bowDists(b,M).map(d=>{const m=M[d]||{};return`<tr><th scope="row" style="text-align:left;font-size:18px">${esc(d)}</th>${['v','h'].map(k=>`<td style="padding:4px"><input class="smk" data-d="${esc(d)}" data-k="${k}" value="${esc(m[k]||'')}" inputmode="decimal" aria-label="${esc(d)} ${k=='v'?'vertical':'horizontal'} mark" placeholder="–" style="width:100%;min-height:48px;font-size:18px;text-align:center"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>${bowDists(b,M).length>14?`<p class="small muted" style="margin:4px 0 0">${bowDists(b,M).length} distances. Scroll the list.</p>`:''}
  <div class="row" style="gap:6px;margin-top:8px"><input id="ndist" inputmode="decimal" placeholder="Add distance" aria-label="Add your own distance" style="flex:1;min-height:48px"><select id="nunit" aria-label="Unit" style="width:70px;min-height:48px"><option>m</option><option>yd</option></select><button class="btn" id="nadd">Add</button></div>
+ ${window.openSightImport?'<button class="btn ghost" id="simpopen" type="button" style="margin-top:8px;width:100%">Import sight marks (paste, CSV or Precision Cut PDF)</button>':''}
  <p class="small muted">Every change is saved to this bow and arrow set and logged in your setup diary.</p>`:''}`;
  app.prepend(el);
  if($('#bsel'))$('#bsel').onchange=e=>{S.bowSel[S.profile]=e.target.value;save();gearRedraw()};
@@ -50,5 +51,6 @@ function renderGear(){seedBows();const L=myBows(),b=curBow(),AL=mySets(),a=curSe
  el.querySelectorAll('.smk').forEach(i=>i.onchange=()=>{const d=i.dataset.d,k=i.dataset.k,MM=marksOf(b,a),m=MM[d]=MM[d]||{},old=m[k]||'',nv=i.value.trim();if(old==nv)return;m[k]=nv;
   S.setup=S.setup||[];S.setup.push({id:'sm'+Date.now(),archer:S.profile,date:today(),cat:'Sight',change:`${a.id!=AS1?a.name+', ':''}${d}${k=='h'?' horizontal':''}: ${old||'none'} to ${nv||'cleared'}`,reason:'',noticed:'',bow:b.name,...(a.id!=AS1?{arrows:a.name}:{})});save();
   i.style.outline='3px solid '+(CB()?'#5ab0ff':'#16a34a');setTimeout(()=>i.style.outline='',800)});
+ if($('#simpopen'))$('#simpopen').onclick=()=>openSightImport();
  if($('#nadd'))$('#nadd').onclick=()=>{const v=parseFloat($('#ndist').value);if(!(v>0))return;const d=v+$('#nunit').value;if(!bowDists(b,M).includes(d))(b.extra=b.extra||[]).push(d);save();gearRedraw()}}
 const _diaryBase=diary;diary=function(){_diaryBase();renderGear()};
