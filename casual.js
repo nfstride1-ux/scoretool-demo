@@ -44,6 +44,11 @@ const cs3dPer=k=>({aba3:3,aba2:2,aba1:1}[k]||1);
 const cs3d=cs=>{const R=ROUNDS[cs.round];return R&&R.d3?CS3D[R.d3]:null};
 const cs3dK=(cs,ei)=>{const R=ROUNDS[cs.round],T=CS3D[R.d3];return T.half&&ei>=R.d3n?CS3D.aba1.k:T.k};
 const cs3dCol=(cs,k)=>{const T=cs3d(cs),i=T.k.indexOf(k),c=k=='M'||i<0?'m':T.c[i];return{g:'k-y',b:'k-b',n:'k-n',m:'k-m'}[c]};
+/* ABA scoring flow, as in the Just me ABA scorer: arrow 1 buttons first (20/18/16); only Miss brings up arrow 2 (14/12/10), then arrow 3 (8/6/4);
+   a hit records that target's score. Display only: a target is still stored as the one score it earned, so totals, relay and saved data are unchanged. */
+const csAbaN=(cs,ei)=>{const R=ROUNDS[cs.round],T=R&&R.d3?CS3D[R.d3]:null;if(!T||T.o!='ABA')return 0;return T.half?(ei<R.d3n?3:1):cs3dPer(R.d3)};
+const csStgKey=(cs,id,ei)=>cs.code+'|'+id+'|'+ei,csStg=(cs,id,ei)=>window._csStg&&window._csStg.k==csStgKey(cs,id,ei)?window._csStg.s:0;
+const csAbaHalf=(cs,ei)=>{const R=ROUNDS[cs.round],T=CS3D[R.d3];return T.half?(ei<R.d3n?'First half':'Second half')+' \u00b7 target '+(ei<R.d3n?ei+1:ei-R.d3n+1)+' of '+R.d3n:'Target '+(ei+1)+' of '+R.ends};
 try{for(const x of[...(S.casual||[]),...(S.sessions||[]),...(S.matches||[])])cs3dReg(x&&x.round)}catch(e){}
 /* face for end ei: the same faceR / face3R the main scorer uses (indoor always on a 3-spot) */
 function csFace(cs,ei){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F))return cs.face3=='single'&&cs.round==AUSI?F:face3R(F,{face3:cs.face3=='vegas'?'vegas':'vert'});return F}
@@ -228,12 +233,13 @@ function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const firs
  first.querySelectorAll('[data-cstp]').forEach(b=>b.onclick=()=>{window._csMode=b.dataset.cstp=='solo'?null:b.dataset.cstp;score();if(b.dataset.cstp=='league'){const l=$('#lgcard');if(l)l.scrollIntoView({block:'start'})}})}
 function csEntryCard(cs){const R=csR(cs),ids=cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id));if(!ids.length||csLocked(cs)||cs.fin)return'';
  const a0=window._csAct&&ids.includes(window._csAct)?window._csAct:null,a=a0||ids.find(id=>!csDoneP(cs,id))||ids[0],e=csEnt(cs,a)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<R.ape?last:[],done=csDoneP(cs,a);
- const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),K=csKeys(cs,en-1),F=csFace(cs,en-1);
+ const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),F=csFace(cs,en-1),nA=csAbaN(cs,en-1),sg=nA>1?Math.min(csStg(cs,a,en-1),nA-1):0,K=nA?[...csKeys(cs,en-1).slice(3*sg,3*sg+3),'M']:csKeys(cs,en-1);
  return`<div class="card" id="csentry"><span class="kicker">Score card</span>${ids.length>1?`<div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const r=csRow(cs,id);return`<button class="lc-chip${id==a?' on':''}" data-csid="${esc(id)}">${esc(r.nm)} <span class="small">${r.done?'finished':r.n+'/'+R.ends}</span></button>`}).join('')}</div>`:''}
- <p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
+ <p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
+ ${done||!nA?'':`<p style="margin:4px 0" id="csabaarrow"><b>Arrow ${sg+1}</b>${sg?' \u00b7 arrow '+sg+' missed':''}</p><p class="small muted" style="margin:0 0 4px">${nA>1?'Tap the score of your first arrow to hit. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0).'}</p>`}
  ${done?'':`<div class="vg-slots">${Array.from({length:R.ape},(_,j)=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
- <div class="ad-pad lc-pad" style="--cols:${K.length>8?Math.ceil(K.length/2):K.length};margin-top:8px">${K.map(k=>`<button class="${csKcol(cs,k)}" data-csk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}
- <button class="btn ghost" id="csundo" style="margin-top:6px" ${csEnds(cs,a).length?'':'disabled'}>Undo last arrow</button></div>`}
+ <div class="ad-pad lc-pad" style="--cols:${K.length>8?Math.ceil(K.length/2):K.length};margin-top:8px">${K.map(k=>`<button class="${csKcol(cs,k)}" data-csk="${k}" aria-label="score ${k}">${k=='M'&&nA?(sg<nA-1?'Miss':'Miss (0)'):k}</button>`).join('')}</div>`}
+ <button class="btn ghost" id="csundo" style="margin-top:6px" ${csEnds(cs,a).length||sg?'':'disabled'}>${nA?'Undo':'Undo last arrow'}</button></div>`}
 function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=null;$('#tabs').hidden=false;const me=csMe(),host=csHost(cs),R=csR(cs),fin=csFin(cs),rows=cs.ppl.map(p=>csRow(cs,p.id)),m=cs.mp&&cs.mp.on&&cs.mp.seeds?csMatchSync(cs):null;
  if(cs.status=='invite'){app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot</span><h1>${esc(cs.name)}</h1><p class="small">${esc(testerName(cs.host))} added you. Tap Join on your Score tab.</p></div></div>`;return}
  const mpOk=cs.ppl.length>=2,seedsN=csSeeds(cs).length,lad=m&&window.suLadder?suLadder(m):[],mpDone=lad.length&&lad[lad.length-1].res.winner;
@@ -259,8 +265,10 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  const q=s=>app.querySelector(s);if(q('#csfix'))q('#csfix').ontoggle=()=>{window._csFix=q('#csfix').open};
  app.querySelectorAll('[data-csid]').forEach(b=>b.onclick=()=>{window._csAct=b.dataset.csid;csView(code)});
  const act=q('#csentry .lc-chip.on')?q('#csentry .lc-chip.on').dataset.csid:(cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id))[0]);
- app.querySelectorAll('[data-csk]').forEach(b=>b.onclick=()=>{window._csAct=act;csKey(code,act,b.dataset.csk)});
- if(q('#csundo'))q('#csundo').onclick=()=>{window._csAct=act;csUndo(code,act)};
+ app.querySelectorAll('[data-csk]').forEach(b=>b.onclick=()=>{window._csAct=act;const E0=csEnds(cs,act),ei=E0.length,nA=csAbaN(cs,ei),sg=nA>1?csStg(cs,act,ei):0;
+  if(nA>1&&b.dataset.csk=='M'&&sg<nA-1){window._csStg={k:csStgKey(cs,act,ei),s:sg+1};csView(code);return}
+  window._csStg=null;csKey(code,act,b.dataset.csk)});
+ if(q('#csundo'))q('#csundo').onclick=()=>{window._csAct=act;const ei=csEnds(cs,act).length,sg=csAbaN(cs,ei)>1?csStg(cs,act,ei):0;if(sg){window._csStg={k:csStgKey(cs,act,ei),s:sg-1};csView(code);return}window._csStg=null;csUndo(code,act)};
  if(q('#csyes'))q('#csyes').onclick=()=>{if(!csMpStart(code))q('#csmpmsg').textContent='Needs 2 or more archers with scores.';csView(code)};
  if(q('#csnot'))q('#csnot').onclick=()=>{csMpDismiss(code);csView(code)};
  app.querySelectorAll('[data-csmpt]').forEach(b=>b.onclick=()=>{const on=b.dataset.csmpt=='on';if(!on&&m&&lad.some(x=>x.res.live)&&!confirm('Switch match play off? Its scores are cleared.'))return;if(!csMpSetup(code,on)){q('#csmpmsg').textContent='Needs 2 or more archers with scores.';return}csView(code)});
