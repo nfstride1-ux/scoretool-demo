@@ -29,6 +29,9 @@ with sync_playwright() as p:
   chk('text forms',P("18m 32.35\n20 m: 33.10\n30, 38.15, 1.5\n40m\t44.25\n50yd 40.00\n")=={'18m':{'v':'32.35','h':''},'20m':{'v':'33.10','h':''},'30m':{'v':'38.15','h':'1.5'},'40m':{'v':'44.25','h':''},'50yd':{'v':'40.00','h':''}})
   chk('headings, spec rows and words skipped',P("Range (m)   Sight Mark\nMark 1             38.15\nSight-In Range 1   30m\nSight Height 3.93in\n2   66.50   46   48.15   90   80.75\n")=={'2m':{'v':'66.50','h':''},'46m':{'v':'48.15','h':''},'90m':{'v':'80.75','h':''}})
   chk('CSV with header and empty vertical',P('Distance,Vertical,Horizontal\n18m,32.35,\n"20m","33.10","0.5"\n25,,1.5\n')=={'18m':{'v':'32.35','h':''},'20m':{'v':'33.10','h':'0.5'},'25m':{'v':'','h':'1.5'}})
+  chk('semicolon CSV with decimal commas (spreadsheet in a comma-decimal region)',P('Distance;Vertical;Horizontal\n18m;32,35;\n20m;33,10;0,5\n30\t38,15\t1,5\n')=={'18m':{'v':'32.35','h':''},'20m':{'v':'33.10','h':'0.5'},'30m':{'v':'38.15','h':'1.5'}})
+  chk('comma CSV with quoted decimal commas',P('20,"18,5","0,5"\n30,"21,25",\n')=={'20m':{'v':'18.5','h':'0.5'},'30m':{'v':'21.25','h':''}})
+  chk('comma CSV with dots unchanged',P('40,44.25,1\n50,48.10,\n')=={'40m':{'v':'44.25','h':'1'},'50m':{'v':'48.10','h':''}})
   chk('values kept exactly (no rounding)',P("13 100.050\n")=={'13m':{'v':'100.050','h':''}})
   # PDF read in the page, offline
   ctx.set_offline(True)

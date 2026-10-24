@@ -8,11 +8,17 @@ const NUM=/^[+-]?\d+(?:\.\d+)?$/;
 /* ---------- text / CSV ---------- */
 function unitOf(u){u=(u||'').toLowerCase();return /^(y|yd|yds|yard|yards)$/.test(u)?'yd':'m'}
 function distKey(n,u){const v=parseFloat(n);if(!(v>0)||v>300)return null;return String(+v)+unitOf(u)}
+/* CSV cells. A line with ; or a tab is split on those only, so a comma there is a decimal comma (18,5 = 18.5, as spreadsheets set to a
+   comma-decimal region save it). A comma line splits on commas outside quotes; a quoted "18,5" is a decimal comma too. */
+function splitCSV(line){const semi=/[;\t]/.test(line),out=[];let cur='',q=false,wq=false;
+ const push=()=>{let x=cur.trim();if((semi||wq)&&/^[+-]?\d+,\d+$/.test(x))x=x.replace(',','.');out.push(x);cur='';wq=false};
+ for(const ch of line){if(ch=='"'){q=!q;wq=true;continue}if(!q&&(semi?(ch==';'||ch=='\t'):ch==',')){push();continue}cur+=ch}
+ push();return out}
 /* one line -> [[dist,v,h?],...]. Lines that start with a word (headings, "Sight Height 3.93in", "Mark 1 38.15") are skipped. */
 function parseLine(line){
  line=line.replace(/\u00a0/g,' ').trim();if(!line)return[];
  if(/[,;\t]/.test(line)){ /* CSV / spreadsheet: distance, vertical, horizontal (empty cells kept in place) */
-  const c=line.split(/\s*[,;\t]\s*/).map(x=>x.replace(/^"|"$/g,'').trim());
+  const c=splitCSV(line);
   const m0=c[0].match(/^(\d+(?:\.\d+)?)\s*(m|y|yd|yds|yards?|metres?|meters?)?$/i);if(!m0)return[];
   if(c.length>=4&&c.every((x,i)=>i%2?NUM.test(x):/^\d+(?:\.\d+)?\s*(m|yd)?$/i.test(x)))return pairs(c); /* several columns of pairs */
   const v=c[1]||'',h=c[2]||'';if(v&&!NUM.test(v))return[];if(h&&!NUM.test(h))return[];if(!v&&!h)return[];
