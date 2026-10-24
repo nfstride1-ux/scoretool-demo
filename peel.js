@@ -32,13 +32,19 @@ function pgHit(d,j,z){const x=d.a[j];if(!x)return false;const s=x.s,R=pgR(),A=s.
  else{const k=t.m+1,p=abaPts(n,k,z);if(p==null)return false;s.ends[i]=[String(p)];t.k=k;t.z=z}
  const fin=s.ends[i].length>0;if(fin&&s.ends.length<R.ends&&s.ends.length==i+1)s.ends.push([]);
  if(pgN(s)>=R.ends){s.finished=true;if(!s.ends[s.ends.length-1].length)s.ends.pop()}
- if(fin)d.at=pgNext(d,j);save();return fin}
+ if(fin){d.at=pgNext(d,j);/* hold on the archer just scored until Next is tapped (the group card moves on only then); no hold when the card stays on the same archer */
+  if(d.at!=j)d.hold=j;else delete d.hold}save();return fin}
 /* after a target is scored, the card moves to the next archer still on the lowest target (group order), like a chip switcher */
 function pgNext(d,j){const L=d.a.length;let best=j,bn=Infinity;for(let k=1;k<=L;k++){const q=(j+k)%L,s=d.a[q].s;if(pgDone(s))continue;const n=pgN(s);if(n<bn){bn=n;best=q}}return best}
-function pgUndo(d,j){const s=d.a[j].s,A=s.aba=s.aba||[];let i=pgIdx(s);const t=A[i];s.finished=false;
+function pgUndo(d,j){const s=d.a[j].s,A=s.aba=s.aba||[];let i=pgIdx(s);const t=A[i];s.finished=false;if(d.hold!=null){delete d.hold;d.at=j}
  if(t&&t.m&&!(s.ends[i]||[]).length)t.m--;
  else{if(s.ends[i]&&!s.ends[i].length)s.ends.pop();i=s.ends.length-1;if(i<0){s.ends=[[]];save();return}s.ends[i]=[];if(A[i]){A[i].m=0;delete A[i].k;delete A[i].z}}
  if(!s.ends.length)s.ends=[[]];save()}
+/* Save the day: every archer's card for the day is complete. The scores are already stored on this phone as each target is scored (S.peel,
+   autosave); Save adds a dated record on the day (d.saved) with each archer's score as saved, and confirms it. Idempotent: it only ever writes
+   that one record on the day, so tapping it again just refreshes it. No session is added to anyone's own rounds. */
+const pgAllDone=d=>d.a.length>0&&d.a.every(x=>pgDone(x.s));
+function pgSave(d){if(!pgAllDone(d))return false;d.saved={at:Date.now(),a:d.a.map(x=>({nm:x.nm,tot:pgTot(x.s),n:pgN(x.s),h:abaHalves(x.s).map(o=>o.tot)}))};save();return true}
 /* event total for an archer, across days, matched by the typed name */
 function pgEvent(nm){const k=pgKey(nm);return pgEv().days.reduce((t,d)=>t+d.a.filter(x=>pgKey(x.nm)==k).reduce((u,x)=>u+pgTot(x.s),0),0)}
 function pgDaysOf(nm){const k=pgKey(nm);return pgEv().days.filter(d=>d.a.some(x=>pgKey(x.nm)==k)).length}
@@ -81,11 +87,14 @@ function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.leng
  $('#pgbk').onclick=()=>{window._pgSlots=null;pgHome()};scrollTo(0,0)}
 /* ---------- a day's card ---------- */
 function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pgDay(id)||E.days[E.days.length-1];E.open=d.id;cur=null;window._pgv=d.id;const tb=$('#tabs');if(tb)tb.hidden=false;
- const R=pgR(),j=Math.min(d.at||0,d.a.length-1),x=d.a[j],s=x.s,i=pgIdx(s),fin=pgDone(s),W=fin?null:abaWhere(R,i,s),n=W?W.n:1,t=(s.aba||[])[i]||{m:0},k=(t.m||0)+1,HS=abaHalves(s),run=pgRun(s),started=d.a.some(y=>pgN(y.s)||(y.s.aba[0]||{}).m);
+ const R=pgR(),hold=d.hold!=null&&d.a[d.hold]&&d.hold!==d.at?d.hold:null,j=hold!=null?hold:Math.min(d.at||0,d.a.length-1),nxj=Math.min(d.at||0,d.a.length-1),x=d.a[j],s=x.s,i=pgIdx(s),fin=pgDone(s),W=fin?null:abaWhere(R,i,s),n=W?W.n:1,t=(s.aba||[])[i]||{m:0},k=(t.m||0)+1,HS=abaHalves(s),run=pgRun(s),started=d.a.some(y=>pgN(y.s)||(y.s.aba[0]||{}).m);
  const view=window._pgSheet;
  const chips=`<div class="row pg-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:6px 0 8px">${d.a.map((y,q)=>`<button class="lc-chip pg-chip${q==j?' on':''}" data-pga="${q}" aria-pressed="${q==j}">${pgEsc(y.nm)} <span class="small">${pgDone(y.s)?'done ':'T'+(pgN(y.s)+1)+' · '}${pgTot(y.s)}</span></button>`).join('')}</div>`;
  const ZN=['A','B','C'],ZL={A:'Kill',B:'Vital',C:'Wound'};
- const pad=fin?`<p id="pgfin" style="margin:6px 0"><b>${pgEsc(x.nm)}: round complete, ${pgTot(s)}</b> (${HS.map((o,h)=>abaHalfName(h,HS.length).toLowerCase()+' '+o.tot).join(' + ')}).</p>`:`
+ const tgt=(y)=>{const l=[...y.s.ends.keys()].filter(q=>y.s.ends[q]&&y.s.ends[q].length).pop();return l==null?null:{n:l+1,v:val(y.s.ends[l][0])}};
+ const sheetNow=`<div id="pglive" style="margin-top:10px"><span class="kicker">Your sheet so far · ${pgEsc(x.nm)}</span>${window.abaGrid?window.abaGrid(s,false,fin?-1:i):''}</div>`;
+ const lt=tgt(x),pad=hold!=null?`<div id="pghold" style="margin:6px 0"><div class="list-item" style="border-left:4px solid #ffd84d;padding-left:8px"><b>${pgEsc(x.nm)}</b>: target ${lt?lt.n:''} of ${R.ends} scored <b>${lt?lt.v:''}</b>${pgDone(s)?' (round complete)':''}. Check the sheet below, then tap Next.</div>
+ <button class="btn full" id="pgnext" style="margin-top:8px;min-height:56px;font-size:18px">Next: ${pgEsc(d.a[nxj].nm)} <span aria-hidden="true">&rsaquo;</span></button></div>`:fin?`<p id="pgfin" style="margin:6px 0"><b>${pgEsc(x.nm)}: round complete, ${pgTot(s)}</b> (${HS.map((o,h)=>abaHalfName(h,HS.length).toLowerCase()+' '+o.tot).join(' + ')}).</p>`:`
  <div class="small muted" id="pghalf">${W.n>1?'3-arrow half':'1-arrow half'}${s.abaClub&&W.h==0?' (club rule)':''} · target ${i+1} of ${R.ends} in the round</div>
  <div class="row" style="justify-content:space-between;align-items:flex-end;margin:2px 0 6px"><b style="font-size:24px" id="pgtg"><span style="font-size:15px">${abaHalfName(W.h,HS.length)} · </span>Target ${W.tn} of ${W.H.t}</b><b id="pgarrow">Arrow ${k}${n>1&&k>1?` <span class="small muted">(arrow ${k-1} missed)</span>`:''}</b></div>
  <div class="aba-pad" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${ZN.map(z=>`<button class="aba-z" data-pgz="${z}" style="min-height:60px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:${z=='A'?'#ffd84d':z=='B'?'#3b82f6':'#334155'};color:${z=='A'?'#111':'#fff'}">${abaPts(n,k,z)}<div style="font-size:11px;font-weight:700">${ZL[z]} ${z}</div></button>`).join('')}<button class="aba-z" data-pgz="M" style="min-height:60px;font-size:18px;font-weight:800;border-radius:12px;border:0;background:#64748b;color:#fff">Miss<div style="font-size:11px;font-weight:700">${n>1&&k<n?'next arrow':'0'}</div></button></div>`;
@@ -97,21 +106,25 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  <div class="card" id="pgcardx"><span class="kicker">Scoring</span>${chips}
  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:20px" id="pgwho">${pgEsc(x.nm)}</b><div style="text-align:right"><span class="small muted">Day total</span> <b style="font-size:24px;color:var(--gold)" id="pgdaytot">${pgTot(s)}</b></div></div>
  ${!started?`<label class="small muted" id="pgclubl" style="display:flex;align-items:center;gap:6px;margin:2px 0 4px;padding:0;font-size:12px;font-weight:400;min-height:0"><input type="checkbox" id="pgclub" ${s.abaClub?'checked':''} style="width:16px;height:16px;min-height:0;min-width:0;margin:0;padding:0;flex:none;accent-color:#ffd84d"> Club rule: first half 1 arrow (whole group)</label>`:s.abaClub?'<div class="small muted" id="pgclubon" style="font-size:12px;margin:0 0 4px">Club rule on: both halves 1 arrow.</div>':''}
- ${pad}${runL}
+ ${pad}${sheetNow}${runL}
  <div class="small muted" id="pghalves" style="margin-top:6px">${HS.map((o,h)=>`${abaHalfName(h,HS.length)}: <b>${o.tot}</b> (${abaBlocks(o.H.t).map(b=>b.from+'-'+b.to+': '+o.sub[b.q]).join(', ')})`).join(' · ')}</div>
  <div class="row" style="gap:8px;justify-content:flex-start;margin-top:10px"><button class="btn ghost" id="pgundo" ${pgN(s)||t.m?'':'disabled'}>Undo</button></div></div>
  <div class="card" id="pgtotals"><span class="kicker">Totals</span><table class="pg-tab"><thead><tr><th>Archer</th><th>Targets</th><th>Block</th><th>Day</th><th>Event</th><th></th></tr></thead><tbody>${rows}</tbody></table>
  <p class="small muted" style="margin:6px 0 0">Block = running total for the 10-target block in progress. Event = Day 1 + Day 2 (matched by name).</p></div>
  <div class="card" id="pgevent"><span class="kicker">Event total · all days</span>${pgEvTable()}</div>
+ ${pgAllDone(d)?`<div class="card" id="pgsavecard"><span class="kicker">Day ${pgDayNo(d)} complete</span><h3 style="margin:2px 0 6px">All targets are scored</h3>${d.saved?`<div class="list-item" id="pgsaved" style="border-left:4px solid #ffd84d;padding-left:8px"><b>Saved.</b> Day ${pgDayNo(d)} scores for ${d.saved.a.map(y=>pgEsc(y.nm)+' '+y.tot).join(', ')} are saved on this phone (${pgEsc(new Date(d.saved.at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}))}). Find them any time on the Score tab: ${PG_NAME}, Day ${pgDayNo(d)}, Open. Tap Sheet beside an archer for their full score sheet, or Event totals for both days.</div>`:`<p class="small" style="margin:0 0 6px">Scores are saved on this phone as you go. Tap Save to keep a final copy of the day for all ${d.a.length} archer${d.a.length>1?'s':''}.</p>`}
+ <button class="btn${d.saved?' ghost':''} full" id="pgsave" style="margin-top:8px;min-height:52px;font-size:17px">${d.saved?'Saved. Tap to save again':'Save Day '+pgDayNo(d)}</button></div>`:''}
  ${sheet}
  <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><button class="btn${E.days.length>=2?' ghost':''}" id="pgnew">Start Day ${E.days.length+1}</button><button class="btn ghost" id="pgdel">Delete Day ${pgDayNo(d)}</button></div></div></div>`;
  const rr=()=>pgView(d.id);
- app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;save();rr()});
+ app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;delete d.hold;save();rr()});
+ const nb=$('#pgnext');if(nb)nb.onclick=()=>{delete d.hold;save();rr();scrollTo(0,0)};
  app.querySelectorAll('[data-pgz]').forEach(b=>b.onclick=()=>{pgHit(d,j,b.dataset.pgz);rr()});
  app.querySelectorAll('[data-pgday]').forEach(b=>b.onclick=()=>{window._pgSheet=null;pgView(b.dataset.pgday)});
  app.querySelectorAll('[data-pgsh]').forEach(b=>b.onclick=()=>{window._pgSheet=+b.dataset.pgsh;rr();const e=$('#pgsheet');if(e&&e.scrollIntoView)e.scrollIntoView()});
  const cb=$('#pgclub');if(cb)cb.onchange=()=>{pgClub(d,cb.checked);rr()};
  const u=$('#pgundo');if(u)u.onclick=()=>{pgUndo(d,j);rr()};
+ const sv=$('#pgsave');if(sv)sv.onclick=()=>{pgSave(d);rr();const e=$('#pgsaved');if(e&&e.scrollIntoView)e.scrollIntoView()};
  const sh=$('#pgshare');if(sh)sh.onclick=()=>{if(window.shareSheet)shareSheet(d.a[view].s)};
  const sx=$('#pgshx');if(sx)sx.onclick=()=>{window._pgSheet=null;rr()};
  $('#pgnew').onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
@@ -119,5 +132,5 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  $('#pgbk').onclick=()=>{window._pgSheet=null;pgHome()};
  $('#pgdel').onclick=()=>{if(!confirm(`Delete day ${pgDayNo(d)} of ${PG_NAME}? Its scores are removed from this phone.`))return;E.days=E.days.filter(y=>y!==d);E.open=E.days.length?E.days[E.days.length-1].id:null;window._pgSheet=null;save();E.days.length?pgView(E.open):pgSetup()}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pgcard [data-pgcday],#pgcard [data-pgcnew]');if(!b)return;window._pgSheet=null;window._pgSlots=null;b.dataset.pgcday?pgView(b.dataset.pgcday):pgSetup()});
-Object.assign(window,{pgEvRows,PG_DATES,pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
+Object.assign(window,{pgSave,pgAllDone,pgEvRows,PG_DATES,pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
 })();
