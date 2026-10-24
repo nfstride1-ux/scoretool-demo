@@ -59,7 +59,7 @@ const HELP_GUIDES=[
   '<b>Leagues</b>: join with a code or start one. Scoring only yourself, you get the target face to plot your arrows.',
   '<b>Match play</b>: head-to-head on two phones, and shoot-ups.',
   '<b>Group score card</b>: score your whole group on one phone.',
-  'On the State Titles group card, the full sheet of the archer you are scoring sits under the score buttons. After the last arrow of a target the card stays on that archer so you can check the sheet, then tap <b>Next</b> to move on. <b>Undo</b> still takes the last target back. When every target is scored, tap <b>Save</b> to keep the day. It is kept on this phone: Score tab, ABA State Titles at Peel, Day, <b>Open</b>.',
+  'On the State Titles group card, the full sheet of the archer you are scoring sits under the score buttons. After the last arrow of a target the card stays on that archer so you can check the sheet, then tap <b>Next</b> to move on. <b>Undo</b> still takes the last target back. When every target is scored, tap <b>Save</b> to keep the day. It is kept on this phone: Clubs, Group score card, ABA State Titles at Peel, Day 1 or Day 2, <b>Open</b>.',
   '<b>Following</b>: archers you follow and their feed.']},
  {id:'tools',i:'wrench',t:'Tools',shot:'tools',steps:[
   '<b>Arrow optimizer &amp; tuning</b>: plot groups before and after a change.',

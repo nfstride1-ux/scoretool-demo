@@ -1,8 +1,8 @@
 /* 'Field Red' is the round name some events used in official results; it is kept apart from 'WA Field 24Mk Red' (stored data unchanged),
    but listed right after it and labelled so the two aren't mistaken for duplicates. */
 const FRD=rs=>{if(!rs.includes('Field Red')||!rs.includes('WA Field 24Mk Red'))return rs;const o=rs.filter(r=>r!='Field Red');o.splice(o.indexOf('WA Field 24Mk Red')+1,0,'Field Red');return o};
-const FRL=(r,rs)=>r=='Field Red'&&rs.includes('WA Field 24Mk Red')?"Field Red \u00b7 event's own round name":r;
-const FRN=(r,rs)=>(r=='Field Red'||r=='WA Field 24Mk Red')&&rs.includes('Field Red')&&rs.includes('WA Field 24Mk Red')?`<p class="small muted" style="margin:6px 0 0">${r=='Field Red'?"These results were entered under the event's own round name, Field Red, so they're kept separate from WA Field 24Mk Red. The results don't say whether every target was marked.":'Some field results were entered under the event\'s own round name, Field Red. They are listed separately, just below this round.'}</p>`:'';
+window.FRD=FRD;const FRL=(r,rs)=>r=='Field Red'&&rs.includes('WA Field 24Mk Red')?"Field Red \u00b7 event's own round name":r;
+window.FRL=FRL;const FRN=(r,rs)=>(r=='Field Red'||r=='WA Field 24Mk Red')&&rs.includes('Field Red')&&rs.includes('WA Field 24Mk Red')?`<p class="small muted" style="margin:6px 0 0">${r=='Field Red'?"These results were entered under the event's own round name, Field Red, so they're kept separate from WA Field 24Mk Red. The results don't say whether every target was marked.":'Some field results were entered under the event\'s own round name, Field Red. They are listed separately, just below this round.'}</p>`:'';
 /* Stats, rebuilt (Oct 2026): ONE round picker + ONE shoot picker at the top drive every card, from ONE list of shoots
    (official scoresheets + app sessions). Up front: Last shoot, How you're going, PB, Score history. Everything else sits behind
    'More detail'. Incomplete rounds (official sheets marked not finished, or app sessions with fewer ends than the round)
