@@ -35,7 +35,7 @@ const HELP_GUIDES=[
   'After you finish, tap <b>Add a photo</b> if you like, or <b>Skip</b>. Change or remove it later in Past sessions.',
   'At the end of a round, under the score, you see how this shoot compares with your earlier shoots of the same round: score vs your average and PB, score by end, Xs and 10s, and your arrow plot vs your usual group. <b>Open</b> in Past sessions shows the same view.',
   'Tap <b>Finish session</b> when you are done. Your arrows are already saved as you go, so this only closes the round.',
-  'Linked to Archery Calendar? Finished rounds show in your My events. Older rounds have a <b>Send</b> button: pick the event, or <b>None of these</b>.']},
+  'Linked to Archery Calendar? Finished rounds show in your My events. Older rounds have a <b>Send</b> button: pick the event, or <b>None of these</b>. The one-time card that offers to link your calendar waits until you are not scoring, so it never covers the target.']},
  {id:'stats',i:'bars',t:'Stats and analysis',shot:'stats',steps:[
   'Tap <b>My archery</b>, then <b>Stats &amp; PBs</b>.',
   'Pick a round to see your last shoot, trend and personal bests.',

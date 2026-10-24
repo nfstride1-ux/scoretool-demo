@@ -39,7 +39,9 @@ try:
   P.evaluate("cur=null;sv='sheet';nav('score')");P.wait_for_timeout(400);P.click('#pgopen');P.wait_for_timeout(300)
   for i,n in enumerate(['Kim','Raj','Lee']):P.fill(f'#pgn{i}',n)
   P.click('#pggo');P.wait_for_timeout(300)
-  for z in ['A','M','B','C','M','M','M','A']:P.click(f'[data-pgz="{z}"]');P.wait_for_timeout(100)
+  for z in ['A','M','B','C','M','M','M','A']:
+   if P.locator('#pgnext').count():P.click('#pgnext');P.wait_for_timeout(100)  # the card holds on the archer just scored until Next is tapped
+   P.click(f'[data-pgz="{z}"]');P.wait_for_timeout(100)
   t=[P.evaluate(f"pgTot(pgEv().days[0].a[{j}].s)") for j in range(3)]
   chk('offline: score a group on the Peel card',t==[20,32,16])
   P.evaluate('window.scrollTo(0,0);document.querySelectorAll("*").forEach(e=>{if(e.scrollTop)e.scrollTop=0})')
@@ -52,6 +54,7 @@ try:
   Q.close()
   # ---------- back online: a new deploy still updates ----------
   cx.set_offline(False)
+  P.reload(wait_until='load');P.wait_for_timeout(2500)  # the page was reloaded while offline, so it has not yet noted the deployed version; a fresh online load does
   V1=V0+'-next';subprocess.run([sys.executable,os.path.join(APP,'tools','build_sw.py'),V1],check=True,stdout=subprocess.DEVNULL)
   P.evaluate("window.__checkUpdate&&window.__checkUpdate()");P.wait_for_timeout(1500)
   P.evaluate("navigator.serviceWorker.getRegistration().then(r=>r&&r.update())");P.wait_for_timeout(3500)

@@ -52,7 +52,7 @@ async function tick(){let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked|
 }catch(e){}finally{state.busy=false}return k}
 setInterval(tick,4000);addEventListener('online',tick);setTimeout(tick,1500);
 /* once only, never in the way: a small card after a round is finished, if not linked */
-function scoringNow(){try{return typeof cur!='undefined'&&!!cur&&typeof isDone=='function'&&!isDone(cur)&&view=='score'}catch(e){return false}}
+function scoringNow(){try{if(document.querySelector('#cspface,#csentry,[data-csk],[data-lgk]'))return true;return typeof cur!='undefined'&&!!cur&&typeof isDone=='function'&&!isDone(cur)&&view=='score'}catch(e){return false}}
 setInterval(()=>{const d=document.getElementById('calPrompt');if(d&&scoringNow())d.remove()},500);
 function maybePrompt(force){if(!force&&get('prompted')||scoringNow()||document.getElementById('calPrompt')||document.getElementById('leaveov')||(!force&&document.querySelector('[role=dialog],[aria-modal=true]')))return;put('prompted',1);
  const d=document.createElement('div');d.id='calPrompt';d.className='calprompt';d.setAttribute('role','status');

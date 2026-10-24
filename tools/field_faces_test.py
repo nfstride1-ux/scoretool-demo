@@ -48,10 +48,10 @@ with sync_playwright() as p:
     pg.click('[data-fface="20"]'); pg.wait_for_timeout(200)
     chk('20cm snaps 35->15 blue marked',E('cur.ff[1].d')==15)
     chk('20cm column has 3 spots',pg.evaluate('document.querySelectorAll("#pface circle").length')>=18)
-    box=pg.locator('#pface').bounding_box()
     vb=E('(()=>{const v=document.querySelector("#pface").viewBox.baseVal;return {x:v.x,y:v.y,width:v.width,height:v.height}})()')
     def tap(x,y):
         # convert face coords to screen with preserveAspectRatio meet
+        box=pg.locator('#pface').bounding_box()  # re-measured each tap: the hint line above the face can wrap and move it a few px
         sc=min(box['width']/vb['width'],box['height']/vb['height']); ox=box['x']+(box['width']-vb['width']*sc)/2; oy=box['y']+(box['height']-vb['height']*sc)/2
         pg.mouse.click(ox+(x-vb['x'])*sc, oy+(y-vb['y'])*sc); pg.wait_for_timeout(150)
     tap(0,-0.62); tap(0.045,0.0); tap(0,0.62+0.3*0.5)

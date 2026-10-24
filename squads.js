@@ -34,7 +34,7 @@ function memberStats(m){if(m.sample)return m;const real=realFor(m.name).filter(r
  const last=real[real.length-1];const dm=arrowDays(m.name);const goal=(m.name==S.profile&&S.goal)||300;let st=0;for(let k=0;k<400;k++){const d=new Date(Date.now()-k*864e5).toLocaleDateString('en-CA');if((dm[d]||0)>=goal)st++;else if(k>0)break}
  const vbl=earnedBadges(m.name).map(b=>[hexIcon(b,1),b.name,b.on]),vb=vbl.filter(x=>x[2]).length;
  return{...m,wk,streak:st,badges:vb,blist:vbl,impr:avg?+((lastR-avg)/avg*100).toFixed(1):0,last:last?normDate(last.date):null,raw:last?[[normDate(last.date),last.round,last.score,'official']]:[]}}
-const VER={official:'<span class="real">✓ verified · Archer\'s Diary</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
+const VER={official:'<span class="real">✓ verified · official result</span>',plot:'<span class="real">✓ verified · plotted</span>',keypad:'<span class="sample">self-logged</span>'};
 function feed(Ms){const F=[];Ms.forEach(m=>{const n=shortName(m.name),R=realFor(m.name).filter(r=>!r.incomplete);
  const last=R[R.length-1];if(last){const prev=R.slice(0,-1).filter(r=>r.round==last.round&&r.division==last.division),pb=prev.length&&last.score>Math.max(...prev.map(r=>r.score));
   F.push({id:m.id+'s'+normDate(last.date)+last.round,date:normDate(last.date),who:m,pb,html:pb?`<b>${esc(n)}</b> set a <b style="color:var(--gold)">NEW CEILING</b> · ${last.score} PB`:`<b>${esc(n)}</b> shot <b>${last.score}</b>`,sub:`${esc(last.round)} · official`,ver:'official'})}
