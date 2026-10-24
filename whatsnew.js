@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+ {v:'v2026-10-24-0946-abatotals',d:'2026-10-24',items:[
+  ['target','ABA totals on the card',"The casual 3D ABA card now shows the same running totals as the Just me ABA scorer: your total, the most you can still score, each half with its 10-target blocks, and your last target with the running total for its block. When the shoot is done the same totals show under the scores. Your saved scores are not changed.",'this release']]},
  {v:'v2026-10-24-0939-abafix',d:'2026-10-24',items:[
-  ['target','3D ABA scoring, one arrow at a time',"In a casual 3D shoot with the ABA 3-arrow and 1-arrow rounds (for example State Titles day one: 40 targets 3-arrow, then 40 targets 1-arrow), the card now works like the Just me ABA scorer. It shows the half and the target number, then Arrow 1 with 20, 18, 16 and Miss. Tap Miss and it moves to arrow 2 (14, 12, 10), then arrow 3 (8, 6, 4). The first arrow to score counts. Undo steps back one arrow, then one target. Totals and the 20s and 18s counts are the same as before, and your saved scores are not changed.",'this release']]},
+  ['target','3D ABA scoring, one arrow at a time',"In a casual 3D shoot with the ABA 3-arrow and 1-arrow rounds (for example State Titles day one: 40 targets 3-arrow, then 40 targets 1-arrow), the card now works like the Just me ABA scorer. It shows the half and the target number, then Arrow 1 with 20, 18, 16 and Miss. Tap Miss and it moves to arrow 2 (14, 12, 10), then arrow 3 (8, 6, 4). The first arrow to score counts. Undo steps back one arrow, then one target. Totals and the 20s and 18s counts are the same as before, and your saved scores are not changed.",'6ab79ad']]},
  {v:'v2026-10-24-0815-sightcard2',d:'2026-10-24',items:[
   ['card','New sight card design',"The printed sight card now looks like a business card: the Archery Calendar header with a gold line, then your marks on the front and your bow settings on the back. Same size, same printing: 100% (Actual size), double-sided.",'6951fa1']]},
  {v:'v2026-10-24-0750-sightcard',d:'2026-10-24',items:[

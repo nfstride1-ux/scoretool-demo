@@ -24,6 +24,7 @@ const HELP_GUIDES=[
   'Tap <b>Score</b>, then <b>Casual shoot</b>.',
   'Pick the discipline: Target, Indoor, Field or <b>3D</b>.',
   'For 3D, pick ABA, IBO or ASA scoring and how many targets.',
+  'In ABA 3D, tap the score of the first arrow to hit. Tap <b>Miss</b> only if it missed, then score the next arrow. The card shows each half, each 10 targets, and the most you can still score.',
   'Add 1 to 10 people. Linked archers score on their own phone.',
   'Match play is optional, at the start or after the shoot.']},
  {id:'past',i:'camera',t:'Past sessions, photos and Archery Calendar',shot:null,steps:[

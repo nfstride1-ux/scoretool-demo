@@ -49,6 +49,14 @@ const cs3dCol=(cs,k)=>{const T=cs3d(cs),i=T.k.indexOf(k),c=k=='M'||i<0?'m':T.c[i
 const csAbaN=(cs,ei)=>{const R=ROUNDS[cs.round],T=R&&R.d3?CS3D[R.d3]:null;if(!T||T.o!='ABA')return 0;return T.half?(ei<R.d3n?3:1):cs3dPer(R.d3)};
 const csStgKey=(cs,id,ei)=>cs.code+'|'+id+'|'+ei,csStg=(cs,id,ei)=>window._csStg&&window._csStg.k==csStgKey(cs,id,ei)?window._csStg.s:0;
 const csAbaHalf=(cs,ei)=>{const R=ROUNDS[cs.round],T=CS3D[R.d3];return T.half?(ei<R.d3n?'First half':'Second half')+' \u00b7 target '+(ei<R.d3n?ei+1:ei-R.d3n+1)+' of '+R.d3n:'Target '+(ei+1)+' of '+R.ends};
+/* Same running totals as the Just me ABA scorer: per half, per 10-target block, and the most still possible (20 a target). Display only. */
+function csAbaSum(cs,id){const R=ROUNDS[cs.round],E=csEnds(cs,id),sz=R.d3&&CS3D[R.d3].half?[R.d3n,R.ends-R.d3n]:[R.ends],V=E.map(e=>e.length?csV(e[0]):null);let i0=0;
+ const H=sz.map(t=>{const v=[...Array(t)].map((_,j)=>V[i0+j]===undefined?null:V[i0+j]);i0+=t;let run=0;const rn=v.map((x,j)=>{if(j%10==0)run=0;return x==null?null:(run+=x)});
+  const sub=[];for(let b=0;b<t;b+=10)sub.push({from:b+1,to:Math.min(t,b+10),s:v.slice(b,b+10).reduce((a,x)=>a+(x||0),0)});return{t,v,rn,sub,tot:v.reduce((a,x)=>a+(x||0),0)}});
+ const done=V.filter(x=>x!=null).length,tot=H.reduce((a,o)=>a+o.tot,0);return{H,tot,max:tot+(R.ends-done)*20,done,li:V.map((x,j)=>x==null?-1:j).filter(j=>j>=0).pop()}}
+function csAbaTotHtml(cs,id){const R=ROUNDS[cs.round],S3=csAbaSum(cs,id),two=S3.H.length>1,nm=h=>two?(h?'Second half':'First half'):'Round';let last='';
+ if(S3.li!=null){let h=0,j=S3.li;while(h<S3.H.length-1&&j>=S3.H[h].t){j-=S3.H[h].t;h++}const o=S3.H[h],b=Math.floor(j/10),v=o.v[j];last=`<div class="list-item" id="csabalast" style="margin:4px 0">Last: ${nm(h).toLowerCase()} target ${j+1} scored <b>${v}</b>${v?'':' (no score)'} \u00b7 running total for targets ${o.sub[b].from}-${o.sub[b].to} <b>${o.rn[j]}</b></div>`}
+ return`<p class="small" style="margin:4px 0" id="csabatot">Total <b>${S3.tot}</b> \u00b7 most still possible <b>${S3.max}</b> of ${R.ends*20}</p><div class="small muted" id="csabahalves">${S3.H.map((o,h)=>`${nm(h)}: <b>${o.tot}</b> (${o.sub.map(b=>b.from+'-'+b.to+': '+b.s).join(', ')})`).join(' \u00b7 ')}</div>${last}`}
 try{for(const x of[...(S.casual||[]),...(S.sessions||[]),...(S.matches||[])])cs3dReg(x&&x.round)}catch(e){}
 /* face for end ei: the same faceR / face3R the main scorer uses (indoor always on a 3-spot) */
 function csFace(cs,ei){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F))return cs.face3=='single'&&cs.round==AUSI?F:face3R(F,{face3:cs.face3=='vegas'?'vegas':'vert'});return F}
@@ -237,6 +245,7 @@ function csEntryCard(cs){const R=csR(cs),ids=cs.ppl.map(p=>p.id).filter(id=>csCa
  return`<div class="card" id="csentry"><span class="kicker">Score card</span>${ids.length>1?`<div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const r=csRow(cs,id);return`<button class="lc-chip${id==a?' on':''}" data-csid="${esc(id)}">${esc(r.nm)} <span class="small">${r.done?'finished':r.n+'/'+R.ends}</span></button>`}).join('')}</div>`:''}
  <p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
  ${done||!nA?'':`<p style="margin:4px 0" id="csabaarrow"><b>Arrow ${sg+1}</b>${sg?' \u00b7 arrow '+sg+' missed':''}</p><p class="small muted" style="margin:0 0 4px">${nA>1?'Tap the score of your first arrow to hit. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0).'}</p>`}
+ ${nA?csAbaTotHtml(cs,a):''}
  ${done?'':`<div class="vg-slots">${Array.from({length:R.ape},(_,j)=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:${K.length>8?Math.ceil(K.length/2):K.length};margin-top:8px">${K.map(k=>`<button class="${csKcol(cs,k)}" data-csk="${k}" aria-label="score ${k}">${k=='M'&&nA?(sg<nA-1?'Miss':'Miss (0)'):k}</button>`).join('')}</div>`}
  <button class="btn ghost" id="csundo" style="margin-top:6px" ${csEnds(cs,a).length||sg?'':'disabled'}>${nA?'Undo':'Undo last arrow'}</button></div>`}
@@ -257,6 +266,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot · ${esc(CS_DISC[cs.disc]||'')}</span><h1>${esc(cs.name)}</h1>
  <p class="small" style="margin:0">${esc(cs.round)} · ${esc(csFaceTxt(cs))} · ${R.d3?plN(R.ends,'target','targets'):plN(R.ends,'end','ends')+' of '+R.ape} · ${esc(cs.date||'')}</p><p class="small" style="margin:4px 0 0">${fin?'Finished.':'Shooting now.'} Hosted by ${host?'you':esc(testerName(cs.host))}.</p></div>
  ${csAllDone(cs)?'':csEntryCard(cs)}
+ ${csAllDone(cs)&&csAbaN(cs,0)?`<div class="card" id="csabasum"><span class="kicker">Totals</span>${cs.ppl.map(p=>`<p style="margin:6px 0 0"><b>${esc(csNm(cs,p.id))}</b></p>${csAbaTotHtml(cs,p.id).replace(/<div class="list-item"[^]*?<\/div>/,'')}`).join('')}</div>`:''}
  <div class="card"><h3>Scores</h3>${tab}${ends}</div>
  ${csAllDone(cs)&&csEntryCard(cs)?`<details class="card" id="csfix" ${window._csFix?'open':''}><summary class="small">Fix a score</summary>${csEntryCard(cs).replace('<div class="card" id="csentry">','<div id="csentry">')}</details>`:''}
  ${mpCard}
