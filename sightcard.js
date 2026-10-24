@@ -1,4 +1,4 @@
-/* Sight card (24 Oct 2026, Nathe via Archery Coach: "Add this feature to the score app"). In Sight marks, 'Print sight card'
+/* Sight card (24 Oct 2026; business-card design with the Archery Calendar header, 24 Oct 2026, Nathe via Archery Coach: "Add this feature to the score app"). In Sight marks, 'Print sight card'
    makes an A4 PDF for a laminated, credit-card-size card (85.6 x 54 mm) for the chosen bow setup + arrow set.
    Page 1: the sight marks side, page 2: the bow settings side. Two identical cards per page, centred across the page and
    placed the same distance above and below the page centre, so the front and back line up whichever edge the printer flips on.
@@ -6,7 +6,7 @@
    Reads the marks only. The one thing it can save is the optional 'Sight' name, to this bow setup (b.sight), and only when
    the archer types it. */
 (function(){
-const W=85.6,H=54,PW=210,PH=297,X0=(PW-W)/2,YS=[PH/2-8-H,PH/2+8],NAVY=[26,38,89];
+const W=85.6,H=54,PW=210,PH=297,X0=(PW-W)/2,YS=[PH/2-8-H,PH/2+8],NAVY=[13,27,42];
 const metres=d=>{const m=String(d).trim().match(/^(\d+(?:\.\d+)?)\s*(m|yd|y)$/i);return m?{n:+m[1],u:m[2].toLowerCase()=='m'?'m':'yd'}:null};
 const num=v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:NaN};
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -35,29 +35,40 @@ function settings(b,a){const sp=((S.bowSpec||{})[b.id])||{},o=(window.myArrow&&m
  add('Sighted in at',o.si);return R}
 function fit(doc,t,max,size,min){let s=size;doc.setFontSize(s);while(s>min&&doc.getTextWidth(t)>max){s-=0.25;doc.setFontSize(s)}return s}
 function crop(doc,x,y){doc.setLineWidth(0.1);doc.setDrawColor(128);for(const cx of[x,x+W])for(const cy of[y,y+H]){const dx=cx==x?-1:1,dy=cy==y?-1:1;doc.line(cx+dx*2,cy,cx+dx*7,cy);doc.line(cx,cy+dy*2,cx,cy+dy*7)}}
-function frame(doc,x,y,title){doc.setDrawColor(...NAVY);doc.setLineWidth(0.21);doc.roundedRect(x,y,W,H,3,3,'S');doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');fit(doc,title,W-8,7.5,5);doc.text(title,x+W/2,y+4.5,{align:'center'})}
-function marksCard(doc,x,y,R,title){frame(doc,x,y,title);const n=R.length;if(!n)return;
- const cols=Math.min(6,Math.max(1,Math.ceil(n/14))),rpc=Math.ceil(n/cols),cw=W/cols,top=y+8.6,rh=Math.min(3.18,44.5/rpc),fs=Math.max(4.5,Math.min(7,7*rh/3.18));
- R.forEach(([d,m,e],i)=>{const c=Math.floor(i/rpc),r=i%rpc,cx=x+c*cw,cy=top+r*rh;
-  if(r%2==0){doc.setFillColor(235,235,235);doc.rect(cx+1,cy-rh+0.9*rh/3.18+0.08,cw-2,rh,'F')}
-  doc.setTextColor(0);doc.setFontSize(fs);doc.setFont('helvetica','bold');doc.text(String(d),cx+Math.min(7.5,cw*0.38),cy,{align:'right'});
-  doc.setFont('helvetica',e?'italic':'normal');if(e)doc.setTextColor(70);doc.text(m||'-',cx+cw-2.5,cy,{align:'right'})});
- doc.setDrawColor(150);doc.setLineWidth(0.1);for(let k=1;k<cols;k++)doc.line(x+k*cw,y+H-2,x+k*cw,top-2.5);
- if(R.some(r=>r[2])){doc.setFont('helvetica','italic');doc.setFontSize(4.5);doc.setTextColor(90);doc.text('italic = est.',x+W-3,y+H-0.9,{align:'right'})}}
-function setCard(doc,x,y,R,title,upd){frame(doc,x,y,title);const top=y+10,rh=Math.min(4.4,(H-14)/Math.max(1,R.length)),fs=Math.min(7.5,7.5*rh/4.4+1.2);
- R.forEach(([k,v],i)=>{const cy=top+i*rh;if(i%2==0){doc.setFillColor(235,235,235);doc.rect(x+4,cy-rh+1.3*rh/4.4+0.1,W-8,rh,'F')}
-  doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(fs);doc.text(k,x+6,cy);const kw=doc.getTextWidth(k);
-  doc.setFont('helvetica','normal');fit(doc,v,W-15-kw,fs,4.5);doc.text(v,x+W-6,cy,{align:'right'})});
- if(upd){doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.setTextColor(90);doc.text('Marks updated '+upd,x+W/2,y+H-2,{align:'center'})}}
+const GOLD=[255,198,41],HB=11;let LOGO=null;
+/* business-card header (24 Oct 2026, Nathe: "Love it add to score app replace other one"): Archery Calendar icon, name and
+   web address on the left, the card's title and one line under it on the right, gold rule under an 11 mm band */
+function head(doc,x,y,title,sub){doc.setDrawColor(...NAVY);doc.setLineWidth(0.21);doc.roundedRect(x,y,W,H,3,3,'S');
+ if(LOGO)doc.addImage(LOGO,'PNG',x+3.5,y+(HB-8.5)/2,8.5,8.5,'aclogo','FAST');
+ doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text('ARCHERY CALENDAR',x+14,y+5.2);
+ doc.setFont('helvetica','normal');doc.setFontSize(5.6);doc.setTextColor(77);doc.text('archerycalendars.com',x+14,y+8.4);
+ doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(7);doc.text(title,x+W-3.5,y+5.2,{align:'right'});
+ if(sub){doc.setFont('helvetica','normal');doc.setTextColor(77);fit(doc,sub,W-50,5.6,4);doc.text(sub,x+W-3.5,y+8.4,{align:'right'})}
+ doc.setDrawColor(...GOLD);doc.setLineWidth(0.49);doc.line(x+3.5,y+HB,x+W-3.5,y+HB)}
+/* one 3.5 mm side margin for the logo, gold rule, tables and shading; both tables centred in the body under the header */
+const MG=3.5,BODY=H-1.8-HB;
+function marksCard(doc,x,y,R,sub){head(doc,x,y,'SIGHT MARKS',sub);const n=R.length;if(!n)return;
+ const cols=Math.min(6,Math.max(1,Math.ceil(n/14))),rpc=Math.ceil(n/cols),cw=(W-2*MG)/cols,rh=Math.min(2.78,BODY/rpc),k=rh/2.78,fs=Math.max(4.2,Math.min(6.8,6.8*k)),th=rpc*rh,top=y+HB+(BODY-th)/2;
+ R.forEach(([d,m,e],i)=>{const c=Math.floor(i/rpc),r=i%rpc,cx=x+MG+c*cw,rt=top+r*rh,base=rt+rh-0.85*k;
+  if(r%2==0){doc.setFillColor(230,230,230);doc.rect(cx+0.5,rt,cw-1,rh,'F')}
+  doc.setTextColor(0);doc.setFontSize(fs);doc.setFont('helvetica','bold');doc.text(String(d),cx+cw*0.36,base,{align:'right'});
+  doc.setFont('helvetica',e?'italic':'normal');if(e)doc.setTextColor(70);doc.text(m||'-',cx+cw*0.86,base,{align:'right'})});
+ doc.setDrawColor(153);doc.setLineWidth(0.106);for(let c=1;c<cols;c++)doc.line(x+MG+c*cw,top,x+MG+c*cw,top+th);
+ if(R.some(r=>r[2])){doc.setFont('helvetica','italic');doc.setFontSize(4.5);doc.setTextColor(90);doc.text('italic = est.',x+W-MG,y+H-0.7,{align:'right'})}}
+function setCard(doc,x,y,R,upd){head(doc,x,y,'BOW SETTINGS',upd?'Marks updated '+upd:'');const n=R.length,rh=Math.min(3.75,BODY/Math.max(1,n)),k=rh/3.75,fs=Math.max(5,Math.min(7,7*k)),top=y+HB+(BODY-n*rh)/2;
+ R.forEach(([lb,v],i)=>{const rt=top+i*rh,base=rt+rh-1.1*k;if(i%2==0){doc.setFillColor(230,230,230);doc.rect(x+MG,rt,W-2*MG,rh,'F')}
+  doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(fs);doc.text(lb,x+MG+2,base);const kw=doc.getTextWidth(lb);
+  doc.setFont('helvetica','normal');fit(doc,v,W-2*MG-6-kw,fs,4.5);doc.text(v,x+W-MG-2,base,{align:'right'})})}
 function foot(doc){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100);doc.text('Print at 100% (Actual size), double-sided. Cut on the corner marks, then laminate.',PW/2,PH-12,{align:'center'})}
 function build(b,a,o){const J=window.jspdf;const doc=new J.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
  const R=rows(b,a,o),nm=String(b.name).trim(),set=a.id=='arrows1'&&a.name=='Arrows 1'?'':' · '+String(a.name).trim();
- const T1=`SIGHT MARKS  ${nm}${set}  ${o.only&&R.length?R[0][0]+'-'+R[R.length-1][0]:o.from+'-'+o.to} ${o.u}`,T2=`BOW SETTINGS  ${nm}${set}`,ST=settings(b,a),up=updated(b,a);
+ const T1=`${nm}${set}  ${o.only&&R.length?R[0][0]+'-'+R[R.length-1][0]:o.from+'-'+o.to} ${o.u}`,ST=settings(b,a),up=updated(b,a);
  doc.setProperties({title:'Sight card '+nm+set});
  for(const y of YS){marksCard(doc,X0,y,R,T1);crop(doc,X0,y)}foot(doc);doc.addPage();
- for(const y of YS){setCard(doc,X0,y,ST,T2,up);crop(doc,X0,y)}foot(doc);return{doc,n:R.length,name:('sight-card-'+nm+set).replace(/[^\w-]+/g,'-').replace(/-+/g,'-')+'.pdf'}}
-window.sightCardPDF=(o)=>{const b=curBow(),a=curSet();return build(b,a,o)};
-function lib(){return window.jspdf?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='vendor/jspdf.umd.min.js';s.onload=ok;s.onerror=()=>no(new Error('PDF maker not loaded'));document.head.appendChild(s)})}
+ for(const y of YS){setCard(doc,X0,y,ST,up);crop(doc,X0,y)}foot(doc);return{doc,n:R.length,name:('sight-card-'+nm+set).replace(/[^\w-]+/g,'-').replace(/-+/g,'-')+'.pdf'}}
+window.sightCardLogo=logo;window.sightCardPDF=(o)=>{const b=curBow(),a=curSet();return build(b,a,o)};
+function logo(){return LOGO?Promise.resolve():fetch('vendor/ac-icon.png').then(r=>r.ok?r.blob():Promise.reject()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>{LOGO=f.result;ok()};f.readAsDataURL(b)})).catch(()=>{})}
+function lib(){return window.jspdf?logo():logo().then(()=>new Promise((ok,no)=>{const s=document.createElement('script');s.src='vendor/jspdf.umd.min.js';s.onload=ok;s.onerror=()=>no(new Error('PDF maker not loaded'));document.head.appendChild(s)}))}
 function close(){const d=document.getElementById('scardov');if(d)d.remove();removeEventListener('keydown',onKey);if(st&&st.url)URL.revokeObjectURL(st.url);st=null}
 function onKey(e){if(e.key=='Escape')close()}
 function draw(){const d=document.getElementById('scardov');if(!d)return;const b=curBow(),a=curSet();
