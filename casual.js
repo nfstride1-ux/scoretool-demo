@@ -239,6 +239,15 @@ function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const firs
  const lc=$('#lgcard');if(mode=='league'&&lc){const p=lc.parentNode;p.insertBefore(lc,first.nextSibling)}
  first.insertAdjacentHTML('afterend',csListCard());csBindList();
  first.querySelectorAll('[data-cstp]').forEach(b=>b.onclick=()=>{window._csMode=b.dataset.cstp=='solo'?null:b.dataset.cstp;score();if(b.dataset.cstp=='league'){const l=$('#lgcard');if(l)l.scrollIntoView({block:'start'})}})}
+/* The Just me ABA sheet for a casual shoot: the same grid (abaGrid) the Just me scorer draws, one row a target with its score and the running total
+   for its 10-target block, block totals, half totals and the round total, built from the casual card on screen. Display only; nothing is stored. */
+function csAbaSession(cs,id){const R=ROUNDS[cs.round],T=CS3D[R.d3],n=cs3dPer(R.d3),E=csEnds(cs,id).map(e=>e.slice(0,1)),PT=[[20,18,16],[14,12,10],[8,6,4]];
+ const aba=E.map(e=>{const v=csV(e[0]);let k=0,z='';PT.forEach((r,i)=>r.forEach((p,j)=>{if(p==v&&!k){k=i+1;z='ABC'[j]}}));return k?{m:k-1,k,z}:{m:0}});
+ const hv=T.half?[{n:3,t:R.d3n,l:'3A',name:'3-arrow half'},{n:1,t:R.d3n,l:'1A',name:'1-arrow half'}]:[{n,t:R.ends,l:n+'A',name:n+'-arrow round'}];
+ return{round:cs.round,ends:E,aba,hv,date:cs.date}}
+function csAbaCounts(cs,id){const V=csEnds(cs,id).map(e=>csV(e[0])),c=x=>V.filter(v=>v==x).length;return`<div class="small" id="csabacounts" style="margin:6px 0 0">20s <b>${c(20)}</b> \u00b7 18s <b>${c(18)}</b> \u00b7 16s <b>${c(16)}</b> \u00b7 no score <b>${c(0)}</b> \u00b7 targets scored <b>${V.length}</b> of ${ROUNDS[cs.round].ends}</div>`}
+function csAbaLive(cs){const ids=cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id)),a=window._csAct&&ids.includes(window._csAct)?window._csAct:ids.find(id=>!csDoneP(cs,id))||ids[0];if(!a)return'';return`<div class="card" id="csabalive"><span class="kicker">Your sheet so far${ids.length>1?' · '+esc(csNm(cs,a)):''}</span>${csAbaSheetHtml(cs,a,true)}</div>`}
+function csAbaSheetHtml(cs,id,live){if(!window.abaGrid)return'';const s=csAbaSession(cs,id);return window.abaGrid(s,false,live?s.ends.length:-1)+csAbaCounts(cs,id)}
 function csEntryCard(cs){const R=csR(cs),ids=cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id));if(!ids.length||csLocked(cs)||cs.fin)return'';
  const a0=window._csAct&&ids.includes(window._csAct)?window._csAct:null,a=a0||ids.find(id=>!csDoneP(cs,id))||ids[0],e=csEnt(cs,a)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<R.ape?last:[],done=csDoneP(cs,a);
  const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),F=csFace(cs,en-1),nA=csAbaN(cs,en-1),sg=nA>1?Math.min(csStg(cs,a,en-1),nA-1):0,K=nA?[...csKeys(cs,en-1).slice(3*sg,3*sg+3),'M']:csKeys(cs,en-1);
@@ -266,7 +275,8 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot · ${esc(CS_DISC[cs.disc]||'')}</span><h1>${esc(cs.name)}</h1>
  <p class="small" style="margin:0">${esc(cs.round)} · ${esc(csFaceTxt(cs))} · ${R.d3?plN(R.ends,'target','targets'):plN(R.ends,'end','ends')+' of '+R.ape} · ${esc(cs.date||'')}</p><p class="small" style="margin:4px 0 0">${fin?'Finished.':'Shooting now.'} Hosted by ${host?'you':esc(testerName(cs.host))}.</p></div>
  ${csAllDone(cs)?'':csEntryCard(cs)}
- ${csAllDone(cs)&&csAbaN(cs,0)?`<div class="card" id="csabasum"><span class="kicker">Totals</span>${cs.ppl.map(p=>`<p style="margin:6px 0 0"><b>${esc(csNm(cs,p.id))}</b></p>${csAbaTotHtml(cs,p.id).replace(/<div class="list-item"[^]*?<\/div>/,'')}`).join('')}</div>`:''}
+ ${csAllDone(cs)||!csAbaN(cs,0)?'':csAbaLive(cs)}
+ ${csAllDone(cs)&&csAbaN(cs,0)?`<div class="card" id="csabasum"><span class="kicker">Totals</span>${cs.ppl.map(p=>`<p style="margin:6px 0 0"><b>${esc(csNm(cs,p.id))}</b></p>${csAbaTotHtml(cs,p.id).replace(/<div class="list-item"[^]*?<\/div>/,'')}${csAbaSheetHtml(cs,p.id,false)}`).join('')}</div>`:''}
  <div class="card"><h3>Scores</h3>${tab}${ends}</div>
  ${csAllDone(cs)&&csEntryCard(cs)?`<details class="card" id="csfix" ${window._csFix?'open':''}><summary class="small">Fix a score</summary>${csEntryCard(cs).replace('<div class="card" id="csentry">','<div id="csentry">')}</details>`:''}
  ${mpCard}

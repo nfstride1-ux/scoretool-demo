@@ -21,7 +21,7 @@ const escA=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* which half a round-target index (0-based) is in: {h, n arrows, tn target number in half, start index} */
 /* club rule (start-of-round tick): the first half is shot 1-arrow too, so both halves are 1-arrow */
 const CLUB={n:1,t:20,l:'1A',name:'1-arrow half (club rule)',desc:'one arrow a target: a miss scores 0'};
-function halvesOf(R,x){x=x||(typeof cur!='undefined'?cur:null);return x&&x.abaClub&&R.halves.length>1?[{...CLUB,t:R.halves[0].t},...R.halves.slice(1)]:R.halves}
+function halvesOf(R,x){x=x||(typeof cur!='undefined'?cur:null);if(x&&x.hv)return x.hv;return x&&x.abaClub&&R.halves.length>1?[{...CLUB,t:R.halves[0].t},...R.halves.slice(1)]:R.halves}
 /* 10-target blocks of a half: [{q, from, to}] (a half of 15 = 1-10, 11-15) */
 const blocks=t=>[...Array(Math.ceil(t/10))].map((_,q)=>({q,from:q*10+1,to:Math.min(t,q*10+10)}));window.abaBlocks=blocks;
 window.abaHalvesOf=halvesOf;
@@ -83,7 +83,7 @@ window.abaHalves=halves;
 const halfTag=(o,HS)=>HS.length>1?(o===HS[0]?'First half':'Second half')+' · ':'';
 /* halves are called First half / Second half everywhere; 1A, 2B etc. are only ever score codes */
 const hName=(h,n)=>n>1?(h==0?'First half':'Second half'):'Round';window.abaHalfName=hName;
-function grid(s,live){const HS=halves(s),A=s.aba||[],nx=live?targetIdx():-1;
+function grid(s,live,nxArg){const HS=halves(s),A=s.aba||[],nx=nxArg!=null?nxArg:live?targetIdx():-1;
  const col=(o,q,h)=>`<table class="aba-p" data-col="${h}-${q}"><tr><th colspan="3" style="line-height:1.15"><span style="font-size:9px;display:block;white-space:nowrap">${hName(h,HS.length)}</span><span style="font-size:12px"> ${q*10+1}-${Math.min(o.H.t,q*10+10)}</span></th></tr>${[...Array(Math.min(10,o.H.t-q*10))].map((_,j)=>{const t=q*10+j,a=A[o.i0+t]||{},v=o.v[t],on=o.i0+t==nx;
   return`<tr${on?' class="aba-now"':''}><td class="aba-t">${t+1}</td><td class="aba-v" data-hit="${v==null?'':v===0?'M':a.k?hitCode(a):''}" title="${v==null?'':v===0?'no score':hitCode(a)}">${v==null?'':v}</td><td class="aba-r">${o.rn[t]==null?'':o.rn[t]}</td></tr>`}).join('')}<tr class="aba-sub"><td colspan="2" class="small">${q*10+1}-${Math.min(o.H.t,q*10+10)}</td><td><b data-sub="${h}-${q}">${o.sub[q]}</b></td></tr></table>`;
  return`<div class="aba-cols4">${HS.map((o,h)=>blocks(o.H.t).map(b=>col(o,b.q,h)).join('')).join('')}</div>
