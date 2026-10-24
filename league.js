@@ -56,12 +56,13 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
-function lgKey(code,w,id,k){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
+function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
+ if(xy||e.p){/* plotted arrow (one archer on this phone): its position kept beside the end, same order as the scores; never sent on the relay */const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;save();
  if(E.length==3){const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
  lgAfter(lg);return true}
-function lgUndo(code,w,id){const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1];E.pop();if(!E.length)e.e.pop();e.u=Date.now();lg.dirty=1;save();lgAfter(lg)}
+function lgUndo(code,w,id){const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1];E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;save();lgAfter(lg)}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -163,9 +164,11 @@ const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&!lgDoneE(lgEnt(lg,act0,w))?act0:open[0]||ids[0];
  const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<3?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
+ const LPL=ids.length==1&&!lock&&!done&&!!window.csFaceHtml,LFR=LPL?face3R(faceR(ROUNDS[LG_R],0),{face3:'vert'}):null,LPTS=LPL&&last&&last.length<3?(((e.p||[])[e.e.length-1])||[]).map((p,j)=>p&&{...p,k:(last&&last.length<3?last:[])[j]}).filter(Boolean):[];window._lgPl=LPL?{FR:LFR,R:ROUNDS[LG_R],pts:LPTS,code:lg.code,w,id:a}:null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
  <p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
+ ${LPL&&!lock&&!done&&window.csFaceHtml?window.csFaceHtml(LFR,LPTS,false):''}
  ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
@@ -205,6 +208,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(q('#lggadd'))q('#lggadd').onclick=()=>{const m=lgAddGuest(code,q('#lggname').value,q('#lggjr').checked);if(m){q('#lggmsg2').textContent=m;return}lgView(code)};
  app.querySelectorAll('[data-lgid]').forEach(b=>b.onclick=()=>{window._lgAct=b.dataset.lgid;lgView(code)});
  const act=q('#lgentry .lc-chip.on')&&q('#lgentry .lc-chip.on').dataset.lgid;
+ if(window._lgPl&&window._lgPl.code==code&&window.csFaceBind)window.csFaceBind(window._lgPl,(k,xy)=>{window._lgAct=act;lgKey(code,w,act,k,xy)},()=>lgView(code));
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;lgKey(code,w,act,b.dataset.lgk)});
  if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;lgUndo(code,w,act)};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
