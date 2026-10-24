@@ -87,7 +87,7 @@
 .ad-right{width:auto;flex-direction:row}.ad-num{padding:0 0 0 8px;font-size:12px}.ad-num b{font-size:18px;padding:6px 8px;min-width:36px}
 .ad-discard{background:none;border:0;color:var(--muted);font:600 13px var(--body);text-decoration:underline;padding:8px;cursor:pointer;display:block;margin:2px auto 8px}
 /* line icons (replace emoji): navy/ink stroke with a gold accent */
-.ic{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block}.ic .g{stroke:var(--gold)}.ic .gf{fill:var(--gold);stroke:none}
+.ic{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block}.ic .g{stroke:var(--gold)}.ic .gf{fill:var(--gold);stroke:none}[data-theme=light] .ic.icf .gf{fill:#b07a00}
 .labwho{background:var(--blue-bg);color:var(--blue);border:1px solid var(--chip-b);border-radius:99px;font:700 14px var(--body);padding:6px 12px;cursor:pointer;margin-right:8px;min-height:36px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tabs .ic{width:22px;height:22px;display:block;margin:0 auto 2px}.hub-tile .i .ic{width:30px;height:30px}.hub-score .ic{width:46px;height:46px}.labrow .i .ic{width:24px;height:24px}.logo .ic{width:26px;height:26px;vertical-align:-6px}.labtheme .ic{width:20px;height:20px;vertical-align:-4px}
 @media (max-width:520px){.labwho,.labme{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.labtheme{min-width:36px;padding:0 6px;margin-right:6px}.logo .ic{width:22px;height:22px}}

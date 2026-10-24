@@ -123,6 +123,7 @@ const IC={people:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 
  flask:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path stroke="#ffc629" d="M7.5 15h9"/>',
  star:'<path stroke="#ffc629" d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>',
  trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/><path stroke="#ffc629" d="M10 17h4"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
  info:'<circle cx="12" cy="12" r="9"/><path stroke="#ffc629" d="M12 11v6M12 7.5v.5"/>'};
 const ic=(k,w=20)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.2em">${IC[k]}</svg>`;
 const TABS=[['squad',ic('people'),'Squad'],['mix',ic('flask'),'Analyse'],['saved',ic('star'),'Saved'],['rank',ic('trophy'),'Rankings'],['about',ic('info'),'About']];
@@ -410,7 +411,7 @@ function autoName(){const n=S.a.length?S.a.map(i=>byId[i].name.split(' ')[0]).jo
 function relFrom(){const m={[ago(3)]:3,[ago(6)]:6,[ago(12)]:12};return m[S.from]}
 function saveCombo(){const name=prompt('Name this combo',autoName());if(!name)return;const c=combos();c.unshift({name,s:{...S,rel:relFrom()}});saveC(c);toast('Saved: '+name);if(tab==='mix')mix()}
 function saved(){const c=combos();
- app.innerHTML=`<div class="card"><span class="kicker">One tap to reopen</span><h1>Saved combos</h1><div class="muted small">Saved on this device. "Last 3 months" style combos roll forward automatically.</div></div><div class="card">${c.length?c.map((x,i)=>`<div class="combo" data-i="${i}"><span>${ic('star',16)}</span><b>${esc(x.name)}</b><span class="x" data-del="${i}">✕</span></div>`).join(''):'<div class="muted">Nothing saved yet. In Analyse, tick what you want and press Save.</div>'}</div>
+ app.innerHTML=`<div class="card"><span class="kicker">One tap to reopen</span><h1>Saved combos</h1><div class="muted small">Saved on this device. "Last 3 months" style combos roll forward automatically.</div></div><div class="card">${c.length?c.map((x,i)=>`<div class="combo" data-i="${i}"><span>${ic('star',16)}</span><b>${esc(x.name)}</b><span class="x" data-del="${i}">${ic('x',14)}</span></div>`).join(''):'<div class="muted">Nothing saved yet. In Analyse, tick what you want and press Save.</div>'}</div>
  <div class="card"><h3>Quick starts</h3>${SQ.slice(0,6).map(a=>`<div class="combo" data-q="${a.id}"><span class="dot" style="width:10px;height:10px;border-radius:50%;background:${a.c}"></span><b>${esc(a.name)} · last 3 months</b><span class="muted">›</span></div>`).join('')}<div class="combo" data-q="all"><span>${ic('people',16)}</span><b>Whole squad overlay · last 6 months</b><span class="muted">›</span></div></div>`;
  app.querySelectorAll('[data-del]').forEach(el=>el.onclick=e=>{e.stopPropagation();const c=combos();c.splice(+el.dataset.del,1);saveC(c);saved()});
  app.querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const x=combos()[+el.dataset.i].s;S={...x};if(x.rel)S.from=ago(x.rel);delete S.rel;tab='mix';render();scrollTo(0,0)});

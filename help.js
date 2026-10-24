@@ -75,6 +75,7 @@ const HELP_GUIDES=[
   '<b>Add to my Archery Calendar</b> links your scores to your My events.',
   'The <b>Calendar</b> tile on Home opens your My events on archerycalendars.com.',
   'A tick turns on colour-blind safe colours.',
+  'Ticks, stars and crosses in the app are small line icons in navy and gold, so they look the same in light and dark. They are only for looks and never change your scores.',
   '<b>What\'s new</b> lists each update. <b>Send a suggestion</b> goes straight to Nathe.']}];
 const FORM_URL='https://formsubmit.co/nfshold@gmail.com';
 let lastTab='home';

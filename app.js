@@ -614,7 +614,7 @@ function ptChart(P,{mn,mx,id}){const W=340,h=170,L=34,R=10,T=14,B=24,n=P.length,
  [mn,(mn+mx)/2,mx].forEach(v=>g+=`<text x="${L-4}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="var(--muted)">${Math.round(v)}</text><line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/>`);
  g+=`<polyline fill="none" stroke="#166534" stroke-width="2" points="${P.map((p,i)=>`${X(i)},${Y(p.v)}`).join(' ')}"/>`;
  const step=Math.ceil(n/5);P.forEach((p,i)=>{if((i%step==0&&(n-1-i>=step*0.6||i==0))||i==n-1)g+=`<text x="${X(i)}" y="${h-8}" font-size="10" text-anchor="${i==0&&n>1?'start':i==n-1&&n>1?'end':'middle'}" fill="var(--muted)">${p.label}</text>`;
-  g+=p.star?`<text x="${X(i)}" y="${Y(p.v)+5}" font-size="15" text-anchor="middle" fill="#ffc629">★</text>`:`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="#166534"/>`;
+  g+=p.star?`<path transform="translate(${X(i)-8} ${Y(p.v)-8}) scale(.667)" fill="#ffc629" d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>`:`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="#166534"/>`;
   g+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="12" fill="transparent" style="cursor:pointer" data-t="${esc(p.tip)}" onclick="this.closest('.pc').querySelector('.pcap').textContent=this.dataset.t"><title>${esc(p.tip)}</title></circle>`});
  return`<div class="pc">${g}</svg><p class="small pcap" style="margin:2px 0;min-height:1.2em">Tap a point for details.</p></div>`}
 function officialCharts(real){const ok=real.filter(r=>!r.incomplete&&r.score>0);if(!ok.length)return'';const G={};

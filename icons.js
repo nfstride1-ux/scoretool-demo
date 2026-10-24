@@ -31,6 +31,9 @@ moon:'<path class="g" d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
 calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><rect class="g" x="8" y="6" width="8" height="3.5" rx=".5"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 17h.01M12 17h.01M15.5 17h.01"/>',
 three:'<circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="5" ry="3.5"/><circle class="gf" cx="12" cy="12" r="1.6"/>',
 trash:'<path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13"/><path class="g" d="M10 11v6M14 11v6"/>',
+tick:'<path d="M5 12.5l4.5 4.5L19 7.5" style="stroke-width:2.4"/>',
+x:'<path d="M6 6l12 12M18 6L6 18" style="stroke-width:2.4"/>',
+starf:'<path class="gf" d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>',
 warn:'<path d="M12 3.5l9.5 16.5h-19z"/><path class="g" d="M12 10v4.5M12 17.5h.01"/>',
 check:'<circle cx="12" cy="12" r="9"/><path class="g" d="M8 12.5l2.7 2.7L16.5 9.5"/>',
 cross:'<circle cx="12" cy="12" r="9"/><path class="g" d="M9 9l6 6M15 9l-6 6"/>',
@@ -53,17 +56,17 @@ shp1:'<circle class="g" cx="12" cy="12" r="8"/>',shp2:'<path class="g" d="M12 4l
 shp5:'<path class="g" d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/>',shp6:'<path class="g" d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>',shp7:'<path class="g" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',shp8:'<path class="g" d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="8"/>'};
 const M={'🎯':'target','🏠':'home','📓':'book','👥':'people','🔧':'wrench','📅':'calendar','🔬':'search','⭐':'star','🌟':'star','📈':'trend','📊':'bars','➕':'plus','📝':'pen','✍':'pen',
 '🏹':'bow','🏅':'medal','🎖':'medal','🥇':'medal','🥈':'medal','🥉':'medal','🏆':'trophy','🛡':'shield','🏁':'flag','⚔':'swords','📋':'clip','👣':'follow','🪪':'card','🧑\u200d🏫':'coach','🧑':'coach',
-'⚙':'gear','☀':'sun','🌙':'moon','🧮':'calc','🦌':'three','🗑':'trash','⚠':'warn','✅':'check','❌':'cross','🔥':'flame','🌋':'flame','💪':'up','👍':'check','💡':'bulb','💬':'chat','💯':'hundred',
+'⚙':'gear','☀':'sun','🌙':'moon','🧮':'calc','🦌':'three','🗑':'trash','⚠':'warn','✅':'check','❌':'cross','✓':'tick','✔':'tick','✕':'x','✖':'x','✗':'x','✘':'x','★':'starf','☆':'star','🔥':'flame','🌋':'flame','💪':'up','👍':'check','💡':'bulb','💬':'chat','💯':'hundred',
 '📷':'camera','🎉':'party','🌈':'party','🎩':'hat','🟡':'dot','👻':'ghost','⚡':'bolt','🌐':'globe','🔒':'lock','🔔':'bell','💎':'gem',
 '🦊':'shp1','🐨':'shp2','🦘':'shp3','🐧':'shp4','🦉':'shp5','🐢':'shp6','🐬':'shp7','🦅':'shp8'};
-const svg=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${P[n]}</svg>`;
+const svg=n=>`<svg class="ic${n=='starf'?' icf':''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${P[n]}</svg>`;
 window.icon=n=>P[n]?svg(n):'';
 const keys=Object.keys(M).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
 /* any listed emoji (with or without the emoji variation selector), or any other pictographic emoji (shown as a small gold dot) */
 const RX=new RegExp('(?:'+keys.join('|')+')\\uFE0F?|(?![\\u00A9\\u00AE\\u2122\\u2605\\u2606\\u2713\\u2715\\u2122\\u2194-\\u21FF])\\p{Extended_Pictographic}\\uFE0F?(?:\\u200D\\p{Extended_Pictographic}\\uFE0F?)*','gu');
 const SKIP=/^(SCRIPT|STYLE|TEXTAREA|INPUT|NOSCRIPT|CODE)$/;
 function fixText(t){const p=t.parentNode;if(!p||SKIP.test(p.nodeName))return;const s=t.nodeValue;RX.lastIndex=0;if(!s||!RX.test(s))return;RX.lastIndex=0;
- /* places that can't hold an icon (dropdown options, SVG text, page title): the emoji is simply left out */
+ /* places that can't hold an icon (dropdown options, SVG text, page title): the emoji is simply left out (the chart's PB star is drawn as a shape, not text) */
  if(p.nodeName=='OPTION'||p.nodeName=='TITLE'||p.namespaceURI=='http://www.w3.org/2000/svg'){t.nodeValue=s.replace(RX,'').replace(/^\s+/,'');return}
  const f=document.createDocumentFragment();let i=0;s.replace(RX,(m,o)=>{if(o>i)f.appendChild(document.createTextNode(s.slice(i,o)));const k=m.replace(/\uFE0F/g,''),n=M[k]||M[m]||'dot';
   const sp=document.createElement('span');sp.className='ici';sp.setAttribute('aria-hidden','true');sp.innerHTML=svg(n);f.appendChild(sp);i=o+m.length;return m});
