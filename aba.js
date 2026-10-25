@@ -100,13 +100,13 @@ function sheetHead(s){const R=ROUNDS[s.round]||{},e=evOf(s);
  const off=isOfficial(s),title=e?e.name:off?'ABA INTERCLUB':'ABA 3D score sheet',sub=e?(R.custom?escA(s.round)+' · ABA scoring':'ABA Interclub scoring'):off?'':'ABA Interclub scoring';
  return`<b id="abatitle">${escA(title)}</b>${sub?`<div class="small muted" id="abasub">${sub}</div>`:''}<div class="small" id="abaoff" style="color:${off?'#ff6b6b':'inherit'}">${off?'Official Score Sheet':e&&e.fun?'Fun shoot - not official':'Not an official score sheet'}</div>`}
 window.abaSheetHead=sheetHead;
-function paper(s){const hd=s.abaHead||{},HS=halves(s);
+function paper(s,noShare){const hd=s.abaHead||{},HS=halves(s);
  return`<div class="card aba-sheet" id="abapaper"><div style="text-align:center">${sheetHead(s)}</div>
  <div class="aba-hd"><div><span class="small muted">Name</span><b>${escA(hd.name||S.profile||'')}</b></div><div><span class="small muted">Date</span><b>${escA(s.date)}</b></div><div><span class="small muted">ABA #</span>${escA(hd.no||'')}</div><div><span class="small muted">Grade</span>${escA(hd.grade||'')}</div><div><span class="small muted">Division</span>${escA(hd.div||'')}</div><div><span class="small muted">Target</span>${escA(hd.target||'')}</div></div>
  <p class="small muted" style="margin:6px 0 0" id="abahow">${HS.map((o,h)=>`${hName(h,HS.length)}: ${o.H.desc}`).join('. ')}. ${HS.every(o=>o.H.t==HS[0].H.t)?(HS.length>1?'Each half is targets 1-':'Targets 1-')+HS[0].H.t:HS.map((o,h)=>hName(h,HS.length)+' targets 1-'+o.H.t).join(', ')}. Points: 1A 20, 1B 18, 1C 16 · 2A 14, 2B 12, 2C 10 · 3A 8, 3B 6, 3C 4.</p>
  <table class="aba-pts"><tr><th>Arrow</th><th>A</th><th>B</th><th>C</th></tr>${PTS.map((r,k)=>`<tr><th>${k+1}</th>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>
  ${grid(s,false)}
- ${s.abaNote?`<p class="small muted">${escA(s.abaNote)}</p>`:''}${s.finished&&window.shareSheet?'<button class="btn full" id="shsheet" style="margin-top:8px">Share score sheet</button>':''}</div>`}
+ ${s.abaNote?`<p class="small muted">${escA(s.abaNote)}</p>`:''}${s.finished&&!noShare&&window.shareSheet?'<button class="btn full" id="shsheet" style="margin-top:8px">Share score sheet</button>':''}</div>`}
 window.abaPaper=paper;
 /* Scorer: one target at a time. Arrow 1's buttons (20/18/16/Miss); a score records the target and moves straight on.
    Only a Miss in a 3-arrow half brings up arrow 2 (14/12/10/Miss), then arrow 3 (8/6/4/Miss); three misses = 0 and move on.
