@@ -50,6 +50,22 @@ function pgSave(d){if(!pgAllDone(d))return false;d.saved={at:Date.now(),a:d.a.ma
 /* event total for an archer, across days, matched by the typed name */
 function pgEvent(nm){const k=pgKey(nm);return pgEv().days.reduce((t,d)=>t+d.a.filter(x=>pgKey(x.nm)==k).reduce((u,x)=>u+pgTot(x.s),0),0)}
 function pgDaysOf(nm){const k=pgKey(nm);return pgEv().days.filter(d=>d.a.some(x=>pgKey(x.nm)==k)).length}
+/* ---------- Competition complete (25 Oct 2026, Nathe) ----------
+   Peel is two days (Day 1 and Day 2) and the competition can be completed after either one, so Nathe is never stuck. Completing merges the days
+   per archer (matched by the typed name) into ONE new record, S.peel.comp: each day's first half, second half and day total, every target's score,
+   and the overall total. It only ever reads the days; the saved Day 1 and Day 2 scores are never changed. Tapping it again with nothing changed
+   writes nothing; if scores changed it refreshes only this record. One day only is said plainly. */
+function pgCompBuild(){const E=pgEv(),M=new Map(),R=pgR(),days=E.days.map((d,q)=>({no:q+1,date:d.date,n:d.a.length,done:pgAllDone(d)}));
+ E.days.forEach((d,q)=>{const seen={};d.a.forEach(x=>{const b=pgKey(x.nm);seen[b]=(seen[b]||0)+1;const k=seen[b]>1?b+'#'+seen[b]:b;if(!M.has(k))M.set(k,{nm:x.nm,days:E.days.map(()=>null)});
+  M.get(k).days[q]={no:q+1,date:d.date,n:pgN(x.s),of:R.ends,done:!!pgDone(x.s),tot:pgTot(x.s),h:abaHalves(x.s).map(o=>({t:o.H.t,n:o.H.n,tot:o.tot,sub:o.sub.slice(),v:Array.from(o.v,y=>y==null?null:y)}))}})});
+ const rows=[...M.values()].map(r=>({...r,tot:r.days.reduce((t,d)=>t+(d?d.tot:0),0)}));
+ return{name:PG_NAME,oneDay:days.length==1,days,rows}}
+const pgCompSame=(a,b)=>JSON.stringify({...a,at:0})==JSON.stringify({...b,at:0});
+function pgComplete(){const E=pgEv();if(!E.days.length)return null;const c=pgCompBuild();if(E.comp&&pgCompSame(E.comp,c))return E.comp;c.at=Date.now();E.comp=c;save();return c}
+const pgCompUnfinished=()=>pgEv().days.map((d,q)=>({q,k:d.a.filter(x=>!pgDone(x.s)).length,n:d.a.length})).filter(u=>u.k);
+const pgWho=nm=>window.shareWho?shareWho({pg:1,abaHead:{name:nm}}):nm;
+function pgCompText(c){const rows=c.rows.map((r,i)=>({r,i})).sort((a,b)=>b.r.tot-a.r.tot||a.i-b.i);let pos=0,last=null;
+ return c.name+' - competition results ('+(c.days.length==1?'one day only, Day '+c.days[0].no:'Day '+c.days.map(d=>d.no).join(' + Day '))+')\n'+rows.map(({r},k)=>{if(r.tot!==last){pos=k+1;last=r.tot}return pos+'. '+pgWho(r.nm)+' - '+c.days.map((d,q)=>'Day '+d.no+' '+(r.days[q]?r.days[q].tot:'-')).join(', ')+' = '+r.tot}).join('\n')}
 /* block running total for the archer's last scored target (restarts each 10-target block, as on the paper sheet) */
 function pgRun(s){const R=pgR(),li=[...s.ends.keys()].filter(j=>s.ends[j]&&s.ends[j].length).pop();if(li==null)return null;const W=abaWhere(R,li,s),HS=abaHalves(s),bk=abaBlocks(W.H.t)[Math.floor((W.tn-1)/10)];
  return{h:W.h,tn:W.tn,from:bk.from,to:bk.to,run:HS[W.h].rn[W.tn-1],hn:abaHalfName(W.h,HS.length)}}
@@ -67,8 +83,8 @@ const pgDayNo=d=>pgEv().days.indexOf(d)+1;
 function pgCard(){if(typeof TESTER=='undefined'||!TESTER)return'';const E=pgEv(),n=Math.max(2,E.days.length);
  const day=q=>{const d=E.days[q],can=q<=E.days.length,dt=d?d.date:PG_DATES[q];
   return`<div class="list-item row pg-dayrow" data-pgdrow="${q+1}" style="align-items:center"><span><b>Day ${q+1}</b> <span class="small muted">${pgEsc(pgDate(dt))}${d?' · '+d.a.length+' archer'+(d.a.length>1?'s':''):''}</span></span>${d?`<button class="btn ghost" style="white-space:nowrap" data-pgcday="${d.id}"${q==0?' id="pgopen"':''} aria-label="Open Day ${q+1}">Open</button>`:can?`<button class="btn alt" style="white-space:nowrap" data-pgcnew="${q+1}"${q==0?' id="pgopen"':''}>Start Day ${q+1}</button>`:`<span class="small muted">after Day ${q}</span>`}</div>`};
- return`<div class="card" id="pgcard"><span class="kicker">Group score card · ABA 3D</span><h3 style="margin:2px 0 2px">${PG_NAME}</h3><p class="small" style="margin:0 0 4px">${PG_WHEN}</p><p class="small muted" style="margin:0 0 8px">Score your whole group on this phone, one card a day. Event total adds Day 1 and Day 2. Works offline; saved on this phone only.</p>
- ${[...Array(n)].map((_,q)=>day(q)).join('')}${E.days.length?`<details id="pgcevt" style="margin-top:6px"><summary class="small">Event totals</summary>${pgEvTable()}</details>`:''}</div>`}
+ return`<div class="card" id="pgcard"><span class="kicker">Group score card · ABA 3D</span><h3 style="margin:2px 0 2px">${PG_NAME}</h3><p class="small" style="margin:0 0 4px">${PG_WHEN}</p><p class="small muted" style="margin:0 0 8px">Peel is two days. Score your whole group on this phone, one card a day. Event total adds Day 1 and Day 2. Works offline; saved on this phone only.</p>
+ ${[...Array(n)].map((_,q)=>day(q)).join('')}${E.days.length?`<details id="pgcevt" style="margin-top:6px"><summary class="small">Event totals</summary>${pgEvTable()}</details>`:''}${E.days.length?`<div class="list-item" id="pgcompbox" style="margin-top:8px;border-left:4px solid #ffd84d;padding-left:8px"><b>Competition complete</b><div class="small muted" style="margin:2px 0 6px">Finish after Day 1 or Day 2. Merges the days into one results record; your saved days are not changed.</div><button class="btn${E.comp?' ghost':''} full" data-pgccomp="1" id="pgcompb" style="min-height:48px">${E.comp?'Open competition results':'Competition complete'}</button></div>`:''}</div>`}
 const _pgH2H=window.h2hCard;window.h2hCard=function(){return(_pgH2H?_pgH2H.apply(this,arguments):'')+pgCard()};
 /* ---------- setup: a new day's group ---------- */
 function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.length+1,dflt=PG_DATES[n-1]||pgToday(),P=prev?pgDay(prev):null,k=Math.max(PG_DEF,P?P.a.length:0);
@@ -90,6 +106,29 @@ function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.leng
 /* ---------- a day's card ---------- */
 /* After every score, Next, Undo or archer chip: put the scoring zone (name, score buttons, updated sheet, Next) in view and keep it there, so the buttons and the sheet are seen together and the card never jumps back to the top of the page. Always anchors on the archer's name just under the top bar, so the position is the same after every tap and Next. Display only. */
 function pgAlign(){const sc=window.__scroller;if(!sc)return;const fix=()=>{const w=$('#pgwho');if(!w)return;const bx=sc.getBoundingClientRect();sc.scrollTop=Math.max(0,w.getBoundingClientRect().top-bx.top+sc.scrollTop-4)};fix();requestAnimationFrame(fix)}
+/* ---------- the competition results screen ---------- */
+function pgCompGo(){const E=pgEv();if(!E.days.length)return;
+ if(!E.comp){const u=pgCompUnfinished();if(u.length&&!confirm('Not every archer has finished: '+u.map(x=>'Day '+(x.q+1)+' has '+x.k+' of '+x.n+' archers not finished').join('; ')+'. Complete the competition with the scores so far? Your saved days are not changed.'))return}
+ else if(!pgCompSame(E.comp,pgCompBuild())){const u=pgCompUnfinished();if(u.length&&!confirm('Not every archer has finished: '+u.map(x=>'Day '+(x.q+1)+' has '+x.k+' of '+x.n+' archers not finished').join('; ')+'. Update the competition results with the scores so far?'))return}
+ pgComplete();pgComp()}
+function pgComp(){const E=pgEv(),c=E.comp;if(!c)return pgView(E.open);cur=null;window._pgv='comp';const tb=$('#tabs');if(tb)tb.hidden=false;
+ const stale=!pgCompSame(c,pgCompBuild()),rows=c.rows.map((r,i)=>({r,i})).sort((a,b)=>b.r.tot-a.r.tot||a.i-b.i);let pos=0,last=null;
+ const dl=(r,q)=>{const d=r.days[q];return d?`Day ${d.no}: first half <b>${d.h[0]?d.h[0].tot:'-'}</b>, second half <b>${d.h[1]?d.h[1].tot:'-'}</b>, day <b>${d.tot}</b>${d.done?'':` <span class="small muted">(not finished, ${d.n} of ${d.of} targets)</span>`}`:`Day ${q+1}: not scored`};
+ app.innerHTML=`<div id="pgview" class="pg-comp"><button class="btn ghost labback" id="pgcbk" style="margin:0 0 8px">&lsaquo; Back</button>
+ <div class="card dark"><span class="kicker">${PG_NAME}</span><h1 style="margin:2px 0">Competition complete</h1>
+ <p class="small" id="pgcwhen" style="margin:2px 0 0">${c.days.length==1?'<b>One day only</b> (Day '+c.days[0].no+'). Peel is two days; this is Day '+c.days[0].no+' on its own. Tap Competition complete again after Day 2 to add it.':'Day '+c.days.map(d=>d.no).join(' + Day ')+' combined, per archer.'}</p>
+ <p class="small muted" style="margin:4px 0 0">This is a separate results record. Your saved Day 1 and Day 2 scores are not changed.</p></div>
+ ${stale?`<div class="card" id="pgcstale"><div class="list-item" style="border-left:4px solid #ffd84d;padding-left:8px">The day scores have changed since this record was made.</div><button class="btn full" id="pgcupd" style="margin-top:8px">Update the results from the days</button></div>`:''}
+ <div class="card" id="pgcres"><span class="kicker">Results</span><table class="pg-tab" id="pgctab"><thead><tr><th>#</th><th>Archer</th>${c.days.map(d=>`<th>Day ${d.no}</th>`).join('')}<th>Total</th></tr></thead><tbody>${rows.map(({r},k)=>{if(r.tot!==last){pos=k+1;last=r.tot}return`<tr><td>${pos}</td><td>${pgEsc(r.nm)}</td>${c.days.map((d,q)=>`<td>${r.days[q]?r.days[q].tot:'-'}</td>`).join('')}<td><b>${r.tot}</b></td></tr>`}).join('')}</tbody></table>
+ <button class="btn full" id="pgcsum" style="margin-top:8px;min-height:52px">Share results summary</button></div>
+ ${rows.map(({r,i})=>`<div class="card" data-pgcarch="${i}"><b style="font-size:20px">${pgEsc(r.nm)}</b> <span class="small muted">total</span> <b style="font-size:24px;color:var(--gold)">${r.tot}</b>${c.days.map((d,q)=>`<div class="small" style="margin-top:4px">${dl(r,q)}</div>`).join('')}<button class="btn alt full" data-pgcsh="${i}" style="margin-top:8px">Share ${pgEsc(r.nm)}'s full sheet</button></div>`).join('')}
+ <div class="card"><button class="btn ghost full" id="pgcback2">Back to the day card</button></div></div>`;
+ const back=()=>{pgView(E.open)};$('#pgcbk').onclick=back;$('#pgcback2').onclick=back;
+ const up=$('#pgcupd');if(up)up.onclick=()=>pgCompGo();
+ const slug=window.shareSlug||(t=>String(t).replace(/[^A-Za-z0-9]+/g,'-'));
+ $('#pgcsum').onclick=()=>{if(window.shareCanvas&&window.compSummaryCanvas)shareCanvas(compSummaryCanvas(c),'scoretool-'+slug(c.name)+'-results.png','Competition results',pgCompText(c))};
+ app.querySelectorAll('[data-pgcsh]').forEach(b=>b.onclick=()=>{const r=c.rows[+b.dataset.pgcsh],w=pgWho(r.nm);if(window.shareCanvas&&window.compSheetCanvas)shareCanvas(compSheetCanvas(c,+b.dataset.pgcsh),'scoretool-'+slug(c.name)+'-'+slug(w)+'-competition.png','Competition sheet · '+w,w+' · '+c.name+' · total '+r.tot+(c.days.length==1?' (one day only)':''))});
+ scrollTo(0,0)}
 function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pgDay(id)||E.days[E.days.length-1];E.open=d.id;cur=null;window._pgv=d.id;const tb=$('#tabs');if(tb)tb.hidden=false;
  const R=pgR(),hold=d.hold!=null&&d.a[d.hold]&&d.hold!==d.at?d.hold:null,j=hold!=null?hold:Math.min(d.at||0,d.a.length-1),nxj=Math.min(d.at||0,d.a.length-1),x=d.a[j],s=x.s,i=pgIdx(s),fin=pgDone(s),W=fin?null:abaWhere(R,i,s),n=W?W.n:1,t=(s.aba||[])[i]||{m:0},k=(t.m||0)+1,HS=abaHalves(s),run=pgRun(s),started=d.a.some(y=>pgN(y.s)||(y.s.aba[0]||{}).m);
  const view=window._pgSheet;
@@ -119,7 +158,7 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  ${pgAllDone(d)?`<div class="card" id="pgsavecard"><span class="kicker">Day ${pgDayNo(d)} complete</span><h3 style="margin:2px 0 6px">All targets are scored</h3>${pgSavedCur(d)?`<div class="list-item" id="pgsaved" style="border-left:4px solid #ffd84d;padding-left:8px"><b>Saved.</b> Day ${pgDayNo(d)} scores for ${d.saved.a.map(y=>pgEsc(y.nm)+' '+y.tot).join(', ')} are saved on this phone (${pgEsc(new Date(d.saved.at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}))}). Find them any time under Clubs, Group score card: ${PG_NAME}, Day ${pgDayNo(d)}, Open. Tap Sheet beside an archer for their full score sheet, or Event totals for both days.</div>`:`<p class="small" style="margin:0 0 6px">${d.saved?'The scores changed after you last saved. Tap Save to update the saved copy. ':''}Scores are saved on this phone as you go. Tap Save to keep a final copy of the day for all ${d.a.length} archer${d.a.length>1?'s':''}.</p>`}
  <button class="btn${pgSavedCur(d)?' ghost':''} full" id="pgsave" style="margin-top:8px;min-height:52px;font-size:17px">${pgSavedCur(d)?'Saved. Tap to save again':'Save Day '+pgDayNo(d)}</button></div>`:''}
  ${sheet}
- <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><button class="btn${E.days.length>=2?' ghost':''}" id="pgnew">Start Day ${E.days.length+1}</button><button class="btn ghost" id="pgdel">Delete Day ${pgDayNo(d)}</button></div></div></div>`;
+ <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${E.days.length<2?'<button class="btn" id="pgnew">Start Day '+(E.days.length+1)+'</button>':''}<button class="btn${E.days.length<2?' ghost':''}" id="pgcomp">Competition complete</button><button class="btn ghost" id="pgdel">Delete Day ${pgDayNo(d)}</button></div><p class="small muted" style="margin:8px 0 0" id="pgcnote">Peel is two days. Tap Competition complete after Day 1 or after Day 2: it merges the days into a results record and offers Share. Your saved days are not changed.</p></div></div>`;
  const rr=()=>pgView(d.id);
  app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;delete d.hold;save();rr();pgAlign()});
  const nb=$('#pgnext');if(nb)nb.onclick=()=>{delete d.hold;save();rr();pgAlign()};
@@ -131,10 +170,11 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  const sv=$('#pgsave');if(sv)sv.onclick=()=>{pgSave(d);rr();const e=$('#pgsaved');if(e&&e.scrollIntoView)e.scrollIntoView()};
  const sh=$('#pgshare');if(sh)sh.onclick=()=>{if(window.shareSheet)shareSheet(d.a[view].s)};
  const sx=$('#pgshx');if(sx)sx.onclick=()=>{window._pgSheet=null;rr()};
- $('#pgnew').onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
+ const nw=$('#pgnew');if(nw)nw.onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
+ $('#pgcomp').onclick=()=>{window._pgSheet=null;pgCompGo()};
  const d2=$('#pgday2');if(d2)d2.onclick=()=>{window._pgSheet=null;window._pgSlots=null;pgSetup()};
  $('#pgbk').onclick=()=>{window._pgSheet=null;pgHome()};
  $('#pgdel').onclick=()=>{if(!confirm(`Delete day ${pgDayNo(d)} of ${PG_NAME}? Its scores are removed from this phone.`))return;E.days=E.days.filter(y=>y!==d);E.open=E.days.length?E.days[E.days.length-1].id:null;window._pgSheet=null;save();E.days.length?pgView(E.open):pgSetup()}}
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pgcard [data-pgcday],#pgcard [data-pgcnew]');if(!b)return;window._pgSheet=null;window._pgSlots=null;b.dataset.pgcday?pgView(b.dataset.pgcday):pgSetup()});
-Object.assign(window,{pgSave,pgAllDone,pgEvRows,PG_DATES,pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#pgcard [data-pgcday],#pgcard [data-pgcnew],#pgcard [data-pgccomp]');if(!b)return;window._pgSheet=null;window._pgSlots=null;if(b.dataset.pgccomp)return pgCompGo();b.dataset.pgcday?pgView(b.dataset.pgcday):pgSetup()});
+Object.assign(window,{pgComp,pgComplete,pgCompBuild,pgCompText,pgSave,pgAllDone,pgEvRows,PG_DATES,pgEv,pgNewDay,pgHit,pgUndo,pgNext,pgEvent,pgTot,pgRun,pgView,pgSetup,pgClub,pgCard,PG_NAME});
 })();
