@@ -88,6 +88,8 @@ function pgSetup(prev){cur=null;window._pgv='setup';const E=pgEv(),n=E.days.leng
  const b=$('#pgback');if(b)b.onclick=()=>{window._pgSlots=null;pgView(E.open)};
  $('#pgbk').onclick=()=>{window._pgSlots=null;pgHome()};scrollTo(0,0)}
 /* ---------- a day's card ---------- */
+/* After every score, Next, Undo or archer chip: put the scoring zone (name, score buttons, updated sheet, Next) in view and keep it there, so the buttons and the sheet are seen together and the card never jumps back to the top of the page. Always anchors on the archer's name just under the top bar, so the position is the same after every tap and Next. Display only. */
+function pgAlign(){const sc=window.__scroller;if(!sc)return;const fix=()=>{const w=$('#pgwho');if(!w)return;const bx=sc.getBoundingClientRect();sc.scrollTop=Math.max(0,w.getBoundingClientRect().top-bx.top+sc.scrollTop-4)};fix();requestAnimationFrame(fix)}
 function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pgDay(id)||E.days[E.days.length-1];E.open=d.id;cur=null;window._pgv=d.id;const tb=$('#tabs');if(tb)tb.hidden=false;
  const R=pgR(),hold=d.hold!=null&&d.a[d.hold]&&d.hold!==d.at?d.hold:null,j=hold!=null?hold:Math.min(d.at||0,d.a.length-1),nxj=Math.min(d.at||0,d.a.length-1),x=d.a[j],s=x.s,i=pgIdx(s),fin=pgDone(s),W=fin?null:abaWhere(R,i,s),n=W?W.n:1,t=(s.aba||[])[i]||{m:0},k=(t.m||0)+1,HS=abaHalves(s),run=pgRun(s),started=d.a.some(y=>pgN(y.s)||(y.s.aba[0]||{}).m);
  const view=window._pgSheet;
@@ -95,8 +97,8 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  const ZN=['A','B','C'],ZL={A:'Kill',B:'Vital',C:'Wound'};
  const tgt=(y)=>{const l=[...y.s.ends.keys()].filter(q=>y.s.ends[q]&&y.s.ends[q].length).pop();return l==null?null:{n:l+1,v:val(y.s.ends[l][0])}};
  const sheetNow=`<div id="pglive" style="margin-top:10px"><span class="kicker">Your sheet so far · ${pgEsc(x.nm)}</span>${window.abaGrid?window.abaGrid(s,false,fin?-1:i):''}</div>`;
- const lt=tgt(x),pad=hold!=null?`<div id="pghold" style="margin:6px 0"><div class="list-item" style="border-left:4px solid #ffd84d;padding-left:8px"><b>${pgEsc(x.nm)}</b>: target ${lt?lt.n:''} of ${R.ends} scored <b>${lt?lt.v:''}</b>${pgDone(s)?' (round complete)':''}. Check the sheet below, then tap Next.</div>
- <button class="btn full" id="pgnext" style="margin-top:8px;min-height:56px;font-size:18px">Next: ${pgEsc(d.a[nxj].nm)} <span aria-hidden="true">&rsaquo;</span></button></div>`:fin?`<p id="pgfin" style="margin:6px 0"><b>${pgEsc(x.nm)}: round complete, ${pgTot(s)}</b> (${HS.map((o,h)=>abaHalfName(h,HS.length).toLowerCase()+' '+o.tot).join(' + ')}).</p>`:`
+ const nextBtn=hold!=null?`<button class="btn full" id="pgnext" style="margin-top:8px;min-height:56px;font-size:18px">Next: ${pgEsc(d.a[nxj].nm)} <span aria-hidden="true">&rsaquo;</span></button>`:'';
+ const lt=tgt(x),pad=hold!=null?`<div id="pghold" style="margin:6px 0"><div class="list-item" style="border-left:4px solid #ffd84d;padding-left:8px"><b>${pgEsc(x.nm)}</b>: target ${lt?lt.n:''} scored <b>${lt?lt.v:''}</b>${pgDone(s)?' (round complete)':''}. Tap Next below the sheet.</div></div>`:fin?`<p id="pgfin" style="margin:6px 0"><b>${pgEsc(x.nm)}: round complete, ${pgTot(s)}</b> (${HS.map((o,h)=>abaHalfName(h,HS.length).toLowerCase()+' '+o.tot).join(' + ')}).</p>`:`
  <div class="small muted" id="pghalf">${W.n>1?'3-arrow half':'1-arrow half'}${s.abaClub&&W.h==0?' (club rule)':''} · target ${i+1} of ${R.ends} in the round</div>
  <div class="row" style="justify-content:space-between;align-items:flex-end;margin:2px 0 6px"><b style="font-size:24px" id="pgtg"><span style="font-size:15px">${abaHalfName(W.h,HS.length)} · </span>Target ${W.tn} of ${W.H.t}</b><b id="pgarrow">Arrow ${k}${n>1&&k>1?` <span class="small muted">(arrow ${k-1} missed)</span>`:''}</b></div>
  <div class="aba-pad" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${ZN.map(z=>`<button class="aba-z" data-pgz="${z}" style="min-height:60px;font-size:22px;font-weight:800;border-radius:12px;border:0;background:${z=='A'?'#ffd84d':z=='B'?'#3b82f6':'#334155'};color:${z=='A'?'#111':'#fff'}">${abaPts(n,k,z)}<div style="font-size:11px;font-weight:700">${ZL[z]} ${z}</div></button>`).join('')}<button class="aba-z" data-pgz="M" style="min-height:60px;font-size:18px;font-weight:800;border-radius:12px;border:0;background:#64748b;color:#fff">Miss<div style="font-size:11px;font-weight:700">${n>1&&k<n?'next arrow':'0'}</div></button></div>`;
@@ -108,7 +110,7 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  <div class="card" id="pgcardx"><span class="kicker">Scoring</span>${chips}
  <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:20px" id="pgwho">${pgEsc(x.nm)}</b><div style="text-align:right"><span class="small muted">Day total</span> <b style="font-size:24px;color:var(--gold)" id="pgdaytot">${pgTot(s)}</b></div></div>
  ${!started?`<label class="small muted" id="pgclubl" style="display:flex;align-items:center;gap:6px;margin:2px 0 4px;padding:0;font-size:12px;font-weight:400;min-height:0"><input type="checkbox" id="pgclub" ${s.abaClub?'checked':''} style="width:16px;height:16px;min-height:0;min-width:0;margin:0;padding:0;flex:none;accent-color:#ffd84d"> Club rule: first half 1 arrow (whole group)</label>`:s.abaClub?'<div class="small muted" id="pgclubon" style="font-size:12px;margin:0 0 4px">Club rule on: both halves 1 arrow.</div>':''}
- ${pad}${sheetNow}${runL}
+ ${pad}${hold!=null?sheetNow.replace('<div class="aba-tots">',nextBtn+'<div class="aba-tots">'):sheetNow}${runL}
  <div class="small muted" id="pghalves" style="margin-top:6px">${HS.map((o,h)=>`${abaHalfName(h,HS.length)}: <b>${o.tot}</b> (${abaBlocks(o.H.t).map(b=>b.from+'-'+b.to+': '+o.sub[b.q]).join(', ')})`).join(' · ')}</div>
  <div class="row" style="gap:8px;justify-content:flex-start;margin-top:10px"><button class="btn ghost" id="pgundo" ${pgN(s)||t.m?'':'disabled'}>Undo</button></div></div>
  <div class="card" id="pgtotals"><span class="kicker">Totals</span><table class="pg-tab"><thead><tr><th>Archer</th><th>Targets</th><th>Block</th><th>Day</th><th>Event</th><th></th></tr></thead><tbody>${rows}</tbody></table>
@@ -119,13 +121,13 @@ function pgView(id){const E=pgEv();if(!E.days.length)return pgSetup();const d=pg
  ${sheet}
  <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><button class="btn${E.days.length>=2?' ghost':''}" id="pgnew">Start Day ${E.days.length+1}</button><button class="btn ghost" id="pgdel">Delete Day ${pgDayNo(d)}</button></div></div></div>`;
  const rr=()=>pgView(d.id);
- app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;delete d.hold;save();rr()});
- const nb=$('#pgnext');if(nb)nb.onclick=()=>{delete d.hold;save();rr();scrollTo(0,0)};
- app.querySelectorAll('[data-pgz]').forEach(b=>b.onclick=()=>{pgHit(d,j,b.dataset.pgz);rr()});
+ app.querySelectorAll('[data-pga]').forEach(b=>b.onclick=()=>{d.at=+b.dataset.pga;delete d.hold;save();rr();pgAlign()});
+ const nb=$('#pgnext');if(nb)nb.onclick=()=>{delete d.hold;save();rr();pgAlign()};
+ app.querySelectorAll('[data-pgz]').forEach(b=>b.onclick=()=>{pgHit(d,j,b.dataset.pgz);rr();pgAlign()});
  app.querySelectorAll('[data-pgday]').forEach(b=>b.onclick=()=>{window._pgSheet=null;pgView(b.dataset.pgday)});
  app.querySelectorAll('[data-pgsh]').forEach(b=>b.onclick=()=>{window._pgSheet=+b.dataset.pgsh;rr();const e=$('#pgsheet');if(e&&e.scrollIntoView)e.scrollIntoView()});
  const cb=$('#pgclub');if(cb)cb.onchange=()=>{pgClub(d,cb.checked);rr()};
- const u=$('#pgundo');if(u)u.onclick=()=>{pgUndo(d,j);rr()};
+ const u=$('#pgundo');if(u)u.onclick=()=>{pgUndo(d,j);rr();pgAlign()};
  const sv=$('#pgsave');if(sv)sv.onclick=()=>{pgSave(d);rr();const e=$('#pgsaved');if(e&&e.scrollIntoView)e.scrollIntoView()};
  const sh=$('#pgshare');if(sh)sh.onclick=()=>{if(window.shareSheet)shareSheet(d.a[view].s)};
  const sx=$('#pgshx');if(sx)sx.onclick=()=>{window._pgSheet=null;rr()};

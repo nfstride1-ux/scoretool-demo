@@ -241,3 +241,5 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .shcmp{margin-top:10px;padding:0 10px;color:var(--ink)}.shcmp .card h3,.shcmp .stat{color:var(--ink)}.shcmp .card{margin-left:0;margin-right:0}
 .shdone{text-align:center}.shdone-ic{width:56px;height:56px;margin:6px auto 4px;color:#ffc629}.shdone-ic svg{width:56px;height:56px}
 .shdone-act{display:grid;gap:8px;margin-top:12px}
+/* Peel group card: the live sheet keeps its half and round totals, a little tighter so the score buttons, the grid and Next fit one phone screen */
+#pglive .aba-tots .list-item{padding:3px 8px;margin:2px 0;min-height:0;font-size:14px}#pglive .aba-tots .list-item[style]{font-size:15px}
