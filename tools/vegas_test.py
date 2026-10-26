@@ -50,7 +50,7 @@ try:
   P0.evaluate("document.querySelector(`.ad-pad [data-k='9']`).click()");P0.wait_for_timeout(200)
   t=P0.inner_text('#app')
   chk('Vegas 300 solo: header with the round info and "End 4 of 10"','20 yd · 40 cm Vegas 3-spot' in t and 'End 4 of 10' in P0.inner_text('#vghead'))
-  chk('Vegas 300 solo: Ends so far table (End, 1, 2, 3, Score, Total, X)',P0.evaluate("[...document.querySelectorAll('#vgtab th')].map(x=>x.textContent)")==['End','1','2','3','Score','Total','X'] and P0.text_content('#vgtot').strip()=='95')
+  chk('Vegas 300 solo: the Ends so far card is gone (removed 26 Oct 2026), scoring pad and header still there',P0.locator('#vgtab').count()==0 and 'Ends so far' not in P0.text_content('#app') and P0.locator('.ad-pad').count()>=1 and 'End 4 of 10' in P0.text_content('#app').replace('\n',' '))
   chk('Vegas 300 solo: one triangle face, no Bonus 12 dot toggle','12 dot' not in t and P0.locator('#face3').count()==0)
   if SHOT:P0.screenshot(path=OUT+'/v1-vegas300-end.png')
   # seeding: score then X count
