@@ -57,12 +57,23 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
- lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
+ lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
+ const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){/* fixing one arrow, as Just me: replaced in place, plot kept */window._csFx=null;if(!csFxPut(e,3,fxs,k,xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+ if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
  if(xy||e.p){/* plotted arrow (one archer on this phone): its position kept beside the end, same order as the scores; never sent on the relay */const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
- Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;save();
+ /* a complete end is put in order (highest first, X before 10) with its plots, exactly as Just me does */
+ if(E.length==3&&window.csSorted){const ix=e.e.length-1,[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2}
+ Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
  if(E.length==3){const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
  lgAfter(lg);return true}
-function lgUndo(code,w,id){const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1];E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;save();lgAfter(lg)}
+function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1];E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
+/* delete one arrow of the end being shot (fix mode) */
+function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+/* my own week is also kept with my other sessions (plots and the 3-spot tag, so groups, heatmaps and the analysis work like Just me). Only a week I score
+   on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
+function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
+ const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
+ if(!s){s={id:sid,date:lgToday(),round:LG_R,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code,face3:'vert'};S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -164,14 +175,18 @@ const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&!lgDoneE(lgEnt(lg,act0,w))?act0:open[0]||ids[0];
  const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<3?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
- const LPL=ids.length==1&&!lock&&!done&&!!window.csFaceHtml,LFR=LPL?face3R(faceR(ROUNDS[LG_R],0),{face3:'vert'}):null,LPTS=LPL&&last&&last.length<3?(((e.p||[])[e.e.length-1])||[]).map((p,j)=>p&&{...p,k:(last&&last.length<3?last:[])[j]}).filter(Boolean):[];window._lgPl=LPL?{FR:LFR,R:ROUNDS[LG_R],pts:LPTS,code:lg.code,w,id:a}:null;
+ const PL=ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
+  AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:10,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> \u00b7 ${fin?'300 finished':'End '+(ei+1)+' of 10'}`}):null;
+ /* one archer on this phone: the same score card as Just me (plotting on the face, chips to fix an arrow, table of ends). Several archers stay buttons. */
+ window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
- <p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
- ${LPL&&!lock&&!done&&window.csFaceHtml?window.csFaceHtml(LFR,LPTS,false):''}
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
  ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
- <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>
+ <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>`}
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
+/* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
+function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
 function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
  const wk=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
@@ -195,7 +210,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
  <p class="small" style="margin:0">${lg.fin?'All six 300s are in. Final shoot-up.':w<6?`Week ${w} of 6 is current${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}. One 300 each, at home or together.`:`Day 6${lg.weeks&&lg.weeks[5]?' · '+wk(lg.weeks[5]):''}: everyone shoots the 6th 300 together. Then the shoot-up final.`}</p></div>
  ${fm?`<div class="card"><button class="btn alt" id="lgfin">${lgFinDone(lg)?'Final result':'Open the final shoot-up'}</button></div>`:`<div class="card" id="lgmine">${mine}</div>`}
- ${addC}${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}
+ ${addC}${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}${lgAnCard(lg,w)}
  <div class="card"><h3>League table</h3>${tab}</div>
  ${host&&!lg.fin?`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${!(lg.weeks||[]).some(Boolean)&&w<6?`<button class="btn ghost" id="lgnext">Move to week ${w+1}</button>`:''}${w==6&&done6>=2?`<button class="btn ghost" id="lgforce">Start shoot-up now</button>`:''}</div>${w==6?`<p class="small muted">The final starts by itself when every archer's day-6 300 is in (${done6} of ${lgArchers(lg).length}).</p>`:''}</div>`:''}
  <div class="card"><p class="small" style="margin:0">League code <b id="lgcode">${esc(code)}</b>. Share it so others can join.</p>${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}
@@ -210,6 +225,7 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  const act=q('#lgentry .lc-chip.on')&&q('#lgentry .lc-chip.on').dataset.lgid;
  if(window._lgPl&&window._lgPl.code==code&&window.csFaceBind)window.csFaceBind(window._lgPl,(k,xy)=>{window._lgAct=act;lgKey(code,w,act,k,xy)},()=>lgView(code));
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;lgKey(code,w,act,b.dataset.lgk)});
+ if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;lgFxDel(code,w,act)};
  if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;lgUndo(code,w,act)};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
  const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='An archer who has started this week can\'t move group.';return}lgView(code)};
@@ -221,5 +237,5 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
  q('#lgrf').onclick=()=>lgTick(true);q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
  if(q('#lgdel'))q('#lgdel').onclick=()=>{if(!confirm('Remove this league from this phone? Other phones keep it.'))return;S.leagues=lgAll().filter(l=>l.code!=code);S.matches=h2hAll().filter(m=>m.code!=lgFinCode(lg));save();window._lgv=null;nav('score')};
- scrollTo(0,0)}
+ if(!(window.csAdFit&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0)}
 window.lgView=lgView;window.lgEntryCard=lgEntryCard;

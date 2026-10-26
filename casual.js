@@ -114,6 +114,7 @@ function csRemove(code,id){const cs=csGet(code);if(!cs||!csHost(cs)||id==cs.host
 /* host: stop waiting for a linked person and score them as a name-only friend */
 function csUnlink(code,id){const cs=csGet(code);const p=cs&&csP(cs,id);if(!p||!p.tid||!csHost(cs)||id==cs.host)return false;p.n=testerName(p.tid);p.tid=null;cs.pt=Date.now();cs.dirty=1;save();csTick(true);return true}
 function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const R=csR(cs);cs.sc=cs.sc||{};const e=cs.sc[id]=cs.sc[id]||{e:[]};
+ const fxs=csFxFor('cs|'+cs.code+'|'+id);if(fxs){/* fixing one arrow (as Just me) */window._csFx=null;if(!e.e[fxs.i]||!csKeys(cs,fxs.i).includes(k)||!csFxPut(e,R.ape,fxs,k,xy))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
  let E=e.e[e.e.length-1];const nw=!E||E.length>=R.ape;if(nw&&e.e.filter(x=>x&&x.length).length>=R.ends)return false;if(!csKeys(cs,nw?e.e.length:e.e.length-1).includes(k))return false;if(nw){E=[];e.e.push(E)}E.push(k);
  if(xy||e.p){/* plotted arrows (single archer only): positions kept in e.p beside the ends, sorted only when the end is complete, as in Just me */
   const ix=e.e.indexOf(E);e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null);
@@ -121,7 +122,8 @@ function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||cs
  else E.sort((a,b)=>csV(b)-csV(a)||(b=='X')-(a=='X'));e.u=Date.now();e.by=csMe();cs.dirty=1;
  if(E.length==R.ape){const ids=cs.ppl.map(p=>p.id).filter(x=>csCanScore(cs,x)),s=ids.indexOf(id);window._csAct=null;for(let j=1;j<=ids.length;j++){const n=ids[(s+j)%ids.length];if(!csDoneP(cs,n)){window._csAct=n;break}}}
  csAfter(cs);return true}
-function csUndo(code,id){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!e.e.length)return false;let E=e.e[e.e.length-1];if(E&&!E.length){e.e.pop();E=e.e[e.e.length-1]}if(!E)return false;const ux=e.e.length-1;E.pop();if(!E.length)e.e.pop();
+function csFxDelete(code,id){const cs=csGet(code),fx=csFxFor('cs|'+code+'|'+id);window._csFx=null;if(!cs||!fx||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!csFxDel(e,fx))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
+function csUndo(code,id){window._csFx=null;const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!e.e.length)return false;let E=e.e[e.e.length-1];if(E&&!E.length){e.e.pop();E=e.e[e.e.length-1]}if(!E)return false;const ux=e.e.length-1;E.pop();if(!E.length)e.e.pop();
  if(e.p){if(e.p[ux])e.p[ux].length=Math.min(e.p[ux].length,E.length);e.p.length=Math.min(e.p.length,e.e.length)}
  e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
 /* my own finished score is also kept with my other sessions (tagged with the shoot) */
@@ -257,8 +259,48 @@ function csAbaSheetHtml(cs,id,live){if(!window.abaGrid)return'';const s=csAbaSes
    Uses the Just me face drawing and plot scoring (faceSVG, tapScore). Several archers on one card, 3D and ABA stay button-only. */
 const csSpotSC=FR=>isBug(FR)?BUGC:spots3(FR);
 const csFaceVB=FR=>{const SC=csSpotSC(FR),SP=SC&&window._csSpot?SC[window._csSpot-1]:null;return SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR)};
-function csFaceHtml(FR,pts,locked){const SC=csSpotSC(FR),vb=csFaceVB(FR),SP=SC&&window._csSpot;
- return`<div class="row" style="gap:6px;justify-content:flex-start;margin:6px 0 2px"><button class="ad-small" id="cshide" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>`+(S.hideFace?'':`${SC?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(window._csSpot||0)==n?' on':''}" data-csspot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}<p class="small muted" style="margin:2px 0">Tap the face or a score. Hold to aim with the magnifier.</p><div id="csfwrap" style="position:relative;width:100%;height:${SP?'min(340px,40vh,40dvh)':'min(300px,38vh,38dvh)'};margin:0 auto;overflow:hidden;touch-action:none;border-radius:8px">${faceSVG(pts,'cspface',vb,FR).replace('width="100%"','width="100%" height="100%"')}<button type="button" class="zcyc" id="cszcycle"></button><div id="csloupe" hidden style="position:absolute;z-index:3;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`)}
+function csFaceHtml(FR,pts,locked,opt){const SC=csSpotSC(FR),vb=csFaceVB(FR),SP=SC&&window._csSpot,o=opt||{};
+ /* face height: the same sizes Just me uses (the vertical 3-spot is tall, so it gets the tall box) */
+ const H=SP?'min(340px,40vh,40dvh)':isBug(FR)||FR.col||FR.vert?'min(320px,calc(100vh - 530px),calc(100dvh - 530px))':'min(290px,36vh,36dvh)';
+ return(o.noHide?'':`<div class="row" style="gap:6px;justify-content:flex-start;margin:6px 0 2px"><button class="ad-small" id="cshide" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>`)+(S.hideFace?'':`${SC?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(window._csSpot||0)==n?' on':''}" data-csspot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}${o.noHide?'':'<p class="small muted" style="margin:2px 0">Tap the face or a score. Hold to aim with the magnifier.</p>'}<div id="csfwrap" style="position:relative;width:100%;height:${H};margin:0 auto;overflow:hidden;touch-action:none;border-radius:8px">${faceSVG(pts,'cspface',vb,FR).replace('width="100%"','width="100%" height="100%"')}<button type="button" class="zcyc" id="cszcycle"></button><div id="csloupe" hidden style="position:absolute;z-index:3;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`)}
+/* ---------- Just me look-alike scoring card (league and casual, one archer on this phone) ----------
+   The same layout and behaviour as the Just me scorer: End / Prog boxes, the arrows of the end as chips (tap one to fix it),
+   the face for the end, the score keys, Undo, and the table of every end. League and casual both draw it from here. */
+function csSorted(E,P){const o=E.map((_,j)=>j).sort((a,b)=>csV(E[b])-csV(E[a])||(E[b]=='X')-(E[a]=='X')||a-b);return[o.map(j=>E[j]),o.map(j=>(P||[])[j]||null)]}
+const csFxFor=ns=>window._csFx&&window._csFx.ns==ns?window._csFx:null;
+/* replace one arrow in place (and its plot); a complete end is sorted again */
+function csFxPut(en,ape,fx,k,xy){const E=en.e&&en.e[fx.i];if(!E||fx.j>=E.length)return false;E[fx.j]=k;
+ if(en.p||xy){en.p=en.p||[];while(en.p.length<=fx.i)en.p.push([]);const P=en.p[fx.i];while(P.length<E.length)P.push(null);P[fx.j]=xy||null}
+ if(E.length==ape){const[E2,P2]=csSorted(E,en.p&&en.p[fx.i]);E.splice(0,E.length,...E2);if(en.p)en.p[fx.i]=P2}return true}
+/* delete one arrow of the end being shot (the last end only) */
+function csFxDel(en,fx){const E=en.e&&en.e[fx.i];if(!E||fx.i!=en.e.length-1)return false;E.splice(fx.j,1);if(en.p&&en.p[fx.i])en.p[fx.i].splice(fx.j,1);if(!E.length){en.e.pop();if(en.p)en.p.length=Math.min(en.p.length,en.e.length)}return true}
+function csAdTable(o){const E=(o.en.e||[]),fx=o.fx;let run=0;
+ const rows=E.map((x,i)=>{x=x||[];if(!x.length)return'';run+=endSum(x);return`<tr><td>${i+1}</td><td>${x.map((a,j)=>`<span class="adb ${o.kcol(a)}" role="button" tabindex="0" data-csfix="${i},${j}" aria-label="fix arrow ${esc(a)}"${fx&&fx.i==i&&fx.j==j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${esc(a)}</span>`).join('')}</td><td>${endSum(x)}</td><td>${run}</td></tr>`}).join('');
+ return rows?`<div class="ad-sheet" id="csadtab"><table class="ad-tab"><thead><tr><th>#</th><th>Scores</th><th>End</th><th>Prog</th></tr></thead><tbody>${rows}</tbody></table></div>`:''}
+function csAdCard(o){const{en,ape,ends,FR,R}=o,E=en.e||[],fx=o.fx,last=E[E.length-1],cur=last&&last.length<ape;
+ const ei=fx?fx.i:cur?E.length-1:Math.min(E.length,ends-1),e=E[ei]||[],prog=E.slice(0,ei+1).reduce((t,y)=>t+endSum(y||[]),0),total=E.reduce((t,y)=>t+endSum(y||[]),0);
+ const attrs=`id="csad" data-ns="${esc(o.ns)}"`;
+ if(o.done&&!fx)return{pl:null,html:`<div ${attrs}><p style="margin:8px 0 4px">${o.info(ei,true)}</p>${csAdTable(o)}<div class="ad-sheet"><div class="ad-sum">${hiStats(E.filter(x=>x&&x.length).flat(),{round:o.round})} <b class="big">${total}</b><span class="small muted"> / ${R.max}</span></div></div><div class="row" style="gap:6px;justify-content:flex-start;align-items:center;padding:0 10px"><button class="ad-small" id="${o.uid}" style="margin-left:0">\u21b6 Undo</button><span class="small muted">Tap an arrow in the table to fix it.</span></div></div>`};
+ const pts=((en.p||[])[ei]||[]).map((p,j)=>p&&{...p,k:e[j],sel:!!(fx&&fx.j==j)}).filter(Boolean);
+ const chips=Array.from({length:ape},(_,j)=>e[j]!=null?`<span class="adb ${o.kcol(e[j])}" role="button" tabindex="0" data-csfix="${ei},${j}" aria-label="fix arrow ${esc(e[j])}"${fx&&fx.j==j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${esc(e[j])}</span>`:'<span class="adb adb-empty"></span>').join('');
+ const canUndo=E.some(x=>x&&x.length);
+ const html=`<div ${attrs}><div class="ad-head"><div class="ad-left"><div class="ad-box ad-line">${o.info(ei,false)}</div></div><div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
+ <div class="ad-chips">${chips}<button class="ad-small" id="${o.uid}" ${canUndo&&!fx?'':'disabled'}>\u21b6 Undo</button>${fx?`${fx.i==E.length-1?'<button class="ad-small" id="csdelarrow">Delete arrow</button>':''}<button class="ad-small" id="csfxdone">Done</button>`:''}<button class="ad-small" id="cshide" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>
+ <p class="small muted" style="margin:4px 10px">${o.sub?esc(o.sub)+'. ':''}${fx?'Fixing arrow '+(fx.j+1)+' of end '+(fx.i+1)+'. Tap the face or a score to replace it.':'Tap the face or a score. Tap an arrow to fix it.'}</p>
+ ${csFaceHtml(FR,pts,false,{noHide:1})}
+ <div class="ad-pad lc-pad" style="--cols:${o.keys.length}">${o.keys.map(k=>`<button class="${o.kcol(k)}" ${o.kattr}="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>
+ ${csAdTable(o)}</div>`;
+ return{html,pl:{FR,R,pts}}}
+/* chips and the fix buttons; the caller binds the keys, the face, Undo and Delete (they write the data) */
+function csAdBind(again){const ad=app.querySelector('#csad');if(!ad)return;const ns=ad.dataset.ns;
+ ad.querySelectorAll('[data-csfix]').forEach(b=>{const go=()=>{const[i,j]=b.dataset.csfix.split(',').map(Number),f=csFxFor(ns);window._csFx=f&&f.i==i&&f.j==j?null:{ns,i,j};again()};b.onclick=go;b.onkeydown=ev=>{if(ev.key=='Enter'||ev.key==' '){ev.preventDefault();go()}}});
+ const d=ad.querySelector('#csfxdone');if(d)d.onclick=()=>{window._csFx=null;again()}}
+/* as Just me: bring the End / Prog boxes to the top and shrink the face until the score keys are on the screen too */
+function csAdFit(){const ad=app.querySelector('#csad'),pd=ad&&ad.querySelector('.ad-pad');if(!ad||!pd)return false;
+ const fw=app.querySelector('#csfwrap'),nv=document.querySelector('nav'),H=document.querySelector('header.top,header'),hd=(H?H.getBoundingClientRect().bottom:0)+4,lim=innerHeight-(nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().height:0)-8;
+ const top=()=>(ad.querySelector('.ad-head')||ad).getBoundingClientRect().top,place=()=>scrollTo(0,Math.max(0,scrollY+top()-hd));
+ place();const need=pd.getBoundingClientRect().bottom-top(),av=lim-hd;
+ if(fw&&need>av){fw.style.height=Math.max(170,fw.getBoundingClientRect().height-(need-av))+'px';place()}return true}
 function csFaceBind(C,plot,again){if(!C)return;const q=x=>app.querySelector(x);
  if(q('#cshide'))q('#cshide').onclick=()=>{S.hideFace=!S.hideFace;save();again()};
  app.querySelectorAll('[data-csspot]').forEach(b=>b.onclick=()=>{window._csSpot=+b.dataset.csspot;PZ.k=1;PZ.cx=PZ.cy=0;again()});
@@ -276,19 +318,21 @@ function csFaceBind(C,plot,again){if(!C)return;const q=x=>app.querySelector(x);
   if(pan.mode=='pan'){const s2=1/f.getScreenCTM().a;PZ.cx-=(ev.clientX-pan.x)*s2;PZ.cy-=(ev.clientY-pan.y)*s2;applyZ()}else if(pan.mode=='scroll')scrollBy(0,pan.y-ev.clientY);else if(pan.mode=='aim')show(ev);pan.x=ev.clientX;pan.y=ev.clientY};
  f.onpointercancel=()=>{clr();pan=null;L.hidden=true};
  f.onpointerup=ev=>{clr();const g=pan;pan=null;L.hidden=true;if(!g)return;if(g.mode=='aim')return plotAt(ev);if(!g.mode&&performance.now()-g.t<300&&Math.hypot(ev.clientX-g.x0,ev.clientY-g.y0)<10)plotAt(ev)}}
-window.csFaceHtml=csFaceHtml;window.csFaceBind=csFaceBind;
+window.csFaceHtml=csFaceHtml;window.csFaceBind=csFaceBind;window.csAdCard=csAdCard;window.csAdBind=csAdBind;window.csAdFit=csAdFit;window.csFxFor=csFxFor;window.csFxPut=csFxPut;window.csFxDel=csFxDel;window.csSorted=csSorted;
 function csEntryCard(cs){const R=csR(cs),ids=cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id));if(!ids.length||csLocked(cs)||cs.fin)return'';
  const a0=window._csAct&&ids.includes(window._csAct)?window._csAct:null,a=a0||ids.find(id=>!csDoneP(cs,id))||ids[0],e=csEnt(cs,a)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<R.ape?last:[],done=csDoneP(cs,a);
  const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),F=csFace(cs,en-1),nA=csAbaN(cs,en-1),sg=nA>1?Math.min(csStg(cs,a,en-1),nA-1):0,K=nA?[...csKeys(cs,en-1).slice(3*sg,3*sg+3),'M']:csKeys(cs,en-1);
- const PL=!nA&&!R.d3&&ids.length==1&&!csLocked(cs),ex=en-1,PTS=PL?(((e.p||[])[ex])||[]).map((p,j)=>p&&{...p,k:((e.e[ex])||[])[j]}).filter(Boolean):[];window._csPl=PL&&!done?{FR:F,R,pts:PTS,code:cs.code,id:a}:null;
+ const PL=!nA&&!R.d3&&ids.length==1&&!csLocked(cs),ex=en-1,PTS=PL?(((e.p||[])[ex])||[]).map((p,j)=>p&&{...p,k:((e.e[ex])||[])[j]}).filter(Boolean):[];const NS='cs|'+cs.code+'|'+a,FX=PL&&window.csAdCard?csFxFor(NS):null,AD=PL&&window.csAdCard?csAdCard({ns:NS,en:e,ape:R.ape,ends:R.ends,R,FR:F,round:cs.round,keys:K,kcol:k=>csKcol(cs,k),kattr:'data-csk',uid:'csundo',fx:FX,done,sub:csEndFace(cs,en-1)+(F.dist&&!/undefined/.test(F.dist)?', '+F.dist:''),info:(ei,fin)=>`<b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} \u00b7 ${fin?'finished':'End '+(ei+1)+' of '+R.ends}`}):null;window._csPl=AD&&AD.pl?{...AD.pl,code:cs.code,id:a}:(PL&&!done?{FR:F,R,pts:PTS,code:cs.code,id:a}:null);
  return`<div class="card" id="csentry"><span class="kicker">Score card</span>${ids.length>1?`<div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const r=csRow(cs,id);return`<button class="lc-chip${id==a?' on':''}" data-csid="${esc(id)}">${esc(r.nm)} <span class="small">${r.done?'finished':r.n+'/'+R.ends}</span></button>`}).join('')}</div>`:''}
- <p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
  ${done||!nA?'':`<p style="margin:4px 0" id="csabaarrow"><b>Arrow ${sg+1}</b>${sg?' \u00b7 arrow '+sg+' missed':''}</p><p class="small muted" style="margin:0 0 4px">${nA>1?'Tap the score of your first arrow to hit. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0).'}</p>`}
  ${nA?csAbaTotHtml(cs,a):''}
  ${PL&&!done?csFaceHtml(F,PTS,false):''}
  ${done?'':`<div class="vg-slots">${Array.from({length:R.ape},(_,j)=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:${K.length>8?Math.ceil(K.length/2):K.length};margin-top:8px">${K.map(k=>`<button class="${csKcol(cs,k)}" data-csk="${k}" aria-label="score ${k}">${k=='M'&&nA?(sg<nA-1?'Miss':'Miss (0)'):k}</button>`).join('')}</div>`}
- <button class="btn ghost" id="csundo" style="margin-top:6px" ${csEnds(cs,a).length||sg?'':'disabled'}>${nA?'Undo':'Undo last arrow'}</button></div>`}
+ <button class="btn ghost" id="csundo" style="margin-top:6px" ${csEnds(cs,a).length||sg?'':'disabled'}>${nA?'Undo':'Undo last arrow'}</button>`}</div>`}
+/* analysis straight under the score once my own card is finished (the same summary and group analysis Just me shows) */
+function csAnCard(cs){try{const me=csMe();if(!csP(cs,me)||!csDoneP(cs,me)||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='cs-'+cs.code);if(!s)return'';return`<div id="csan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
 function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=null;$('#tabs').hidden=false;const me=csMe(),host=csHost(cs),R=csR(cs),fin=csFin(cs),rows=cs.ppl.map(p=>csRow(cs,p.id)),m=cs.mp&&cs.mp.on&&cs.mp.seeds?csMatchSync(cs):null;
  if(cs.status=='invite'){app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot</span><h1>${esc(cs.name)}</h1><p class="small">${esc(testerName(cs.host))} added you. Tap Join on your Score tab.</p></div></div>`;return}
  const mpOk=cs.ppl.length>=2,seedsN=csSeeds(cs).length,lad=m&&window.suLadder?suLadder(m):[],mpDone=lad.length&&lad[lad.length-1].res.winner;
@@ -309,6 +353,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  ${csAllDone(cs)||!csAbaN(cs,0)?'':csAbaLive(cs)}
  ${csAllDone(cs)&&csAbaN(cs,0)?`<div class="card" id="csabasum"><span class="kicker">Totals</span>${cs.ppl.map(p=>`<p style="margin:6px 0 0"><b>${esc(csNm(cs,p.id))}</b></p>${csAbaTotHtml(cs,p.id).replace(/<div class="list-item"[^]*?<\/div>/,'')}${csAbaSheetHtml(cs,p.id,false)}`).join('')}</div>`:''}
  <div class="card"><h3>Scores</h3>${tab}${ends}</div>
+ ${csAnCard(cs)}
  ${csAllDone(cs)&&csEntryCard(cs)?`<details class="card" id="csfix" ${window._csFix?'open':''}><summary class="small">Fix a score</summary>${csEntryCard(cs).replace('<div class="card" id="csentry">','<div id="csentry">')}</details>`:''}
  ${mpCard}
  <div class="card">${addBox}${ppl}${host&&!fin?`<button class="btn ghost" id="csfin" style="margin-top:8px">Finish shoot</button>`:''}
@@ -320,6 +365,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
   if(nA>1&&b.dataset.csk=='M'&&sg<nA-1){window._csStg={k:csStgKey(cs,act,ei),s:sg+1};csView(code);return}
   window._csStg=null;csKey(code,act,b.dataset.csk)});
  if(window._csPl&&window._csPl.code==code)csFaceBind(window._csPl,(k,xy)=>{window._csAct=act;window._csStg=null;csKey(code,act,k,xy)},()=>csView(code));
+ if(window.csAdBind)csAdBind(()=>csView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._csAct=act;csFxDelete(code,act)};
  if(q('#csundo'))q('#csundo').onclick=()=>{window._csAct=act;const ei=csEnds(cs,act).length,sg=csAbaN(cs,ei)>1?csStg(cs,act,ei):0;if(sg){window._csStg={k:csStgKey(cs,act,ei),s:sg-1};csView(code);return}window._csStg=null;csUndo(code,act)};
  if(q('#csyes'))q('#csyes').onclick=()=>{if(!csMpStart(code))q('#csmpmsg').textContent='Needs 2 or more archers with scores.';csView(code)};
  if(q('#csnot'))q('#csnot').onclick=()=>{csMpDismiss(code);csView(code)};
@@ -333,7 +379,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
   q('#csvadd').onclick=()=>{const e=csAdd(code,{n:vt.value});if(e){q('#csvmsg').textContent=e;return}window._csMore=1;csView(code)};if(window._csMore){q('#csmore').open=true;window._csMore=0}}
  q('#csrf').onclick=()=>csTick(true);q('#csback').onclick=()=>{window._csv=null;nav('score')};
  if(q('#csdel'))q('#csdel').onclick=()=>{if(!confirm('Remove this casual shoot from this phone? Other phones keep it.'))return;S.casual=csAll().filter(x=>x.code!=code);S.matches=h2hAll().filter(x=>x.code!=csMpCode(cs));save();window._csv=null;nav('score')};
- scrollTo(0,0)}
+ if(!(window.csAdFit&&q('#csad')&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0)}
 window.csView=csView;
 /* leaving the shoot view by the tabs clears it */
 const _csNav=nav;nav=function(v){if(v!='score')window._csMode=null;window._csv=null;return _csNav.apply(this,arguments)};
