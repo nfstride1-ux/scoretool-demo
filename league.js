@@ -118,12 +118,12 @@ async function lgTick(force){if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;
  finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv)lgView(window._lgv);else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
 setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true),2500);addEventListener('online',()=>lgTick(true));
 /* invites + join */
-window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
+window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||d.code==LG_PRESET.code||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
  lgAll().push({code:d.code,name:nmClean(String(d.name||'League')).slice(0,40),host:d.from,order:[d.from,me],sc:{},status:'invite',created:d.t||Date.now()});save();return true};
 function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h2hCode(),lg={code,name:nmClean(name||'').slice(0,40)||'Onion Shed Challenge',host:me,order:[me,...T.filter(id=>id!=me&&!LG_EXCL.includes(id))].slice(0,H2H_MAX),
  weeks:(weeks||[]).slice(0,LG_W),wt:Date.now(),cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),dirty:1};lgAll().push(lg);save();
  for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);return lg}
-async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(code.length!=8)return'Type the 8-character league code.';if(lgGet(code)){lgView(code);return''}
+async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(code.length!=8)return'Type the 8-character league code.';if(code==LG_PRESET.code)return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);return''}
  const L=await h2hPoll(lgTopic(code));const s=(L||[]).filter(d=>d.k=='ls'&&d.code==code);if(!s.length)return'No league found with that code yet. Ask the host to open the league, then try again.';
  const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<h2hCap(lg))lg.order.push(me);
  lgAll().push(lg);save();lgTick(true);lgView(code);return''}
@@ -138,26 +138,19 @@ const LG_PRESET={code:'ONIONSHD',name:'Onion Shed Challenge',host:'nathe',member
  gn:{gleslie:{n:'Leslie Anderson',j:0,t:Date.UTC(2026,9,22,13,45),by:'nathe'}},
  /* relay posts older than this are browser tests from the release checks (22 Oct 2026) and are ignored */
  since:Date.UTC(2026,9,22,12,52)};
-/* additive, idempotent: a phone that already holds this league gets any preset member or added shooter it is missing, appended to the
-   end of order (nothing removed or reordered, scores untouched). order and gn only ever grow in lgMerge, so an older host snapshot can't drop them. */
-function lgPresetFix(){if(typeof S=='undefined'||!S||!Array.isArray(S.leagues))return false;const P=LG_PRESET;let ch=false;
- for(const lg of S.leagues){if(!lg||lg.code!=P.code)continue;lg.order=lg.order||[];
-  for(const id of P.members)if(!LG_EXCL.includes(id)&&!lg.order.includes(id)){lg.order.push(id);ch=true}
-  for(const id in P.gn){lg.gn=lg.gn||{};if(!lg.gn[id]){lg.gn[id]={...P.gn[id]};ch=true}if(!lg.order.includes(id)){lg.order.push(id);ch=true}}
-  if(ch)lg.dirty=1}
- return ch}
-function lgSeed(){if(!TESTER||typeof S=='undefined'||!S)return;const me=TESTER.id,P=LG_PRESET;if(lgPresetFix())save();if(!P.members.includes(me)||LG_EXCL.includes(me)||S.lgPreset==P.code)return;
- const L=S.leagues=S.leagues||[];S.lgPreset=P.code;
- if(!L.some(l=>l.code==P.code||String(l.name||'').trim().toLowerCase()==P.name.toLowerCase()))L.push({code:P.code,name:P.name,host:P.host,order:P.members.slice(),weeks:[],wt:0,cw:1,cwt:0,grp:{},gn:JSON.parse(JSON.stringify(P.gn)),sc:{},status:'active',created:Date.now(),preset:1}),lgPresetFix();
- save()}
-try{lgSeed()}catch(e){console.error(e)}window.lgSeed=lgSeed;window.LG_PRESET=LG_PRESET;
+/* 26 Oct 2026 (Nathe): the Onion Shed Challenge preset is no longer offered. Nothing adds it to anyone's leagues list, nothing edits an
+   existing copy, and a copy already in a phone's storage is simply not listed (its scores and sessions stay exactly as saved). LG_PRESET
+   is kept as the template for new leagues ('Use the usual group' in New league). lgPresetRecord builds the old record (tests only). */
+const lgPresetHidden=lg=>!!lg&&lg.code==LG_PRESET.code;
+function lgPresetRecord(){const P=LG_PRESET;return{code:P.code,name:P.name,host:P.host,order:P.members.slice().concat(Object.keys(P.gn)),weeks:[],wt:0,cw:1,cwt:0,grp:{},gn:JSON.parse(JSON.stringify(P.gn)),sc:{},status:'active',created:Date.now(),preset:1}}
+window.lgPresetRecord=lgPresetRecord;window.LG_PRESET=LG_PRESET;
 /* ---------- screens ---------- */
-function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().slice().reverse();
+function lgCard(){if(!TESTER)return'';const me=h2hMe(),L=lgAll().filter(l=>!lgPresetHidden(l)).reverse();
  return`<div class="card" id="lgcard"><span class="kicker">Leagues</span><h3>Your leagues</h3>${L.length?'':'<p class="small muted" style="margin:2px 0 8px">You are not in any leagues yet. Join one with the code from its host, or start your own.</p>'}
  ${L.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(lg.name)}</b><div class="small muted">${lg.fin?'Final shoot-up':'Week '+lgWeek(lg)+' of 6'} · ${lgArchers(lg).length} archers</div></span><button class="btn ghost" data-lgopen="${lg.code}">Open</button></div>`).join('')}
  <details id="lgnew"><summary>New league</summary><label for="lgname">League name</label><input id="lgname" maxlength="40" placeholder="League name"><p class="small muted" style="margin:6px 0">Format: six 300s at 18 m on the vertical 3-spot, cumulative total, then one shoot-up final. <span id="lgrules">${LG_FINTXT}</span></p>
- <fieldset class="h2hops nm-real"><legend>Who's in</legend>${TESTERS.filter(t=>t.id!=me&&!LG_EXCL.includes(t.id)).map(t=>`<label class="h2htk"><input type="checkbox" data-lgop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
+ <fieldset class="h2hops nm-real"><legend>Who's in</legend><button type="button" class="btn ghost" id="lgtpl" style="margin:0 0 6px">Use the usual group</button>${TESTERS.filter(t=>t.id!=me&&!LG_EXCL.includes(t.id)).map(t=>`<label class="h2htk"><input type="checkbox" data-lgop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
  <p class="small muted" style="margin:4px 0">You plus up to 9 others (10 archers max). Others can also join with the league code.</p>
  <details><summary class="small">Week dates (optional)</summary>${[1,2,3,4,5,6].map(w=>`<label for="lgd${w}">${w<6?'Week '+w:'Day 6 (together)'}</label><input type="date" id="lgd${w}">`).join('')}</details>
  <button class="btn alt full" id="lggo" style="margin-top:8px">Create league</button></details>
@@ -166,7 +159,8 @@ function lgBindCard(){const c=$('#lgcard');if(!c)return;
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
  c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code)});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});
- const g=$('#lggo');if(g)g.onclick=()=>{if(lgAll().filter(l=>l.host==h2hMe()&&!lgFinDone(l)).length>=3)return;const T=[...c.querySelectorAll('[data-lgop]:checked')].map(x=>x.dataset.lgop);if(T.length>H2H_MAX-1)return;
+ const tp=$('#lgtpl');if(tp)tp.onclick=()=>{c.querySelectorAll('[data-lgop]').forEach(x=>{x.checked=LG_PRESET.members.includes(x.dataset.lgop)})};
+ const g=$('#lggo');if(g)g.onclick=()=>{if(lgAll().filter(l=>!lgPresetHidden(l)&&l.host==h2hMe()&&!lgFinDone(l)).length>=3)return;const T=[...c.querySelectorAll('[data-lgop]:checked')].map(x=>x.dataset.lgop);if(T.length>H2H_MAX-1)return;
   const lg=lgCreate($('#lgname').value,T,[1,2,3,4,5,6].map(w=>($('#lgd'+w)||{}).value||''));if(lg)lgView(lg.code)};
  const j=$('#lgjgo');if(j)j.onclick=async()=>{const msg=await lgJoin($('#lgjc').value);const e=$('#lgjmsg');if(e&&msg)e.textContent='⚠ '+msg}}
 const lgFinDone=lg=>{const m=lg.fin&&h2hGet(lgFinCode(lg));return!!(m&&window.suLadder&&suLadder(m).length&&suLadder(m).slice(-1)[0].res.winner)};

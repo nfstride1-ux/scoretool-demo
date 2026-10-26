@@ -117,7 +117,7 @@ try:
   chk('page errors (Casual): none',not e2)
   # ================= League =================
   c3,pg,e3=phone(b)
-  pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("lgView('ONIONSHD')");pg.wait_for_timeout(500)
+  pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
   pg.click('[data-lgme]');pg.wait_for_timeout(500)
   st,mk,plot,un,agree=kit(pg,'cspface','#lgundo','#csad .ad-chips .adb:not(.adb-empty)')
   if pg.locator('#cspface').count()==0:pg.click('#cshide') if pg.locator('#cshide').count() else None

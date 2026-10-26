@@ -42,7 +42,7 @@ try:
   # ---------- League ----------
   c2,pg,e2=phone(b)
   KEY=pg.evaluate("KEY");before=snap(pg)
-  pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("lgView('ONIONSHD')");pg.wait_for_timeout(500)
+  pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
   chk('tester sees the league',pg.locator('[data-lgme]').count()==1)
   pg.click('[data-lgme]');pg.wait_for_timeout(500)
   chk('Just me look: End and Prog boxes',pg.locator('#csad .ad-num').count()==2 and pg.locator('#csad .ad-head').count()==1)

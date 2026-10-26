@@ -112,7 +112,7 @@ try:
   # undo after finish still works (reopens last target), no hold needed
   pg.click('#pgsave');pg.wait_for_timeout(100)
   now=json.loads(pg.evaluate("JSON.stringify(Object.assign({},S,{peel:null,leagues:JSON.parse(JSON.stringify(S.leagues||[])).map(l=>{delete l.dirty;delete l.posted;delete l.qfail;return l})}))"));o=json.loads(other0)
-  L0=o['leagues'];L1=now['leagues'];print('LEN',len(L0),len(L1));[print('LGD',x,json.dumps(L0[0].get(x))[:150],json.dumps(L1[0].get(x))[:150]) for x in set(L0[0])|set(L1[0]) if L0[0].get(x)!=L1[0].get(x)];print('DIFFKEYS',[k for k in set(now)|set(o) if now.get(k)!=o.get(k)])
+  L0=o['leagues'];L1=now['leagues'];print('LEN',len(L0),len(L1));[print('LGD',x,json.dumps(L0[0].get(x))[:150],json.dumps(L1[0].get(x))[:150]) for x in (set(L0[0])|set(L1[0]) if L0 and L1 else []) if L0[0].get(x)!=L1[0].get(x)];print('DIFFKEYS',[k for k in set(now)|set(o) if now.get(k)!=o.get(k)])
   chk('peel data is the only data touched: sessions, settings and everything else unchanged (apart from the league relay bookkeeping the app updates by itself)',pg.evaluate("JSON.stringify(Object.assign({},S,{peel:null,leagues:JSON.parse(JSON.stringify(S.leagues||[])).map(l=>{delete l.dirty;delete l.posted;delete l.qfail;return l})}))")==other0)
   # emoji / colour check inside the new parts
   em=pg.evaluate("(()=>{const t=document.querySelector('#pgview').innerText;return /[\\u{1F300}-\\u{1FAFF}\\u2600-\\u27BF]/u.test(t)})()")

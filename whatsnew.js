@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-26-2106-nopreset',d:'2026-10-26',items:[
+   ['trophy',"Onion Shed Challenge league removed","The preset Onion Shed Challenge league is no longer added to anyone's Leagues list, and one already on a phone is no longer listed. Nothing saved was deleted or changed: its scores and sessions are exactly as they were. Creating a new league, weekly scoring, the relay and the shoot-up all work as before. In New league, the Use the usual group button ticks the same members as before as a starting point.",'this release']]},
   {v:'v2026-10-26-2027-chipcolors',d:'2026-10-26',items:[
-   ['target',"Light theme: score chips and archer names are readable","On Casual and League score cards, and on Vegas match play, the arrows you have just shot (X 10 9 8 7) were dark navy with dark text in the light theme, so you could not read the scores. They are now light chips with dark text, and the archer name pills are light too. The dark theme looks the same as before. Nothing saved has changed.",'this release']]},
+   ['target',"Light theme: score chips and archer names are readable","On Casual and League score cards, and on Vegas match play, the arrows you have just shot (X 10 9 8 7) were dark navy with dark text in the light theme, so you could not read the scores. They are now light chips with dark text, and the archer name pills are light too. The dark theme looks the same as before. Nothing saved has changed.",'1c75ce3']]},
   {v:'v2026-10-26-1955-ghosttie',d:'2026-10-26',items:[
    ['target',"Ghost match: a tied end is readable again","On the Ghost match panel, an end where you tied the ghost (for example 30 against 30 on Vegas 300) was drawn in white text on a white card in the light theme, so it looked like an empty end. It now shows in the normal text colour, the same as the Ghost row, and the gap figure on the ghost bar does the same when you are level. Your scores were never missing and nothing saved has changed.",'c1072bd']]},
   {v:'v2026-10-26-1946-vgtab',d:'2026-10-26',items:[

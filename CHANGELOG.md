@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-26-2106-nopreset (2026-10-26)
+### What changed
+- The preset Onion Shed Challenge league (LG_PRESET, code ONIONSHD) is no longer shown to anyone. `lgSeed` / `lgPresetFix` (which added the league to every member's phone on load and appended members to an existing copy) are removed, so nothing adds or edits it. A copy already in a phone's storage is simply not listed in "Your leagues" (`lgPresetHidden`); it is not deleted and its scores, weeks and linked sessions are untouched. It also no longer counts toward the 3-leagues-per-host limit, its code can't be joined again, and an invite for it is ignored.
+- Template kept for new leagues (Nathe, 26 Oct): LG_PRESET stays in the code; New league has a "Use the usual group" button that ticks the same members. Creating a league, weekly scoring, groups, relay and the shoot-up are unchanged. League scoring rules were NOT changed (a new method is to come from Nathe).
+- Tests: league_indoor_test and undozoom_test used to get the preset league by opening the Score tab; they now add the old record themselves (`lgPresetRecord`). This is the only edit to existing tests. The stale league_test check "go-live: new user sees no leagues, no Onion Shed shown" now passes (it failed only because the preset was being seeded).
+- Housekeeping: the previous commit (1c75ce3) accidentally included test screenshot folders (shots-3d, shots-arrowcheck, shots-ausindoor, two shots-fix1022 files); they are removed from git here. No app code is affected.
+
+### Files touched
+league.js, tools/nopreset_test.py (new, 29 checks), tools/league_indoor_test.py, tools/undozoom_test.py, qa/run_regression.py, whatsnew.js, CHANGELOG.md, sw.js, index.html, version.json (bump).
+
+### Tests run
+Baseline = previous deploy 1c75ce3: the new nopreset_test fails 12 of 18 before it can finish (preset seeded for every member); full suite as a8 (only vegas_test 58/2 and league_test 56/2 plus runner artefacts).
+This release, full suite: every test passes except the same known failures as before (vegas_test 58/2) and league_test (57 of 58). league_test's 'go-live: new user sees no leagues, no Onion Shed shown' now PASSES (it was the stale failure); the one left, 'weekly screen: one-phone / own-phone card near the top', failed before this release too and is investigated in the next release. New nopreset_test 29/29. peel_next_test had a stale debug line that indexed leagues[0] (now guarded; its checks are unchanged). Runner-load artefacts (names, offline, peel_comp, peel_share, field_faces, h2h, sightimport) all pass when run alone.
+After deploy: see the live-run result recorded below.
+
 ## v2026-10-26-2027-chipcolors (2026-10-26)
 
 ### What changed
