@@ -113,7 +113,7 @@ async function lgTick(force){if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;
   if(lgFinal(lg))ch=ch||false;
   if(lg.dirty||!lgOpened[lg.code]||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}
    if(ok){lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}
- finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv)lgView(window._lgv);else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
+ finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
 setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true),2500);addEventListener('online',()=>lgTick(true));
 /* invites + join */
 window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||d.code==LG_PRESET.code||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
@@ -179,7 +179,8 @@ function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
 function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
-function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
+/* Scoring taps, Undo, fixing an arrow and background relay refreshes re-draw this screen; they set window._lgKeep so the page stays exactly where it was (score keys and sheet stay on screen). Opening the screen, an archer chip and Back still start at the top. Display only. */
+function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
  const wk=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
@@ -215,10 +216,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(q('#lggadd'))q('#lggadd').onclick=()=>{const m=lgAddGuest(code,q('#lggname').value,q('#lggjr').checked);if(m){q('#lggmsg2').textContent=m;return}lgView(code)};
  app.querySelectorAll('[data-lgid]').forEach(b=>b.onclick=()=>{window._lgAct=b.dataset.lgid;lgView(code)});
  const act=q('#lgentry .lc-chip.on')&&q('#lgentry .lc-chip.on').dataset.lgid;
- if(window._lgPl&&window._lgPl.code==code&&window.csFaceBind)window.csFaceBind(window._lgPl,(k,xy)=>{window._lgAct=act;lgKey(code,w,act,k,xy)},()=>lgView(code));
- app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;lgKey(code,w,act,b.dataset.lgk)});
- if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;lgFxDel(code,w,act)};
- if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;lgUndo(code,w,act)};
+ if(window._lgPl&&window._lgPl.code==code&&window.csFaceBind)window.csFaceBind(window._lgPl,(k,xy)=>{window._lgAct=act;window._lgKeep=1;lgKey(code,w,act,k,xy);window._lgKeep=null},()=>lgView(code));
+ app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;window._lgKeep=1;lgKey(code,w,act,b.dataset.lgk);window._lgKeep=null});
+ if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgFxDel(code,w,act);window._lgKeep=null};
+ if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgUndo(code,w,act);window._lgKeep=null};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
  const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='Only the host can change how the week is scored.';return}lgView(code)};
  app.querySelectorAll('[data-lggb]').forEach(b=>b.onclick=()=>{const id=b.dataset.lggb,g=b.dataset.g,G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>x!=id));if(g!=='')G2[+g].push(id);setG(G2)});
@@ -229,5 +230,5 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
  q('#lgrf').onclick=()=>lgTick(true);q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
  if(q('#lgdel'))q('#lgdel').onclick=()=>{if(!confirm('Remove this league from this phone? Other phones keep it.'))return;S.leagues=lgAll().filter(l=>l.code!=code);S.matches=h2hAll().filter(m=>m.code!=lgFinCode(lg));save();window._lgv=null;nav('score')};
- if(!(window.csAdFit&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0)}
+ if(!(window.csAdFit&&q('#csad .ad-pad')&&csAdFit())){if(keepY!=null){const fit=()=>{scrollTo(0,keepY);/* the line above the keys can wrap for a longer name: if that pushed the keys under the bottom bar (or above the top bar), nudge just enough to bring them back */const pd=q('#lgentry .lc-pad'),sc=window.__scroller,nv=document.querySelector('nav'),hd=document.querySelector('header.top,header');if(!pd||!sc)return;const r=pd.getBoundingClientRect(),lo=Math.min(sc.getBoundingClientRect().bottom,nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().top:1e9)-6,hi=(hd?hd.getBoundingClientRect().bottom:0)+4;if(r.bottom>lo)scrollTo(0,keepY+(r.bottom-lo));else if(r.top<hi)scrollTo(0,Math.max(0,keepY-(hi-r.top)))};fit();requestAnimationFrame(fit)}else scrollTo(0,0)}}
 window.lgView=lgView;window.lgEntryCard=lgEntryCard;

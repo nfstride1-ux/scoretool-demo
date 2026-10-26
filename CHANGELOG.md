@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-26-2235-lgscroll (2026-10-26)
+### What changed
+- League multi-archer scoring (several archers on one phone, e.g. Vegas 300 18m 3-spot, 7 archers on Phone 1): the page no longer jumps to the top after every arrow, Undo, face plot or background refresh. Reproduced with the new test on the previous deploy (a3cd686): the first score tap, Undo and a relay refresh all returned the page to y=0. Cause: `lgView` ended with `scrollTo(0,0)` on every render except the single-archer card, and every score tap, Undo and `lgTick` refresh re-rendered it. Fix (same kind as the Peel `pgscroll` fix d1d963d): `lgView` keeps the scroll position when the render was caused by a score tap, face plot, arrow delete, Undo or refresh (`window._lgKeep`), then nudges the keys fully clear of the nav and header. Choosing a different archer chip, opening a week and leaving it still start at the top.
+- The active archer still moves to the next unfinished archer after the third arrow, as before; it just no longer scrolls the page.
+- Display only. Scoring, saved scores and the relay are unchanged. Peel, Casual and Just me code is untouched (their tests were run).
+- Casual "only 5 of 6 arrows" (WA 720 50m Compound): looked at a second time, still not reproduced and no code change. Checked: 1, 2, 4 and 10 archers; buttons and face taps (touch and mouse); 6th arrow as every key; widths 320, 360, 375, 390, 412 px; light and dark; a random run of 12 ends per archer with chip switching, Undo and relay refreshes mid-end (every complete end held 6 arrows); encode/decode for the relay (6 characters per end); merge rules. Nothing drops or caps an arrow at 5. Needs Nathe's screen recording or the exact steps.
+
+### Files touched
+league.js (lgView, score/plot/delete/Undo handlers, lgTick refresh), tools/lgscroll_test.py (new, 19 checks, port 8898), qa/run_regression.py, whatsnew.js, CHANGELOG.md, sw.js, index.html, version.json (bump).
+
+### Tests run
+Baseline (a3cd686, after the Leslie release): full suite as recorded for the Leslie release; lgscroll_test fails 6 of 19 on this code (page jumps to y=0 on the first tap, on Undo and on a refresh).
+This release, full suite: all 56 suites run (parallel run a11). Passing: everything including lgscroll_test 19/0, league_test 60/0, nopreset_test 29/0, leslie_test 17/0, h2h, names, casual, just-me, peel suites. Six suites failed only from the parallel runner (shifted ports and load) and were re-run on their normal ports: offline 12/0, peel_comp 52/0, peel_share 26/0, field_faces pass, sightimport 43 ok/0 bad. vegas_test 58 passed, 2 failed: the same 2 checks fail on the previous release (a3cd686) and on earlier ones, in vegas.js code this release does not touch; they are on the failing-test investigation list. peel_test exit 2 is its known name bug; peel_scroll 15/0, peel_data 2/0, peel_next pass.
+After deploy: see the live-run result recorded below.
+
 ## v2026-10-26-2145-leslie (2026-10-26)
 ### What changed
 - League weekly screen: the host can now move an archer who has already started this week between Own phone and Phone 1/2/3 (and back). Before, a started archer's buttons were greyed (the Leslie Anderson "(started)" case Nathe reported) because `lgSetGroups` refused to move anyone with scores, the buttons were disabled, and the hint said "Archers can move only before they start". The refusal is removed; that is all.
@@ -19,7 +34,7 @@ league.js (lgSetGroups, group buttons, hint text), tools/leslie_test.py (new, 17
 ### Tests run
 Baseline (1c75ce3 plus preset removal, a639320): leslie_test fails "started archer buttons are not disabled" on the old code.
 This release, full suite (parallel run a10, all areas): every area passed except vegas_test (the known 58 pass / 2 fail, unchanged) and runner artefacts (shifted ports and CPU load) in field_faces, offline, peel_comp, peel_share, peel_scroll, sightimport; each of those passed when re-run alone and unshifted (peel_scroll 15/0, peel_data 2/0, peel_next exit 0, offline 12/0, field_faces exit 0, peel_comp 52/0, peel_share 26/0, sightimport 43 ok). league_test 60/0 (after the two stale-check fixes above), leslie_test 17/0.
-After deploy: see the live-run result recorded below.
+After deploy (live URL, v2026-10-26-2145-leslie, commit a3cd686): version.json matched; league_test 60/0, nopreset_test 29/0, leslie_test 17/0; live smoke 22/0.
 
 ## v2026-10-26-2106-nopreset (2026-10-26)
 ### What changed
