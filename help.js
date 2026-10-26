@@ -27,7 +27,7 @@ const HELP_GUIDES=[
   'In ABA 3D, tap the score of the first arrow to hit. Tap <b>Miss</b> only if it missed, then score the next arrow. The card shows each half, each 10 targets, and the most you can still score.',
   'Under the score buttons, <b>Your sheet so far</b> lists every target with its score and the running total for its 10 targets, then each block total, each half, the round total, and how many 20s and 18s you have. It is the same sheet as Just me ABA, and it stays on screen all through the shoot.',
   'Add 1 to 10 people. Linked archers score on their own phone.',
-  'When you are the only archer on the card (casual shoot or league), the <b>target face</b> shows, just like Just me: tap where each arrow landed, or hold to aim with the magnifier. The score buttons still work, and the arrow positions are kept for your groups and heatmap. With 2 or more archers on one phone it stays buttons only.',
+  'When you are the only archer on the card (casual shoot or league), the <b>target face</b> shows, just like Just me: tap where each arrow landed, or hold to aim with the magnifier. The score buttons still work, and the arrow positions are kept for your groups and heatmap. League weeks and Casual indoor rounds score like Just me: each arrow is measured from its own spot, a full end is put in order, tap an arrow to fix or delete it, Undo works, and the analysis shows under your score when you finish. With 2 or more archers on one phone it stays buttons only.',
   'Match play is optional, at the start or after the shoot.']},
  {id:'past',i:'camera',t:'Past sessions, photos and Archery Calendar',shot:null,steps:[
   'Past sessions are on the <b>Score</b> screen, under Just me.',
