@@ -6,6 +6,7 @@ and prints PASS/FAIL per area plus a total. Nothing is written to any user's dat
   python3 qa/run_regression.py --live URL      # fetch the files the live site precaches into a temp folder and run the same suites on that copy,
                                                # then smoke-check the live URL itself (ghost picker, version, no page errors)
   python3 qa/run_regression.py --only ghost    # one area (substring of the area name)
+  python3 qa/run_regression.py --suite real_test,testers_test   # named suites only
 
 Run it BEFORE every deploy and again on the live URL after. Record the result in CHANGELOG.md.
 """
@@ -31,14 +32,23 @@ def fetch_live(url,dest):
     sw=get('sw.js').decode()
     m=re.search(r'PRE=(\[[^\]]*\])',sw)
     names={x.lstrip('./') for x in json.loads(m.group(1)) if x not in('./',)}|{'index.html','sw.js','version.json'}
+    try:  # pages that are not precached (coach page etc.) are still needed by some suites
+        tracked=subprocess.run(['git','ls-files'],cwd=ROOT,capture_output=True,text=True).stdout.split()
+        names|={t for t in tracked if t.endswith(('.html','.js','.json','.css','.csv','.svg')) and not t.startswith(('shots-','screenshots','tools/','qa/','help/','node_modules'))}
+    except Exception:pass
     for n in sorted(names):
         try:d=get(n)
         except Exception as e:
             print('  (not on live site, skipped)',n);continue
         os.makedirs(os.path.dirname(os.path.join(dest,n)) or dest,exist_ok=True);open(os.path.join(dest,n),'wb').write(d)
     shutil.copytree(os.path.join(ROOT,'tools'),os.path.join(dest,'tools'),dirs_exist_ok=True)
+    g=os.path.join(ROOT,'.git')  # whatsnew_test checks the notes' commits against git log
+    try:
+        if os.path.isfile(g):shutil.copy(g,os.path.join(dest,'.git'))
+        elif os.path.isdir(g):os.symlink(g,os.path.join(dest,'.git'))
+    except Exception:pass
 def main():
-    a=sys.argv[1:];live=a[a.index('--live')+1] if '--live' in a else None;only=a[a.index('--only')+1].lower() if '--only' in a else None
+    a=sys.argv[1:];live=a[a.index('--live')+1] if '--live' in a else None;only=a[a.index('--only')+1].lower() if '--only' in a else None;suite=a[a.index('--suite')+1].split(',') if '--suite' in a else None
     root=ROOT;tmp=None
     if live:
         tmp=tempfile.mkdtemp(prefix='stlive_');print('Fetching live copy of',live,'into',tmp);fetch_live(live,tmp);root=tmp
@@ -46,6 +56,7 @@ def main():
     for area,files in AREAS:
         if only and only not in area.lower():continue
         for f in files:
+            if suite and f not in suite and f[:-3] not in suite:continue
             if not os.path.exists(os.path.join(tools,f)):res.append((area,f,None,'missing'));continue
             srv=None
             if f=='field_faces_test.py':  # this suite expects a server already running on 8765 (the others start their own)
