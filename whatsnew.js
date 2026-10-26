@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-26-2027-chipcolors',d:'2026-10-26',items:[
+   ['target',"Light theme: score chips and archer names are readable","On Casual and League score cards, and on Vegas match play, the arrows you have just shot (X 10 9 8 7) were dark navy with dark text in the light theme, so you could not read the scores. They are now light chips with dark text, and the archer name pills are light too. The dark theme looks the same as before. Nothing saved has changed.",'this release']]},
   {v:'v2026-10-26-1955-ghosttie',d:'2026-10-26',items:[
-   ['target',"Ghost match: a tied end is readable again","On the Ghost match panel, an end where you tied the ghost (for example 30 against 30 on Vegas 300) was drawn in white text on a white card in the light theme, so it looked like an empty end. It now shows in the normal text colour, the same as the Ghost row, and the gap figure on the ghost bar does the same when you are level. Your scores were never missing and nothing saved has changed.",'this release']]},
+   ['target',"Ghost match: a tied end is readable again","On the Ghost match panel, an end where you tied the ghost (for example 30 against 30 on Vegas 300) was drawn in white text on a white card in the light theme, so it looked like an empty end. It now shows in the normal text colour, the same as the Ghost row, and the gap figure on the ghost bar does the same when you are level. Your scores were never missing and nothing saved has changed.",'c1072bd']]},
   {v:'v2026-10-26-1946-vgtab',d:'2026-10-26',items:[
    ['target',"Vegas 300: the Ends so far card is gone","The Ends so far card that sat under Back and Next while you scored Vegas 300 and Vegas 300 (18 m) has been removed. Nothing else on the Vegas scoring screen changed, and the scorecard screen still shows every end. Your saved scores are not changed.",'f0f9d07']]},
   {v:'v2026-10-26-1843-undozoom',d:'2026-10-26',items:[

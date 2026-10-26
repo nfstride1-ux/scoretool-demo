@@ -14,7 +14,7 @@ import subprocess,sys,os,re,time,tempfile,shutil,urllib.request,json
 HERE=os.path.dirname(os.path.abspath(__file__));ROOT=os.path.dirname(HERE)
 AREAS=[
  ('Solo scoring (Just me, rounds, faces, scorer, PBs)',['redesign_test.py','ausindoor_test.py','nav_test.py','real_test.py','pickers_test.py','halfsplit_test.py','shotview_test.py','sidehill_test.py','grouppattern_test.py','todayarrows_test.py','photos_test.py','names_test.py','colourblind_test.py','field_faces_test.py','vegas_test.py','h2h_test.py','undozoom_test.py']),
- ('Casual shoot',['casual_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py']),
+ ('Casual shoot',['casual_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py']),
  ('ABA',['aba_test.py']),
  ('Peel group card',['peel_test.py','peel_data_test.py','peel_next_test.py','peel_scroll_test.py','peel_share_test.py','peel_comp_test.py']),
