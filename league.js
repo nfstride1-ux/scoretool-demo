@@ -49,10 +49,8 @@ function lgTable(lg){const rows=lgArchers(lg).map(id=>{const W=[];let t=0,x=0;fo
 /* ---------- groups ---------- */
 const lgGroups=(lg,w)=>(((lg.grp||{})[w]||{}).g||[]).map(g=>g.filter(id=>lgArchers(lg).includes(id)));
 const lgGroupOf=(lg,w,id)=>{const G=lgGroups(lg,w);const k=G.findIndex(g=>g.includes(id));return k<0?null:k};
-/* host: set week w's groups; archers who already started this week can't move */
-function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=me)return false;const old=lgGroups(lg,w),started=id=>lgHas(lgEnt(lg,id,w));
- const where=(GG,id)=>GG.findIndex(g=>g.includes(id));let ok=true;const N=G.map(g=>g.filter(id=>lgArchers(lg).includes(id)));
- for(const id of lgArchers(lg))if(started(id)&&where(old,id)!=where(N,id))ok=false;if(!ok)return false;
+/* host: set week w's groups. 26 Oct 2026: an archer who has already started can be moved too (ends already scored stay with them: scores are keyed by archer and week, never by group); only the host may change groups */
+function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=me)return false;const N=G.map(g=>g.filter(id=>lgArchers(lg).includes(id)));
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
@@ -196,9 +194,9 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  /* how this week is scored (host): a clear choice per archer, own phone or a shared phone for the group. Saved on tap. (Coach re-test, 20 Oct) */
  const GA=lgGroups(lg,w),seg=(id,g,lab,on,dis)=>`<button type="button" class="lg-seg${on?' on':''}" data-lggb="${esc(id)}" data-g="${g}" aria-pressed="${on}" ${dis?'disabled':''}>${lab}</button>`;
  const grpEd=host&&!lg.fin?`<div class="card" id="lggrp"><span class="kicker">Week ${w} · how it's scored</span><h3 style="margin:2px 0 4px">One phone or own phones?</h3>
-  <p class="small muted" style="margin:0 0 8px">Tap for each archer. <b>Own phone</b>: they score themselves. <b>Phone 1, 2 or 3</b>: one phone scores that whole group. Archers can move only before they start.</p>
+  <p class="small muted" style="margin:0 0 8px">Tap for each archer. <b>Own phone</b>: they score themselves. <b>Phone 1, 2 or 3</b>: one phone scores that whole group. You can move an archer at any time. Scores already shot stay with them.</p>
   <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin:0 0 8px"><button type="button" class="btn ghost" id="lgallown">Everyone on own phone</button><button type="button" class="btn ghost" id="lgallone">Everyone on one phone</button></div>
-  ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="lg-grow"><span class="lg-gname">${esc(lgName(id))}${st?' <span class="small muted">(started)</span>':''}</span><span class="lg-segs" role="group" aria-label="How ${esc(lgName(id))} is scored">${seg(id,'',k==null?'&#10003; Own phone':'Own phone',k==null,st)}${[0,1,2].map(g=>seg(id,g,k===g?'&#10003; Phone '+(g+1):'Phone '+(g+1),k===g,st)).join('')}</span></div>`}).join('')}
+  ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="lg-grow"><span class="lg-gname">${esc(lgName(id))}${st?' <span class="small muted">(started)</span>':''}</span><span class="lg-segs" role="group" aria-label="How ${esc(lgName(id))} is scored">${seg(id,'',k==null?'&#10003; Own phone':'Own phone',k==null,false)}${[0,1,2].map(g=>seg(id,g,k===g?'&#10003; Phone '+(g+1):'Phone '+(g+1),k===g,false)).join('')}</span></div>`}).join('')}
   <p class="small" id="lggmsg" role="alert" style="margin:6px 0 0"></p></div>`:'';
  const done6=lgArchers(lg).filter(id=>lgDoneE(lgEnt(lg,id,LG_W))).length;
  app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
@@ -222,10 +220,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;window._lgv=code;cur=nu
  if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;lgFxDel(code,w,act)};
  if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;lgUndo(code,w,act)};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
- const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='An archer who has started this week can\'t move group.';return}lgView(code)};
+ const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='Only the host can change how the week is scored.';return}lgView(code)};
  app.querySelectorAll('[data-lggb]').forEach(b=>b.onclick=()=>{const id=b.dataset.lggb,g=b.dataset.g,G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>x!=id));if(g!=='')G2[+g].push(id);setG(G2)});
- if(q('#lgallown'))q('#lgallown').onclick=()=>{const S0=lgArchers(lg).filter(id=>lgHas(lgEnt(lg,id,w)));setG([0,1,2,3].map(k=>(GA[k]||[]).filter(x=>S0.includes(x))))};
- if(q('#lgallone'))q('#lgallone').onclick=()=>{const S0=lgArchers(lg).filter(id=>lgHas(lgEnt(lg,id,w))&&lgGroupOf(lg,w,id)!==0);const G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>S0.includes(x)));G2[0]=lgArchers(lg).filter(id=>!S0.includes(id));setG(G2)};
+ if(q('#lgallown'))q('#lgallown').onclick=()=>setG([[],[],[],[]]);
+ if(q('#lgallone'))q('#lgallone').onclick=()=>setG([lgArchers(lg).slice(),[],[],[]]);
  if(q('#lgnext'))q('#lgnext').onclick=()=>{lg.cw=w+1;lg.cwt=Date.now();lg.dirty=1;save();lgTick(true);lgView(code)};
  if(q('#lgforce'))q('#lgforce').onclick=()=>{if(done6<lgArchers(lg).length&&!confirm('Start the shoot-up now? Archers without a day-6 300 are left out.'))return;if(lgForce(code))suLadderView(lgFinCode(lg))};
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));

@@ -82,7 +82,7 @@ try:
   chk('every phone has the 6 archers',all(len(g.evaluate(f"lgArchers(lgGet('{code}'))"))==6 for g in PH.values()))
   # ---------- mixed groups, week 1: shared phone 1 (logan, joseph), shared phone 2 (steven, michael), nathe + dana own phones ----------
   H.evaluate(f"lgView('{code}')");H.wait_for_timeout(200)
-  chk('weekly screen: the one-phone / own-phone choice is a visible card near the top (not folded away)',H.locator('#lggrp').is_visible() and H.locator('#lggrp details').count()==0 and 'One phone or own phones?' in H.text_content('#lggrp') and H.evaluate("(()=>{const c=[...document.querySelectorAll('#lgview > .card')];return c.indexOf(document.querySelector('#lggrp'))<=2})()"))
+  chk('weekly screen: the one-phone / own-phone choice is a visible card near the top (not folded away)',H.locator('#lggrp').is_visible() and H.locator('#lggrp details').count()==0 and 'One phone or own phones?' in H.text_content('#lggrp') and H.evaluate("(()=>{const c=[...document.querySelectorAll('#lgview > .card')];return c.indexOf(document.querySelector('#lggrp'))<=3})()"))
   chk('default: everyone on own phone (shown ticked)',H.locator('#lggrp .lg-seg.on').count()==6 and all('Own phone' in t for t in H.locator('#lggrp .lg-seg.on').all_inner_texts()))
   if SHOT:H.screenshot(path=OUT+'/l0-week-scoring-choice.png')
   H.click('#lgallone');H.wait_for_timeout(200);chk('Everyone on one phone puts the whole league on phone 1',H.evaluate(f"lgGroups(lgGet('{code}'),1)")==[['nathe','logan','joseph','steven','michael','dana']] or sorted(H.evaluate(f"lgGroups(lgGet('{code}'),1)")[0])==sorted(['nathe','logan','joseph','steven','michael','dana']))
@@ -101,7 +101,11 @@ try:
   chk('card goes round the group after an end',L.evaluate("window._lgAct")=='michael')
   if SHOT:L.screenshot(path=OUT+'/l2-shared-phone.png',full_page=True)
   lt(*PH.values())
-  chk('an archer who has started can no longer move group',not H.evaluate(f"lgSetGroups('{code}',1,[['logan','michael'],['steven'],['joseph']])"))
+  # 26 Oct 2026 (Nathe): the host may move an archer who has started (this replaces the old 'can no longer move' rule); scores stay put
+  sc0=H.evaluate(f"JSON.stringify(lgGet('{code}').sc)")
+  chk('a started archer CAN be moved by the host, scores unchanged',H.evaluate(f"lgSetGroups('{code}',1,[['logan','michael'],['steven'],['joseph']])") and H.evaluate(f"JSON.stringify(lgGet('{code}').sc)")==sc0)
+  chk('moved back before the next steps',H.evaluate(f"lgSetGroups('{code}',1,[['logan','joseph','michael'],['steven']])") and H.evaluate(f"JSON.stringify(lgGet('{code}').sc)")==sc0)
+  chk('only the host can change groups',PH['logan'].evaluate(f"lgSetGroups('{code}',1,[['logan'],['joseph','michael','steven']])")==False)
   J=PH['joseph']
   chk("duplicate guard: joseph's own phone is refused for his locked week",J.evaluate(f"lgKey('{code}',1,'joseph','X')")==False and J.evaluate(f"lgLockedBy(lgGet('{code}'),1,'joseph')")=='logan')
   J.evaluate(f"lgView('{code}')");J.wait_for_timeout(150);J.click('[data-lgsg="0"]');J.wait_for_timeout(150);J.click('[data-lgid="joseph"]');J.wait_for_timeout(150)

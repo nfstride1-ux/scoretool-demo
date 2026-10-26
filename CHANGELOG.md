@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-26-2145-leslie (2026-10-26)
+### What changed
+- League weekly screen: the host can now move an archer who has already started this week between Own phone and Phone 1/2/3 (and back). Before, a started archer's buttons were greyed (the Leslie Anderson "(started)" case Nathe reported) because `lgSetGroups` refused to move anyone with scores, the buttons were disabled, and the hint said "Archers can move only before they start". The refusal is removed; that is all.
+- Why it is data-safe: a week's scores are keyed by archer and week (`lg.sc[id][w]`), never by group, so moving an archer does not touch his ends. Scoring carries on from the next end on the phone that now scores him. The cross-phone sync (`lgMerge`) never had the check. The existing take-over rule still protects a real member who is being scored on another phone (a "Take over scoring here" button is shown); guests like Leslie are never locked for the host.
+- Also changed, same lock: the Everyone on own phones / Everyone on one phone buttons used to leave started archers where they were; they now move everyone. Only the host can change groups (unchanged).
+- League scoring rules were NOT changed.
+- Stale league_test check fixed (test only, no app change): "weekly screen: the one-phone / own-phone choice is a visible card near the top (not folded away)" asserted the card is one of the first 3 cards; the host's "Add a shooter" card was later put above it, so it is the 4th card. The check still requires it visible, not folded away, with the same heading, and within the first 4 cards (`<=3`).
+- Tests: league_test line 104 asserted the old rule ("a started archer can't move"). It is replaced by 3 checks of the new behaviour (a started archer can be moved with the scores identical by JSON compare; moved back; only the host can change groups).
+
+### Files touched
+league.js (lgSetGroups, group buttons, hint text), tools/leslie_test.py (new, 17 checks), tools/league_test.py (one stale assertion replaced), qa/run_regression.py, whatsnew.js, CHANGELOG.md, sw.js, index.html, version.json (bump).
+
+### Tests run
+Baseline (1c75ce3 plus preset removal, a639320): leslie_test fails "started archer buttons are not disabled" on the old code.
+This release, full suite (parallel run a10, all areas): every area passed except vegas_test (the known 58 pass / 2 fail, unchanged) and runner artefacts (shifted ports and CPU load) in field_faces, offline, peel_comp, peel_share, peel_scroll, sightimport; each of those passed when re-run alone and unshifted (peel_scroll 15/0, peel_data 2/0, peel_next exit 0, offline 12/0, field_faces exit 0, peel_comp 52/0, peel_share 26/0, sightimport 43 ok). league_test 60/0 (after the two stale-check fixes above), leslie_test 17/0.
+After deploy: see the live-run result recorded below.
+
 ## v2026-10-26-2106-nopreset (2026-10-26)
 ### What changed
 - The preset Onion Shed Challenge league (LG_PRESET, code ONIONSHD) is no longer shown to anyone. `lgSeed` / `lgPresetFix` (which added the league to every member's phone on load and appended members to an existing copy) are removed, so nothing adds or edits it. A copy already in a phone's storage is simply not listed in "Your leagues" (`lgPresetHidden`); it is not deleted and its scores, weeks and linked sessions are untouched. It also no longer counts toward the 3-leagues-per-host limit, its code can't be joined again, and an invite for it is ignored.
@@ -17,7 +34,7 @@ league.js, tools/nopreset_test.py (new, 29 checks), tools/league_indoor_test.py,
 ### Tests run
 Baseline = previous deploy 1c75ce3: the new nopreset_test fails 12 of 18 before it can finish (preset seeded for every member); full suite as a8 (only vegas_test 58/2 and league_test 56/2 plus runner artefacts).
 This release, full suite: every test passes except the same known failures as before (vegas_test 58/2) and league_test (57 of 58). league_test's 'go-live: new user sees no leagues, no Onion Shed shown' now PASSES (it was the stale failure); the one left, 'weekly screen: one-phone / own-phone card near the top', failed before this release too and is investigated in the next release. New nopreset_test 29/29. peel_next_test had a stale debug line that indexed leagues[0] (now guarded; its checks are unchanged). Runner-load artefacts (names, offline, peel_comp, peel_share, field_faces, h2h, sightimport) all pass when run alone.
-After deploy: see the live-run result recorded below.
+After deploy (live URL, v2026-10-26-2106-nopreset, commit a639320): version.json matched; nopreset_test 29/0; live smoke 22/0; league_test 57/1 (the known weekly-screen check).
 
 ## v2026-10-26-2027-chipcolors (2026-10-26)
 
@@ -32,7 +49,7 @@ lab.css (4 light-theme rules), tools/chipcolors_test.py (new, 53 checks), qa/run
 ### Tests run
 Baseline = previous deploy c1072bd (v2026-10-26-1955-ghosttie): the new test fails 3 of 53 (light theme: the filled chips on the Casual card and the shared League/Vegas chips are below contrast 4.5; the other archers' pills are navy); the 6-arrow checks pass.
 This release, full suite: all `tools/*_test.py` (parallel runner) - chipcolors_test 53/0; every file exits 0 except the known stale vegas_test 58/2 and league_test 56/2 (same checks as the baseline), and offline, peel_comp, peel_share, field_faces, h2h (timed out under load) and sightimport (port clash), which fail only because of the runner's shifted ports/load; re-run alone: offline 12/0, peel_comp 52/0, peel_share 26/0, field_faces 0, h2h 90/0, sightimport 43 ok / 0 bad.
-After deploy: see the live-run result recorded below.
+After deploy (live URL, v2026-10-26-2027-chipcolors, commit 1c75ce3): version.json matched; casual live 6/0.
 
 ## v2026-10-26-1955-ghosttie (2026-10-26)
 

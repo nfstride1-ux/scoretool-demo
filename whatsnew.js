@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-26-2145-leslie',d:'2026-10-26',items:[
+   ['people',"Move an archer between phones any time","In a league week the host can now move an archer who has already started between Own phone and Phone 1, 2 or 3, and back. The ends already scored stay exactly as they are and scoring carries on from the next end. Before, a started archer's buttons were greyed out.",'this release']]},
   {v:'v2026-10-26-2106-nopreset',d:'2026-10-26',items:[
-   ['trophy',"Onion Shed Challenge league removed","The preset Onion Shed Challenge league is no longer added to anyone's Leagues list, and one already on a phone is no longer listed. Nothing saved was deleted or changed: its scores and sessions are exactly as they were. Creating a new league, weekly scoring, the relay and the shoot-up all work as before. In New league, the Use the usual group button ticks the same members as before as a starting point.",'this release']]},
+   ['trophy',"Onion Shed Challenge league removed","The preset Onion Shed Challenge league is no longer added to anyone's Leagues list, and one already on a phone is no longer listed. Nothing saved was deleted or changed: its scores and sessions are exactly as they were. Creating a new league, weekly scoring, the relay and the shoot-up all work as before. In New league, the Use the usual group button ticks the same members as before as a starting point.",'a639320']]},
   {v:'v2026-10-26-2027-chipcolors',d:'2026-10-26',items:[
    ['target',"Light theme: score chips and archer names are readable","On Casual and League score cards, and on Vegas match play, the arrows you have just shot (X 10 9 8 7) were dark navy with dark text in the light theme, so you could not read the scores. They are now light chips with dark text, and the archer name pills are light too. The dark theme looks the same as before. Nothing saved has changed.",'1c75ce3']]},
   {v:'v2026-10-26-1955-ghosttie',d:'2026-10-26',items:[
