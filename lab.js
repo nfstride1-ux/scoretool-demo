@@ -20,7 +20,7 @@ function sub(id,sec,title,back,backLbl,base,test,after){LABSEC[id]=sec;E[id]=fun
 const _nav=nav;nav=function(v){_nav(v);const s=secOf(view);document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==s))};
 
 /* top bar: Me button */
-function addMe(){const t=document.querySelector('.top');if(!t||t.querySelector('.labme'))return;const b=document.createElement('button');b.className='labme';const who=(typeof TESTER!='undefined'&&TESTER)?(typeof testerName=='function'?testerName(TESTER.id):TESTER.short):'';b.textContent=who||'Me';b.title=who?(isAdmin()?`${who}'s app: Me, settings and switch archer`:`${who}'s app: Me and settings`):'Me and settings';b.setAttribute('aria-label',b.title);b.onclick=()=>nav('lab_me');const hb=t.querySelector('.help-btn');hb?t.insertBefore(b,hb):t.appendChild(b);const tb=document.createElement('button');tb.className='labtheme';tb.onclick=()=>setTheme(curTheme()=='dark'?'light':'dark');t.insertBefore(tb,b);paintTheme(curTheme())}
+function addMe(){const t=document.querySelector('.top');if(!t||t.querySelector('.labme'))return;const b=document.createElement('button');b.className='labme';const who=(typeof TESTER!='undefined'&&TESTER)?(typeof testerName=='function'?testerName(TESTER.id):TESTER.short):'';b.textContent=who||'Me';b.title=who?(isAdmin()||window.ADMIN_VIEW?`${who}'s app: Me, settings and switch archer`:`${who}'s app: Me and settings`):'Me and settings';b.setAttribute('aria-label',b.title);b.onclick=()=>nav('lab_me');const hb=t.querySelector('.help-btn');hb?t.insertBefore(b,hb):t.appendChild(b);const tb=document.createElement('button');tb.className='labtheme';tb.onclick=()=>setTheme(curTheme()=='dark'?'light':'dark');t.insertBefore(tb,b);paintTheme(curTheme())}
 /* theme button (22 Oct 2026, Nathe): light mode shows a light WA target face, dark mode a dark field face (gold and black only) */
 function themeIcon(t){const r=(R,f,st)=>`<circle cx="12" cy="12" r="${R}" fill="${f}" stroke="${st}" stroke-width="0.6"/>`;
  return`<svg class="ic thface" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">${t=='dark'
@@ -30,6 +30,13 @@ function curTheme(){return document.documentElement.getAttribute('data-theme')==
 function setTheme(t){localStorage.setItem('scoretool.theme',t);paintTheme(t)}
 function paintTheme(t){document.documentElement.setAttribute('data-theme',t);const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t=='dark'?'#0b0f17':'#ffffff';document.querySelectorAll('.labtheme').forEach(b=>{b.innerHTML=themeIcon(t);b.title=t=='dark'?'Switch to light mode':'Switch to dark mode';b.setAttribute('aria-label',b.title)})}
 setTimeout(addMe,0);setTimeout(addMe,800);
+/* Viewing-as bar (26 Oct 2026): while Nathe looks at another tester's profile, a navy and gold bar sits under the top bar on every screen with one tap back to his own profile. */
+function adminBar(){if(!window.ADMIN_VIEW||typeof TESTER=='undefined'||!TESTER||document.getElementById('adminbar'))return;const sh=document.getElementById('shell'),sc=document.getElementById('scroller');if(!sh||!sc)return;
+ const d=document.createElement('div');d.id='adminbar';d.setAttribute('role','region');d.setAttribute('aria-label','Viewing another profile');
+ d.innerHTML=`<span class="avtx"><b>Viewing as ${h(TESTER.short)}</b><small>Read only: nothing here is saved</small></span><button type="button" id="avback">Back to my profile</button>`;
+ sh.insertBefore(d,sc);d.querySelector('#avback').onclick=()=>setTester('nathe')}
+adminBar();
+
 
 /* ---------- Home: a few big buttons ---------- */
 const _home=home;
@@ -103,8 +110,8 @@ E.lab_squad=function(){squad();const n=app.children.length,tab=S._labsq||'board'
 LABSEC.lab_me='me';
 /* 22 Oct 2026 (Nathe): the switch-archer card is for the admin (Nathe, tester id 'nathe') only. Other archers never see it or any switch. */
 const isAdmin=()=>typeof TESTER!='undefined'&&!!TESTER&&TESTER.id=='nathe';
-const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='undefined'||!isAdmin())return'';const nm=t=>typeof testerName=='function'?testerName(t.id):t.short;
- return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
+const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='undefined'||!(isAdmin()||window.ADMIN_VIEW))return'';const nm=t=>typeof testerName=='function'?testerName(t.id):t.short;
+ return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p>${window.ADMIN_VIEW?`<button class="btn full" id="whoback" data-tester="nathe" style="margin:0 0 8px">Back to my profile</button>`:''}<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id&&!(window.ADMIN_VIEW&&t.id=='nathe')).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
 E.lab_me=()=>{menuMe();const w=whoCard();if(w){app.querySelector('.labbar').insertAdjacentHTML('afterend',w);if(typeof bindTesterPicker=='function')bindTesterPicker(app)}};
 const menuMe=()=>menu('Me',[
  row('lab_profile','🪪','Profile & card','Display name, archer card, badges, best moments'),

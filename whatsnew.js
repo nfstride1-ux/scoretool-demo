@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-26-1720-adminback',d:'2026-10-26',items:[
+   ['check',"Viewing another tester: Back to my profile","When you switch to another tester to take a look, a navy and gold bar now stays under the top bar on every screen: Viewing as Nate, with a Back to my profile button. One tap takes you back to your own profile. The switch card in Me stays too, and opening your link with ?tester=nathe always works as a way back. Looking at another tester is read only: nothing is saved on their profile, nothing is sent from it, and if you try to score or save you see a notice that it was not saved. Normal testers never see the switcher.",'this release']]},
   {v:'v2026-10-25-1451-pgcomp',d:'2026-10-25',items:[
    ['clip',"Peel group card: Competition complete","Peel is two days. After Day 1 or after Day 2, tap Competition complete on the group card. It merges Day 1 and Day 2 for each archer (each half, each day total and the overall total) into a separate results record, shows the results table, and lets you share each archer's full competition sheet with their own name on it, plus one combined results summary. If only one day has been scored it says one day only. Your saved Day 1 and Day 2 scores are not changed. The Start Day 3 button is gone once two days exist.",'this release']]},
   {v:'v2026-10-25-1440-pgshare',d:'2026-10-25',items:[

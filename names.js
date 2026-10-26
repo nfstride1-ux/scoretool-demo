@@ -108,7 +108,7 @@ let nmSkipMem=false;
 const nmLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const nmSkipped=id=>nmSkipMem||(+nmLS.get(nmAskKey(id))||0)>=NM_RESET;
 (function(){if(!TESTER)return;const id=TESTER.id;if(nmOwnRaw(id)&&!nmOwn(id)){nmLS.del(nmOwnKey(id));if(!nmSkipped(id))nmLS.del(nmAskKey(id))}})();
-function nmNeedPrompt(){if(!TESTER)return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
+function nmNeedPrompt(){if(!TESTER||window.ADMIN_VIEW)return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
  <p class="small">${clash?'Another tester picked that name first. Choose a different one.':'This is the name other testers see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}

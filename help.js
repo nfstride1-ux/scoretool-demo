@@ -72,6 +72,7 @@ const HELP_GUIDES=[
  {id:'settings',i:'gear',t:'Settings, light or dark, and help',shot:'settings',steps:[
   'Tap your name at the top, then <b>Settings &amp; help</b>.',
   'Pick <b>Light</b> or <b>Dark</b>. The target-face button at the top switches too.',
+  'If you switch to look at another tester, a bar under the top says <b>Viewing as</b> that name. Tap <b>Back to my profile</b> to return to your own. While you are looking, nothing is saved on their profile.',
   '<b>Add to my Archery Calendar</b> links your scores to your My events.',
   'The <b>Calendar</b> tile on Home opens your My events on archerycalendars.com.',
   'A tick turns on colour-blind safe colours.',
