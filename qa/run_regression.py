@@ -18,7 +18,7 @@ AREAS=[
  ('League',['league_test.py']),
  ('ABA',['aba_test.py']),
  ('Peel group card',['peel_test.py','peel_data_test.py','peel_next_test.py','peel_scroll_test.py','peel_share_test.py','peel_comp_test.py']),
- ('Ghost match (unlock, Race who?, records, top-ranked)',['ghost_test.py','ghost_pick_test.py']),
+ ('Ghost match (unlock, Race who?, records, top-ranked)',['ghost_test.py','ghost_pick_test.py','ghosttie_test.py']),
  ('Sight marks',['sightest_test.py','sightseed_test.py','sightimport_test.py','arrowsets_test.py']),
  ('Sight card',['sightcard_test.py']),
  ('My arrows / My bows',['myarrows_test.py','mybows_test.py','arrowpick_test.py','todayarrows_test.py']),
