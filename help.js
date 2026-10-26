@@ -12,7 +12,8 @@ const HELP_GUIDES=[
  {id:'score',i:'target',t:'Score a round',shot:'score',steps:[
   'Tap <b>Score</b>, then <b>Just me</b>.',
   'Pick your round. The list shows how many arrows each round has.',
-  'Tick <b>Ghost match</b> to shoot against a past score, end by end.',
+  'Tick <b>Ghost match</b> to shoot against a past score, end by end. It unlocks as soon as you have any past score of that round, on any face (3-spot or single), including part-shot rounds and your competition results.',
+  'Tap <b>Choose who</b> to pick exactly who to race: any past score (date, score, PB and best marked), your PB, your average, or a world or national record. A record only has a total, so it races as an even pace line, labelled as one. If a record is not confirmed it says Record not available.',
   'Tap <b>Start</b>.']},
  {id:'scoring',i:'pen',t:'Plot your arrows',shot:'scoring',steps:[
   'Tap the target where each arrow landed, or tap a score key.',

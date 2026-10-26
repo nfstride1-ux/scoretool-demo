@@ -14,7 +14,7 @@ const DISC=['Outdoor','Indoor','Field','Clout'],DN={Outdoor:'Outdoor target',Ind
 const GHOST_MAP={'WA 90/1440':'WA 90/1440 (90/70/50/30m)','WA 70/1440':'WA 70/1440 (70/60/50/30m)','WA 60/1440':'WA 60/1440 (60/50/40/30m)',
  'WA 70/720':'WA 720 (70m)','WA 60/720':'WA 720 (60m)','WA 50/720':'WA 720 (50m Compound)','WA 60/900 (Canberra)':'WA 60/900 (60/50/40m)',
  'Short Canberra':'Short Canberra (50/40/30m)','Junior Canberra':'Junior Canberra (40/30/20m)','WA Indoor 18m':'Indoor WA 18m','WA Indoor 25m':'Indoor WA 25m',
- 'Field 24Mk Red':'WA Field 24 Marked','Field Red 24t MK':'WA Field 24 Marked','2014 AWA Field Course Red':'WA Field 24 Marked','AWA Unmarked Field Course Red':'WA Field 24 Unmarked'};
+ 'Australian Indoor 18m':'Australian Indoor 18m','Field 24Mk Red':'WA Field 24 Marked','Field Red 24t MK':'WA Field 24 Marked','2014 AWA Field Course Red':'WA Field 24 Marked','AWA Unmarked Field Course Red':'WA Field 24 Unmarked'};
 const anRoundOf=rd=>{const a=(typeof SHEET_ALIAS!='undefined'&&SHEET_ALIAS[rd])||rd;return typeof window.canonRound=='function'?window.canonRound(a):a};window.bsAnRound=anRoundOf;
 const v=a=>a=='X'?10:a=='M'||!a?0:+a;
 const fmt=d=>{const x=new Date(d+'T00:00');return isNaN(x)?d:x.getDate()+' '+x.toLocaleString('en-AU',{month:'short'})+' '+x.getFullYear()};
@@ -45,6 +45,9 @@ function ghostEnds(s,appRound){const R=ROUNDS[appRound];if(!R||!s.ds.length||s.p
  for(const d of s.ds){if(d.e.length&&d.e[0].length==R.ape)E.push(...d.e);else if(d.e.length&&d.e[0].length*2==R.ape&&d.e.length%2==0){for(let i=0;i<d.e.length;i+=2)E.push(d.e[i].concat(d.e[i+1]))}else return null}
  return E.length==R.ends&&E.every(e=>e.length==R.ape)?E:null}
 function bestForApp(appRound,bow){const L=entries().filter(s=>GHOST_MAP[s.rd]==appRound&&!s.part&&(!bow||s.bow==bow)).sort((a,b)=>b.sc-a.sc);for(const s of L){const E=ghostEnds(s,appRound);if(E)return{s,E}}return null}
+/* every official result of this bow that can be raced end by end on this round (Race who? picker); read only */
+window.offGhosts=function(appRound){const bow=window._bsBow||curBow();const list=entries().filter(s=>GHOST_MAP[s.rd]==appRound&&!s.part&&(!bow||s.bow==bow)).sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:b.sc-a.sc).map(s=>({s,E:ghostEnds(s,appRound)})).filter(x=>x.E).map(({s,E})=>({d:s.d,sc:s.sc,ev:s.ev,bow:s.bow,face:(s.ds[0]||{}).face||'',E:E.map(e=>e.slice()),sums:E.map(e=>e.reduce((t,a)=>t+v(a),0))}));return{bow,list}};
+window.ghostBowNow=function(){return window._bsBow||curBow()};
 window.offGhost=function(appRound){const b=bestForApp(appRound,window._bsBow||curBow());if(!b)return null;const E=b.E;
  return{mode:'off',src:'off',ends:E.map(e=>e.reduce((t,a)=>t+v(a),0)),ar:E.map(e=>e.slice()),pos:null,date:fmt(b.s.d),ev:b.s.ev}};
 function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])}
