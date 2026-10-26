@@ -118,12 +118,12 @@ function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||cs
  let E=e.e[e.e.length-1];const nw=!E||E.length>=R.ape;if(nw&&e.e.filter(x=>x&&x.length).length>=R.ends)return false;if(!csKeys(cs,nw?e.e.length:e.e.length-1).includes(k))return false;if(nw){E=[];e.e.push(E)}E.push(k);
  if(xy||e.p){/* plotted arrows (single archer only): positions kept in e.p beside the ends, sorted only when the end is complete, as in Just me */
   const ix=e.e.indexOf(E);e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null);
-  if(E.length==R.ape){const o=E.map((_,j)=>j).sort((a,b)=>csV(E[b])-csV(E[a])||(E[b]=='X')-(E[a]=='X')||a-b),E2=o.map(j=>E[j]),P2=o.map(j=>P[j]||null);E.splice(0,E.length,...E2);P.splice(0,P.length,...P2)}}
+  if(E.length==R.ape){const pre=[...E],preP=[...P],o=E.map((_,j)=>j).sort((a,b)=>csV(E[b])-csV(E[a])||(E[b]=='X')-(E[a]=='X')||a-b),E2=o.map(j=>E[j]),P2=o.map(j=>P[j]||null);E.splice(0,E.length,...E2);P.splice(0,P.length,...P2);if(window.stOrd)stOrd.set('cs|'+cs.code+'|'+id,ix,pre,preP,E,P)}}
  else E.sort((a,b)=>csV(b)-csV(a)||(b=='X')-(a=='X'));e.u=Date.now();e.by=csMe();cs.dirty=1;
  if(E.length==R.ape){const ids=cs.ppl.map(p=>p.id).filter(x=>csCanScore(cs,x)),s=ids.indexOf(id);window._csAct=null;for(let j=1;j<=ids.length;j++){const n=ids[(s+j)%ids.length];if(!csDoneP(cs,n)){window._csAct=n;break}}}
  csAfter(cs);return true}
 function csFxDelete(code,id){const cs=csGet(code),fx=csFxFor('cs|'+code+'|'+id);window._csFx=null;if(!cs||!fx||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!csFxDel(e,fx))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
-function csUndo(code,id){window._csFx=null;const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!e.e.length)return false;let E=e.e[e.e.length-1];if(E&&!E.length){e.e.pop();E=e.e[e.e.length-1]}if(!E)return false;const ux=e.e.length-1;E.pop();if(!E.length)e.e.pop();
+function csUndo(code,id){window._csFx=null;const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!e.e.length)return false;let E=e.e[e.e.length-1];if(E&&!E.length){e.e.pop();E=e.e[e.e.length-1]}if(!E)return false;const ux=e.e.length-1,r=window.stOrd&&stOrd.take('cs|'+cs.code+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();
  if(e.p){if(e.p[ux])e.p[ux].length=Math.min(e.p[ux].length,E.length);e.p.length=Math.min(e.p.length,e.e.length)}
  e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
 /* my own finished score is also kept with my other sessions (tagged with the shoot) */
@@ -281,7 +281,7 @@ function csAdCard(o){const{en,ape,ends,FR,R}=o,E=en.e||[],fx=o.fx,last=E[E.lengt
  const ei=fx?fx.i:cur?E.length-1:Math.min(E.length,ends-1),e=E[ei]||[],prog=E.slice(0,ei+1).reduce((t,y)=>t+endSum(y||[]),0),total=E.reduce((t,y)=>t+endSum(y||[]),0);
  const attrs=`id="csad" data-ns="${esc(o.ns)}"`;
  if(o.done&&!fx)return{pl:null,html:`<div ${attrs}><p style="margin:8px 0 4px">${o.info(ei,true)}</p>${csAdTable(o)}<div class="ad-sheet"><div class="ad-sum">${hiStats(E.filter(x=>x&&x.length).flat(),{round:o.round})} <b class="big">${total}</b><span class="small muted"> / ${R.max}</span></div></div><div class="row" style="gap:6px;justify-content:flex-start;align-items:center;padding:0 10px"><button class="ad-small" id="${o.uid}" style="margin-left:0">\u21b6 Undo</button><span class="small muted">Tap an arrow in the table to fix it.</span></div></div>`};
- const pts=((en.p||[])[ei]||[]).map((p,j)=>p&&{...p,k:e[j],sel:!!(fx&&fx.j==j)}).filter(Boolean);
+ const pts=((en.p||[])[ei]||[]).map((p,j)=>p&&j<e.length&&{...p,k:e[j],sel:!!(fx&&fx.j==j)}).filter(Boolean);
  const chips=Array.from({length:ape},(_,j)=>e[j]!=null?`<span class="adb ${o.kcol(e[j])}" role="button" tabindex="0" data-csfix="${ei},${j}" aria-label="fix arrow ${esc(e[j])}"${fx&&fx.j==j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${esc(e[j])}</span>`:'<span class="adb adb-empty"></span>').join('');
  const canUndo=E.some(x=>x&&x.length);
  const html=`<div ${attrs}><div class="ad-head"><div class="ad-left"><div class="ad-box ad-line">${o.info(ei,false)}</div></div><div class="ad-right"><div class="ad-num"><span>End</span><b>${endSum(e)}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
@@ -290,7 +290,7 @@ function csAdCard(o){const{en,ape,ends,FR,R}=o,E=en.e||[],fx=o.fx,last=E[E.lengt
  ${csFaceHtml(FR,pts,false,{noHide:1})}
  <div class="ad-pad lc-pad" style="--cols:${o.keys.length}">${o.keys.map(k=>`<button class="${o.kcol(k)}" ${o.kattr}="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>
  ${csAdTable(o)}</div>`;
- return{html,pl:{FR,R,pts}}}
+ return{html,pl:{FR,R,pts,zk:o.ns+'|'+ei}}}
 /* chips and the fix buttons; the caller binds the keys, the face, Undo and Delete (they write the data) */
 function csAdBind(again){const ad=app.querySelector('#csad');if(!ad)return;const ns=ad.dataset.ns;
  ad.querySelectorAll('[data-csfix]').forEach(b=>{const go=()=>{const[i,j]=b.dataset.csfix.split(',').map(Number),f=csFxFor(ns);window._csFx=f&&f.i==i&&f.j==j?null:{ns,i,j};again()};b.onclick=go;b.onkeydown=ev=>{if(ev.key=='Enter'||ev.key==' '){ev.preventDefault();go()}}});
@@ -304,7 +304,7 @@ function csAdFit(){const ad=app.querySelector('#csad'),pd=ad&&ad.querySelector('
 function csFaceBind(C,plot,again){if(!C)return;const q=x=>app.querySelector(x);
  if(q('#cshide'))q('#cshide').onclick=()=>{S.hideFace=!S.hideFace;save();again()};
  app.querySelectorAll('[data-csspot]').forEach(b=>b.onclick=()=>{window._csSpot=+b.dataset.csspot;PZ.k=1;PZ.cx=PZ.cy=0;again()});
- const f=q('#cspface');if(!f)return;const FR=C.FR,R=C.R,pts=C.pts,L=q('#csloupe'),W=q('#csfwrap'),B=csFaceVB(FR).split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
+ const f=q('#cspface');if(!f)return;if(C.zk&&window._csZk!==C.zk){window._csZk=C.zk;PZ.k=1;PZ.cx=PZ.cy=0}/* another end or archer opens on the full face */const FR=C.FR,R=C.R,pts=C.pts,L=q('#csloupe'),W=q('#csfwrap'),B=csFaceVB(FR).split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
  const clampZ=()=>{PZ.k=Math.min(4,Math.max(1,PZ.k));const fr=f.getBoundingClientRect(),ar=(fr.width||1)/(fr.height||1),Ew=Math.max(B[2],B[3]*ar),Eh=Math.max(B[3],B[2]/ar),m=Ew/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));const my=Eh/2*(1-1/PZ.k);PZ.cy=Math.min(my,Math.max(-my,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
  const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);const zc=q('#cszcycle');if(zc){const st=zStep(PZ.k);zc.textContent=['Z1','Z2','Reset'][st];zc.classList.toggle('on',st>0)}};
  f.style.touchAction='none';let pan=null,hold=null;applyZ();

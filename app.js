@@ -358,12 +358,15 @@ function faceSVG(pts,id,vb,R,extra=''){if(isFld(R)&&R.col){let g=`<svg id="${id}
  rings.forEach((c,i)=>{if(R&&isSix(R)&&i<4)return;if(R&&isSpot(R)&&i<5)return;g+=`<circle r="${1-i*0.1}" fill="${c[0]}" stroke="${c[1]}" stroke-width="0.006"/>`});g+=`<circle r="0.05" fill="none" stroke="#111" stroke-width="0.005"/>`;
  pts.forEach(p=>g+=arrowDot(p,0.025,0.008,ptLab(p,R)));return g+extra+'</svg>'}
 function plotScore(x,y,R){if(isFld(R)){const d=Math.hypot(x,y)-0.028;/* line cutter */if(d>1)return'M';return d<=.1?'6':d<=.2?'5':d<=.4?'4':d<=.6?'3':d<=.8?'2':'1'}if(isBug(R)){const d=Math.min(...BUGC.map(([cx,cy])=>Math.hypot(x-cx,y-cy)))-0.023;/* dot r 0.02 + half line */if(d>0.3)return'M';return String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}if(spots3(R)){/* spot radius 0.3 = 6-ring edge; local units match the single 3-spot (edge 0.5) */const d=Math.min(...spots3(R).map(([cx,cy])=>Math.hypot(x-cx,y-cy)))/0.6-0.035;if(d>0.5)return'M';if(d<=0.05)return R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}const d=Math.hypot(x,y)-0.028;/* line cutter: arrow edge touching a line scores higher */const lim=R&&isSpot(R)?0.5:R&&isSix(R)?0.6:1;if(d>lim)return'M';if(d<=0.05)return R&&R.xs===false?'10':'X';return String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}
+/* Shot order: a complete end is sorted (highest first), so Undo would take the lowest arrow, not the one just shot, and a plot on another spot could stay behind.
+   The shot order is kept in memory only (never saved) while the sorted end is unchanged; Undo then takes the arrow just shot together with its plot. */
+window.stOrd=window.stOrd||(()=>{const M={},j=(E,P)=>JSON.stringify([E,E.map((_,x)=>(P||[])[x]||null)]);return{set:(k,i,preE,preP,E,P)=>{M[k+'|'+i]={E:[...preE],P:preE.map((_,x)=>(preP||[])[x]||null),s:j(E,P)}},take:(k,i,E,P)=>{const r=M[k+'|'+i];delete M[k+'|'+i];return r&&r.s===j(E,P)?{E:r.E.slice(0,-1),P:r.P.slice(0,-1)}:null}}})();
 function sortEnd(i){const E=cur.ends[i],P=(cur.pos=cur.pos||[])[i]||[];const pr=E.map((a,k)=>[a,P[k]||null]).sort((a,b)=>val(b[0])-val(a[0])||(b[0]=='X')-(a[0]=='X'));cur.ends[i]=pr.map(x=>x[0]);cur.pos[i]=pr.map(x=>x[1])}
 function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
  if(fix){const[i,j]=fix;cur.ends[i][j]=k;(cur.pos[i]=cur.pos[i]||[])[j]=xy||null;if(cur.ends[i].length==R.ape)sortEnd(i);fix=null;if(fixRet)sv='sheet';fixRet=false;save();score();return}
  let e=cur.ends[cur.ends.length-1];if(e.length==R.ape){if(cur.ends.length>=R.ends)return;cur.ends.push([]);e=cur.ends[cur.ends.length-1]}
  const i=cur.ends.length-1;e.push(k);(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
- if(e.length==R.ape){sortEnd(i);justDone=true}save();score()}
+ if(e.length==R.ape){const pe=[...e],pq=[...(cur.pos[i]||[])];sortEnd(i);stOrd.set(cur.id,i,pe,pq,cur.ends[i],cur.pos[i]);justDone=true}save();score()}
 const SIDEHILL=`<details class="tipcard" id="sidehill"><summary>Tip: side hill shots</summary><b>Side hill shots: keep the bow level</b><ol><li>If the bubble is off at full draw, let down and start again. Twisting the bow level at full draw sets the shot up to miss the other way.</li><li>Before you draw, tip the top of the bow a little into the hill, slightly more than feels right.</li><li>Draw with the bow still tipped, then let it relax back to level by itself.</li><li>Pause just short of anchor and check the bubble is level and still.</li><li>Then come to anchor and shoot. You don't need to watch the bubble for the rest of the shot.</li></ol></details>`;
 let crEdit=null,sv='sheet',justDone=false,fixRet=false;
 function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom&&!ROUNDS[r].legacy);
@@ -378,10 +381,11 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#st').onclick=()=>{if($('#rd').value=='__new')return;startRound($('#rd').value)};
  /* Start straight from a saved round in My rounds */app.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{const c=(S.customRounds||[])[+b.dataset.cs];if(c){window._csMode=null;startRound(c.name)}});bindList();return}
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0),P=cur.pos||[];
- if(R.aba&&window.abaScore)return abaScore(R);if(sv=='sheet'&&!fix)return scoreSheet(R,fin);
+ if(R.aba&&window.abaScore)return abaScore(R);if(sv=='sheet'&&!fix){PZ.k=1;PZ.cx=PZ.cy=0;return scoreSheet(R,fin)}
  const full=last.length==R.ape,ei=fix?fix[0]:(full&&(justDone||fin))?cur.ends.length-1:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
+ {const zk=cur.id+'|'+ei;if(window._pzEnd!==zk){window._pzEnd=zk;PZ.k=1;PZ.cx=PZ.cy=0}}/* a different end always opens on the full face */
  const FR0=faceR(R,ei),BG=!!cur.bugs&&isFld(FR0),I3=use3(cur,R,FR0),FF=isFld(FR0)&&!BG?fldFor(cur,ei,FR0):null,FR=BG?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FF?fldFR(FF):I3?face3R(FR0,cur):FR0,FL=FF?fldDists(cur.peg,FF.f,fldMarked(FR0)):null,SC=isBug(FR)?BUGC:spots3(FR),SP=SC&&cur.spot?SC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
- const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&{...p,k:(cur.ends[fix[0]]||[])[j],sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).map((p,j)=>p&&{...p,k:e[j]}).filter(Boolean);
+ const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&j<(cur.ends[fix[0]]||[]).length&&{...p,k:(cur.ends[fix[0]]||[])[j],sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).map((p,j)=>p&&j<e.length&&{...p,k:e[j]}).filter(Boolean);
  const endDone=e.length==R.ape,prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y),0),locked=endDone&&!fix;
  /* score keys in one or two compact rows, highest first (X 10 9 ... 1 M) */const xk=R.xs===false?[]:['X'],keys=isBug(FR)||isFld(FR)?['6','5','4','3','2','1','M']:[...xk,...(isSpot(FR)?['10','9','8','7','6']:isSix(FR)?['10','9','8','7','6','5']:['10','9','8','7','6','5','4','3','2','1']),'M'],kcols=keys.length>8?Math.ceil(keys.length/2):keys.length;
  const sm=typeof sightFor=='function'&&d?sightFor(d):'';
@@ -433,7 +437,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
    if(g.mode=='aim')return plotAt(ev);
    if(!g.mode&&performance.now()-g.t<TAP_MS&&Math.hypot(ev.clientX-g.x0,ev.clientY-g.y0)<TAP_PX)plotAt(ev)}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
- $('#undo').onclick=()=>{while(cur.ends.length>1&&!cur.ends[cur.ends.length-1].length)cur.ends.pop();const n=cur.ends.length-1,l=cur.ends[n];if(!l||!l.length)return;l.pop();const pp=(cur.pos||[])[n];if(pp)pp.length=l.length;justDone=false;save();score()};
+ $('#undo').onclick=()=>{while(cur.ends.length>1&&!cur.ends[cur.ends.length-1].length)cur.ends.pop();const n=cur.ends.length-1,l=cur.ends[n];if(!l||!l.length)return;const pp=(cur.pos||[])[n],r=stOrd.take(cur.id,n,l,pp);if(r){cur.ends[n]=r.E;if(pp)cur.pos[n]=r.P}else{l.pop();if(pp)pp.length=l.length}justDone=false;save();score()};
  if($('#prevend'))$('#prevend').onclick=()=>{const pe=cur.ends[ei-1]||[];fix=[ei-1,Math.max(0,pe.length-1)];score()};
  if($('#fixcancel'))$('#fixcancel').onclick=()=>{fix=null;score()};
  if($('#delarrow'))$('#delarrow').onclick=()=>{const[i,j]=fix;cur.ends[i].splice(j,1);if(cur.pos&&cur.pos[i])cur.pos[i].splice(j,1);fix=null;if(i==cur.ends.length-1)justDone=false;save();score()};
