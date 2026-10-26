@@ -38,7 +38,7 @@ const TESTER=(function(){const q=new URLSearchParams(location.search).get('teste
 const ADMIN_KEY='scoretool.adminReturn';
 (function(){try{const cur=TESTER&&TESTER.id;
  if(cur=='nathe'){if(localStorage.getItem(ADMIN_KEY))localStorage.removeItem(ADMIN_KEY)}
- else if(cur&&!localStorage.getItem(ADMIN_KEY)){const n=JSON.parse(localStorage.getItem('scoretool.v1')||'null');if(n&&/^Nathaniel Stride/i.test(n.profile||''))localStorage.setItem(ADMIN_KEY,'nathe')}
+ else if(cur&&!localStorage.getItem(ADMIN_KEY)){const n=JSON.parse(localStorage.getItem('scoretool.v1')||'null');if(n&&Array.isArray(n.sessions)&&/^Nathaniel Stride/.test(n.profile||''))localStorage.setItem(ADMIN_KEY,'nathe')}
  window.ADMIN_VIEW=!!(cur&&cur!='nathe'&&localStorage.getItem(ADMIN_KEY)=='nathe')}catch(e){window.ADMIN_VIEW=false}
  if(!window.ADMIN_VIEW)return;
  const LS=window.localStorage,P=Storage.prototype,_set=P.setItem,_rm=P.removeItem,_clr=P.clear,OK=new Set([ADMIN_KEY,'scoretool.tester','scoretool.theme']);

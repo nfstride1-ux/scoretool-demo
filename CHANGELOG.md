@@ -2,6 +2,15 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-10-26-1727-adminback2 (2026-10-26)
+
+Follow-up to adminback.
+
+- Recovery check tightened: the bar is only auto-enabled on a phone whose `scoretool.v1` has a sessions list and a profile starting "Nathaniel Stride" (case-sensitive).
+- Fixed the What's new test: earlier notes (adminback and pgcomp) now name their real commits (e0a11de, 4348def).
+- league_test: the same 2 checks fail on 4348def and on e0a11de ("go-live: new user sees no leagues, no Onion Shed shown", "weekly screen: the one-phone / own-phone choice is a visible card near the top"). Not caused by adminback.
+- Tests: whatsnew, adminview, testers re-run (see commit message).
+
 ## v2026-10-26-1720-adminback (2026-10-26)
 
 Admin return bar and read-only profile viewing.
