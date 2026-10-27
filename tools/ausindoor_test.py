@@ -34,7 +34,7 @@ try:
   print('picker faces',lab)
   chk('Just me: three faces for Aus Indoor',lab==['vert=Vertical 3-spot (traffic light)','vegas=Triangular 3-spot','single=Single 40cm face'])
   chk('Just me: vertical (traffic light) is the default',pg.locator('#f3row [data-f3=vert].on').count()==1)
-  pg.select_option('#rd','Indoor WA 18m');pg.wait_for_timeout(200);chk('WA 18m: no extra face row (unchanged)',pg.inner_html('#f3row')=='')
+  pg.select_option('#rd','Indoor WA 18m');pg.wait_for_timeout(200);chk('WA 18m: the Three spot / Single face choice (single face release), default Three spot',pg.evaluate("[...document.querySelectorAll('#f3row [data-f1]')].map(b=>b.dataset.f1+'='+b.textContent)")==['three=Three spot','single=Single face'] and pg.locator('#f3row [data-f1=three].on').count()==1)
   pg.select_option('#rd',AUS);pg.wait_for_timeout(200)
   pg.click('#f3row [data-f3=vegas]');pg.wait_for_timeout(200);chk('pick triangular sticks',pg.locator('#f3row [data-f3=vegas].on').count()==1)
   pg.click('#f3row [data-f3=vert]');pg.wait_for_timeout(200)

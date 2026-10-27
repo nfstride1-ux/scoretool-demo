@@ -218,11 +218,11 @@ window.__topGhost=topGhost;
 let RECD=null,RECl=false;
 function loadRec(){if(RECD||RECl)return;RECl=true;fetch('data/records.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;RECD=j;if(typeof cur!='undefined'&&!cur){const w=$('#ghwrap');if(w){w.remove();ghostPick()}}}).catch(()=>{})}
 const f3Short={vert:'Vertical 3-spot',vegas:'Triangular 3-spot',single:'Single face'};
-const faceCls=(round,s)=>{if(round!=AUSI)return'';try{const R0=ROUNDS[round];return use3(s,R0,faceR(R0,0))?'3-spot':'single'}catch(e){return s.face3=='single'?'single':'3-spot'}};
+const faceCls=(round,s)=>{if(round!=AUSI&&!f3One(round))return'';try{const R0=ROUNDS[round];return use3(s,R0,faceR(R0,0))?'3-spot':'single'}catch(e){return s.face3=='single'?'single':'3-spot'}};
 const faceLbl=(cls,s)=>!cls?'':cls=='single'?'Single face':(s&&f3Short[s.face3])||'3-spot';
-const faceLong=c=>c=='single'?'single 40cm face':'3-spot face';
-const curCls=(round,c)=>round!=AUSI?'':((c&&c.face3)||f3Pref(round))=='single'?'single':'3-spot';
-function faceDiff(round,cls,excl){const me=curCls(round,excl);return cls&&me&&cls!=me?`Different face: shot on the ${faceLong(cls)}, you are on the ${faceLong(me)}. Compared end by end; its arrow positions are not shown.`:''}
+const faceLong=(c,r)=>c=='single'?(r&&r!=AUSI?'single face':'single 40cm face'):'3-spot face';
+const curCls=(round,c)=>round!=AUSI&&!f3One(round)?'':((c&&c.face3)||f3Start(round))=='single'?'single':'3-spot';
+function faceDiff(round,cls,excl){const me=curCls(round,excl);return cls&&me&&cls!=me?`Different face: shot on the ${faceLong(cls,round)}, you are on the ${faceLong(me,round)}. Compared end by end; its arrow positions are not shown.`:''}
 function gSources(round,excl){const R=ROUNDS[round],app=[],off=[];if(!R||!R.ape||R.aba)return{app,off};
  (typeof allSessions=='function'?allSessions():S.sessions||[]).filter(s=>s&&s.round==round&&s!==excl&&!s.sample&&(s.ends||[]).length).forEach(s=>{const E=[];for(const e of s.ends){if(e&&e.length==R.ape)E.push(e);else break}
   if(!E.length)return;const ends=E.slice(0,R.ends),full=isFull(s)&&ends.length>=R.ends,cls=faceCls(round,s);

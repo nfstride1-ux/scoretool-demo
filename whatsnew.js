@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-28-0640-singleface',d:'2026-10-28',items:[
+   ['target',"Single face for indoor rounds","If you can't shoot the three spot, you can now score indoor rounds on one single face. Tap Score, then Just me, pick Indoor WA 18m, Indoor WA 25m or the combined indoor round, and choose Three spot or Single face under Face. Single face is one full target per end, scored X, 10 down to 1 and M, and you can tap where each arrow landed just like any other single face target. It remembers your choice. You can still change the face from the Face button while scoring, until you have plotted an arrow. Three spot is still what you get unless you change it, and your saved scores, totals, leagues and match nights are unchanged.",'this release']]},
   {v:'v2026-10-27-1834-onion',d:'2026-10-27',items:[
    ['trophy',"Onion Shed Challenge is back, with its rules","The Onion Shed Challenge is in your Leagues list again, with the same name and the same six 300s at 18 m on the vertical 3-spot, and the rules are now written at the top of the league screen. Everyone from before is in it (Nathe, Logan, Steven, Joseph, Michael, Dana, Tahuri, Estiaan, Nate and Danie), plus Leslie Anderson, who is scored by the host on his phone. It starts fresh, so the old test scores from the earlier copy stay saved but are not part of it. League scoring, the relay and saved scores are unchanged.",'e60ba0a']]},
   {v:'v2026-10-27-1045-lgnext',d:'2026-10-27',items:[
