@@ -18,7 +18,7 @@ league.js (lgView scoring page, Back to league, nav reset), lab.js (inner back a
 ### Tests run
 Baseline (ea09434): lgpage_test fails the page checks (scoring does not open on its own page, no Back to league, no Scores card).
 This release, full suite (56 suites, sequential, 2816 s): all pass except: vegas_test 58/2 (the same 2 stale checks as the previous releases, vegas.js untouched); leslie_test and lgscroll_test failed on the first run because they assumed the old inline scoring card (they clicked the league group buttons while scoring, and needed the page scrolled to find the keys); both tests were updated (go Back to league first; scroll down a little in setup) and now pass, leslie_test 17/0, lgscroll_test 19/0, league_test 60/0, nopreset_test 29/0, lgpage_test 28/0 (re-run of the League area 5/5). peel_scroll_test timed out under load while other tests ran; re-run alone 15/0.
-After deploy: recorded below.
+After deploy (live URL, v2026-10-27-0815-lgpage, commit e08c3cf): version.json matched; League area 5/5 (league_test 60/0, nopreset 29/0, leslie 17/0, lgscroll 19/0, lgpage 28/0); live smoke 22/0; Casual area live pass.
 
 ## v2026-10-26-2235-lgscroll (2026-10-26)
 ### What changed
