@@ -62,8 +62,11 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
  /* a complete end is put in order (highest first, X before 10) with its plots, exactly as Just me does */
  if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((e.p&&e.p[ix])||[])],[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
- if(E.length==3){const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
+ /* 27 Oct 2026 (Nathe): after the third arrow the card STAYS on this archer, showing the three arrows and a Next button; Next (lgNextArcher) moves on in the same order auto-advance used. Display only. */
+ if(E.length==3){window._lgAct=id;window._lgHold={id,n:e.e.length}}
  lgAfter(lg);return true}
+/* the archer after `id` in this phone's group (same order the old auto-advance used), skipping finished archers; null when everyone is finished */
+function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
 function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
@@ -165,16 +168,18 @@ const lgFinDone=lg=>{const m=lg.fin&&h2hGet(lgFinCode(lg));return!!(m&&window.su
 const _lgH2H=window.h2hCard;window.h2hCard=function(){return _lgH2H.apply(this,arguments)+lgCard()};
 const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try{lgBindCard()}catch(e){console.error(e)}return o};
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
- const open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&!lgDoneE(lgEnt(lg,act0,w))?act0:open[0]||ids[0];
- const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<3?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
+ const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
+  open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
+ const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
  const PL=ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
   AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:10,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> \u00b7 ${fin?'300 finished':'End '+(ei+1)+' of 10'}`}):null;
  /* one archer on this phone: the same score card as Just me (plotting on the face, chips to fix an arrow, table of ends). Several archers stay buttons. */
  window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
- ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
- ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
+ ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:hold?`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot on">${esc(last[j]||'')}</span>`).join('')}</div>
+ <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?'300 finished.':'End '+e.e.length+' of 10 is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>`}
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
@@ -220,9 +225,9 @@ else app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker"
  <div class="card"><p class="small" style="margin:0">League code <b id="lgcode">${esc(code)}</b>. Share it so others can join.</p>${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}
  <div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn ghost" id="lgback">All leagues</button>${lgFinDone(lg)?`<button class="btn ghost" id="lgdel">Remove</button>`:''}</div></div></div>`;
  const q=s=>app.querySelector(s);
- if(q('[data-lgme]'))q('[data-lgme]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:[me]};window._lgAct=me;lgView(code)};
- if(q('[data-lgsg]'))q('[data-lgsg]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:G[gk].slice()};window._lgAct=null;lgView(code)};
- if(q('[data-lgguests]'))q('[data-lgguests]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:GS.slice()};window._lgAct=null;lgView(code)};
+ if(q('[data-lgme]'))q('[data-lgme]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:[me]};window._lgAct=me;window._lgHold=null;lgView(code)};
+ if(q('[data-lgsg]'))q('[data-lgsg]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:G[gk].slice()};window._lgAct=null;window._lgHold=null;lgView(code)};
+ if(q('[data-lgguests]'))q('[data-lgguests]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:GS.slice()};window._lgAct=null;window._lgHold=null;lgView(code)};
  if(q('#lggjr'))q('#lggjr').onchange=e=>{q('label[for=lggname]').textContent=e.target.checked?'Nickname':'Name'};
  if(q('#lggadd'))q('#lggadd').onclick=()=>{const m=lgAddGuest(code,q('#lggname').value,q('#lggjr').checked);if(m){q('#lggmsg2').textContent=m;return}lgView(code)};
  app.querySelectorAll('[data-lgid]').forEach(b=>b.onclick=()=>{window._lgAct=b.dataset.lgid;lgView(code)});
@@ -230,6 +235,7 @@ else app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker"
  if(window._lgPl&&window._lgPl.code==code&&window.csFaceBind)window.csFaceBind(window._lgPl,(k,xy)=>{window._lgAct=act;window._lgKeep=1;lgKey(code,w,act,k,xy);window._lgKeep=null},()=>lgView(code));
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;window._lgKeep=1;lgKey(code,w,act,b.dataset.lgk);window._lgKeep=null});
  if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgFxDel(code,w,act);window._lgKeep=null};
+ if(q('#lgnextarcher'))q('#lgnextarcher').onclick=()=>{window._lgKeep=1;lgNextArcher(code,w,act);lgView(code);window._lgKeep=null};
  if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgUndo(code,w,act);window._lgKeep=null};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
  const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='Only the host can change how the week is scored.';return}lgView(code)};
@@ -239,10 +245,10 @@ else app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker"
  if(q('#lgnext'))q('#lgnext').onclick=()=>{lg.cw=w+1;lg.cwt=Date.now();lg.dirty=1;save();lgTick(true);lgView(code)};
  if(q('#lgforce'))q('#lgforce').onclick=()=>{if(done6<lgArchers(lg).length&&!confirm('Start the shoot-up now? Archers without a day-6 300 are left out.'))return;if(lgForce(code))suLadderView(lgFinCode(lg))};
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
- app.querySelectorAll('[data-lgtl]').forEach(b=>b.onclick=()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;lgView(code);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))});
+ app.querySelectorAll('[data-lgtl]').forEach(b=>b.onclick=()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;window._lgHold=null;lgView(code);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))});
  q('#lgrf').onclick=()=>lgTick(true);if(q('#lgback'))q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
  if(q('#lgdel'))q('#lgdel').onclick=()=>{if(!confirm('Remove this league from this phone? Other phones keep it.'))return;S.leagues=lgAll().filter(l=>l.code!=code);S.matches=h2hAll().filter(m=>m.code!=lgFinCode(lg));save();window._lgv=null;nav('score')};
- if(!(window.csAdFit&&q('#csad .ad-pad')&&csAdFit())){if(keepY!=null){const fit=()=>{scrollTo(0,keepY);/* the line above the keys can wrap for a longer name: if that pushed the keys under the bottom bar (or above the top bar), nudge just enough to bring them back */const pd=q('#lgentry .lc-pad'),sc=window.__scroller,nv=document.querySelector('nav'),hd=document.querySelector('header.top,header');if(!pd||!sc)return;const r=pd.getBoundingClientRect(),lo=Math.min(sc.getBoundingClientRect().bottom,nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().top:1e9)-6,hi=(hd?hd.getBoundingClientRect().bottom:0)+4;if(r.bottom>lo)scrollTo(0,keepY+(r.bottom-lo));else if(r.top<hi)scrollTo(0,Math.max(0,keepY-(hi-r.top)))};fit();requestAnimationFrame(fit)}else scrollTo(0,0)}}
+ if(!(window.csAdFit&&q('#csad .ad-pad')&&!(keepY!=null&&S.hideFace)&&csAdFit())){if(keepY!=null){const fit=()=>{scrollTo(0,keepY);/* the line above the keys can wrap for a longer name: if that pushed the keys under the bottom bar (or above the top bar), nudge just enough to bring them back */const pd=q('#lgentry .lc-pad'),sc=window.__scroller,nv=document.querySelector('nav'),hd=document.querySelector('header.top,header');if(!pd||!sc)return;const r=pd.getBoundingClientRect(),lo=Math.min(sc.getBoundingClientRect().bottom,nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().top:1e9)-6,hi=(hd?hd.getBoundingClientRect().bottom:0)+4;if(r.bottom>lo)scrollTo(0,keepY+(r.bottom-lo));else if(r.top<hi)scrollTo(0,Math.max(0,keepY-(hi-r.top)))};fit();requestAnimationFrame(fit)}else scrollTo(0,0)}}
 window.lgView=lgView;window.lgEntryCard=lgEntryCard;
 /* leaving by a tab or screen change closes the scoring page, so reopening the league starts on the league screen */
 const _lgNav=nav;nav=function(){window._lgE=null;window._lgRet=null;return _lgNav.apply(this,arguments)};

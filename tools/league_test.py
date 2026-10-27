@@ -98,7 +98,9 @@ try:
   chk('league scoring keys X 10 9 8 7 6 M, vertical 3-spot, 18 m',L.evaluate("[...document.querySelectorAll('#lgentry [data-lgk]')].map(b=>b.dataset.lgk)")==['X','10','9','8','7','6','M'] and 'Vertical 3-spot · 18 m' in L.inner_text('#lgentry'))
   L.click('[data-lgid="joseph"]');L.wait_for_timeout(100)
   for k in ['X','10','9']:L.click(f'#lgentry [data-lgk="{k}"]');L.wait_for_timeout(80)
-  chk('card goes round the group after an end',L.evaluate("window._lgAct")=='michael')
+  chk('after the third arrow the card stays on the archer with a Next button (no auto-advance)',L.evaluate("window._lgAct")=='joseph' and L.locator('#lgnextarcher').count()==1)
+  L.click('#lgnextarcher');L.wait_for_timeout(150)
+  chk('Next takes the card round the group',L.evaluate("window._lgAct")=='michael')
   if SHOT:L.screenshot(path=OUT+'/l2-shared-phone.png',full_page=True)
   lt(*PH.values())
   # 26 Oct 2026 (Nathe): the host may move an archer who has started (this replaces the old 'can no longer move' rule); scores stay put

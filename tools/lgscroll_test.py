@@ -34,10 +34,11 @@ try:
        s=H.evaluate(ST);who=s['act']
        if j==0:order.append(who)
        H.evaluate(f"document.querySelector('#lgentry [data-lgk=\"{keys[(a+j)%9]}\"]').click()");H.wait_for_timeout(150);tot+=1
+       if j==2:H.evaluate("document.querySelector('#lgnextarcher').click()");H.wait_for_timeout(150)  # lgnext: the card stays on the archer until Next is tapped
        t=H.evaluate(ST)
        if abs(t['y']-y0)>40 or not t['vis'] or not t['keys']:allok=False;badwhy.append((tag,a,j,t))
    chk(f'{tag} 21 arrows (7 archers x 3): page stayed where it was (at most a nudge of a line to keep the keys clear of the bottom bar) and the keys stayed fully on screen',allok,badwhy[:2])
-   chk(f'{tag} the active archer moved on after each third arrow (7 different archers in turn)',len(set(order))==7,order)
+   chk(f'{tag} the active archer moved on after each Next (7 different archers in turn)',len(set(order))==7,order)
    chk(f'{tag} every archer has one complete end saved',H.evaluate(f"lgArchers(lgGet('{code}')).every(id=>{{const e=lgEnt(lgGet('{code}'),id,1);return e&&e.e.length==1&&e.e[0].length==3}})"))
    # undo keeps the page where it is
    H.evaluate("document.querySelector('#lgundo').click()");H.wait_for_timeout(200);t=H.evaluate(ST)

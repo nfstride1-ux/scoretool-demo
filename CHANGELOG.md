@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-27-1045-lgnext (2026-10-27)
+### What changed
+- League scoring page (Nathe, 27 Oct: "The instant I click the 3rd score it changes to the next person. I don't want that. I want to push next."): when several archers share a phone, the card no longer moves to the next archer after the third arrow. It stays on that archer with the three arrows shown (score keys hidden) and a large Next button; Next moves on in the same order the old auto-advance used (skipping finished archers; after the last archer it goes round to the first archer still to shoot). Undo still takes back the last arrow, including the third (the keys come back and Next goes away until the third arrow is in again). After a finished 300 (10th end) the card also stays with a Next button.
+- A single archer on their own phone (target face plotting) has nothing to move on to, so no Next button; unchanged.
+- Display only. Casual, league scoring rules, the relay, the 10-archer cap and saved scores are untouched (a `lgNextArcher` helper replaces the advance loop that sat in `lgKey`; `lgKey` still saves exactly the same data).
+- Last archer of the league: when the final arrow finishes the league the final shoot-up screen opens as before.
+- Next hold is cleared when a scoring page is opened or left (a hold left over from earlier scoring made Leslie's card show Next instead of the keys in leslie_test; found by the full regression).
+- Page jump fix (Nathe, 27 Oct: "I don't like the page flicking up. It doesn't do it when the targets are showing. Only when they are hidden."): on the league scoring page with Hide target on, the first arrow of each end scrolled the page so the Score card sat at the top of the screen (the target-fit placement `csAdFit` ran on every re-render even though there is no face to fit), and Undo did the same. `lgView` now keeps the current scroll position on those re-renders when the target is hidden, exactly as it does for the shared-phone keys, and Next keeps position too. With the target showing the fit placement is unchanged. Opening the page and Hide/Show target behave as before.
+
+### Files touched
+league.js (lgView scroll rule with hidden target, lgKey, new lgNextArcher, lgEntryCard hold state and Next button, Next handler), help.js, whatsnew.js, tools/lgpage_test.py (now also: hidden target, scrollY unchanged after the first arrow, later arrows, next end and Undo, and on a shared phone after the first arrow and Next; 40 checks), tools/league_test.py, tools/lgscroll_test.py (the only tests that assumed auto-advance; each now taps Next), CHANGELOG.md, sw.js, index.html, version.json (bump).
+
+### Tests run
+Baseline (e08c3cf, previous release): full suite 51/4 as recorded for lgpage; the only real failure was vegas_test 58/2 (known); the other three were the two tests that assumed the old layout (since fixed) and a load timeout.
+This release: full regression 53 passed / 2 failed (4240 s): vegas_test 58/2 (known, unrelated); custom3d_test failed once from a calendar-prompt overlay intercepting a click under load and passes alone 55/0. All League suites 5/5 (lgpage 40/0 incl. new hidden-target and shared-phone scroll checks; lgscroll 19/0; league; leslie 17/0 after the hold-clear fix; ). Casual 5/5 except that overlay flake.
+After deploy: recorded below.
+
 ## v2026-10-27-0815-lgpage (2026-10-27)
 ### What changed
 - League scoring page (Nathe, 27 Oct, league starts Wed 28 Oct): tapping Score my week, Score group (Phone 1/2/3) or the added shooters now opens the scoring on its OWN page, laid out like Casual scoring: header card with a Back to league button, the Score card (archer chips, slots, X 10 9 8 7 6 M keys, Undo), a Scores table for the group (with an "Ends for each archer" list), the analysis card, and Refresh now plus a second Back to league at the bottom. The league screen is not changed: "One phone or own phones" (and the group buttons) stay where they were, "How it's scored" stays there, and Back to league returns to the same scroll position.
