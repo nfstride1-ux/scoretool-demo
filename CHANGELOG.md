@@ -19,7 +19,7 @@ league.js (lgView scroll rule with hidden target, lgKey, new lgNextArcher, lgEnt
 ### Tests run
 Baseline (e08c3cf, previous release): full suite 51/4 as recorded for lgpage; the only real failure was vegas_test 58/2 (known); the other three were the two tests that assumed the old layout (since fixed) and a load timeout.
 This release: full regression 53 passed / 2 failed (4240 s): vegas_test 58/2 (known, unrelated); custom3d_test failed once from a calendar-prompt overlay intercepting a click under load and passes alone 55/0. All League suites 5/5 (lgpage 40/0 incl. new hidden-target and shared-phone scroll checks; lgscroll 19/0; league; leslie 17/0 after the hold-clear fix; ). Casual 5/5 except that overlay flake.
-After deploy: recorded below.
+After deploy (live v2026-10-27-1045-lgnext, e9285cf): `--live --only league` League 5/5 (league 61/0, nopreset 29/0, leslie 17/0, lgscroll 19/0, lgpage 40/0), live smoke 22/0; custom3d_test alone on the new code 55/0 (the one full-run failure was a load flake).
 
 ## v2026-10-27-0815-lgpage (2026-10-27)
 ### What changed
