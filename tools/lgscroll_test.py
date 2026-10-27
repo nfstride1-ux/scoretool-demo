@@ -24,7 +24,7 @@ try:
    H.evaluate(f"(()=>{{lgSetGroups('{code}',1,[lgArchers(lgGet('{code}'))]);window._csMode='league';lgView('{code}')}})()");H.wait_for_timeout(500)
    H.click('[data-lgsg="0"]');H.wait_for_timeout(500)
    chk(f'{tag} one-phone card with all 7 chips and the 7 score keys',H.locator('#lgentry .lc-chip').count()==7 and H.locator('#lgentry [data-lgk]').count()==7)
-   H.evaluate("()=>{const sc=__scroller;const k=document.querySelector('#lgentry .lc-pad');const nv=document.querySelector('nav'),nt=nv?nv.getBoundingClientRect().top:innerHeight;const d=k.getBoundingClientRect().bottom-(Math.min(sc.getBoundingClientRect().bottom,nt)-8);sc.scrollTop=sc.scrollTop+Math.max(0,d)}");H.wait_for_timeout(300)
+   H.evaluate("()=>{const sc=__scroller;const k=document.querySelector('#lgentry .lc-pad');const nv=document.querySelector('nav'),nt=nv?nv.getBoundingClientRect().top:innerHeight;const d=k.getBoundingClientRect().bottom-(Math.min(sc.getBoundingClientRect().bottom,nt)-8);sc.scrollTop=sc.scrollTop+Math.max(120,d)/* lgpage: the scoring page now fits the keys on screen at the top, so scroll down a little to prove the page stays put */}");H.wait_for_timeout(300)
    s0=H.evaluate(ST);y0=s0['y']
    chk(f'{tag} set-up: page is scrolled down with the keys on screen',y0>0 and s0['vis'],s0)
    order=[]; tot=0; allok=True; badwhy=[]

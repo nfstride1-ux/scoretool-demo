@@ -200,18 +200,29 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgK
   ${lgArchers(lg).map(id=>{const k=lgGroupOf(lg,w,id),st=lgHas(lgEnt(lg,id,w));return`<div class="lg-grow"><span class="lg-gname">${esc(lgName(id))}${st?' <span class="small muted">(started)</span>':''}</span><span class="lg-segs" role="group" aria-label="How ${esc(lgName(id))} is scored">${seg(id,'',k==null?'&#10003; Own phone':'Own phone',k==null,false)}${[0,1,2].map(g=>seg(id,g,k===g?'&#10003; Phone '+(g+1):'Phone '+(g+1),k===g,false)).join('')}</span></div>`}).join('')}
   <p class="small" id="lggmsg" role="alert" style="margin:6px 0 0"></p></div>`:'';
  const done6=lgArchers(lg).filter(id=>lgDoneE(lgEnt(lg,id,LG_W))).length;
- app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
+ /* 27 Oct 2026 (Nathe): scoring a phone group (or your own week, or added shooters) opens on its OWN page, laid out like Casual scoring, with Back to league. The league screen (including 'One phone or own phones?') is left exactly as it was. Display only: scoring, saved scores and the relay are unchanged. */
+const sp=!!(E&&!fm);
+if(sp){const SI=E.ids,rw=SI.map(id=>{const x=lgEnt(lg,id,w),EE=(x&&x.e||[]).filter(z=>z&&z.length);return{id,n:EE.filter(z=>z.length==3).length,t:lgTot(EE),x:lgXs(EE),EE}});
+ app.innerHTML=`<div id="lgview" class="lgsp"><div class="card dark"><span class="kicker">League · week ${w} · ${SI.length>1?'shared phone':'scoring'}</span><h1>${esc(lg.name)}</h1>
+<p class="small" style="margin:0">${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE} · 18 m · ${w<6?'Week '+w+' of 6':'Day 6'}${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}</p><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="lgtoleague" data-lgtl="1">Back to league</button></div></div>
+${lgEntryCard(lg,w,SI)}
+<div class="card" id="lgscores"><h3>Scores</h3><table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>Ends</th><th>Score</th><th>X</th></tr></thead><tbody>${rw.map(r=>`<tr data-lgsrow="${esc(r.id)}"><td>${esc(lgName(r.id))}${r.id==me?' (you)':''}</td><td>${r.n}/10</td><td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table>
+<p class="small muted" style="margin:4px 0 0">This week's 300 only. The league table is on the league screen.</p>
+<details id="lgsends"><summary class="small">Ends for each archer</summary>${rw.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(lgName(r.id))}</b>: ${r.EE.length?r.EE.map((e,i)=>`E${i+1} ${esc(e.join(' '))} (${lgTot([e])})`).join(' · '):'no ends yet'}</div>`).join('')}</details></div>
+${lgAnCard(lg,w)}
+<div class="card">${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}<div class="row" style="gap:6px;justify-content:flex-start"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn alt" id="lgtoleague2" data-lgtl="1">Back to league</button></div></div></div>`}
+else app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker">League · ${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE}</span><h1>${esc(lg.name)}</h1>
  <p class="small" style="margin:0">${lg.fin?'All six 300s are in. Final shoot-up.':w<6?`Week ${w} of 6 is current${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}. One 300 each, at home or together.`:`Day 6${lg.weeks&&lg.weeks[5]?' · '+wk(lg.weeks[5]):''}: everyone shoots the 6th 300 together. Then the shoot-up final.`}</p></div>
  ${fm?`<div class="card"><button class="btn alt" id="lgfin">${lgFinDone(lg)?'Final result':'Open the final shoot-up'}</button></div>`:`<div class="card" id="lgmine">${mine}</div>`}
- ${addC}${grpEd}${E&&!fm?lgEntryCard(lg,w,E.ids):''}${lgAnCard(lg,w)}
+ ${addC}${grpEd}${lgAnCard(lg,w)}
  <div class="card"><h3>League table</h3>${tab}</div>
  ${host&&!lg.fin?`<div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${!(lg.weeks||[]).some(Boolean)&&w<6?`<button class="btn ghost" id="lgnext">Move to week ${w+1}</button>`:''}${w==6&&done6>=2?`<button class="btn ghost" id="lgforce">Start shoot-up now</button>`:''}</div>${w==6?`<p class="small muted">The final starts by itself when every archer's day-6 300 is in (${done6} of ${lgArchers(lg).length}).</p>`:''}</div>`:''}
  <div class="card"><p class="small" style="margin:0">League code <b id="lgcode">${esc(code)}</b>. Share it so others can join.</p>${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}
  <div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn ghost" id="lgback">All leagues</button>${lgFinDone(lg)?`<button class="btn ghost" id="lgdel">Remove</button>`:''}</div></div></div>`;
  const q=s=>app.querySelector(s);
- if(q('[data-lgme]'))q('[data-lgme]').onclick=()=>{window._lgE={code,w,ids:[me]};window._lgAct=me;lgView(code)};
- if(q('[data-lgsg]'))q('[data-lgsg]').onclick=()=>{window._lgE={code,w,ids:G[gk].slice()};window._lgAct=null;lgView(code)};
- if(q('[data-lgguests]'))q('[data-lgguests]').onclick=()=>{window._lgE={code,w,ids:GS.slice()};window._lgAct=null;lgView(code)};
+ if(q('[data-lgme]'))q('[data-lgme]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:[me]};window._lgAct=me;lgView(code)};
+ if(q('[data-lgsg]'))q('[data-lgsg]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:G[gk].slice()};window._lgAct=null;lgView(code)};
+ if(q('[data-lgguests]'))q('[data-lgguests]').onclick=()=>{window._lgRet=scrollY;window._lgE={code,w,ids:GS.slice()};window._lgAct=null;lgView(code)};
  if(q('#lggjr'))q('#lggjr').onchange=e=>{q('label[for=lggname]').textContent=e.target.checked?'Nickname':'Name'};
  if(q('#lggadd'))q('#lggadd').onclick=()=>{const m=lgAddGuest(code,q('#lggname').value,q('#lggjr').checked);if(m){q('#lggmsg2').textContent=m;return}lgView(code)};
  app.querySelectorAll('[data-lgid]').forEach(b=>b.onclick=()=>{window._lgAct=b.dataset.lgid;lgView(code)});
@@ -228,7 +239,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgK
  if(q('#lgnext'))q('#lgnext').onclick=()=>{lg.cw=w+1;lg.cwt=Date.now();lg.dirty=1;save();lgTick(true);lgView(code)};
  if(q('#lgforce'))q('#lgforce').onclick=()=>{if(done6<lgArchers(lg).length&&!confirm('Start the shoot-up now? Archers without a day-6 300 are left out.'))return;if(lgForce(code))suLadderView(lgFinCode(lg))};
  if(q('#lgfin'))q('#lgfin').onclick=()=>suLadderView(lgFinCode(lg));
- q('#lgrf').onclick=()=>lgTick(true);q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
+ app.querySelectorAll('[data-lgtl]').forEach(b=>b.onclick=()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;lgView(code);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))});
+ q('#lgrf').onclick=()=>lgTick(true);if(q('#lgback'))q('#lgback').onclick=()=>{window._lgv=null;window._lgE=null;nav(view=='lab_leagues'?'lab_leagues':'score')};
  if(q('#lgdel'))q('#lgdel').onclick=()=>{if(!confirm('Remove this league from this phone? Other phones keep it.'))return;S.leagues=lgAll().filter(l=>l.code!=code);S.matches=h2hAll().filter(m=>m.code!=lgFinCode(lg));save();window._lgv=null;nav('score')};
  if(!(window.csAdFit&&q('#csad .ad-pad')&&csAdFit())){if(keepY!=null){const fit=()=>{scrollTo(0,keepY);/* the line above the keys can wrap for a longer name: if that pushed the keys under the bottom bar (or above the top bar), nudge just enough to bring them back */const pd=q('#lgentry .lc-pad'),sc=window.__scroller,nv=document.querySelector('nav'),hd=document.querySelector('header.top,header');if(!pd||!sc)return;const r=pd.getBoundingClientRect(),lo=Math.min(sc.getBoundingClientRect().bottom,nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().top:1e9)-6,hi=(hd?hd.getBoundingClientRect().bottom:0)+4;if(r.bottom>lo)scrollTo(0,keepY+(r.bottom-lo));else if(r.top<hi)scrollTo(0,Math.max(0,keepY-(hi-r.top)))};fit();requestAnimationFrame(fit)}else scrollTo(0,0)}}
 window.lgView=lgView;window.lgEntryCard=lgEntryCard;
+/* leaving by a tab or screen change closes the scoring page, so reopening the league starts on the league screen */
+const _lgNav=nav;nav=function(){window._lgE=null;window._lgRet=null;return _lgNav.apply(this,arguments)};

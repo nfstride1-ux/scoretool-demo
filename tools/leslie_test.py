@@ -50,11 +50,13 @@ try:
   chk('his earlier ends kept, new end added after them (3 ends, first two unchanged)',len(e)==3 and e[:2]==json.loads(sc0)[gid]['1']['e'][:2] and e[2]==['X','X','9'])
   # Logan started on his own phone; host moves him: ends kept, lock shows whose phone, takeover possible
   sc1=snap()
+  H.click('#lgtoleague');H.wait_for_timeout(400)  # scoring now opens on its own page (lgpage): go back to the league screen first
   H.click('#lggrp [data-lggb="logan"][data-g="0"]');H.wait_for_timeout(400)
   chk('Logan (started on his own phone) moved to Phone 1, ends kept',H.evaluate(f"lgGroupOf(lgGet('{code}'),1,'logan')")==0 and H.evaluate(f"lgGet('{code}').sc.logan[1].e")==[['10','10','9']])
   H.click('[data-lgsg="0"]');H.wait_for_timeout(300);H.click('#lgentry [data-lgid="logan"]');H.wait_for_timeout(300)
   chk("his week says it is on Logan's phone, with a take-over button, nothing is lost",H.locator('#lglock').count()==1 and H.locator('#lgtake').count()==1 and H.evaluate(f"lgGet('{code}').sc.logan[1].e.length")==1)
   # everyone buttons now move started archers too
+  H.click('#lgtoleague');H.wait_for_timeout(300)
   H.evaluate(f"lgView('{code}')");H.wait_for_timeout(300)
   H.click('#lgallown');H.wait_for_timeout(300)
   chk('Everyone on own phone moves every archer including started ones',H.evaluate(f"lgGroups(lgGet('{code}'),1)")==[])

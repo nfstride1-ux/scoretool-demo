@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-27-0815-lgpage',d:'2026-10-27',items:[
+   ['people',"League scoring opens on its own page","In a league week, tap Score my week or Score group and the scoring now opens on its own page, laid out like Casual scoring: the archer chips, the score buttons, Undo and a Scores table for the group. Tap Back to league (at the top or the bottom) to return to the league screen, which stays as you left it, including the one phone or own phones choice. If you are scoring only yourself you can still plot your arrows on the target face, or hide it and tap the scores. Archers still move on to the next one after three arrows. League scoring rules, the 10 archer limit and saved scores are unchanged.",'this release']]},
   {v:'v2026-10-26-2235-lgscroll',d:'2026-10-26',items:[
-   ['people',"League scoring no longer jumps to the top","When you score a group on one phone in a league week, the page used to jump back to the top after every arrow. It now stays where you are, so the score buttons and the sheet stay on screen. Only choosing a different archer (or opening or leaving the week) starts at the top. Scoring and saved scores are unchanged.",'this release']]},
+   ['people',"League scoring no longer jumps to the top","When you score a group on one phone in a league week, the page used to jump back to the top after every arrow. It now stays where you are, so the score buttons and the sheet stay on screen. Only choosing a different archer (or opening or leaving the week) starts at the top. Scoring and saved scores are unchanged.",'ea09434']]},
   {v:'v2026-10-26-2145-leslie',d:'2026-10-26',items:[
    ['people',"Move an archer between phones any time","In a league week the host can now move an archer who has already started between Own phone and Phone 1, 2 or 3, and back. The ends already scored stay exactly as they are and scoring carries on from the next end. Before, a started archer's buttons were greyed out.",'a3cd686']]},
   {v:'v2026-10-26-2106-nopreset',d:'2026-10-26',items:[

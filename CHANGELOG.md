@@ -4,6 +4,22 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-27-0815-lgpage (2026-10-27)
+### What changed
+- League scoring page (Nathe, 27 Oct, league starts Wed 28 Oct): tapping Score my week, Score group (Phone 1/2/3) or the added shooters now opens the scoring on its OWN page, laid out like Casual scoring: header card with a Back to league button, the Score card (archer chips, slots, X 10 9 8 7 6 M keys, Undo), a Scores table for the group (with an "Ends for each archer" list), the analysis card, and Refresh now plus a second Back to league at the bottom. The league screen is not changed: "One phone or own phones" (and the group buttons) stay where they were, "How it's scored" stays there, and Back to league returns to the same scroll position.
+- A single archer scoring on their own phone still gets the target face to plot arrows (with Hide target), the same as Just me. Several archers on one phone use the buttons only, as Casual does. Archers still move on to the next one after the third arrow. The 10-archer cap is unchanged.
+- Leaving by a tab or any other screen closes the scoring page, so reopening the league starts on the league screen. The in-app header back arrow on the scoring page also goes to the league screen.
+- Display only. League scoring rules, relay, and saved scores (keyed by archer and week) are untouched; Back to league leaves the stored scores byte-identical (checked by the test).
+- Also: lgscroll "After deploy" line filled in, and its What's new entry now points at ea09434.
+
+### Files touched
+league.js (lgView scoring page, Back to league, nav reset), lab.js (inner back arrow), help.js, whatsnew.js, tools/lgpage_test.py (new, 28 checks, port 8899, test-only league codes, relay stubbed so nothing is posted to a real topic), qa/run_regression.py (lgpage_test added to the League area), CHANGELOG.md, sw.js, index.html, version.json (bump).
+
+### Tests run
+Baseline (ea09434): lgpage_test fails the page checks (scoring does not open on its own page, no Back to league, no Scores card).
+This release, full suite (56 suites, sequential, 2816 s): all pass except: vegas_test 58/2 (the same 2 stale checks as the previous releases, vegas.js untouched); leslie_test and lgscroll_test failed on the first run because they assumed the old inline scoring card (they clicked the league group buttons while scoring, and needed the page scrolled to find the keys); both tests were updated (go Back to league first; scroll down a little in setup) and now pass, leslie_test 17/0, lgscroll_test 19/0, league_test 60/0, nopreset_test 29/0, lgpage_test 28/0 (re-run of the League area 5/5). peel_scroll_test timed out under load while other tests ran; re-run alone 15/0.
+After deploy: recorded below.
+
 ## v2026-10-26-2235-lgscroll (2026-10-26)
 ### What changed
 - League multi-archer scoring (several archers on one phone, e.g. Vegas 300 18m 3-spot, 7 archers on Phone 1): the page no longer jumps to the top after every arrow, Undo, face plot or background refresh. Reproduced with the new test on the previous deploy (a3cd686): the first score tap, Undo and a relay refresh all returned the page to y=0. Cause: `lgView` ended with `scrollTo(0,0)` on every render except the single-archer card, and every score tap, Undo and `lgTick` refresh re-rendered it. Fix (same kind as the Peel `pgscroll` fix d1d963d): `lgView` keeps the scroll position when the render was caused by a score tap, face plot, arrow delete, Undo or refresh (`window._lgKeep`), then nudges the keys fully clear of the nav and header. Choosing a different archer chip, opening a week and leaving it still start at the top.
@@ -17,7 +33,7 @@ league.js (lgView, score/plot/delete/Undo handlers, lgTick refresh), tools/lgscr
 ### Tests run
 Baseline (a3cd686, after the Leslie release): full suite as recorded for the Leslie release; lgscroll_test fails 6 of 19 on this code (page jumps to y=0 on the first tap, on Undo and on a refresh).
 This release, full suite: all 56 suites run (parallel run a11). Passing: everything including lgscroll_test 19/0, league_test 60/0, nopreset_test 29/0, leslie_test 17/0, h2h, names, casual, just-me, peel suites. Six suites failed only from the parallel runner (shifted ports and load) and were re-run on their normal ports: offline 12/0, peel_comp 52/0, peel_share 26/0, field_faces pass, sightimport 43 ok/0 bad. vegas_test 58 passed, 2 failed: the same 2 checks fail on the previous release (a3cd686) and on earlier ones, in vegas.js code this release does not touch; they are on the failing-test investigation list. peel_test exit 2 is its known name bug; peel_scroll 15/0, peel_data 2/0, peel_next pass.
-After deploy: see the live-run result recorded below.
+After deploy (live URL, v2026-10-26-2235-lgscroll, commit ea09434): version.json matched; league_test 60/0, nopreset_test 29/0, leslie_test 17/0, lgscroll_test 19/0; live smoke 22/0.
 
 ## v2026-10-26-2145-leslie (2026-10-26)
 ### What changed

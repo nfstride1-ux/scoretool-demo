@@ -304,7 +304,8 @@ const PAR={stats:['Stats & PBs','myarch','My archery'],analytics:['Analytics','m
 Object.assign(LABSEC,{lab_analysis:'myarch'});
 const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?(view=='profile'?'lab_profile':'lab_season'):v;
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';
-function inner(){if(view=='lab_leagues'&&window._lgv)return['Leagues',()=>{window._lgv=null;window._lgE=null;nav('lab_leagues')}];
+function inner(){if(view=='lab_leagues'&&window._lgv&&window._lgE&&window._lgE.code==window._lgv)return['League',()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;lgView(window._lgv);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))}];
+ if(view=='lab_leagues'&&window._lgv)return['Leagues',()=>{window._lgv=null;window._lgE=null;nav('lab_leagues')}];
  if(view=='lab_opt'&&S._tuneId&&(S.tune||[]).some(t=>t.id==S._tuneId))return['Arrow optimizer',()=>{S._tuneId=null;save();nav('lab_opt')}];return null}
 /* Discard card (22 Oct 2026): throw away the card being scored, after a confirm. It is removed from this phone, and its id is
    listed in scoretool.cal.<tester>.discarded so it can never be sent to Archery Calendar My events. */
