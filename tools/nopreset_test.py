@@ -1,4 +1,5 @@
-# Onion Shed Challenge preset removed (26 Oct 2026): nobody is given the preset league, a copy already in storage is not listed but is
+# Hidden 26 Oct 2026 preset record (code ONIONSHD). UPDATED 27 Oct 2026: the Onion Shed Challenge is restored under the NEW code ONIONSH2 (see onionrestore_test.py),
+# so a fresh phone now holds that one league; this suite now checks the old ONIONSHD record: a copy already in storage is not listed but is
 # left byte-for-byte as saved, it does not count toward the 3-league host limit, its code can't be re-joined, and New league can still be
 # created, with 'Use the usual group' ticking the old members as the template. TEST data only; relay mocked.
 import subprocess,sys,time,os,json
@@ -21,20 +22,20 @@ try:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
   for tid in ['nathe','logan','estiaan','nate','darnie','dana']:
     c,pg=phone(b,tid);t=card(pg)
-    chk(f'{tid}: fresh phone is not given the Onion Shed preset',pg.evaluate("(S.leagues||[]).length")==0 and 'Onion Shed' not in t and 'not in any leagues yet' in t)
+    chk(f'{tid}: fresh phone holds only the restored league (ONIONSH2), never the old ONIONSHD',pg.evaluate("(S.leagues||[]).map(l=>l.code)")==['ONIONSH2'] and 'Onion Shed' in t)
     chk(f'{tid}: reload keeps it that way',pg.evaluate("(()=>{location.reload();return 1})()")==1 or True)
     pg.wait_for_timeout(1800);t=card(pg)
-    chk(f'{tid}: still no preset after reload',pg.evaluate("(S.leagues||[]).length")==0 and 'Onion Shed' not in t)
+    chk(f'{tid}: still one copy after reload',pg.evaluate("(S.leagues||[]).map(l=>l.code)")==['ONIONSH2'])
     if tid!='nathe':c.close()
   # ----- a phone that already holds the preset record with scores -----
   ch,H=phone(b,'logan')
-  H.evaluate("()=>{const r=lgPresetRecord();r.sc={logan:{1:{e:Array(10).fill(['X','10','9']),by:'logan',u:5,f:'vert'}}};r.host='logan';S.leagues=[r];save()}")
+  H.evaluate("()=>{const r=lgPresetRecord();r.sc={logan:{1:{e:Array(10).fill(['X','10','9']),by:'logan',u:5,f:'vert'}}};r.host='logan';S.leagues=[r];S.lgPreset='ONIONSHD';save()}")
   before=H.evaluate("JSON.stringify(S.leagues)")
   t=card(H)
-  chk('stored preset league is not listed',H.locator('#lgcard [data-lgopen="ONIONSHD"]').count()==0 and 'Onion Shed' not in t and 'not in any leagues yet' in t)
+  chk('stored old preset league is not listed (the restored ONIONSH2 is)',H.locator('#lgcard [data-lgopen="ONIONSHD"]').count()==0 and H.locator('#lgcard [data-lgopen="ONIONSH2"]').count()==1)
   H.evaluate("lgTick(true)");H.wait_for_timeout(800);t=card(H)
   after=H.evaluate("JSON.stringify(S.leagues)")
-  d0,d1=json.loads(before)[0],json.loads(after)[0]
+  d0,d1=[x for x in json.loads(before) if x['code']=='ONIONSHD'][0],[x for x in json.loads(after) if x['code']=='ONIONSHD'][0]
   for d in (d0,d1):d.pop('posted',None);d.pop('dirty',None);d.pop('qfail',None)
   chk('its saved scores and record are untouched',d0==d1 and d1['sc']['logan']['1']['e']==[['X','10','9']]*10)
   chk('still readable by code (data kept, just not listed)',H.evaluate("!!lgGet('ONIONSHD')&&lgTable(lgGet('ONIONSHD')).find(r=>r.id=='logan').t")==290)
@@ -45,9 +46,9 @@ try:
   H.evaluate("()=>{S.leagues[0].host=h2hMe();save()}")
   for k in range(3):
     card(H);H.click('#lgnew summary');H.fill('#lgname',f'Fresh {k}');H.check('#lgnew [data-lgop="steven"]');H.click('#lggo');H.wait_for_timeout(500)
-  chk('three new leagues can still be created with a hidden preset hosted',H.evaluate("S.leagues.filter(l=>l.code!='ONIONSHD').length")==3)
+  chk('three new leagues can still be created with a hidden preset hosted',H.evaluate("S.leagues.filter(l=>l.code!='ONIONSHD'&&l.code!='ONIONSH2').length")==3)
   t=card(H)
-  chk('new leagues listed, preset still not',all(f'Fresh {k}' in t for k in range(3)) and 'Onion Shed' not in t)
+  chk('new leagues listed, old preset still not',all(f'Fresh {k}' in t for k in range(3)) and H.locator('#lgcard [data-lgopen="ONIONSHD"]').count()==0)
   # ----- template -----
   c2,N=phone(b,'dana');card(N);N.click('#lgnew summary');N.click('#lgtpl')
   tk=N.evaluate("[...document.querySelectorAll('#lgnew [data-lgop]:checked')].map(x=>x.dataset.lgop).sort()")

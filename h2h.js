@@ -12,7 +12,7 @@ const h2hTopic=c=>H2H_NS+'-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,''),h2
 const H2H_ROUNDS=()=>Object.keys(ROUNDS).filter(r=>(/^Indoor WA/.test(r)||r==AUSI||ROUNDS[r].vegas&&!ROUNDS[r].league)&&!ROUNDS[r].custom);
 const H2H_MAX=10,H2H_RESET=Date.UTC(2026,9,19,22,36);/* 20 Oct 06:36 Perth: older relay posts (a browser test) are ignored */
 /* Onion Shed Challenge has no archer limit (Nathe, 22 Oct 2026): its league record and its final match are uncapped; everything else keeps H2H_MAX */
-const H2H_NOCAP=['ONIONSHD'],h2hCap=m=>m&&(H2H_NOCAP.includes(m.code)||H2H_NOCAP.includes(m.lg))?1e9:H2H_MAX;window.h2hCap=h2hCap;
+const H2H_NOCAP=['ONIONSHD','ONIONSH2'],h2hCap=m=>m&&(H2H_NOCAP.includes(m.code)||H2H_NOCAP.includes(m.lg))?1e9:H2H_MAX;window.h2hCap=h2hCap;
 const H2H_MODES={total:'Highest total',sets:'Set points (2 for a set win, 1 for a draw, first to 6)'};
 const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
 const h2hAll=()=>S.matches=S.matches||[],h2hGet=c=>h2hAll().find(m=>m.code==c);

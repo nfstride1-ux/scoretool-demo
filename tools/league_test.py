@@ -58,8 +58,8 @@ try:
   # ---------- create: real names in Who's in, Phill left out ----------
   H.evaluate("cur=null;sv='sheet';nav('score')");H.wait_for_timeout(300)
   lc=H.text_content('#lgcard')
-  # go-live rule (22 Oct): a new user sees no leagues and no Onion Shed card; the format and final rules sit in "New league"
-  chk('go-live: new user sees no leagues, no Onion Shed shown','not in any leagues yet' in lc and 'Onion Shed' not in lc)
+  # go-live rule (22 Oct), UPDATED 27 Oct 2026 (stale by design: the Onion Shed Challenge is restored for its members): a new member sees only the restored Onion Shed Challenge (ONIONSH2); the format and final rules also sit in "New league"
+  chk('go-live: new member sees the restored Onion Shed Challenge and nothing else',H.evaluate("(S.leagues||[]).map(l=>l.code)")==['ONIONSH2'] and 'Onion Shed Challenge' in lc)
   chk('league card: six 300s at 18 m on the vertical 3-spot, no Vegas','six 300s at 18 m on the vertical 3-spot' in lc.lower() and 'Vegas' not in lc)
   chk('final rules shown before a league is created','Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).' in lc)
   H.click('#lgnew summary')
