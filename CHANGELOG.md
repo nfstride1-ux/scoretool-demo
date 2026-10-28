@@ -18,6 +18,7 @@ casual.js (csSplit/csAF/csMixed/csSetFace, csFace/csKeys/csEndFace per archer, s
 
 ### Tests run
 Baseline: origin/main 064db47 (singleface follow-up). New tools/mixedface_test.py: 59 checks (setup defaults and independent per-archer choice, Vegas 300 excluded, keys per archer, face lock and Undo, relay round-trip for a linked archer, mixed totals and note, old shoots unchanged, solo plotting on a single face, Australian Indoor, match play keys, match night face and note). This release: full regression `python3 qa/run_regression.py` 57 passed / 1 failed (2145 s). The one failure is vegas_test 58/2, the known stale one-phone relay checks (unchanged). casual_test 82/0, h2h_test 90/0, singleface 44/0, mixedface 59/0, whatsnew 33/0, league suites all pass.
+After deploy (live v2026-10-28-1314-mixedface, ec1e13e): `--live --suite mixedface_test,whatsnew_test,casual_test` all passed (mixedface 59/0, casual 82/0, whatsnew 33/0) plus the live smoke 22/0 (ghost picker on the live site). The live version.json showed v2026-10-28-1314-mixedface. Suites run on fresh browser profiles with the relay stubbed; no real data written.
 
 ## v2026-10-28-0640-singleface (2026-10-28)
 ### What changed
