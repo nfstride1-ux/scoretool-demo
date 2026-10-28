@@ -59,15 +59,24 @@ function csAbaTotHtml(cs,id){const R=ROUNDS[cs.round],S3=csAbaSum(cs,id),two=S3.
  return`<p class="small" style="margin:4px 0" id="csabatot">Total <b>${S3.tot}</b> \u00b7 most still possible <b>${S3.max}</b> of ${R.ends*20}</p><div class="small muted" id="csabahalves">${S3.H.map((o,h)=>`${nm(h)}: <b>${o.tot}</b> (${o.sub.map(b=>b.from+'-'+b.to+': '+b.s).join(', ')})`).join(' \u00b7 ')}</div>${last}`}
 try{for(const x of[...(S.casual||[]),...(S.sessions||[]),...(S.matches||[])])cs3dReg(x&&x.round)}catch(e){}
 /* face for end ei: the same faceR / face3R the main scorer uses (indoor always on a 3-spot) */
-function csFace(cs,ei){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F))return cs.face3=='single'&&cs.round==AUSI?F:face3R(F,{face3:cs.face3=='vegas'?'vegas':'vert'});return F}
+/* Mixed faces (28 Oct 2026, Nathe): on Indoor WA 18m / 25m / Combined and Australian Indoor 18m each archer picks their own face, Three spot or Single face.
+   cs.fa = {archerId:'three'|'single'} is set by the host (setup, or the Face buttons while that archer has no arrows); a linked archer on their own phone sets cs.sc[id].f instead.
+   Nothing stored = the shoot's own face (cs.face3), so shoots made before this behave exactly as they did. Vegas 300 stays a 3-spot game for everyone. */
+const csSplitR=(round,disc)=>disc=='indoor'&&!!ROUNDS[round]&&(round==AUSI||f3One(round));
+const csSplit=cs=>csSplitR(cs.round,cs.disc);
+const csBase=cs=>cs.face3=='single'&&cs.round==AUSI?'single':cs.face3=='vegas'?'vegas':'vert';
+/* one archer's face: 'single', 'vegas' or 'vert' (the three-spot layout comes from the shoot) */
+function csAF(cs,id){const b=csBase(cs);if(id==null||!csSplit(cs))return b;const v=((cs.sc||{})[id]||{}).f||(cs.fa||{})[id];return v=='single'?'single':v=='three'&&b=='single'?'vert':b}
+const csMixed=cs=>{try{return csSplit(cs)&&(cs.ppl||[]).length>1&&new Set(cs.ppl.map(p=>csAF(cs,p.id)=='single')).size>1}catch(e){return false}};
+function csFace(cs,ei,id){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F)){const a=csAF(cs,id);return a=='single'?F:face3R(F,{face3:a=='vegas'?'vegas':'vert'})}return F}
 /* score keys: the main scorer's rule (app.js score()), highest first */
-function csKeys(cs,ei){const R=ROUNDS[cs.round]||{};if(R.d3)return cs3dK(cs,ei||0);const FR=csFace(cs,ei||0);if(isFld(FR))return['6','5','4','3','2','1','M'];const xk=R.xs===false?[]:['X'];
+function csKeys(cs,ei,id){const R=ROUNDS[cs.round]||{};if(R.d3)return cs3dK(cs,ei||0);const FR=csFace(cs,ei||0,id);if(isFld(FR))return['6','5','4','3','2','1','M'];const xk=R.xs===false?[]:['X'];
  return[...xk,...(isSpot(FR)?['10','9','8','7','6']:isSix(FR)?['10','9','8','7','6','5']:['10','9','8','7','6','5','4','3','2','1']),'M']}
 const csKcol=(cs,k)=>cs3d(cs)?cs3dCol(cs,k):cs.disc=='field'||isFld(csFace(cs,0))?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k);
-const csFaceTxt=cs=>{const R=ROUNDS[cs.round];if(!R)return'';if(R.d3){const T=CS3D[R.d3];return T.o+' 3D animal'+(T.half?', '+R.d3n+' targets 3-arrow then '+R.d3n+' targets 1-arrow':'')+(T.o=='ABA'?', first arrow to score counts':'')}if(R.vegas)return'Vegas 3-spot';const F=faceR(R,0);if(isFld(F))return'Field face, gold 6 and 5, black 4 to 1';if(indoor3(R,F))return cs.round==AUSI?f3Name(AUSI,cs.face3):cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot';
+const csFaceTxt=cs=>{const R=ROUNDS[cs.round];if(!R)return'';if(R.d3){const T=CS3D[R.d3];return T.o+' 3D animal'+(T.half?', '+R.d3n+' targets 3-arrow then '+R.d3n+' targets 1-arrow':'')+(T.o=='ABA'?', first arrow to score counts':'')}if(R.vegas)return'Vegas 3-spot';const F=faceR(R,0);if(isFld(F))return'Field face, gold 6 and 5, black 4 to 1';if(indoor3(R,F)){if(cs.round==AUSI&&!(cs.ppl||[]).length)return f3Name(AUSI,cs.face3);const A=csSplit(cs)&&(cs.ppl||[]).length?[...new Set(cs.ppl.map(p=>csAF(cs,p.id)))]:[csBase(cs)];return A.map(a=>f3Name(cs.round,a)).join(' + ')}
  const L=[...new Set((R.blocks||[{}]).map((b,k)=>{let e=0;for(let j=0;j<k;j++)e+=+R.blocks[j].ends;return faceR(R,e).face}))].filter(Boolean);return L.length?L.join(' / '):R.face}
 const csR=cs=>ROUNDS[cs.round]||{ends:10,ape:3};
-const csEndFace=(cs,ei)=>{const R0=ROUNDS[cs.round]||{};if(R0.d3){const T=CS3D[R0.d3];return T.half?(ei<R0.d3n?'3-arrow half':'1-arrow half'):T.l}const R=R0,F=faceR(R,ei),sz=(String(F.face||'').match(/^\d+(-\d+)?/)||[''])[0];if(isFld(F))return sz+'cm field face';if(R.vegas||indoor3(R,F))return(sz?sz+'cm ':'')+(R.vegas?'Vegas 3-spot':cs.round==AUSI?f3Name(AUSI,cs.face3).replace(/^Single 40cm/,'single'):cs.face3=='vegas'?'Vegas 3-spot':'Vertical 3-spot');return F.face||''};
+const csEndFace=(cs,ei,id)=>{const R0=ROUNDS[cs.round]||{};if(R0.d3){const T=CS3D[R0.d3];return T.half?(ei<R0.d3n?'3-arrow half':'1-arrow half'):T.l}const R=R0,F=faceR(R,ei),sz=(String(F.face||'').match(/^\d+(-\d+)?/)||[''])[0];if(isFld(F))return sz+'cm field face';if(R.vegas||indoor3(R,F))return(sz?sz+'cm ':'')+(R.vegas?'Vegas 3-spot':cs.round==AUSI?f3Name(AUSI,csAF(cs,id)).replace(/^Single 40cm/,'single'):csAF(cs,id)=='single'?'single face':csAF(cs,id)=='vegas'?'Vegas 3-spot':'Vertical 3-spot');return F.face||''};
 const csP=(cs,id)=>(cs.ppl||[]).find(p=>p.id==id);
 const csNameOnly=(cs,id)=>{const p=csP(cs,id);return!!(p&&!p.tid)};
 /* names: social views use the nickname for app users; name-only friends show the name the host typed (tester real names swapped) */
@@ -102,10 +111,11 @@ function csNameCheck(raw){const n=nmClean(raw);if(n.length<2)return{ok:false,n,m
  return{ok:true,n,msg:''}}
 /* ---------- create, people, scoring ---------- */
 const csNid=()=>'n'+h2hCode().slice(0,6).toLowerCase();
-function csCreate(o){const me=csMe();if(!me)return null;const P=[];if(o.self)P.push({id:me,tid:me});for(const p of o.ppl||[]){if(P.length>=CS_MAX)break;if(p.tid){if(!P.some(x=>x.id==p.tid))P.push({id:p.tid,tid:p.tid,n:''})}else{const c=csNameCheck(p.n);if(c.ok&&!P.some(x=>!x.tid&&x.n.toLowerCase()==c.n.toLowerCase()))P.push({id:csNid(),n:c.n})}}
+function csCreate(o){const me=csMe();if(!me)return null;const P=[],FA={};if(o.self){P.push({id:me,tid:me});FA[me]=o.selfF}for(const p of o.ppl||[]){if(P.length>=CS_MAX)break;if(p.tid){if(!P.some(x=>x.id==p.tid)){P.push({id:p.tid,tid:p.tid,n:''});FA[p.tid]=p.f}}else{const c=csNameCheck(p.n);if(c.ok&&!P.some(x=>!x.tid&&x.n.toLowerCase()==c.n.toLowerCase())){const nid=csNid();P.push({id:nid,n:c.n});FA[nid]=p.f}}}
  if(P.length<1||!ROUNDS[o.round])return null;const t=Date.now(),code='C'+h2hCode(),disc=csDisc(o.round);
  const cs={code,name:nmClean(o.name||'').slice(0,40)||'Casual shoot',disc,round:o.round,face3:disc=='indoor'&&!ROUNDS[o.round].vegas?(o.face3=='vegas'?'vegas':o.face3=='single'&&o.round==AUSI?'single':'vert'):null,date:o.date||today(),host:me,ppl:P,pt:t,sc:{},fin:0,fint:0,
-  mp:{on:!!o.mp&&P.length>=2,ask:0,seeds:null,t},status:'active',created:t,dirty:1,invq:P.filter(p=>p.tid&&p.tid!=me).map(p=>p.tid)};csAll().push(cs);save();csTick(true);return cs}
+  mp:{on:!!o.mp&&P.length>=2,ask:0,seeds:null,t},status:'active',created:t,dirty:1,invq:P.filter(p=>p.tid&&p.tid!=me).map(p=>p.tid)};
+ if(csSplit(cs)){const fa={};for(const id in FA)if(FA[id]=='single'||FA[id]=='three')fa[id]=FA[id];if(Object.keys(fa).length)cs.fa=fa}csAll().push(cs);save();csTick(true);return cs}
 function csAdd(code,p){const cs=csGet(code);if(!cs||!csHost(cs)||cs.ppl.length>=CS_MAX||csFin(cs))return'This shoot already has 10 people.';
  if(p.tid){if(cs.ppl.some(x=>x.tid==p.tid))return'Already in this shoot.';cs.ppl.push({id:p.tid,tid:p.tid,n:''});cs.invq=[...(cs.invq||[]),p.tid]}
  else{const c=csNameCheck(p.n);if(!c.ok)return c.msg;if(cs.ppl.some(x=>!x.tid&&x.n.toLowerCase()==c.n.toLowerCase()))return'That name is already in this shoot.';cs.ppl.push({id:csNid(),n:c.n})}
@@ -114,8 +124,8 @@ function csRemove(code,id){const cs=csGet(code);if(!cs||!csHost(cs)||id==cs.host
 /* host: stop waiting for a linked person and score them as a name-only friend */
 function csUnlink(code,id){const cs=csGet(code);const p=cs&&csP(cs,id);if(!p||!p.tid||!csHost(cs)||id==cs.host)return false;p.n=testerName(p.tid);p.tid=null;cs.pt=Date.now();cs.dirty=1;save();csTick(true);return true}
 function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const R=csR(cs);cs.sc=cs.sc||{};const e=cs.sc[id]=cs.sc[id]||{e:[]};
- const fxs=csFxFor('cs|'+cs.code+'|'+id);if(fxs){/* fixing one arrow (as Just me) */window._csFx=null;if(!e.e[fxs.i]||!csKeys(cs,fxs.i).includes(k)||!csFxPut(e,R.ape,fxs,k,xy))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
- let E=e.e[e.e.length-1];const nw=!E||E.length>=R.ape;if(nw&&e.e.filter(x=>x&&x.length).length>=R.ends)return false;if(!csKeys(cs,nw?e.e.length:e.e.length-1).includes(k))return false;if(nw){E=[];e.e.push(E)}E.push(k);
+ const fxs=csFxFor('cs|'+cs.code+'|'+id);if(fxs){/* fixing one arrow (as Just me) */window._csFx=null;if(!e.e[fxs.i]||!csKeys(cs,fxs.i,id).includes(k)||!csFxPut(e,R.ape,fxs,k,xy))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
+ let E=e.e[e.e.length-1];const nw=!E||E.length>=R.ape;if(nw&&e.e.filter(x=>x&&x.length).length>=R.ends)return false;if(!csKeys(cs,nw?e.e.length:e.e.length-1,id).includes(k))return false;if(nw){E=[];e.e.push(E)}E.push(k);
  if(xy||e.p){/* plotted arrows (single archer only): positions kept in e.p beside the ends, sorted only when the end is complete, as in Just me */
   const ix=e.e.indexOf(E);e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null);
   if(E.length==R.ape){const pre=[...E],preP=[...P],o=E.map((_,j)=>j).sort((a,b)=>csV(E[b])-csV(E[a])||(E[b]=='X')-(E[a]=='X')||a-b),E2=o.map(j=>E[j]),P2=o.map(j=>P[j]||null);E.splice(0,E.length,...E2);P.splice(0,P.length,...P2);if(window.stOrd)stOrd.set('cs|'+cs.code+'|'+id,ix,pre,preP,E,P)}}
@@ -123,17 +133,21 @@ function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||cs
  if(E.length==R.ape){const ids=cs.ppl.map(p=>p.id).filter(x=>csCanScore(cs,x)),s=ids.indexOf(id);window._csAct=null;for(let j=1;j<=ids.length;j++){const n=ids[(s+j)%ids.length];if(!csDoneP(cs,n)){window._csAct=n;break}}}
  csAfter(cs);return true}
 function csFxDelete(code,id){const cs=csGet(code),fx=csFxFor('cs|'+code+'|'+id);window._csFx=null;if(!cs||!fx||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!csFxDel(e,fx))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
+/* one archer's face: only before their first arrow. The host sets it for themselves and name-only friends (cs.fa); a linked archer sets their own (cs.sc[id].f) */
+function csSetFace(code,id,v){const cs=csGet(code);if(!cs||!csSplit(cs)||!csCanScore(cs,id)||csLocked(cs)||cs.fin||csEnds(cs,id).length||(v!='single'&&v!='three'))return false;window._csFx=null;
+ if(csHost(cs)){cs.fa=cs.fa||{};cs.fa[id]=v;const en=csEnt(cs,id);if(en)delete en.f}else{cs.sc=cs.sc||{};const e=cs.sc[id]=cs.sc[id]||{e:[]};e.f=v;e.u=Date.now();e.by=csMe()}
+ cs.dirty=1;csAfter(cs);return true}
 function csUndo(code,id){window._csFx=null;const cs=csGet(code);if(!cs||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!e.e.length)return false;let E=e.e[e.e.length-1];if(E&&!E.length){e.e.pop();E=e.e[e.e.length-1]}if(!E)return false;const ux=e.e.length-1,r=window.stOrd&&stOrd.take('cs|'+cs.code+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();
  if(e.p){if(e.p[ux])e.p[ux].length=Math.min(e.p[ux].length,E.length);e.p.length=Math.min(e.p.length,e.e.length)}
  e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
 /* my own finished score is also kept with my other sessions (tagged with the shoot) */
 function csOwnSession(cs){const me=csMe();if(!csP(cs,me)||!csDoneP(cs,me))return;const id='cs-'+cs.code;let s=S.sessions.find(x=>x.id==id);const E=csEnds(cs,me).map(e=>e.slice()),en=csEnt(cs,me)||{},PO=en.p&&en.e?en.e.map((x,i)=>x&&x.length?(en.p[i]||[]).map(q=>q||null):null).filter(Boolean):null,POS=PO&&PO.some(l=>l.some(Boolean))?E.map((x,i)=>x.map((_,j)=>(PO[i]||[])[j]||null)):null;
- if(!s){s={id,date:cs.date||today(),round:cs.round,ends:E,pos:POS||E.map(()=>[]),note:'Casual shoot: '+cs.name,casual:cs.code};if(cs.face3)s.face3=cs.face3;if(ROUNDS[cs.round].vegas)s.face3='vegas';S.sessions.push(s)}else{s.ends=E;if(POS)s.pos=POS}}
+ if(!s){s={id,date:cs.date||today(),round:cs.round,ends:E,pos:POS||E.map(()=>[]),note:'Casual shoot: '+cs.name,casual:cs.code};if(cs.face3)s.face3=cs.face3;if(csSplit(cs)&&csAF(cs,me)!=csBase(cs))s.face3=csAF(cs,me);if(ROUNDS[cs.round].vegas)s.face3='vegas';S.sessions.push(s)}else{s.ends=E;if(POS)s.pos=POS}}
 function csAfter(cs){csOwnSession(cs);if(csFin(cs)&&cs.mp&&cs.mp.on&&!cs.mp.seeds&&csHost(cs))csMpStart(cs.code,true);save();csMatchSync(cs);if($('#csview')&&window._csv==cs.code)csView(cs.code);csTick(true)}
 function csFinish(code){const cs=csGet(code);if(!cs||!csHost(cs)||cs.fin)return;cs.fin=1;cs.fint=Date.now();cs.dirty=1;csAfter(cs)}
 /* ---------- match play (shootup.js ladder) ---------- */
 const csMpCode=cs=>cs.code+'M';
-const csRule=cs=>{const T=cs3d(cs);if(T){const K=csKeys(cs,0);return{ends:CS_MP_ENDS,ape:1,xv:+K[0],t12:false,so:'pick1',keys:K,d3:1,kc:Object.fromEntries(K.map(k=>[k,cs3dCol(cs,k)]))}}return{ends:CS_MP_ENDS,ape:3,xv:10,t12:false,so:'pick1',keys:csKeys(cs,0),fld:isFld(csFace(cs,0))}};
+const csRule=cs=>{const T=cs3d(cs);if(T){const K=csKeys(cs,0);return{ends:CS_MP_ENDS,ape:1,xv:+K[0],t12:false,so:'pick1',keys:K,d3:1,kc:Object.fromEntries(K.map(k=>[k,cs3dCol(cs,k)]))}}return{ends:CS_MP_ENDS,ape:3,xv:10,t12:false,so:'pick1',keys:csKeys(cs,0,(cs.ppl||[]).map(p=>p.id).find(i=>csAF(cs,i)=='single')),fld:isFld(csFace(cs,0))}};
 function csMatchSync(cs){const on=cs.mp&&cs.mp.on&&cs.mp.seeds&&cs.mp.seeds.length>=2,code=csMpCode(cs);let m=h2hGet(code);
  if(!on){if(m){S.matches=h2hAll().filter(x=>x.code!=code);save()}return null}
  const seeds=cs.mp.seeds.filter(id=>csP(cs,id)),ops={},names={};for(const id of seeds){ops[id]={ends:csEnds(cs,id),done:true};names[id]=csNm(cs,id)}
@@ -151,8 +165,8 @@ const CS_OK=['X','10','9','8','7','6','5','4','3','2','1','M'];
 const CS_OK3=[...new Set(Object.values(CS3D).flatMap(T=>T.k))];
 const csDec=(s,R)=>String(s||'').split('/').filter(x=>x!=='').slice(0,R.ends).map(e=>R.d3?e.split('.').slice(0,R.ape).filter(a=>CS_OK3.includes(a)):[...e].slice(0,R.ape).map(c=>c=='T'?'10':c).filter(a=>CS_OK.includes(a)));
 function csSnapParts(cs){const me=csMe(),host=csHost(cs),head={k:'cs',code:cs.code,by:me,...h2hNm()};
- if(host)Object.assign(head,{name:cs.name,disc:cs.disc,round:cs.round,face3:cs.face3||'',date:cs.date,host:cs.host,ppl:cs.ppl.map(p=>p.tid?{id:p.id,tid:p.tid}:{id:p.id,n:csNm(cs,p.id)}),pt:cs.pt||0,fin:cs.fin||0,fint:cs.fint||0,mp:cs.mp||{}});
- const items=[];for(const id in cs.sc||{}){const e=cs.sc[id];if(e&&e.e&&e.e.length)items.push([id,{e:csEnc(e.e,csR(cs)),u:e.u||0,by:e.by||''}])}
+ if(host)Object.assign(head,{name:cs.name,disc:cs.disc,round:cs.round,face3:cs.face3||'',date:cs.date,host:cs.host,ppl:cs.ppl.map(p=>p.tid?{id:p.id,tid:p.tid}:{id:p.id,n:csNm(cs,p.id)}),pt:cs.pt||0,fin:cs.fin||0,fint:cs.fint||0,mp:cs.mp||{}});if(host&&cs.fa&&Object.keys(cs.fa).length)head.fa=cs.fa;
+ const items=[];for(const id in cs.sc||{}){const e=cs.sc[id];if(e&&e.e&&(e.e.length||e.f))items.push([id,{e:csEnc(e.e,csR(cs)),u:e.u||0,by:e.by||'',...(e.f?{f:e.f}:{})}])}
  const parts=[];let cur0={};const size=o=>JSON.stringify(o).length;
  for(const [id,v] of items){const c2={...cur0,[id]:v};if(Object.keys(cur0).length&&size({...head,sc:c2})>3300){parts.push(cur0);cur0={[id]:v}}else cur0=c2}
  parts.push(cur0);const t=Date.now();return parts.map((sc,k)=>({...head,sc,part:k+1,np:parts.length,t}))}
@@ -164,13 +178,14 @@ function csMerge(cs,d){if(!d||d.code!=cs.code||(d.t||0)<H2H_RESET)return false;c
  if(fromHost&&typeof d.round=='string'&&ROUNDS[d.round]){if(!cs.host&&typeof d.host=='string'){cs.host=d.host;ch=true}
   if(Array.isArray(d.ppl)&&(d.pt||0)>(cs.pt||0)){cs.ppl=d.ppl.slice(0,CS_MAX).filter(p=>p&&typeof p.id=='string'&&p.id.length<=16).map(p=>typeof p.tid=='string'&&nmIdx(p.tid)>=0?{id:p.tid,tid:p.tid,n:''}:{id:p.id,n:nmClean(String(p.n||'')).slice(0,16)||'Archer'});cs.pt=d.pt;ch=true}
   for(const k of['name','round','disc','date'])if(typeof d[k]=='string'&&d[k]&&cs[k]!=d[k]){cs[k]=k=='name'?nmClean(d[k]).slice(0,40):d[k];ch=true}
+  if(d.fa&&typeof d.fa=='object'&&!csHost(cs)){/* the host's own phone is the source of truth: its older relay messages must not undo a face it just changed */const fa={};for(const k in d.fa)if(k.length<=16&&(d.fa[k]=='single'||d.fa[k]=='three'))fa[k]=d.fa[k];if(JSON.stringify(fa)!=JSON.stringify(cs.fa||{})){if(Object.keys(fa).length)cs.fa=fa;else delete cs.fa;ch=true}}
   const f3=d.face3=='vegas'?'vegas':d.face3=='vert'?'vert':d.face3=='single'?'single':null;if(cs.face3!=f3){cs.face3=f3;ch=true}
   if((d.fint||0)>(cs.fint||0)){cs.fin=d.fin?1:0;cs.fint=d.fint;ch=true}
   if(d.mp&&typeof d.mp=='object'&&(d.mp.t||0)>((cs.mp||{}).t||0)){cs.mp={on:!!d.mp.on,ask:d.mp.ask?1:0,seeds:Array.isArray(d.mp.seeds)?d.mp.seeds.filter(x=>typeof x=='string').slice(0,CS_MAX):null,t:d.mp.t};ch=true}}
  const R=csR(cs);cs.sc=cs.sc||{};for(const id in d.sc||{}){const p=csP(cs,id);if(!p)continue;/* only the host (for themselves and name-only friends) or the linked archer themselves */
   const v=d.sc[id];if(!v||typeof v!='object')continue;/* who scored it: the host (themselves or a name-only friend) or the linked archer themselves; any phone may pass it on */
   const by=typeof v.by=='string'?v.by:'',ok=(by==cs.host&&(id==cs.host||!p.tid))||(p.tid&&id==by);if(!ok)continue;const mine=csEnt(cs,id);if(mine&&(mine.u||0)>=(+v.u||0))continue;
-  if(id==me&&by!=me)continue;cs.sc[id]={e:csDec(v.e,R),u:+v.u||0,by};ch=true}
+  if(id==me&&by!=me)continue;cs.sc[id]={e:csDec(v.e,R),u:+v.u||0,by,...(v.f=='single'||v.f=='three'?{f:v.f}:{})};ch=true}
  if(ch){csOwnSession(cs);csMatchSync(cs)}return ch}
 let csBusy=false;const csOpened={};
 async function csTick(force){if(csBusy||!TESTER)return;csBusy=true;let ch=false;const me=csMe();try{for(const cs of csAll()){if(cs.status=='invite')continue;
@@ -185,26 +200,27 @@ setInterval(()=>{if(!document.hidden)csTick()},20000);setTimeout(()=>csTick(true
 window.csInvite=function(d){const me=csMe();cs3dReg(d.round);if(d.to!=me||d.from==me||!d.code||csGet(d.code)||(d.t||0)<H2H_RESET||!ROUNDS[d.round])return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
  csAll().push({code:d.code,name:nmClean(String(d.name||'Casual shoot')).slice(0,40),round:d.round,disc:csDisc(d.round),host:d.from,ppl:[{id:d.from,tid:d.from},{id:me,tid:me}],pt:0,sc:{},mp:{},status:'invite',created:d.t||Date.now()});save();return true};
 const csQTxt=cs=>cs.qfail?'Offline: saved on this phone, it will send when you are back online.':cs.dirty?'Sending...':'Saved and sent.';
-window.csCreate=csCreate;window.csAdd=csAdd;window.csRemove=csRemove;window.csUnlink=csUnlink;window.csKey=csKey;window.csUndo=csUndo;window.csFinish=csFinish;window.csSeeds=csSeeds;window.csMatch=csMatch;window.csNameCheck=csNameCheck;
+window.csCreate=csCreate;window.csSetFace=csSetFace;window.csAF=csAF;window.csMixed=csMixed;window.csAdd=csAdd;window.csRemove=csRemove;window.csUnlink=csUnlink;window.csKey=csKey;window.csUndo=csUndo;window.csFinish=csFinish;window.csSeeds=csSeeds;window.csMatch=csMatch;window.csNameCheck=csNameCheck;
 window.csMpStart=csMpStart;window.csMpOff=csMpOff;window.csMpSetup=csMpSetup;window.csTick=csTick;window.csMerge=csMerge;window.csSnapParts=csSnapParts;window.csKeys=csKeys;window.cs3dName=cs3dName;window.cs3dReg=cs3dReg;window.csRounds=csRounds;window.csDisc=csDisc;window.csFaceTxt=csFaceTxt;
 /* ---------- screens ---------- */
 const csSeg=(name,opts,val,dis)=>`<span class="lg-segs cs-segs" role="group">${opts.map(([v,l])=>`<button type="button" class="lg-seg${v==val?' on':''}" data-${name}="${v}" aria-pressed="${v==val}" ${dis?'disabled':''}>${v==val?'&#10003; ':''}${l}</button>`).join('')}</span>`;
 /* setup draft survives re-renders (relay ticks redraw the Score tab) */
 const csDraft=()=>window._csD=window._csD||{d3t:'aba3',d3n:20,disc:'target',round:null,face3:'vert',self:true,ppl:[],mp:false,name:'',typed:'',msg:''};
 function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.disc);if(is3){D.round=cs3dName(D.d3t,D.d3n);cs3dReg(D.round)}else if(!R0.includes(D.round))D.round=R0.includes(S.lastRound)?S.lastRound:R0[0];
- const n=(D.self?1:0)+D.ppl.length,tmp={round:D.round,face3:D.face3,disc:D.disc},ind=D.disc=='indoor'&&!(ROUNDS[D.round]||{}).vegas,taken=D.ppl.filter(p=>p.tid).map(p=>p.tid),sug=n<CS_MAX?csMatch(D.typed,taken):[];
+ const n=(D.self?1:0)+D.ppl.length,tmp={round:D.round,face3:D.face3,disc:D.disc},ind=D.disc=='indoor'&&!(ROUNDS[D.round]||{}).vegas,sp=csSplitR(D.round,D.disc),dfv=D.round==AUSI&&D.face3=='single'?'single':'three',fseg=(w,v)=>`<div class="row cs-face" style="gap:8px;justify-content:flex-start;align-items:center;flex-wrap:wrap;margin:4px 0 6px"><span class="small"><b>Face</b></span>${csFSeg('data-csfs="'+w+'"',v||dfv)}</div>`,taken=D.ppl.filter(p=>p.tid).map(p=>p.tid),sug=n<CS_MAX?csMatch(D.typed,taken):[];
  return`<div id="cssetup"><h2 style="margin:6px 0 2px">Casual shoot</h2><p class="small muted" style="margin:0 0 8px">A one-off shoot with friends. Not part of any league. 1 to ${CS_MAX} people.</p>
  <label for="csname">Name (optional)</label><input id="csname" maxlength="40" placeholder="Casual shoot" value="${esc(D.name)}">
  <label>Discipline</label>${csSeg('csdisc',Object.entries(CS_DISC),D.disc)}
  ${is3?`<label for="cs3t">Round</label><select id="cs3t">${Object.entries(CS3D).map(([k,T])=>`<option value="${k}" ${k==D.d3t?'selected':''}>${esc(T.l+' ('+(T.half?'3 + 1 arrows':plN(cs3dPer(k),'arrow','arrows'))+' a target)')}</option>`).join('')}</select>
  <label for="cs3n">${CS3D[D.d3t].half?'Targets each half':'Number of targets'}</label><input id="cs3n" type="number" inputmode="numeric" min="1" max="${CS3D_MAX}" value="${esc(D.d3n)}" style="max-width:120px">`
  :`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option value="${esc(r)}" ${r==D.round?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>`}
- ${ind?`<label>Face</label>${D.round==AUSI?csSeg('csf3',F3AUS,D.face3):csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3=='single'?'vert':D.face3)}`:''}
+ ${ind?`<label>${sp&&D.round!=AUSI?'3-spot layout':'Face'}</label>${D.round==AUSI?csSeg('csf3',F3AUS,D.face3):csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3=='single'?'vert':D.face3)}`:''}
  <p class="small" id="csfacetxt" style="margin:6px 0">${esc(csFaceTxt(tmp))} · keys ${csKeys(tmp,0).join(' ')}</p>
  <label for="csdt">Date</label><input id="csdt" type="date" value="${esc(D.date||today())}">
  <fieldset class="h2hops"><legend>Who's shooting (${n} of ${CS_MAX})</legend>
  <label class="h2htk"><input type="checkbox" id="csself" ${D.self?'checked':''}> I'm shooting too</label>
- ${D.ppl.map((p,k)=>`<div class="list-item row cs-person"><span><b>${esc(p.tid?csSetupNm(p.tid):p.n)}</b> <span class="small">${p.tid?'has the app, linked':'name only, you score for them'}</span></span><button type="button" class="btn ghost" data-csdel="${k}" aria-label="Remove">Remove</button></div>`).join('')}
+ ${sp&&D.self?fseg('self',D.selfF):''}
+ ${D.ppl.map((p,k)=>`<div class="list-item row cs-person"><span><b>${esc(p.tid?csSetupNm(p.tid):p.n)}</b> <span class="small">${p.tid?'has the app, linked':'name only, you score for them'}</span>${sp?fseg(k,p.f):''}</span><button type="button" class="btn ghost" data-csdel="${k}" aria-label="Remove">Remove</button></div>`).join('')}
  ${n<CS_MAX?`<div class="row" style="gap:6px;margin-top:6px"><input id="cstype" maxlength="40" autocomplete="off" placeholder="Type a name" value="${esc(D.typed)}" style="flex:1"><button type="button" class="btn ghost" id="csaddn">Add</button></div>
  <div id="cssug">${sug.map(t=>`<button type="button" class="lc-chip cs-sug" data-cslink="${t.id}">Link ${esc(csSetupNm(t.id))} <span class="small">· has the app</span></button>`).join('')}${sug.length?`<p class="small muted" style="margin:4px 0">Is that them? Tap to link, so they can see the shoot and score themselves. Or tap Add to keep it as a name only.</p>`:''}</div>`:`<p class="small">That's the maximum of ${CS_MAX} people.</p>`}
  <p class="small" id="csmsg" role="alert" style="font-weight:600;margin:4px 0">${esc(D.msg||'')}</p></fieldset>
@@ -215,6 +231,7 @@ function csBindSetup(root){const D=csDraft(),q=s=>root.querySelector(s),re=()=>s
  const keep=()=>{const a=q('#csname'),b=q('#csdt'),c=q('#cstype'),n3=q('#cs3n');if(n3)D.d3n=Math.max(1,Math.min(CS3D_MAX,Math.round(+n3.value)||20));if(a)D.name=a.value;if(b)D.date=b.value;if(c)D.typed=c.value};
  root.querySelectorAll('[data-csdisc]').forEach(b=>b.onclick=()=>{keep();D.disc=b.dataset.csdisc;D.round=null;re()});
  root.querySelectorAll('[data-csf3]').forEach(b=>b.onclick=()=>{keep();D.face3=b.dataset.csf3;re()});
+ root.querySelectorAll('[data-csfs]').forEach(b=>b.onclick=()=>{keep();const w=b.dataset.csfs;if(w=='self')D.selfF=b.dataset.csfv;else if(D.ppl[+w])D.ppl[+w].f=b.dataset.csfv;re()});
  root.querySelectorAll('[data-csmp]').forEach(b=>b.onclick=()=>{keep();D.mp=b.dataset.csmp=='on';re()});
  const rd=q('#csrd');if(rd)rd.onchange=()=>{keep();D.round=rd.value;re()};
  const t3=q('#cs3t');if(t3)t3.onchange=()=>{keep();D.d3t=t3.value;re()};const n3=q('#cs3n');if(n3)n3.onchange=()=>{keep();re()};
@@ -227,7 +244,7 @@ function csBindSetup(root){const D=csDraft(),q=s=>root.querySelector(s),re=()=>s
  const ad=q('#csaddn');if(ad)ad.onclick=()=>{keep();if(full()){D.msg='That\'s the maximum of 10 people.';return re()}const c=csNameCheck(D.typed);if(!c.ok){D.msg=c.msg;return re()}
   if(D.ppl.some(p=>!p.tid&&p.n.toLowerCase()==c.n.toLowerCase())){D.msg='That name is already in.';return re()}D.ppl.push({n:c.n});D.typed='';D.msg='';re();const t=$('#cstype');if(t)t.focus()};
  const go=q('#csgo');if(go)go.onclick=()=>{keep();const n=(D.self?1:0)+D.ppl.length;if(n<1){D.msg='Add at least 1 person.';return re()}if(n>CS_MAX){D.msg='10 people at most.';return re()}
-  const cs=csCreate({name:D.name,round:D.round,face3:D.face3,date:D.date,self:D.self,ppl:D.ppl,mp:D.mp&&n>=2});if(!cs){D.msg='Could not start. Check the names.';return re()}window._csD=null;window._csMode=null;S.lastRound=cs.round;save();csView(cs.code)}}
+  const cs=csCreate({name:D.name,round:D.round,face3:D.face3,date:D.date,self:D.self,selfF:D.selfF,ppl:D.ppl,mp:D.mp&&n>=2});if(!cs){D.msg='Could not start. Check the names.';return re()}window._csD=null;window._csMode=null;S.lastRound=cs.round;save();csView(cs.code)}}
 function csListCard(){if(!TESTER)return'';const L=csAll().filter(x=>x.status!='declined').slice().reverse();if(!L.length)return'';
  return`<div class="card" id="cscard"><span class="kicker">Casual shoots</span>${L.map(cs=>cs.status=='invite'?`<div class="list-item"><b>${esc(testerName(cs.host))} added you to a casual shoot: ${esc(cs.name)}</b><div class="small muted">${esc(cs.round)}</div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-csacc="${cs.code}">Join</button><button class="btn ghost" data-csno="${cs.code}">Not me</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(cs.name)}</b><div class="small muted">${esc(cs.round)} · ${plN(cs.ppl.length,'person','people')} · ${csFin(cs)?'finished':'shooting'}${cs.mp&&cs.mp.on?' · match play':''}</div></span><button class="btn ghost" data-csopen="${cs.code}">Open</button></div>`).join('')}</div>`}
@@ -319,12 +336,17 @@ function csFaceBind(C,plot,again){if(!C)return;const q=x=>app.querySelector(x);
  f.onpointercancel=()=>{clr();pan=null;L.hidden=true};
  f.onpointerup=ev=>{clr();const g=pan;pan=null;L.hidden=true;if(!g)return;if(g.mode=='aim')return plotAt(ev);if(!g.mode&&performance.now()-g.t<300&&Math.hypot(ev.clientX-g.x0,ev.clientY-g.y0)<10)plotAt(ev)}}
 window.csFaceHtml=csFaceHtml;window.csFaceBind=csFaceBind;window.csAdCard=csAdCard;window.csAdBind=csAdBind;window.csAdFit=csAdFit;window.csFxFor=csFxFor;window.csFxPut=csFxPut;window.csFxDel=csFxDel;window.csSorted=csSorted;
+/* Face buttons for one archer (Three spot | Single face); fixed once that archer has an arrow */
+const csFSeg=(attr,val,dis,extra)=>`<span class="lg-segs cs-segs" role="group" aria-label="Face">${[['three','Three spot'],['single','Single face']].map(([v,l])=>`<button type="button" class="lg-seg${v==val?' on':''}" ${attr} data-csfv="${v}" aria-pressed="${v==val}" ${dis?'disabled':''}>${v==val?'&#10003; ':''}${l}</button>`).join('')}</span>`;
+function csFaceRow(cs,a){const lock=csEnds(cs,a).length>0,v=csAF(cs,a)=='single'?'single':'three';
+ return`<div class="cs-face" id="csfacerow" style="margin:6px 0 2px"><div class="row" style="gap:8px;justify-content:flex-start;align-items:center;flex-wrap:wrap"><span class="small"><b>Face</b></span>${csFSeg('data-csfa',v,lock)}</div>${lock?'<p class="small muted" style="margin:2px 0 0">Locked once an arrow is scored. Undo back to the start to change it.</p>':''}</div>`}
 function csEntryCard(cs){const R=csR(cs),ids=cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id));if(!ids.length||csLocked(cs)||cs.fin)return'';
  const a0=window._csAct&&ids.includes(window._csAct)?window._csAct:null,a=a0||ids.find(id=>!csDoneP(cs,id))||ids[0],e=csEnt(cs,a)||{e:[]},last=e.e[e.e.length-1],cur3=last&&last.length<R.ape?last:[],done=csDoneP(cs,a);
- const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),F=csFace(cs,en-1),nA=csAbaN(cs,en-1),sg=nA>1?Math.min(csStg(cs,a,en-1),nA-1):0,K=nA?[...csKeys(cs,en-1).slice(3*sg,3*sg+3),'M']:csKeys(cs,en-1);
- const PL=!nA&&!R.d3&&ids.length==1&&!csLocked(cs),ex=en-1,PTS=PL?(((e.p||[])[ex])||[]).map((p,j)=>p&&{...p,k:((e.e[ex])||[])[j]}).filter(Boolean):[];const NS='cs|'+cs.code+'|'+a,FX=PL&&window.csAdCard?csFxFor(NS):null,AD=PL&&window.csAdCard?csAdCard({ns:NS,en:e,ape:R.ape,ends:R.ends,R,FR:F,round:cs.round,keys:K,kcol:k=>csKcol(cs,k),kattr:'data-csk',uid:'csundo',fx:FX,done,sub:csEndFace(cs,en-1)+(F.dist&&!/undefined/.test(F.dist)?', '+F.dist:''),info:(ei,fin)=>`<b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} \u00b7 ${fin?'finished':'End '+(ei+1)+' of '+R.ends}`}):null;window._csPl=AD&&AD.pl?{...AD.pl,code:cs.code,id:a}:(PL&&!done?{FR:F,R,pts:PTS,code:cs.code,id:a}:null);
+ const en=Math.min(R.ends,e.e.length+(last&&last.length<R.ape?0:1)),F=csFace(cs,en-1,a),nA=csAbaN(cs,en-1),sg=nA>1?Math.min(csStg(cs,a,en-1),nA-1):0,K=nA?[...csKeys(cs,en-1,a).slice(3*sg,3*sg+3),'M']:csKeys(cs,en-1,a);
+ const PL=!nA&&!R.d3&&ids.length==1&&!csLocked(cs),ex=en-1,PTS=PL?(((e.p||[])[ex])||[]).map((p,j)=>p&&{...p,k:((e.e[ex])||[])[j]}).filter(Boolean):[];const NS='cs|'+cs.code+'|'+a,FX=PL&&window.csAdCard?csFxFor(NS):null,AD=PL&&window.csAdCard?csAdCard({ns:NS,en:e,ape:R.ape,ends:R.ends,R,FR:F,round:cs.round,keys:K,kcol:k=>csKcol(cs,k),kattr:'data-csk',uid:'csundo',fx:FX,done,sub:csEndFace(cs,en-1,a)+(F.dist&&!/undefined/.test(F.dist)?', '+F.dist:''),info:(ei,fin)=>`<b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} \u00b7 ${fin?'finished':'End '+(ei+1)+' of '+R.ends}`}):null;window._csPl=AD&&AD.pl?{...AD.pl,code:cs.code,id:a}:(PL&&!done?{FR:F,R,pts:PTS,code:cs.code,id:a}:null);
  return`<div class="card" id="csentry"><span class="kicker">Score card</span>${ids.length>1?`<div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const r=csRow(cs,id);return`<button class="lc-chip${id==a?' on':''}" data-csid="${esc(id)}">${esc(r.nm)} <span class="small">${r.done?'finished':r.n+'/'+R.ends}</span></button>`}).join('')}</div>`:''}
- ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
+ ${csSplit(cs)&&!done&&!nA?csFaceRow(cs,a):''}
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(csNm(cs,a))}</b>${a==csMe()?' (you)':''} · ${done?'finished':nA?esc(csAbaHalf(cs,en-1)):(R.d3?'Target ':'End ')+en+' of '+R.ends} · ${esc(csEndFace(cs,en-1,a))}${F.dist&&!/undefined/.test(F.dist)?' · '+esc(F.dist):''}</p>
  ${done||!nA?'':`<p style="margin:4px 0" id="csabaarrow"><b>Arrow ${sg+1}</b>${sg?' \u00b7 arrow '+sg+' missed':''}</p><p class="small muted" style="margin:0 0 4px">${nA>1?'Tap the score of your first arrow to hit. Only tap Miss if the arrow missed: then shoot the next arrow at the same target.':'One arrow a target. Tap its score, or Miss (scores 0).'}</p>`}
  ${nA?csAbaTotHtml(cs,a):''}
  ${PL&&!done?csFaceHtml(F,PTS,false):''}
@@ -337,7 +359,8 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  if(cs.status=='invite'){app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot</span><h1>${esc(cs.name)}</h1><p class="small">${esc(testerName(cs.host))} added you. Tap Join on your Score tab.</p></div></div>`;return}
  const mpOk=cs.ppl.length>=2,seedsN=csSeeds(cs).length,lad=m&&window.suLadder?suLadder(m):[],mpDone=lad.length&&lad[lad.length-1].res.winner;
  const ask=host&&fin&&mpOk&&!(cs.mp&&cs.mp.on)&&!(cs.mp&&cs.mp.ask)&&seedsN>=2;
- const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':'X'}</th></tr></thead><tbody>${rows.map(r=>{const p=csP(cs,r.id);return`<tr data-csrow="${esc(r.id)}"><td>${esc(r.nm)}${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
+ const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':'X'}</th></tr></thead><tbody>${rows.map(r=>{const p=csP(cs,r.id);return`<tr data-csrow="${esc(r.id)}"><td>${esc(r.nm)}${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${csMixed(cs)?` <span class="small muted">${csAF(cs,r.id)=='single'?'single face':'3-spot'}</span>`:''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
+ ${csMixed(cs)?`<p class="small muted" id="csfacenote" style="margin:4px 0 0">Different faces: each archer shoots their own, scored on the same X, 10 to M scale.</p>`:''}
  <p class="small muted" style="margin:4px 0 0">This shoot's scores only, in the order people were added. Not counted in any league.</p>`;
  const ends=`<details id="csends"><summary class="small">${R.d3?'Targets':'Ends'} for each archer</summary>${rows.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(r.nm)}</b>: ${r.E.length?r.E.map((e,i)=>`${R.d3?'T':'E'}${i+1} ${esc(e.join(' '))} (${csTotal(e)})`).join(' · '):'no ends yet'}</div>`).join('')}</details>`;
  const mpCard=!mpOk?`<div class="card" id="csmp"><p class="small muted" style="margin:0">Match play needs 2 or more archers.</p></div>`
@@ -361,6 +384,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  const q=s=>app.querySelector(s);if(q('#csfix'))q('#csfix').ontoggle=()=>{window._csFix=q('#csfix').open};
  app.querySelectorAll('[data-csid]').forEach(b=>b.onclick=()=>{window._csAct=b.dataset.csid;csView(code)});
  const act=q('#csentry .lc-chip.on')?q('#csentry .lc-chip.on').dataset.csid:(cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id))[0]);
+ app.querySelectorAll('[data-csfa]').forEach(b=>b.onclick=()=>{window._csAct=act;csSetFace(code,act,b.dataset.csfv)});
  app.querySelectorAll('[data-csk]').forEach(b=>b.onclick=()=>{window._csAct=act;const E0=csEnds(cs,act),ei=E0.length,nA=csAbaN(cs,ei),sg=nA>1?csStg(cs,act,ei):0;
   if(nA>1&&b.dataset.csk=='M'&&sg<nA-1){window._csStg={k:csStgKey(cs,act,ei),s:sg+1};csView(code);return}
   window._csStg=null;csKey(code,act,b.dataset.csk)});

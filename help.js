@@ -12,7 +12,7 @@ const HELP_GUIDES=[
  {id:'score',i:'target',t:'Score a round',shot:'score',steps:[
   'Tap <b>Score</b>, then <b>Just me</b>.',
   'Pick your round. The list shows how many arrows each round has.',
-  'For Indoor WA 18m, 25m and the combined indoor round, a <b>Face</b> choice appears: <b>Three spot</b> (the default) or <b>Single face</b> for archers who shoot one full target per end. Single face scores X, 10 to 1 and M. The choice is remembered, and you can swap it with the Face button until you plot your first arrow. Australian Indoor 18m has its own choice of traffic light, triangular or single. Casual, match nights and leagues keep their own faces.',
+  'For Indoor WA 18m, 25m and the combined indoor round, a <b>Face</b> choice appears: <b>Three spot</b> (the default) or <b>Single face</b> for archers who shoot one full target per end. Single face scores X, 10 to 1 and M. The choice is remembered, and you can swap it with the Face button until you plot your first arrow. Australian Indoor 18m has its own choice of traffic light, triangular or single. In a Casual shoot and on match nights you can pick Single face too (see Casual shoot). Leagues keep their own faces.',
   'Tick <b>Ghost match</b> to shoot against a past score, end by end. It unlocks as soon as you have any past score of that round, on any face (3-spot or single), including part-shot rounds and your competition results.',
   'Tap <b>Choose who</b> to pick exactly who to race: any past score (date, score, PB and best marked), your PB, your average, or a world or national record. A record only has a total, so it races as an even pace line, labelled as one. If a record is not confirmed it says Record not available.',
   'Tap <b>Start</b>.']},
@@ -24,6 +24,7 @@ const HELP_GUIDES=[
   'Check each end total, then finish the round to save it.']},
  {id:'casual',i:'people',t:'Casual shoot and 3D',shot:'casual',steps:[
   'Tap <b>Score</b>, then <b>Casual shoot</b>.',
+  'On Indoor WA 18m, 25m, the combined indoor round and Australian Indoor 18m, each archer picks their <b>own face</b>: <b>Three spot</b> or <b>Single face</b>, beside their name when you set up the shoot, or on the score card until they shoot their first arrow. You can shoot a Vegas or vertical 3-spot and a friend a single 40 cm face in the same shoot. Everyone is still scored against each other on the same X, 10 to M scale. Vegas 300 stays a 3-spot game.',
   'Pick the discipline: Target, Indoor, Field or <b>3D</b>.',
   'For 3D, pick ABA, IBO or ASA scoring and how many targets.',
   'In ABA 3D, tap the score of the first arrow to hit. Tap <b>Miss</b> only if it missed, then score the next arrow. The card shows each half, each 10 targets, and the most you can still score.',

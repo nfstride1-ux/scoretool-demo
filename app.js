@@ -322,11 +322,11 @@ const AUSI='Australian Indoor 18m',F3AUS=[['vert','Vertical 3-spot (traffic ligh
 const f3Pref=r=>r==AUSI?(F3AUS.some(o=>o[0]==S.face3a)?S.face3a:'vert'):(S.face3||'vert');
 const f3Name=(r,f)=>r==AUSI?(F3AUS.find(o=>o[0]==f)||F3AUS[0])[1]:f=='single'?'Single face':f=='vegas'?'Vegas 3-spot':'Vertical 3-spot';
 /* Single face for the other 40cm / 60cm indoor rounds in Just me (28 Oct 2026, Nathe): archers who can't shoot the 3-spot score on one full face, one target per end, X 10-1 M.
-   Offered on Indoor WA 18m / 25m / Combined only (not Vegas 300, whose game is the 3-spot, not custom or ABA rounds, and not match nights or Casual). The pick is remembered in S.face1
+   Offered on Indoor WA 18m / 25m / Combined only (not Vegas 300, whose game is the 3-spot, not custom or ABA rounds, and not Casual, where each archer has their own Face buttons in casual.js; match nights do offer it, each archer on their own phone). The pick is remembered in S.face1
    (true = single); S.face3 keeps holding only the 3-spot layout (vert / vegas), so default behaviour for everyone who never picks it is unchanged. */
 const f3One=r=>{const R=ROUNDS[r];return!!R&&r!=AUSI&&!R.vegas&&!R.custom&&!R.aba&&!R.league&&indoor3(R,faceR(R,0))};
 const f3Start=r=>f3One(r)&&S.face1?'single':f3Pref(r);
-const f3Can=(c,R,F)=>!!(c&&indoor3(R,F)&&(c.round==AUSI||(f3One(c.round)&&!c.h2h&&!c.casual&&!c.league)));
+const f3Can=(c,R,F)=>!!(c&&indoor3(R,F)&&(c.round==AUSI||(f3One(c.round)&&!c.casual&&!c.league)));
 const f3Row=(r,solo)=>{if(r!=AUSI){if(!solo||!f3One(r))return'';const v=S.face1?'single':'three';return`<label>Face</label><div class="zbar f3bar" role="group" aria-label="Face" style="justify-content:flex-start;flex-wrap:wrap;gap:6px;margin:4px 0">${[['three','Three spot'],['single','Single face']].map(([k,l])=>`<button type="button" class="zb${k==v?' on':''}" data-f1="${k}" aria-pressed="${k==v}">${l}</button>`).join('')}</div>`}const v=f3Pref(r);return`<label>Face</label><div class="zbar f3bar" role="group" aria-label="Face" style="justify-content:flex-start;flex-wrap:wrap;gap:6px;margin:4px 0">${F3AUS.map(([k,l])=>`<button type="button" class="zb${k==v?' on':''}" data-f3="${k}" aria-pressed="${k==v}">${l}</button>`).join('')}</div>`};
 const f3Bind=(w,again)=>{w.querySelectorAll('[data-f3]').forEach(b=>b.onclick=()=>{S.face3a=b.dataset.f3;save();again()});w.querySelectorAll('[data-f1]').forEach(b=>b.onclick=()=>{S.face1=b.dataset.f1=='single';save();again()})};
 /* Field pegs, faces and distances: World Archery Book 2 art. 4.5.2.2 (2026-01-27). [marked distances],[unmarked min,max] in metres. Archery Australia Doc 26 matches. */

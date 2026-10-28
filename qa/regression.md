@@ -13,7 +13,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | Area | Suites (tools/) | What must still work |
 |---|---|---|
 | Solo scoring | redesign, ausindoor, singleface, nav, real, pickers, halfsplit, shotview, sidehill, grouppattern, todayarrows, photos, names, colourblind, field_faces, vegas, h2h | Just me rounds on every face, key entry and tap plotting, undo/fix arrow, PBs, finish analysis, Past sessions, photos, names rules, tab bar |
-| Casual shoot | casual, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
+| Casual shoot | casual, mixedface, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
 | League | league | Onion Shed 6 x Vegas 300, cumulative ranking, X ties, missing weeks |
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |
 | Peel group card | peel, peel_data, peel_next, peel_scroll, peel_share, peel_comp | Day 1/Day 2, Next hold, Save, Competition complete, share names, saved data untouched |
