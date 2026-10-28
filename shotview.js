@@ -16,11 +16,12 @@ const NAVY='#0b1f4d',GOLD='#ffc629',BLUE='#5ab0ff';
 const fin=v=>typeof v=='number'&&isFinite(v);
 function shotPts(s){const R0=s&&ROUNDS[s.round];const out={target:[],field:[]};if(!R0||R0.aba)return out;
  (s.pos||[]).forEach((E,i)=>(E||[]).forEach((p,j)=>{if(!p||!fin(p.x)||!fin(p.y))return;const F=faceR(R0,i);let x=p.x,y=p.y,mm=null,k;
-  if(bugsOn(s)){const c=BUGC.reduce((b,q)=>Math.hypot(p.x-q[0],p.y-q[1])<Math.hypot(p.x-b[0],p.y-b[1])?q:b,BUGC[0]);x=(p.x-c[0])/0.3;y=(p.y-c[1])/0.3;k='bugs'}
+  let r=0.028,sp,lay,rx,ry;/* r = the arrow's own radius on the face (the same line-cutter allowance plotScore scores with), so a dot that scored a ring touches it */
+  if(bugsOn(s)){const c=BUGC.reduce((b,q)=>Math.hypot(p.x-q[0],p.y-q[1])<Math.hypot(p.x-b[0],p.y-b[1])?q:b,BUGC[0]);x=(p.x-c[0])/0.3;y=(p.y-c[1])/0.3;k='bugs';r=0.023/0.3}
   else if(isFld(F)){const e=(s.ff||[])[i];mm=e&&e.f?e.f*5:null;k='field'}/* 20cm column: stored per spot already */
-  else{if(use3(s,R0,F)){const q=to1spot(p,s.face3=='vegas'?TRIC:BUGC);x=q.x;y=q.y;k='spot'}else k=isSix(F)?'six':isSpot(F)?'spot':'full';
+  else{if(use3(s,R0,F)){const L=s.face3=='vegas'?TRIC:BUGC,q=to1spot(p,L);x=q.x;y=q.y;k='spot';r=0.035;lay=s.face3=='vegas'?'vegas':'vert';sp=L.reduce((b,c,n)=>Math.hypot(p.x-c[0],p.y-c[1])<Math.hypot(p.x-L[b][0],p.y-L[b][1])?n:b,0);rx=p.x;ry=p.y}else k=isSix(F)?'six':isSpot(F)?'spot':'full';
    const cm=+(((F.face||'').match(/^(\d+)cm/)||[])[1]||0);mm=cm?cm*5:null}
-  out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,e:i,j,a:(s.ends[i]||[])[j]})}));
+  out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,r,sp,lay,rx,ry,e:i,j,a:(s.ends[i]||[])[j]})}));
  return out}
 let uid=0;
 function faceSvg(fam,P){const ks=new Set(P.map(p=>p.k));let g='',hw;
@@ -46,13 +47,25 @@ function plotSvg(fam,P,label,U){const F=faceSvg(fam,P.concat(U||[])),hw=F.hw,s=F
  let g=`<svg class="shplot" viewBox="${-hw} ${-hw} ${2*hw} ${2*hw}" role="img" aria-label="${H(label)}"><defs><radialGradient id="${id}g"><stop offset="0" stop-color="#000" stop-opacity=".9"/><stop offset=".55" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
  <mask id="${id}"><rect x="${-hw}" y="${-hw}" width="${2*hw}" height="${2*hw}" fill="#fff"/>${P.map(p=>`<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="${(0.16*s).toFixed(3)}" fill="url(#${id}g)"/>`).join('')}</mask></defs>${F.g}
  <rect x="${-hw}" y="${-hw}" width="${2*hw}" height="${2*hw}" fill="${NAVY}" opacity=".5" mask="url(#${id})"/>`;
- P.forEach(p=>g+=`<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="${(0.026*s).toFixed(4)}" fill="#fff" stroke="${NAVY}" stroke-width="${(0.011*s).toFixed(4)}"/>`);
+ P.forEach(p=>{const x=p.x.toFixed(3),y=p.y.toFixed(3);/* the arrow itself (its edge is what touches a ring line when it is scored), with its centre dot */
+  g+=`<circle cx="${x}" cy="${y}" r="${(p.r||0.028).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${NAVY}" stroke-opacity=".55" stroke-width="${(0.006*s).toFixed(4)}"/><circle cx="${x}" cy="${y}" r="${(0.014*s).toFixed(4)}" fill="#fff" stroke="${NAVY}" stroke-width="${(0.008*s).toFixed(4)}"/>`});
  if(UG){const x=UG.cx.toFixed(3),y=UG.cy.toFixed(3),r=Math.max(UG.sp,0.02).toFixed(3);/* usual group: blue dashed ring + hollow centre */
   g+=`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${NAVY}" stroke-width="${(0.02*s).toFixed(3)}"/><circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${BLUE}" stroke-width="${(0.009*s).toFixed(3)}" stroke-dasharray="${0.02*s} ${0.025*s}"/><circle cx="${x}" cy="${y}" r="${(0.045*s).toFixed(3)}" fill="none" stroke="${NAVY}" stroke-width="${(0.03*s).toFixed(3)}"/><circle cx="${x}" cy="${y}" r="${(0.045*s).toFixed(3)}" fill="none" stroke="${BLUE}" stroke-width="${(0.014*s).toFixed(3)}"/>`}
  if(G&&G.n>=3){const c=0.075*s,x=G.cx.toFixed(3),y=G.cy.toFixed(3),d=`M${G.cx-c} ${G.cy}H${G.cx+c}M${G.cx} ${G.cy-c}V${G.cy+c}`;
   g+=`<circle cx="${x}" cy="${y}" r="${Math.max(G.sp,0.02).toFixed(3)}" fill="none" stroke="${NAVY}" stroke-width="${(0.02*s).toFixed(3)}"/><circle cx="${x}" cy="${y}" r="${Math.max(G.sp,0.02).toFixed(3)}" fill="none" stroke="${GOLD}" stroke-width="${(0.009*s).toFixed(3)}" stroke-dasharray="${0.04*s} ${0.03*s}"/>
   <path d="${d}" stroke="${NAVY}" stroke-width="${(0.04*s).toFixed(3)}" stroke-linecap="round"/><path d="${d}" stroke="${GOLD}" stroke-width="${(0.018*s).toFixed(3)}" stroke-linecap="round"/>`}
  return{svg:g+'</svg>',G,UG}}
+/* The three spots as they are on the target (Vegas triangle) or side by side (vertical 3-spot), each arrow on the spot it was shot at, own rings, same ring colours.
+   Each arrow is drawn at its true place with its own radius, so the ring it scored is the ring its edge touches. Read only. */
+const SPW={vegas:[[-0.34,-0.2],[0.34,-0.2],[0,0.39]],vert:[[-0.66,0],[0,0],[0.66,0]]};
+function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some(p=>p.lay!=S[0].lay))return'';const lay=S[0].lay,C=SPW[lay],vb=lay=='vegas'?'-0.66 -0.56 1.32 1.3':'-0.99 -0.34 1.98 0.68';
+ const Cc=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k],orig=lay=='vegas'?TRIC:BUGC;let g='';
+ C.forEach((c,n)=>{for(let i=5;i<10;i++)g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${((1-i*0.1)*0.6).toFixed(3)}" fill="${Cc[i]}" stroke="${L[i]}" stroke-width="0.004"/>`;
+  g+=`<text x="${c[0]}" y="${(c[1]-0.315).toFixed(3)}" text-anchor="middle" font-size="0.07" font-weight="700" fill="#cfe0ff">Spot ${n+1}</text>`});
+ S.forEach(p=>{const c=C[p.sp],o=orig[p.sp],x=(c[0]+p.rx-o[0]).toFixed(3),y=(c[1]+p.ry-o[1]).toFixed(3);
+  g+=`<circle cx="${x}" cy="${y}" r="${(p.r*0.6).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${NAVY}" stroke-opacity=".6" stroke-width="0.003"/><circle cx="${x}" cy="${y}" r="0.0075" fill="#fff" stroke="${NAVY}" stroke-width="0.0045"/>`});
+ const n=[0,0,0];S.forEach(p=>n[p.sp]++);
+ return`<div class="shwrap shspots"><svg class="shspotsvg" viewBox="${vb}" role="img" aria-label="${S.length} plotted arrows on the three spots (${n.join(', ')})">${g}</svg></div><p class="small muted shkey">The three spots${lay=='vegas'?' as on the Vegas target':' side by side, Spot 1 at the top of the target'} · arrows per spot: ${n.join(', ')}</p>`}
 const famName={target:'target face',field:'field face'};
 /* one card per face family that has plotted arrows */
 function plotCards(sessions,o={}){const A={target:[],field:[]};sessions.forEach(s=>{const q=shotPts(s);A.target.push(...q.target);A.field.push(...q.field)});
@@ -60,7 +73,7 @@ function plotCards(sessions,o={}){const A={target:[],field:[]};sessions.forEach(
  return fams.map(f=>{const P=A[f],{svg,G}=plotSvg(f,P,`${P.length} plotted arrows on a ${famName[f]}`),spot=f=='target'&&!P.some(p=>p.k=='full');
   return`<div class="card shcard"><span class="kicker">${plN(P.length,'plotted arrow','plotted arrows')}${fams.length>1?' · '+famName[f]:''}</span><h3>${H(o.title||'Where your arrows landed')}</h3>
   <div class="shwrap">${svg}</div><p class="small muted shkey"><span class="shk-dot"></span> each arrow <span class="shk-x"></span> group centre · darker face = no arrows there${spot?' · 3-spot arrows shown on one spot':''}${f=='field'&&P.some(p=>p.k=='bugs')?' · Bugs Eyes arrows shown on one spot':''}</p>
-  ${guide(G,f)}${o.multi&&sessions.length>1?`<p class="small muted" style="margin:6px 0 0">From ${plN(sessions.length,'shoot','shoots')}. Sight marks change with distance, so check one round and distance at a time for sight moves.</p>`:''}</div>`}).join('')}
+  ${f=='target'?spotsSvg(P):''}${guide(G,f)}${o.multi&&sessions.length>1?`<p class="small muted" style="margin:6px 0 0">From ${plN(sessions.length,'shoot','shoots')}. Sight marks change with distance, so check one round and distance at a time for sight moves.</p>`:''}</div>`}).join('')}
 window.shotPts=shotPts;window.shotPlotCards=plotCards;
 /* end-of-shoot / Past sessions: this shoot's plot, its group centre and sight guide, and the usual group from earlier plotted shoots of the same round */
 const offTxt=(G,fam)=>{const unit=fam=='field'?'zones':'rings',TH=G.ring*0.25,mmT=v=>v==null?'':` (${Math.round(Math.abs(v))} mm)`;
@@ -70,7 +83,7 @@ function shotPlotCard(sess,prev){const q=shotPts(sess),fams=['target','field'].f
   const P=q[f],{svg,G,UG}=plotSvg(f,P,`${P.length} plotted arrows on a ${famName[f]}`,U),spot=f=='target'&&!P.concat(U).some(p=>p.k=='full');
   return`<div class="card shcard"><span class="kicker">Where this shoot landed</span><h3>${plN(P.length,'plotted arrow','plotted arrows')}</h3><div class="shwrap">${svg}</div>
   <p class="small muted shkey"><span class="shk-dot"></span> this shoot <span class="shk-x"></span> its group centre${UG?' <span class="shk-u"></span> your usual group':''} · darker face = no arrows there${spot?' · 3-spot arrows shown on one spot':''}</p>
-  ${guide(G,f)}${UG&&G&&G.n>=3?`<div class="shg-tab" style="margin-top:8px"><div class="shg-row"><span>Your usual group</span><b>${offTxt(UG,f)}</b></div><div class="shg-row"><span>Usual spread</span><b>${rs(UG.sp,UG.ring,f=='field'?'zones':'rings')}</b></div></div><p class="small muted" style="margin:4px 0 0">Usual = ${plN(UG.n,'plotted arrow','plotted arrows')} from ${plN(nU,'earlier shoot','earlier shoots')} of this round.</p>`:''}</div>`}).join('')}
+  ${f=='target'?spotsSvg(P):''}${guide(G,f)}${UG&&G&&G.n>=3?`<div class="shg-tab" style="margin-top:8px"><div class="shg-row"><span>Your usual group</span><b>${offTxt(UG,f)}</b></div><div class="shg-row"><span>Usual spread</span><b>${rs(UG.sp,UG.ring,f=='field'?'zones':'rings')}</b></div></div><p class="small muted" style="margin:4px 0 0">Usual = ${plN(UG.n,'plotted arrow','plotted arrows')} from ${plN(nU,'earlier shoot','earlier shoots')} of this round.</p>`:''}</div>`}).join('')}
 window.shotPlotCard=shotPlotCard;
 
 /* done state after Finish session: the round is already saved; this screen only says so and offers next steps */

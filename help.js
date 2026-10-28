@@ -44,7 +44,7 @@ const HELP_GUIDES=[
   'Pick a round to see your last shoot, trend and personal bests.',
   'Tap <b>More detail</b> for the full picture.',
   '<b>Full analysis</b> has end by end and half split for the shoot you picked.',
-  '<b>Arrow plot</b> in Analytics shows your plotted arrows as dots. On 3-spot faces every arrow is measured from its own spot. The group centre and offset in mm tell you which way to move your sight.']},
+  '<b>Arrow plot</b> in Analytics and at the end of a shoot shows each plotted arrow at its real size, so an arrow that scored a 9 touches the 9 ring. On 3-spot faces every arrow is measured from its own spot and shown together on one spot, and a second picture shows the three spots as they sit on the target (Vegas triangle or vertical row) with each arrow on its own spot. The group centre and offset in mm tell you which way to move your sight.']},
  {id:'myarch',i:'bow',t:'Diary, setups and bows',shot:'myarch',steps:[
   '<b>My archery</b> holds your Diary, Practice arrows, Setups &amp; sight marks, My bows and My arrows.',
   '<b>Past competition results</b>: your official scores from past competitions show in Stats, My best scores and Rankings. They are kept separate from rounds you score in ScoreTool.',

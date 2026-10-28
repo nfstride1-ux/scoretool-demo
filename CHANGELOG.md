@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-28-2103-plot3spot (2026-10-28)
+### What changed
+- Arrow plot on 3-spot shoots (Nathe, 28 Oct, Vegas 300, 30 plotted arrows: "I only hit the 9 4 times, this looks like it hit all over the place. Line the 3 spot targets properly"). Investigated first: positions are NOT wrong. Tap, score and plotted position agree on the Vegas triangle and the vertical face, at Z1 and Z2, Vegas 300 solo and Indoor 18m (probe tapping known offsets per spot, then comparing `shotPts` with the intended offset: all within rounding). Cause is visual: every arrow was drawn as a tiny dot at its centre, but scoring lets the arrow's edge (3-spot 0.035, other faces 0.028) touch a ring, so X, 10 and 9 arrows sat visibly outside the ring they scored in and the group looked wider than the score. With 16 X, 10 tens and 4 nines the dots were all inside the 9 ring but looked loose.
+- Now each arrow is drawn as a translucent circle at its real size (the same radius scoring uses) plus a centre dot, so a scored 9 touches the 9 ring and nothing outside it. Applies to the end-of-shoot card, Past sessions Open and the Analytics Arrow plot (all use `plotSvg`).
+- New "three spots as on the target" picture under the combined plot: Vegas shows the real triangle (Spot 1 top left, Spot 2 top right, Spot 3 bottom), the vertical face a row of three, each with rings 6 to 10, its own arrows at real size, and a count per spot. The combined one-spot plot and sight guide are kept as they were.
+- Old saved sessions: no data written or changed. Sessions without `face3` that were plotted on the full face still plot on the full face (no spots view); single-face sessions unchanged; 3-spot sessions replot from the same stored positions, so past Vegas and vertical shoots get the new picture too.
+- Help (Arrow plot) and What's new updated.
+### Files touched
+shotview.js (`shotPts` carries arrow radius and spot, `plotSvg` arrows at real size, new `spotsSvg` in `plotCards` and `shotPlotCard`), style.css, help.js, whatsnew.js, qa/run_regression.py and qa/regression.md (plot3spot_test added to Solo scoring), tools/plot3spot_test.py (new), sw.js, index.html, version.json.
+### Tests run
+tools/plot3spot_test.py 18 checks, all pass (16 X / 10 tens / 4 nines Vegas shoot: exactly four 9s, each arrow scores the ring its edge touches, 10 per spot, triangle and vertical layouts, old full-face and single-face sessions untouched, nothing rewritten, no page errors). Full regression: RESULT_PRE
+After deploy: AFTERDEPLOY
+
 ## v2026-10-28-1948-zoompersist (2026-10-28)
 ### What changed
 - Zoom now persists on the indoor 3-spot face (Nathe, 28 Oct, Just me vs ghost on Australian Indoor 18m vertical 3-spot: "keep the zoom as I set it, no reset every end, restart back to target 1 but keep the zoom unless I change it"). Root cause: release c2a35af (undozoom, 26 Oct) deliberately reset the shared zoom `PZ` on a spot tab tap, on a new end (`window._pzEnd`), on return from the sheet and, in Casual and League, on a new end (`window._csZk`); and `cur.spot` / `window._csSpot` were never reset at a new end, so the last spot (Spot 3) carried into the next end.
