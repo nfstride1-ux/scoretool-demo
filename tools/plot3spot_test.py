@@ -11,6 +11,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.environ.get('SHOTS','/tmp/shots-plot3spot');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)
+BASE=os.environ.get('BASE') or f"http://localhost:{os.environ.get('PORT','8963')}/"
 PORT=int(os.environ.get("PORT","8963"))
 srv=subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 SEED=r"""(()=>{let r=11;const rnd=()=>{r=(r*16807)%2147483647;return r/2147483647};
@@ -38,10 +39,10 @@ try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
   ctx=b.new_context(viewport={'width':390,'height':844},has_touch=True,is_mobile=True,device_scale_factor=2)
-  ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://localhost:{PORT}') else r.abort())
+  ctx.route('**/*',lambda r:r.continue_() if (r.request.url.startswith(f'http://localhost:{PORT}') or r.request.url.startswith(BASE)) else r.abort())
   pg=ctx.new_page();errs=[]
   pg.on('pageerror',lambda e:errs.append(str(e)))
-  pg.goto(f'http://localhost:{PORT}/?tester=steven');pg.wait_for_timeout(1200)
+  pg.goto(BASE+'?tester=steven');pg.wait_for_timeout(1200)
   pg.evaluate("S.unlocked=true;save()");pg.evaluate("localStorage.setItem('scoretool.theme','light')");pg.evaluate(SEED);pg.reload();pg.wait_for_timeout(1800)
   r=pg.evaluate(CHK,'p3c')
   chk(f'Vegas 300: 30 plotted arrows, each one scores the ring its edge touches (bad={r["bad"]})',r['n']==30 and r['bad']==0)

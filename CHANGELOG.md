@@ -14,8 +14,8 @@ Process (agreed 26 Oct 2026): do not change anything that already works while fi
 ### Files touched
 shotview.js (`shotPts` carries arrow radius and spot, `plotSvg` arrows at real size, new `spotsSvg` in `plotCards` and `shotPlotCard`), style.css, help.js, whatsnew.js, qa/run_regression.py and qa/regression.md (plot3spot_test added to Solo scoring), tools/plot3spot_test.py (new), sw.js, index.html, version.json.
 ### Tests run
-tools/plot3spot_test.py 18 checks, all pass (16 X / 10 tens / 4 nines Vegas shoot: exactly four 9s, each arrow scores the ring its edge touches, 10 per spot, triangle and vertical layouts, old full-face and single-face sessions untouched, nothing rewritten, no page errors). Full regression: RESULT_PRE
-After deploy: AFTERDEPLOY
+tools/plot3spot_test.py 18 checks, all pass (16 X / 10 tens / 4 nines Vegas shoot: exactly four 9s, each arrow scores the ring its edge touches, 10 per spot, triangle and vertical layouts, old full-face and single-face sessions untouched, nothing rewritten, no page errors). Full regression `python3 qa/run_regression.py` 54 passed / 6 failed (2270 s) on the pre-rebase build: vegas_test 58/2 is the known stale failure; nav_test, real_test, field_faces_test and ghost_test could not find the `nathe` tester in this box ("waiting for [data-tester=nathe]"), and fail the same way on untouched origin/main 6a3bf5c, so not caused by this change; whatsnew_test failed only because the new note had no commit hash yet (33/0 after). After rebase on 6a3bf5c re-ran plot3spot 18/0, shotview 38/0, zoompersist 59/0, whatsnew 33/0, offline 12/0.
+After deploy: live at v2026-10-28-2103-plot3spot (5d9c7cd). `qa/run_regression.py --live` on plot3spot, shotview, zoompersist, whatsnew, offline: all pass; LIVE smoke 22 ok / 0 fail. plot3spot_test also run against the live URL (BASE env): 18/0, 390 px light screenshots taken.
 
 ## v2026-10-28-1948-zoompersist (2026-10-28)
 ### What changed
