@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-28-1948-zoompersist',d:'2026-10-28',items:[
+   ['target',"Your zoom now stays put","On the indoor 3-spot target, the zoom you choose (Z1, Z2 or Reset) now stays exactly as you set it. It no longer drops back when you change spots or start a new end, and it is the same in Just me (including against a ghost), Casual, match nights and leagues. Each new end still starts on Spot 1, so you only change the zoom when you want to. If you shoot a single face, it works as before.",'COMMITHASH']]},
   {v:'v2026-10-28-1356-auto',d:'2026-10-28',items:[
    ['people',"Everyone picks their own target face","In a Casual indoor shoot, each archer can now choose their own face: Three spot or Single face. You set it beside each name when you start the shoot (it starts on the shoot's face), and it can still be changed on the score card until that archer shoots their first arrow. So one person can shoot a Vegas 3-spot while a friend shoots one big single face on the same phone, and you are all still scored against each other with the same X, 10 down to M. Each archer sees their own face, the right score buttons and, if they are the only one on the phone, the plotting. On match nights you can choose Single face too, and a small note tells you when the faces differ. Vegas 300 and leagues are unchanged, and your saved scores and shoots already started are not changed.",'ec1e13e']]},
   {v:'v2026-10-28-0747-auto',d:'2026-10-28',items:[

@@ -18,7 +18,7 @@ const HELP_GUIDES=[
   'Tap <b>Start</b>.']},
  {id:'scoring',i:'pen',t:'Plot your arrows',shot:'scoring',steps:[
   'Tap the target where each arrow landed, or tap a score key.',
-  'Tap the small <b>Z1</b> button to zoom, <b>Z2</b> for more, then <b>Reset</b>. Pinch works too.',
+  'Tap the small <b>Z1</b> button to zoom, <b>Z2</b> for more, then <b>Reset</b>. Pinch works too. On an indoor 3-spot face your zoom stays as you set it, across spots and ends, until you change it. Each new end starts on Spot 1.',
   'Tap an arrow to fix it. <b>Undo</b> takes back the last one.',
   '<b>Finish later</b> keeps the round. Carry on from Score or Home.',
   'Check each end total, then finish the round to save it.']},
