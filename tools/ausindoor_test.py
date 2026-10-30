@@ -15,8 +15,8 @@ def plot(pg,pts):  # tap the face at face coordinates (x,y), via the svg's own t
     q=pg.evaluate("([x,y])=>{const sv=document.querySelector('#pface'),p=sv.createSVGPoint();p.x=x;p.y=y;const r=p.matrixTransform(sv.getScreenCTM());return[r.x,r.y]}",[x,y])
     pg.mouse.click(q[0],q[1]);pg.wait_for_timeout(250)
 # plotted (per-spot mapped by shotPts) re-scored on one spot / full face must equal the stored score
-CHECK=r"""(()=>{const s=cur||S.sessions.find(x=>x.id==window._aid),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e);let v;
- if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035;v=d>0.5?'M':d<=0.05?'X':String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false});return[p.k,p.a,v]})})()"""
+CHECK=r"""(()=>{const s=cur||S.sessions.find(x=>x.id==window._aid),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e),lc=arrowLC(Fi,s);let v;
+ if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-(lc>0?lc:0.035);v=d>0.5?'M':d<=0.05?'X':String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false},lc);return[p.k,p.a,v]})})()"""
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
