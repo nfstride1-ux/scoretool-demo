@@ -4,7 +4,7 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
-## v2026-10-30-1554-landedface (2026-10-30)
+## v2026-10-30-1657-landedface (2026-10-30)
 ### What changed
 - "Where this shoot landed" single face (Nathe, 30 Oct, 30-arrow vertical 3-spot shoot: "I like the 3 spot idea under. But the single face looks shit", "It doesn't look correct"). Cause: the card's big face used the Analytics plot drawing, which lays a navy layer at 50% through a radial mask over the face (the "darker face = no arrows there" shading). That darkened every ring (teal blue, maroon red, dull gold) and smeared a glow over the rings; and it always showed rings 6 to 10, so a group inside the 9 ring was small and the arrows, the gold group-centre cross and the usual-group circle piled on top of each other.
 - Now the card draws a clean face (`cleanSvg` in shotview.js, used only by `shotPlotCard`): the same WA colours as the 3-spot faces, no glow or shading, zoomed to only the scoring rings the arrows (at their real size) and group circles reach (never fewer than rings 8 to 10). Draw order: rings, usual group (dashed blue), this shoot's group (dashed navy), arrows, then a small usual-group centre ring and an open gold cross with a navy outline and a gap in the middle so the arrows under it stay visible. The legend drops "darker face = no arrows there" because that shading is gone.
@@ -12,7 +12,9 @@ Process (agreed 26 Oct 2026): do not change anything that already works while fi
 ### Files touched
 shotview.js (`cleanSvg` new, `faceSvg` optional zoom, `plotSvg` clean option, `shotPlotCard`), whatsnew.js, CHANGELOG.md, sw.js, index.html, version.json.
 ### Tests run
-RESULTS_PENDING
+Baseline, untouched origin/main 07197e1 (`python3 qa/run_regression.py`, run in two parts because the box cleared /tmp mid-run): 57 passed / 5 failed. vegas_test 58/2 (the known stale failure); nav_test and real_test could not find the `nathe` tester ("waiting for [data-tester=nathe]"), the known box issue; field_faces_test failed the same way in part 1 and passed (54/0) in part 2; whatsnew_test 32/1 because on origin/main the newest What's new entry (v2026-10-28-2103-plot3spot) does not match version.json (v2026-10-28-2112-auto, the pre-commit hook relabelled the follow-up commit).
+After (this build, full `python3 qa/run_regression.py`, 2530 s): 56 passed / 4 failed. vegas_test 58/2 (same stale failure); ghost_test "waiting for [data-tester=nathe]" (the known box issue, it also failed this way before); h2h_test timed out on one click and passed 90/0 when re-run alone (it does not touch this card); whatsnew_test 32/1 for the same version.json mismatch, fixed in this release by bumping sw.js in the same commit as the What's new entry (re-run below). nav_test, real_test and field_faces_test passed this time. Targeted: shotview 38/0, plot3spot 18/0, casual_indoor 36/0, league_indoor 35/1 (the same "analysis directly under the score card" failure on untouched origin/main, not caused by this change).
+Screenshots before and after (30-arrow vertical 3-spot test shoot, Australian Indoor 18m, test data only, 390 px and desktop, light and dark): /workspace/shots-landed-face/ on the build box.
 
 ## v2026-10-28-2103-plot3spot (2026-10-28)
 ### What changed

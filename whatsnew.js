@@ -3,7 +3,7 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
-  {v:'v2026-10-30-1554-landedface',d:'2026-10-30',items:[
+  {v:'v2026-10-30-1657-landedface',d:'2026-10-30',items:[
    ['target',"A clearer picture of where your shoot landed","On the card at the end of a shoot (and in Past sessions), the big target under Where this shoot landed now uses the same clean target colours as the three spots under it. It zooms in to just the rings your arrows are in, the shaded glow over the rings is gone, and the group centre cross and your usual group circle sit on top of the arrows without hiding them. The three spots picture, the Analytics Arrow plot and your saved shoots are unchanged.",'6c5bed7']]},
   {v:'v2026-10-28-2103-plot3spot',d:'2026-10-28',items:[
    ['target',"Arrow plots show the real arrows, and the three spots","The Arrow plot used to draw each arrow as a tiny dot, but an arrow scores by its edge touching a ring, so a 9 could look like it was out in the 8 and a tight group looked scattered. Each arrow is now drawn at its true size, so a 9 touches the 9 ring. On a 3-spot target (Vegas or the vertical indoor face) there is also a new picture of the three spots as they sit on the target, with each arrow on its own spot and a count per spot. Your saved shoots are unchanged, they just plot better.",'5d9c7cd']]},
