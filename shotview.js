@@ -32,18 +32,45 @@ function faceSvg(fam,P,zR){const ks=new Set(P.map(p=>p.k));let g='',hw;
   const C=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k];
   for(let i=lo;i<10;i++)g+=`<circle r="${(1-i*0.1).toFixed(2)}" fill="${C[i]}" stroke="${L[i]}" stroke-width="0.005"/>`;g+=`<circle r="0.05" fill="none" stroke="${WA.k}" stroke-width="0.004"/>`}
  const s=hw/1.06;return{g,hw,s}}
-/* average offset and spread; ring = 0.1 face units on target faces, 0.2 (one outer zone) on field faces */
-function group(P,fam){const n=P.length;if(!n)return null;const cx=P.reduce((t,p)=>t+p.x,0)/n,cy=P.reduce((t,p)=>t+p.y,0)/n,ring=fam=='field'?0.2:0.1;
- const allMM=P.every(p=>p.mm),mx=allMM?P.reduce((t,p)=>t+p.x*p.mm,0)/n:null,my=allMM?P.reduce((t,p)=>t+p.y*p.mm,0)/n:null;
+/* average offset and spread, measured from the exact centre of the X (0,0); ring = 0.1 face units on target faces, 0.2 (one outer zone) on field faces.
+   30 Oct 2026, Nathe: "The point is to try get all arrows center of the X." No "centred" tolerance: every offset is shown in mm from the X centre,
+   with its standard error (SE = SD / sqrt(n), per axis). An offset is "measurable" when it is bigger than its SE; smaller ones are shown but not acted on.
+   3-spot shoots also get a group per spot (p.sp), and spots whose centres differ by more than chance flag a form or setup problem, not a sight problem. */
+function group(P,fam,noSpots){const n=P.length;if(!n)return null;const cx=P.reduce((t,p)=>t+p.x,0)/n,cy=P.reduce((t,p)=>t+p.y,0)/n,ring=fam=='field'?0.2:0.1;
+ const allMM=P.every(p=>p.mm),mx=allMM?P.reduce((t,p)=>t+p.x*p.mm,0)/n:null,my=allMM?P.reduce((t,p)=>t+p.y*p.mm,0)/n:null,u=allMM?P.reduce((t,p)=>t+p.mm,0)/n:null;
  const sp=P.reduce((t,p)=>t+Math.hypot(p.x-cx,p.y-cy),0)/n,spm=allMM?P.reduce((t,p)=>t+Math.hypot((p.x-cx)*p.mm,(p.y-cy)*p.mm),0)/n:null;
- return{n,cx,cy,ring,mx,my,sp,spm}}
+ const sdx=n>1?Math.sqrt(P.reduce((t,p)=>t+(p.x-cx)**2,0)/(n-1)):0,sdy=n>1?Math.sqrt(P.reduce((t,p)=>t+(p.y-cy)**2,0)/(n-1)):0;
+ const G={n,cx,cy,ring,mx,my,u,sp,spm,sdx,sdy,sex:sdx/Math.sqrt(n),sey:sdy/Math.sqrt(n)};
+ const lay=P[0].lay;if(!noSpots&&lay&&P.every(p=>p.lay==lay&&p.sp!=null)){G.spots=[0,1,2].map(i=>group(P.filter(p=>p.sp===i),fam,true));G.lay=lay}
+ return G}
 const rs=(v,ring,unit)=>{const r=Math.abs(v)/ring;return(r<0.95?r.toFixed(1):r<9.5?(Math.round(r*10)/10).toFixed(1):Math.round(r))+' '+unit};
+/* one axis of a group: v = offset in face units, se = its standard error. Whole mm when the face size is known, else tenths of a ring. */
+const MIN=G=>G.ring*0.05;/* plotting is not finer than about a twentieth of a ring (1 mm on a 40cm face) */
+const meas=(v,se,G)=>Math.abs(v)>Math.max(se,MIN(G));
+const amt=(v,G,unit)=>G.u?Math.round(Math.abs(v)*G.u)+' mm':rs(v,G.ring,unit);
+const pm=(se,G,unit)=>'±'+(G.u?Math.max(1,Math.round(se*G.u))+' mm':rs(Math.max(se,MIN(G)),G.ring,unit));
+const axTxt=(v,se,G,unit,neg,pos,short)=>{const d=v<0?neg:pos,a=amt(v,G,unit);
+ if(G.u&&Math.round(Math.abs(v)*G.u)==0)return short?`0 mm ${pos=='right'?'left / right':'up / down'}`:`0 mm (${pm(se,G,unit)})`;
+ return meas(v,se,G)?`${a} ${d}${short?'':` (${pm(se,G,unit)})`}`:`${a} ${d} (not measurable${short?'':`, ${pm(se,G,unit)}`})`};
+const ctr=fam=>fam=='field'?'the centre':'the X';
+/* spot-to-spot check: two spots differ when their centres are further apart than a quarter ring and twice their combined SE, on either axis */
+function spotShift(G,unit){const S=(G.spots||[]).map((g,i)=>g&&g.n>=3?{g,i}:null).filter(Boolean);if(S.length<2)return null;const out=[];let top=null;
+ for(let a=0;a<S.length;a++)for(let b=a+1;b<S.length;b++){const A=S[a].g,B=S[b].g;
+  [['cx','sex','left','right'],['cy','sey','higher','lower']].forEach(([c,e,neg,pos])=>{const d=B[c]-A[c],lim=Math.max(G.ring*0.25,2*Math.hypot(A[e],B[e]));
+   const o={d,lim,k:Math.abs(d)/lim,txt:`Spot ${S[b].i+1} lands ${amt(d,G,unit)} ${d<0?neg:pos} than Spot ${S[a].i+1}`};if(o.k>1)out.push(o);if(!top||o.k>top.k)top=o})}
+ return{S,out,top}}
 function guide(G,fam){if(!G||G.n<3)return`<p class="small muted shg-note">Plot at least 3 arrows to see the group centre and a sight guide.</p>`;
- const unit=fam=='field'?'zones':'rings',TH=G.ring*0.25,mmT=v=>v==null?'':` (${Math.round(Math.abs(v))} mm)`;
- const lr=Math.abs(G.cx)<TH?null:G.cx<0?'left':'right',ud=Math.abs(G.cy)<TH?null:G.cy<0?'high':'low';
- const off=`<div class="shg-row"><span>Left / right</span><b>${lr?rs(G.cx,G.ring,unit)+mmT(G.mx)+' '+lr:'centred'}</b></div><div class="shg-row"><span>Up / down</span><b>${ud?rs(G.cy,G.ring,unit)+mmT(G.my)+' '+ud:'centred'}</b></div><div class="shg-row"><span>Average spread</span><b>${rs(G.sp,G.ring,unit)}${mmT(G.spm)} from the group centre</b></div>`;
- const w=lr?`Windage: move the sight <b>${lr}</b>.`:'Windage: no change, the group is centred left to right.',e=ud?`Elevation: move the sight <b>${ud=='high'?'up':'down'}</b>.`:'Elevation: no change, the group is centred up and down.';
- return`<div class="shg-tab">${off}</div><div class="shg-guide"><span class="kicker">Sight move guide</span><p>${w}<br>${e}</p><p class="small muted" style="margin:0">Move the sight towards the group. Based on ${plN(G.n,'plotted arrow','plotted arrows')}; small offsets are left alone. Change marks a little at a time.</p></div>`}
+ const unit=fam=='field'?'zones':'rings',X=ctr(fam),mmT=v=>v==null?'':` (${Math.round(Math.abs(v))} mm)`;
+ const lr=meas(G.cx,G.sex,G)?(G.cx<0?'left':'right'):null,ud=meas(G.cy,G.sey,G)?(G.cy<0?'high':'low'):null;
+ const off=`<div class="shg-row"><span>Left / right of ${X}</span><b>${axTxt(G.cx,G.sex,G,unit,'left','right')}</b></div><div class="shg-row"><span>Up / down from ${X}</span><b>${axTxt(G.cy,G.sey,G,unit,'high','low')}</b></div><div class="shg-row"><span>Average spread</span><b>${rs(G.sp,G.ring,unit)}${mmT(G.spm)} from the group centre</b></div>`;
+ const SS=spotShift(G,unit);let spots='';
+ if(SS){spots=`<div class="shg-tab shg-spots" style="margin-top:8px"><div class="shg-row"><span><b>Each spot</b></span><b>from ${X} · spread</b></div>${SS.S.map(({g,i})=>`<div class="shg-row"><span>Spot ${i+1} · ${plN(g.n,'arrow','arrows')}</span><b>${axTxt(g.cx,g.sex,g,unit,'left','right',1)}, ${axTxt(g.cy,g.sey,g,unit,'high','low',1)} · ${g.spm!=null?Math.round(g.spm)+' mm':rs(g.sp,g.ring,unit)}</b></div>`).join('')}</div>`;
+  spots+=SS.out.length?`<div class="shg-guide shg-flag"><span class="kicker">The spots land in different places</span><p>${SS.out.map(o=>o.txt).join('.<br>')}.</p><p class="small muted" style="margin:0">The sight is the same for every spot, so a sight move cannot fix this. Different landing places for different spots point to form or setup: head and body position as you move between spots, bow cant (check the level bubble on each spot) and your anchor. Fix this first; a sight move shifts all three spots together.</p></div>`
+   :`<p class="small muted" style="margin:6px 0 0">No clear spot-to-spot difference yet. ${G.u&&Math.round(Math.abs(SS.top.d)*G.u)==0?'All spots land within 1 mm of each other.':`The biggest: ${SS.top.txt}, but with this many arrows per spot it would need to be more than ${amt(SS.top.lim,G,unit)} to be more than chance.`}</p>`}
+ const big=(v)=>Math.abs(v)<G.ring?' a little':'',on=v=>G.u&&Math.round(Math.abs(v)*G.u)==0;
+ const w=lr?`Windage: move the sight${big(G.cx)} <b>${lr}</b>. The group centre is ${amt(G.cx,G,unit)} ${lr} of ${X}.`:on(G.cx)?`Windage: no change. The group centre is on ${X} left to right, to the nearest mm (${pm(G.sex,G,unit)}).`:`Windage: no change yet. The group centre is ${amt(G.cx,G,unit)} ${G.cx<0?'left':'right'} of ${X}, inside ${pm(G.sex,G,unit)}, so ${plN(G.n,'arrow','arrows')} cannot show a real offset.`;
+ const e=ud?`Elevation: move the sight${big(G.cy)} <b>${ud=='high'?'up':'down'}</b>. The group centre is ${amt(G.cy,G,unit)} ${ud=='high'?'above':'below'} ${X}.`:on(G.cy)?`Elevation: no change. The group centre is on ${X} up and down, to the nearest mm (${pm(G.sey,G,unit)}).`:`Elevation: no change yet. The group centre is ${amt(G.cy,G,unit)} ${G.cy<0?'above':'below'} ${X}, inside ${pm(G.sey,G,unit)}, so ${plN(G.n,'arrow','arrows')} cannot show a real offset.`;
+ return`<div class="shg-tab">${off}</div>${spots}<div class="shg-guide"><span class="kicker">Sight move guide</span><p>${w}<br>${e}</p><p class="small muted" style="margin:0">Measured from the exact centre of ${X}. Move the sight towards the group. ± is how far the group centre can be out by chance with ${plN(G.n,'plotted arrow','plotted arrows')}; offsets inside it are not measurable yet. The amount is the shift on the target; change marks a little at a time and check again.</p></div>`}
 function plotSvg(fam,P,label,U,o){if(o&&o.clean)return cleanSvg(fam,P,label,U);const F=faceSvg(fam,P.concat(U||[])),hw=F.hw,s=F.s,G=group(P,fam),UG=U&&U.length>=3?group(U,fam):null,id='shm'+(++uid);
  let g=`<svg class="shplot" viewBox="${-hw} ${-hw} ${2*hw} ${2*hw}" role="img" aria-label="${H(label)}"><defs><radialGradient id="${id}g"><stop offset="0" stop-color="#000" stop-opacity=".9"/><stop offset=".55" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
  <mask id="${id}"><rect x="${-hw}" y="${-hw}" width="${2*hw}" height="${2*hw}" fill="#fff"/>${P.map(p=>`<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="${(0.16*s).toFixed(3)}" fill="url(#${id}g)"/>`).join('')}</mask></defs>${F.g}
@@ -94,8 +121,7 @@ function plotCards(sessions,o={}){const A={target:[],field:[]};sessions.forEach(
   ${f=='target'?spotsSvg(P):''}${guide(G,f)}${o.multi&&sessions.length>1?`<p class="small muted" style="margin:6px 0 0">From ${plN(sessions.length,'shoot','shoots')}. Sight marks change with distance, so check one round and distance at a time for sight moves.</p>`:''}</div>`}).join('')}
 window.shotPts=shotPts;window.shotPlotCards=plotCards;
 /* end-of-shoot / Past sessions: this shoot's plot, its group centre and sight guide, and the usual group from earlier plotted shoots of the same round */
-const offTxt=(G,fam)=>{const unit=fam=='field'?'zones':'rings',TH=G.ring*0.25,mmT=v=>v==null?'':` (${Math.round(Math.abs(v))} mm)`;
- const a=Math.abs(G.cx)<TH?'centred':rs(G.cx,G.ring,unit)+mmT(G.mx)+' '+(G.cx<0?'left':'right'),b=Math.abs(G.cy)<TH?'centred':rs(G.cy,G.ring,unit)+mmT(G.my)+' '+(G.cy<0?'high':'low');return a+', '+b};
+const offTxt=(G,fam)=>{const unit=fam=='field'?'zones':'rings';return axTxt(G.cx,G.sex,G,unit,'left','right',1)+', '+axTxt(G.cy,G.sey,G,unit,'high','low',1)};
 function shotPlotCard(sess,prev){const q=shotPts(sess),fams=['target','field'].filter(f=>q[f].length);if(!fams.length)return'';
  return fams.map(f=>{const U=[];let nU=0;(prev||[]).forEach(p=>{const x=shotPts(p)[f];if(x.length){U.push(...x);nU++}});
   const P=q[f],{svg,G,UG}=plotSvg(f,P,`${P.length} plotted arrows on a ${famName[f]}`,U,{clean:true}),spot=f=='target'&&!P.concat(U).some(p=>p.k=='full');

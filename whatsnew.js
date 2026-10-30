@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-30-1840-spotgroups',d:'2026-10-30',items:[
+   ['target',"Arrow plot now measures from the centre of the X","The sight guide measures each group from the exact centre of the X, in millimetres on the real face size, and shows how sure it is (plus or minus). It gives a sight move with a direction and amount only when the offset is bigger than the arrows can show by chance, so there is no more 'centred'. On 3-spot faces it also shows where each spot lands. When the spots land in clearly different places it says so: that points to form or setup (head and body position, bow cant, level bubble), not the sight.",'']]},
   {v:'v2026-10-30-1657-landedface',d:'2026-10-30',items:[
    ['target',"A clearer picture of where your shoot landed","On the card at the end of a shoot (and in Past sessions), the big target under Where this shoot landed now uses the same clean target colours as the three spots under it. It zooms in to just the rings your arrows are in, the shaded glow over the rings is gone, and the group centre cross and your usual group circle sit on top of the arrows without hiding them. The three spots picture, the Analytics Arrow plot and your saved shoots are unchanged.",'6c5bed7']]},
   {v:'v2026-10-28-2103-plot3spot',d:'2026-10-28',items:[
