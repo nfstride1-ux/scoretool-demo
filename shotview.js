@@ -24,10 +24,11 @@ function shotPts(s){const R0=s&&ROUNDS[s.round];const out={target:[],field:[]};i
   out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,r,sp,lay,rx,ry,e:i,j,a:(s.ends[i]||[])[j]})}));
  return out}
 let uid=0;
-function faceSvg(fam,P){const ks=new Set(P.map(p=>p.k));let g='',hw;
+function faceSvg(fam,P,zR){const ks=new Set(P.map(p=>p.k));let g='',hw;
  if(fam=='field'){hw=1.06;if(ks.size==1&&ks.has('bugs'))[6,5,4,3,2,1].forEach(z=>{const y=z<=2;g+=`<circle r="${(z/6).toFixed(4)}" fill="${y?WA.g:WA.k}" stroke="${y?WA.k:WA.w}" stroke-width="0.006"/>`});
   else[1,.8,.6,.4,.2,.1].forEach((r,i)=>{const y=i>3;g+=`<circle r="${r}" fill="${y?WA.g:WA.k}" stroke="${y?WA.k:WA.w}" stroke-width="0.006"/>`})}
- else{const lo=ks.has('full')?0:ks.has('six')?4:5;hw=lo==0?1.06:lo==4?0.64:0.54;
+ else{let lo=ks.has('full')?0:ks.has('six')?4:5;hw=lo==0?1.06:lo==4?0.64:0.54;
+  if(zR){const z=Math.max(lo,Math.min(7,Math.round((1-zR.R)*10)));if(z>lo){lo=z;hw=Math.max(1-lo*0.1,zR.ext)*1.08}}/* zoomed: only the scoring rings the arrows reach (never fewer than 8 to 10) */
   const C=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k];
   for(let i=lo;i<10;i++)g+=`<circle r="${(1-i*0.1).toFixed(2)}" fill="${C[i]}" stroke="${L[i]}" stroke-width="0.005"/>`;g+=`<circle r="0.05" fill="none" stroke="${WA.k}" stroke-width="0.004"/>`}
  const s=hw/1.06;return{g,hw,s}}
@@ -43,7 +44,7 @@ function guide(G,fam){if(!G||G.n<3)return`<p class="small muted shg-note">Plot a
  const off=`<div class="shg-row"><span>Left / right</span><b>${lr?rs(G.cx,G.ring,unit)+mmT(G.mx)+' '+lr:'centred'}</b></div><div class="shg-row"><span>Up / down</span><b>${ud?rs(G.cy,G.ring,unit)+mmT(G.my)+' '+ud:'centred'}</b></div><div class="shg-row"><span>Average spread</span><b>${rs(G.sp,G.ring,unit)}${mmT(G.spm)} from the group centre</b></div>`;
  const w=lr?`Windage: move the sight <b>${lr}</b>.`:'Windage: no change, the group is centred left to right.',e=ud?`Elevation: move the sight <b>${ud=='high'?'up':'down'}</b>.`:'Elevation: no change, the group is centred up and down.';
  return`<div class="shg-tab">${off}</div><div class="shg-guide"><span class="kicker">Sight move guide</span><p>${w}<br>${e}</p><p class="small muted" style="margin:0">Move the sight towards the group. Based on ${plN(G.n,'plotted arrow','plotted arrows')}; small offsets are left alone. Change marks a little at a time.</p></div>`}
-function plotSvg(fam,P,label,U){const F=faceSvg(fam,P.concat(U||[])),hw=F.hw,s=F.s,G=group(P,fam),UG=U&&U.length>=3?group(U,fam):null,id='shm'+(++uid);
+function plotSvg(fam,P,label,U,o){if(o&&o.clean)return cleanSvg(fam,P,label,U);const F=faceSvg(fam,P.concat(U||[])),hw=F.hw,s=F.s,G=group(P,fam),UG=U&&U.length>=3?group(U,fam):null,id='shm'+(++uid);
  let g=`<svg class="shplot" viewBox="${-hw} ${-hw} ${2*hw} ${2*hw}" role="img" aria-label="${H(label)}"><defs><radialGradient id="${id}g"><stop offset="0" stop-color="#000" stop-opacity=".9"/><stop offset=".55" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
  <mask id="${id}"><rect x="${-hw}" y="${-hw}" width="${2*hw}" height="${2*hw}" fill="#fff"/>${P.map(p=>`<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="${(0.16*s).toFixed(3)}" fill="url(#${id}g)"/>`).join('')}</mask></defs>${F.g}
  <rect x="${-hw}" y="${-hw}" width="${2*hw}" height="${2*hw}" fill="${NAVY}" opacity=".5" mask="url(#${id})"/>`;
@@ -54,6 +55,23 @@ function plotSvg(fam,P,label,U){const F=faceSvg(fam,P.concat(U||[])),hw=F.hw,s=F
  if(G&&G.n>=3){const c=0.075*s,x=G.cx.toFixed(3),y=G.cy.toFixed(3),d=`M${G.cx-c} ${G.cy}H${G.cx+c}M${G.cx} ${G.cy-c}V${G.cy+c}`;
   g+=`<circle cx="${x}" cy="${y}" r="${Math.max(G.sp,0.02).toFixed(3)}" fill="none" stroke="${NAVY}" stroke-width="${(0.02*s).toFixed(3)}"/><circle cx="${x}" cy="${y}" r="${Math.max(G.sp,0.02).toFixed(3)}" fill="none" stroke="${GOLD}" stroke-width="${(0.009*s).toFixed(3)}" stroke-dasharray="${0.04*s} ${0.03*s}"/>
   <path d="${d}" stroke="${NAVY}" stroke-width="${(0.04*s).toFixed(3)}" stroke-linecap="round"/><path d="${d}" stroke="${GOLD}" stroke-width="${(0.018*s).toFixed(3)}" stroke-linecap="round"/>`}
+ return{svg:g+'</svg>',G,UG}}
+/* 'Where this shoot landed' face (30 Oct 2026, Nathe: "the single face looks shit ... it doesn't look correct"): clean WA colours like the three-spot view,
+   no dimming or glow over the rings, zoomed to the scoring rings the arrows reach, the group and usual-group rings drawn under the arrows,
+   and an open centre cross (gap in the middle) plus a small usual-group ring on top, so no arrow is covered. Same points, same group maths. */
+function cleanSvg(fam,P,label,U){const G=group(P,fam),UG=U&&U.length>=3?group(U,fam):null;let zR=null;
+ if(fam=='target'){let ext=0;P.forEach(p=>{ext=Math.max(ext,Math.hypot(p.x,p.y)+(p.r||0.028))});
+  [G&&G.n>=3?G:null,UG].forEach(q=>{if(q)ext=Math.max(ext,Math.hypot(q.cx,q.cy)+Math.max(q.sp,0.02))});
+  zR={ext,R:Math.min(1,Math.ceil((ext+0.004)*10-1e-9)/10)}}
+ const F=faceSvg(fam,P.concat(U||[]),zR),hw=F.hw,s=F.s,K='#0b1f4d';
+ let g=`<svg class="shplot shclean" viewBox="${-hw} ${-hw} ${2*hw} ${2*hw}" role="img" aria-label="${H(label)}">${F.g}`;
+ if(UG)g+=`<circle cx="${UG.cx.toFixed(3)}" cy="${UG.cy.toFixed(3)}" r="${Math.max(UG.sp,0.02).toFixed(3)}" fill="none" stroke="${BLUE}" stroke-width="${(0.011*s).toFixed(4)}" stroke-dasharray="${(0.03*s).toFixed(4)} ${(0.022*s).toFixed(4)}"/>`;
+ if(G&&G.n>=3)g+=`<circle cx="${G.cx.toFixed(3)}" cy="${G.cy.toFixed(3)}" r="${Math.max(G.sp,0.02).toFixed(3)}" fill="none" stroke="${K}" stroke-width="${(0.011*s).toFixed(4)}" stroke-dasharray="${(0.03*s).toFixed(4)} ${(0.022*s).toFixed(4)}"/>`;
+ P.forEach(p=>{const x=p.x.toFixed(3),y=p.y.toFixed(3);
+  g+=`<circle cx="${x}" cy="${y}" r="${(p.r||0.028).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${K}" stroke-opacity=".6" stroke-width="${(0.005*s).toFixed(4)}"/><circle cx="${x}" cy="${y}" r="${(0.0125*s).toFixed(4)}" fill="#fff" stroke="${K}" stroke-width="${(0.0075*s).toFixed(4)}"/>`});
+ if(UG)g+=`<circle cx="${UG.cx.toFixed(3)}" cy="${UG.cy.toFixed(3)}" r="${(0.02*s).toFixed(4)}" fill="none" stroke="${K}" stroke-width="${(0.02*s).toFixed(4)}"/><circle cx="${UG.cx.toFixed(3)}" cy="${UG.cy.toFixed(3)}" r="${(0.02*s).toFixed(4)}" fill="none" stroke="${BLUE}" stroke-width="${(0.011*s).toFixed(4)}"/>`;
+ if(G&&G.n>=3){const a=0.032*s,c=0.12*s,X=G.cx,Y=G.cy,d=`M${(X-c).toFixed(4)} ${Y.toFixed(4)}H${(X-a).toFixed(4)}M${(X+a).toFixed(4)} ${Y.toFixed(4)}H${(X+c).toFixed(4)}M${X.toFixed(4)} ${(Y-c).toFixed(4)}V${(Y-a).toFixed(4)}M${X.toFixed(4)} ${(Y+a).toFixed(4)}V${(Y+c).toFixed(4)}`;
+  g+=`<path d="${d}" stroke="${K}" stroke-width="${(0.032*s).toFixed(4)}" stroke-linecap="round"/><path d="${d}" stroke="${GOLD}" stroke-width="${(0.017*s).toFixed(4)}" stroke-linecap="round"/>`}
  return{svg:g+'</svg>',G,UG}}
 /* The three spots as they are on the target (Vegas triangle) or side by side (vertical 3-spot), each arrow on the spot it was shot at, own rings, same ring colours.
    Each arrow is drawn at its true place with its own radius, so the ring it scored is the ring its edge touches. Read only. */
@@ -80,9 +98,9 @@ const offTxt=(G,fam)=>{const unit=fam=='field'?'zones':'rings',TH=G.ring*0.25,mm
  const a=Math.abs(G.cx)<TH?'centred':rs(G.cx,G.ring,unit)+mmT(G.mx)+' '+(G.cx<0?'left':'right'),b=Math.abs(G.cy)<TH?'centred':rs(G.cy,G.ring,unit)+mmT(G.my)+' '+(G.cy<0?'high':'low');return a+', '+b};
 function shotPlotCard(sess,prev){const q=shotPts(sess),fams=['target','field'].filter(f=>q[f].length);if(!fams.length)return'';
  return fams.map(f=>{const U=[];let nU=0;(prev||[]).forEach(p=>{const x=shotPts(p)[f];if(x.length){U.push(...x);nU++}});
-  const P=q[f],{svg,G,UG}=plotSvg(f,P,`${P.length} plotted arrows on a ${famName[f]}`,U),spot=f=='target'&&!P.concat(U).some(p=>p.k=='full');
+  const P=q[f],{svg,G,UG}=plotSvg(f,P,`${P.length} plotted arrows on a ${famName[f]}`,U,{clean:true}),spot=f=='target'&&!P.concat(U).some(p=>p.k=='full');
   return`<div class="card shcard"><span class="kicker">Where this shoot landed</span><h3>${plN(P.length,'plotted arrow','plotted arrows')}</h3><div class="shwrap">${svg}</div>
-  <p class="small muted shkey"><span class="shk-dot"></span> this shoot <span class="shk-x"></span> its group centre${UG?' <span class="shk-u"></span> your usual group':''} · darker face = no arrows there${spot?' · 3-spot arrows shown on one spot':''}</p>
+  <p class="small muted shkey"><span class="shk-dot"></span> this shoot <span class="shk-x"></span> its group centre${UG?' <span class="shk-u"></span> your usual group':''}${spot?' · 3-spot arrows shown on one spot':''}</p>
   ${f=='target'?spotsSvg(P):''}${guide(G,f)}${UG&&G&&G.n>=3?`<div class="shg-tab" style="margin-top:8px"><div class="shg-row"><span>Your usual group</span><b>${offTxt(UG,f)}</b></div><div class="shg-row"><span>Usual spread</span><b>${rs(UG.sp,UG.ring,f=='field'?'zones':'rings')}</b></div></div><p class="small muted" style="margin:4px 0 0">Usual = ${plN(UG.n,'plotted arrow','plotted arrows')} from ${plN(nU,'earlier shoot','earlier shoots')} of this round.</p>`:''}</div>`}).join('')}
 window.shotPlotCard=shotPlotCard;
 

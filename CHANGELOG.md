@@ -4,6 +4,16 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-30-1554-landedface (2026-10-30)
+### What changed
+- "Where this shoot landed" single face (Nathe, 30 Oct, 30-arrow vertical 3-spot shoot: "I like the 3 spot idea under. But the single face looks shit", "It doesn't look correct"). Cause: the card's big face used the Analytics plot drawing, which lays a navy layer at 50% through a radial mask over the face (the "darker face = no arrows there" shading). That darkened every ring (teal blue, maroon red, dull gold) and smeared a glow over the rings; and it always showed rings 6 to 10, so a group inside the 9 ring was small and the arrows, the gold group-centre cross and the usual-group circle piled on top of each other.
+- Now the card draws a clean face (`cleanSvg` in shotview.js, used only by `shotPlotCard`): the same WA colours as the 3-spot faces, no glow or shading, zoomed to only the scoring rings the arrows (at their real size) and group circles reach (never fewer than rings 8 to 10). Draw order: rings, usual group (dashed blue), this shoot's group (dashed navy), arrows, then a small usual-group centre ring and an open gold cross with a navy outline and a gap in the middle so the arrows under it stay visible. The legend drops "darker face = no arrows there" because that shading is gone.
+- Unchanged on purpose: the three spots strip, the Analytics Arrow plot (`plotCards` still uses the old drawing), the rest of the legend, the plotted positions, field faces (gold and black, full face, no zoom), saved data (nothing written).
+### Files touched
+shotview.js (`cleanSvg` new, `faceSvg` optional zoom, `plotSvg` clean option, `shotPlotCard`), whatsnew.js, CHANGELOG.md, sw.js, index.html, version.json.
+### Tests run
+RESULTS_PENDING
+
 ## v2026-10-28-2103-plot3spot (2026-10-28)
 ### What changed
 - Arrow plot on 3-spot shoots (Nathe, 28 Oct, Vegas 300, 30 plotted arrows: "I only hit the 9 4 times, this looks like it hit all over the place. Line the 3 spot targets properly"). Investigated first: positions are NOT wrong. Tap, score and plotted position agree on the Vegas triangle and the vertical face, at Z1 and Z2, Vegas 300 solo and Indoor 18m (probe tapping known offsets per spot, then comparing `shotPts` with the intended offset: all within rounding). Cause is visual: every arrow was drawn as a tiny dot at its centre, but scoring lets the arrow's edge (3-spot 0.035, other faces 0.028) touch a ring, so X, 10 and 9 arrows sat visibly outside the ring they scored in and the group looked wider than the score. With 16 X, 10 tens and 4 nines the dots were all inside the 9 ring but looked loose.
