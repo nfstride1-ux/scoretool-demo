@@ -4,6 +4,24 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-1409-clarity (2026-10-31)
+### What changed
+- Microsoft Clarity (Nathe, 31 Oct, approved: project z660yw0kiw, to see how the app is used). New clarity.js, loaded from the page head: the official Clarity snippet, which adds https://www.clarity.ms/tag/z660yw0kiw as an async script.
+- Masking: every typed field (text, search, email, phone, number, textarea, select and the like) gets data-clarity-mask="true" as soon as it is drawn, including fields drawn later on any screen (a MutationObserver), so names, emails, notes and messages are never sent. Tick boxes, radio buttons and buttons are left alone. Strict masking is also set in the Clarity dashboard.
+- Privacy line, plain text, in Me > Settings & help (Settings card): "We use Microsoft Clarity to see how the app is used (taps and scrolling) so we can improve it; typed details are hidden."
+- Service worker: clarity.ms requests are passed straight through (an explicit hostname check before the existing cross-origin rule); nothing from clarity.ms is cached.
+- Offline: if clarity.ms cannot be reached the script just fails to load and the app carries on; the app still reopens from the cache with no signal.
+- Automated test browsers (navigator.webdriver) load nothing, so test runs are not recorded and every other suite sees the app exactly as before.
+- analytics.js (the in-app Analytics) is unchanged. There is no GoatCounter in this app, so there was nothing there to change.
+- What's new: one plain-text note; the endviewer note now names its commit 0f46036.
+### Files
+clarity.js (new), index.html (one script tag in the head), app.js (the privacy line in the Settings card), tools/sw_template.js and sw.js (clarity.ms pass-through, rebuilt with tools/build_sw.py so clarity.js is precached), whatsnew.js, version.json, tools/clarity_test.py (new), qa/run_regression.py and qa/regression.md (clarity_test in App shell).
+### Tests
+- Before (baseline): full regression on code identical to origin/main 0f46036: 59 passed / 5 failed, the known nav, real, field_faces, ghost ("waiting for [data-tester=nathe]") and vegas 58/2.
+- New clarity_test (WebKit, 390 px, touch, installed iPhone app emulated; then Chromium with the service worker): 16 passed / 0 failed. Snippet once, async, right project; 17 typed fields masked across Me, Settings, Send a suggestion and Following, and fields drawn later; privacy line word for word; nothing loaded in test browsers; clarity.ms unreachable: every tab draws, no page errors; no clarity.ms entry in the service worker cache; offline reopen works.
+- whatsnew_test after the bump: 33 passed / 0 failed.
+- After: full regression 60 passed / 5 failed out of 65 suites (the new clarity suite passed, 16 / 0). Same known nav, real, field_faces, ghost and vegas 58/2 as before; nothing new failed.
+
 ## v2026-10-31-1345-endviewer (2026-10-31)
 ### What changed
 - End by end plot viewer (Nathe via Archery Coach, 31 Oct: each end's target face with that end's arrows plotted arrow by arrow, numbered in shot order, at the true size already used; swipe left and right between ends, plus arrow buttons; "End 3 of 10" and the end total; three spots on 3-spot faces). Clarification from Nathe the same day: only after a shoot is finished, so the end-of-shoot summary and Open on a finished shoot in Past sessions, and nothing on the live scoring screen changes.

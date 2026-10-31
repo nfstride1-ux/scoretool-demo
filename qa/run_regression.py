@@ -24,7 +24,7 @@ AREAS=[
  ('My arrows / My bows',['myarrows_test.py','mybows_test.py','arrowpick_test.py','todayarrows_test.py']),
  ('Calculators',['arrowcheck_test.py','arrowchooser_test.py','arrowuse_test.py']),
  ('Analysis (stats, coach, testers)',['coach2_test.py','coach3_test.py','testers_test.py','sendpast_test.py']),
- ('App shell, What\'s new, offline',['whatsnew_test.py','offline_test.py']),
+ ('App shell, What\'s new, offline, Clarity',['whatsnew_test.py','offline_test.py','clarity_test.py']),
 ]
 def fetch_live(url,dest):
     base=url.rstrip('/')+'/'

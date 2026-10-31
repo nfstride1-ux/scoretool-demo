@@ -4,14 +4,14 @@
    Fetch (same-origin GET only): network first, so a new deploy always shows; anything that answers is saved to the cache. With no
    signal, or no answer within 3.5 s, the cached copy is used (query strings ignored: ?v=, ?t=, ?tester=). Page loads fall back
    to the cached index.html. version.json and sw.js are never served from the cache, so the update check (update.js) only ever
-   sees the real live version. Cross-origin requests (ntfy relay, archerycalendars.com) are not touched.
+   sees the real live version. Cross-origin requests (ntfy relay, archerycalendars.com, clarity.ms) are not touched: no cache, straight to the network.
    Activate: delete every older scoretool-* cache. A new version = a new sw.js, so the browser installs it on the next check. */
 const V='__VERSION__',CACHE='scoretool-'+V,PRE=__PRECACHE__,WAIT=3500;
 const key=u=>{const x=new URL(u,self.registration.scope);x.search='';x.hash='';return x.href};
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>Promise.all(PRE.map(u=>fetch(new Request(u,{cache:'reload'})).then(r=>{if(r&&r.ok)return c.put(key(u),r)}).catch(()=>{})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(K=>Promise.all(K.filter(k=>k.startsWith('scoretool-')&&k!=CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('message',e=>{if(e.data&&e.data.type=='SKIP_WAITING')self.skipWaiting()});
-self.addEventListener('fetch',e=>{const q=e.request;if(q.method!='GET')return;const u=new URL(q.url);if(u.origin!=self.location.origin)return;
+self.addEventListener('fetch',e=>{const q=e.request;if(q.method!='GET')return;const u=new URL(q.url);if(/(^|\.)clarity\.ms$/.test(u.hostname))return;if(u.origin!=self.location.origin)return;
  if(/\/(version\.json|sw\.js)$/.test(u.pathname))return;
  const nav=q.mode=='navigate',k=nav?key('index.html'):key(q.url);
  e.respondWith((async()=>{const c=await caches.open(CACHE);

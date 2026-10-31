@@ -23,7 +23,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | My arrows / My bows | myarrows, mybows, arrowpick, todayarrows | Add/edit lists, dropdowns fill calculators |
 | Calculators | arrowcheck, arrowchooser, arrowuse | FOC, speed, spine verdicts, chart look-ups |
 | Analysis | coach2, coach3, testers, sendpast | Stats vs Analytics lists, coach read, tester data, send past rounds |
-| App shell | whatsnew, offline | What's new/help rules (no emoji, line icons, newest first), service worker precache, offline reopen |
+| App shell | whatsnew, offline, clarity | What's new/help rules (no emoji, line icons, newest first), service worker precache, offline reopen; Clarity snippet async, typed fields masked, privacy line, clarity.ms never cached, app fine when clarity.ms is unreachable |
 
 ## Manual spot checks (2 minutes, on a phone, after the live deploy)
 1. Score > Just me > Australian Indoor 18m: Ghost match is tickable; Choose who lists past scores; pick a record row and start.
