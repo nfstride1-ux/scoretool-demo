@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-31-1646-pbnote',d:'2026-10-31',items:[
+   ['trophy',"Personal best note matches your PB","At the end of a shoot, the Personal best line now counts the same scores as your PB in This shoot vs your usual: your practice and your official results for that round, full rounds only. Before, it only counted practice, so it could say New PB while the card showed a higher official score. A short line under it says what it counts."]]},
   {v:'v2026-10-31-1642-fullround',d:'2026-10-31',items:[
-   ['check',"Every round type checked start to finish","Behind the scenes: every round in the app is now scored start to finish by an automatic check before each update (outdoor, indoor, field, Vegas 300, practice, your own rounds, ABA 3D, league nights and the group score card). It checks every end, the running total, the X and 10 counts and that the saved shoot is the same after reopening the app and in Past sessions. All passed. Nothing about how you score has changed."]]},
+   ['check',"Every round type checked start to finish","Behind the scenes: every round in the app is now scored start to finish by an automatic check before each update (outdoor, indoor, field, Vegas 300, practice, your own rounds, ABA 3D, league nights and the group score card). It checks every end, the running total, the X and 10 counts and that the saved shoot is the same after reopening the app and in Past sessions. All passed. Nothing about how you score has changed.",'8c8bfb8']]},
   {v:'v2026-10-31-1409-clarity',d:'2026-10-31',items:[
    ['lock',"Privacy: how the app is used","We use Microsoft Clarity to see how the app is used (taps and scrolling) so we can improve it; typed details are hidden. Names, emails, notes and anything else you type are masked and never sent. The line is in Me > Settings & help. The app works the same with no signal.",'99bc9de']]},
   {v:'v2026-10-31-1345-endviewer',d:'2026-10-31',items:[

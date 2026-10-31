@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-1646-pbnote (2026-10-31)
+### What changed
+- Queue B1, PB note (Needs Nathe's decision in QA audit A: "your PB" in the finish compare card counted official results while the Personal best line at the finish was practice-only). Fixed so both use the same scores: the Personal best note at the end of a shoot now counts the same earlier shoots as "your PB" / "previous PB" in This shoot vs your usual (practice and official results for the round, full rounds only, earlier dates), so the two can never disagree.
+- Wording: "New PB for this round, beating N." / "Equal to your PB for this round." (the word practice is gone, as it now counts official results too), and a small line under it: "Your PB counts your practice and official scores for this round, full rounds only." "First time you have scored this round here." is unchanged. The party emoji in the message is left for its own release (queue C2).
+- If the analysis code is not loaded, the note falls back to the old practice-only best, so nothing breaks.
+- The Best Score row and everything else on the card are unchanged; no saved data changed.
+- What's new: one plain-text note; the fullround note now names its commit 8c8bfb8.
+### Files
+app.js (pbPrev helper + roundSummary note), tools/pbnote_test.py (new), qa/run_regression.py and qa/regression.md (new PB note area), whatsnew.js, CHANGELOG.md, version.json, sw.js (rebuilt with tools/build_sw.py), index.html (?v= bump).
+### Tests
+- pbnote_test (new): 13 passed / 0 failed. On the old code (8c8bfb8) 6 passed / 7 failed, so the test catches the old behaviour (practice-only note, "beating 590" while the card shows an official 640).
+- whatsnew_test 33/0.
+- Before (baseline): the fullround after-run (8c8bfb8): 61 passed / 5 failed, only the known five: nav, real, field_faces, ghost ("waiting for [data-tester=nathe]": these four use port 8765, which another local app's server already holds on the test machine, so they load the wrong page; fixed in the failing-tests release) and vegas 58/2 (two stale checks, same release).
+- After: 62 passed / 5 failed (3041 s), the same known five only (nav, real, field_faces, ghost on port 8765; vegas 58/2). pbnote_test 13 passed / 0 failed.
+
 ## v2026-10-31-1642-fullround (2026-10-31)
 ### What changed
 - Data integrity check (paid-ready programme item 1). The Vegas 300 report (End 3 blank in the ghost table, End box 0 while Prog 144) was root-caused on 26 Oct: End 3 was saved (30) and the total 144 was right; the tied 30-30 end was drawn white on white in the light theme, fixed in v2026-10-26-1955-ghosttie (c1072bd). End box 0 on a new, empty end is by design (the box shows the end being shot). Re-checked today: no data fault.
@@ -16,6 +31,8 @@ tools/fullround_test.py (new), qa/run_regression.py and qa/regression.md (new Fu
 ### Tests
 - Before (baseline): the clarity after-run on identical app code (99bc9de): 60 passed / 5 failed, the known nav, real, field_faces, ghost ("waiting for [data-tester=nathe]") and vegas 58/2.
 - fullround_test: 409 passed / 0 failed. Every failure found: none in the app. (Test-side fixes while writing it: keys re-read each end for block rounds; League sheet read from its own table; Nathe's 17 May 2025 paper-sheet ABA seed, added by aba.js by design, excluded from the Peel "own sessions" check.)
+- After: 61 passed / 5 failed, the same known five. (league_test failed once in that run because I ran a changed copy of it on the same port at the same time; rerun alone on 8c8bfb8: 61 passed / 0 failed.)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1642-fullround): fullround_test 408 passed / 1 failed. Every score check passed (all ends, totals, counts, saved records, reloads). The one failure is a page error during the league part: "Can't find variable: squad", seen only on the live site, not locally, and app code is unchanged in this release, so it is older than this release. Likely cause: on a slow load a screen draw runs before squads.js has arrived. Noted for the Level 1 live diagnostic; not fixed here.
 
 ## v2026-10-31-1409-clarity (2026-10-31)
 ### What changed

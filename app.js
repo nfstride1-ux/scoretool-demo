@@ -512,14 +512,19 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  if($('#finsess'))$('#finsess').onclick=()=>{const id=s.id;cur=null;sv='sheet';fix=null;justDone=false;if(window.shotDone&&id)shotDone(id);else nav('score')};
  $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
 const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','Australian Indoor 18m':'Australian Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)','AA 50/1440 (50/40/30/20m)':'AA 50/1440'};
+function pbPrev(s){if(!window._anShoots)return null;try{const all=_anShoots(),me=all.find(o=>o.s===s),rd=me?me.round:s.round,ord=o=>o.date+(o.s&&o.s.id?'|'+o.s.id:''),meK=s.date+'|'+(s.id||'');
+ const ps=all.filter(o=>o.round==rd&&!o.part&&o.s!==s&&ord(o)<meK&&(o.ends&&o.ends.length||o.score)).map(o=>o.score);return ps.length?{pb:Math.max(...ps),n:ps.length}:{pb:null,n:0}}catch(e){return null}}
 function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.round&&x!==s),best=prev.length?prev.reduce((a,b)=>total(b)>total(a)?b:a):null;
  const off=findReal(S.profile||'').filter(r=>r.division).slice(-1)[0],div=off&&off.division,R0=ROUNDS[s.round],aa=R0&&s.ends.length==R0.ends&&s.ends.every(e=>e.length==R0.ape)?AA_MAP[s.round]:null;/* no AA rating for a round finished early */
  const rt=aa&&typeof aaRating=='function'&&AA_ROUNDS[aa]?aaRating(sc,aa,/compound/i.test(div||'')):null,lv=rt!=null&&div?aaLevel(rt,div):null;
  const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
- const pb=best?(sc>total(best)?`🎉 New practice PB for this round, beating ${total(best)}.`:sc==total(best)?'Equal to your practice best for this round.':''):'First time you have scored this round here.';
+ /* 31 Oct 2026 (queue B1): the Personal best note uses the same earlier shoots as the 'your PB' figure in This shoot vs your usual (practice and official results, full rounds only), so the two always agree. */
+ const pp=pbPrev(s),pbv=pp?pp.pb:best?total(best):null,pbn=pp?pp.n:best?1:0;
+ const pb=pbn?(sc>pbv?`🎉 New PB for this round, beating ${pbv}.`:sc==pbv?'Equal to your PB for this round.':''):'First time you have scored this round here.';
+ const pbx=pbn&&pb?'<span class="small muted" style="display:block;margin-top:2px">Your PB counts your practice and official scores for this round, full rounds only.</span>':'';
  return`<div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><table class="ad-kv">${div?row('Division',esc(div),'from your official results'):''}${row('Round Name',esc(s.round))}${row('Score',sc)}
  ${best?row('Best Score',Math.max(total(best),sc),total(best)>=sc?fmtD(best.date):fmtD(s.date)):''}${rt!=null?row('AA Rating',rt.toFixed(1)):''}${lv?row('Classification',esc(lv.name),'level for this rating · practice isn\'t counted'):''}</table>
- ${pb?`<div class="ad-band" style="margin:0">Personal best</div><p style="margin:8px 12px">${pb}</p>`:''}</div>`}
+ ${pb?`<div class="ad-band" style="margin:0">Personal best</div><p style="margin:8px 12px">${pb}${pbx}</p>`:''}</div>`}
 function arrowsIn(s){return s.ends.reduce((t,e)=>t+e.length,0)}
 function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;sv='sheet';save();if(after)after();else score()};
  if(!arrowsIn(cur)){S.sessions=S.sessions.filter(x=>x!==cur);return go()}
