@@ -22,6 +22,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | Test guards | guards | Every test that loads the app imports tools/guard.py: each browser context and page has the ntfy.sh relay stubbed and the service worker blocked (a test that sets service_workers itself, such as offline_test, keeps its choice). field_faces_test exits non-zero on a failed check. |
 | Slow start | slowload | squads.js, lab.js or update.js held back 2.5 s: the app still opens Home with no page errors (the first draw waits for every script). |
 | League auto-advance | lgauto | Shared-phone league: after the 3rd arrow is saved the next archer opens with no jump to the top, Saved line names the last archer and end, never before the 3rd arrow, undo clears it, the Stay on each archer setting brings back Next; no page errors. |
+| Your data | backup | Me > Settings & help Your data card: backup file of every shoot (ScoreTool keys only), restore asks first and keeps a copy, wrong-archer or damaged files refused in plain words, offline line on and off, shoots kept through an app update and a cleared app cache (offline worker on), privacy note; no page errors. |
 | Casual shoot | casual, mixedface, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
 | League | league | Onion Shed 6 x Vegas 300, cumulative ranking, X ties, missing weeks |
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |

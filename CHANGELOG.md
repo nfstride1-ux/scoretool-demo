@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0611-yourdata (2026-11-01)
+### What changed
+- Item 5, paid-user basics. New backup.js (loaded after lab.js) adds a Your data card to Me > Settings & help, after the Settings card:
+- Save a backup file: a JSON file of this archer's ScoreTool data (the main record plus this archer's other scoretool.* keys), named scoretool-backup-<archer>-<date>.json; the card shows when the last one was saved. Photos are not included (said on the card).
+- Restore from a backup file: checks it is a ScoreTool backup for this archer and not damaged, asks first (naming both shoot counts), keeps a copy of the current data on the phone (scoretool.prerestore.<archer>), then reloads and says how many shoots were restored. Blocked in admin view.
+- Keeping data: the app asks the phone to keep its storage (navigator.storage.persist; home-screen apps get this without a prompt) and the card says whether the phone agreed.
+- Offline: a line under the top bar, "Offline · saved on this phone. Shared scores send when you are back online.", shows while there is no signal.
+- Privacy note on the card (wording per Nathe, 1 Nov): scores, sight marks and settings are kept on this phone; no account, login or payment details; league, match and group scores (with the display name) are shared through a relay (ntfy.sh); linked Archery Calendar rounds and their photos go to that account; anonymous usage (taps and scrolling, typed details hidden) is recorded by Microsoft Clarity.
+- No accounts, login or payments added. No saved data changed.
+### Files
+backup.js (new), index.html (script tag, ?v= bump), tools/backup_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js.
+### Tests
+- Before (baseline): full regression 74 passed, 0 failed (lgauto after-run, 7d97baa; pushed as 768812d with the CHANGELOG line only)
+- Single runs: backup_test 24 passed, 0 failed (its offline-worker check now sets service_workers='allow', which guard.py keeps; the first single run, without it, failed that one check); whatsnew_test 33/0; peel_data_test 2/0; guards_test 7/0; clarity_test 16/0; nav_test 99/0
+- After: full regression 75 passed, 0 failed, 3131 s (d1089cc)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0611-yourdata): backup_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0418-lgauto (2026-11-01)
 ### What changed
 - Item 4, League Next setting. Shared-phone league scoring now moves to the next archer by itself once the 3rd arrow of the end is saved (never before), with no jump to the top. A line shows "Saved: Name, end N: X 9 8." Undo clears it.
@@ -17,7 +34,7 @@ league.js, tools/lgauto_test.py (new), tools/lgpage_test.py, tools/league_test.p
 - First full run (bd972e0, not pushed): 73 passed, 1 failed; lgpage_test stopped after 4 s because this release's edit to it left the 2 second wait after the reload inside a comment, so under load the page was not ready. Fixed (the wait is back), then run again.
 - Single runs: lgauto_test 16 passed, 0 failed; lgpage_test 40/0; league_test 60/0 (61 before: the two Next-button checks are now one auto-advance check, approved with item 4); lgscroll_test 19/0; whatsnew_test 33/0; peel_data_test 2/0; guards_test 7/0; casual3d_test 26/0
 - After: full regression 74 passed, 0 failed, 3129 s (7d97baa)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0418-lgauto): lgauto_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0418-lgauto): lgauto_test (BASE=live) 16 passed, 0 failed (1 Nov 2026, 06:09 AWST); version.json, newest whatsnew v and noindex checked.
 
 ## v2026-11-01-0320-squadfix (2026-11-01)
 ### What changed

@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-0611-yourdata',d:'2026-11-01',items:[
+   ['lock',"Back up your scores","Me > Settings & help has a new Your data card. Save a backup file of your scores, sight marks and settings, and restore it on a new phone or after a reset. When there is no signal a line at the top says the app is offline and saving on this phone. There is also a short privacy note: your scores are kept on this phone, league, match and group scores are shared through a relay, and anonymous usage is recorded by Microsoft Clarity. No account, no login, no payment details."]]},
   {v:'v2026-11-01-0418-lgauto',d:'2026-11-01',items:[
-   ['people',"League scoring moves on by itself","On a shared phone at league, once an archer's 3rd arrow is saved the next archer opens straight away, without jumping to the top of the page, and a line shows whose end was just saved. If you prefer, tick Stay on each archer after the 3rd arrow and tap Next to move on."]]},
+   ['people',"League scoring moves on by itself","On a shared phone at league, once an archer's 3rd arrow is saved the next archer opens straight away, without jumping to the top of the page, and a line shows whose end was just saved. If you prefer, tick Stay on each archer after the 3rd arrow and tap Next to move on.",'768812d']]},
   {v:'v2026-11-01-0320-squadfix',d:'2026-11-01',items:[
    ['check',"Steadier start on a slow connection","On a slow connection the app could stop with an error while it was still loading. It now waits for all of itself to arrive before showing the first screen.",'7d171df']]},
   {v:'v2026-11-01-0058-stubtests',d:'2026-11-01',items:[

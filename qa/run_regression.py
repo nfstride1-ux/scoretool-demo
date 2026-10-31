@@ -23,6 +23,7 @@ AREAS=[
  ("Test guards (relay stubbed, service worker blocked in every test)",["guards_test.py"]),
  ("Slow start (no page error while scripts load)",["slowload_test.py"]),
  ("League auto-advance (Next optional)",["lgauto_test.py"]),
+ ("Your data (backup, restore, offline, privacy)",["backup_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),
