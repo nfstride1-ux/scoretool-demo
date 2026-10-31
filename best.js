@@ -9,7 +9,7 @@ const SID=(typeof TESTER!='undefined'&&TESTER)?(TESTER.data?TESTER.id:null):'nat
 const isMe=()=>!!BS;
 if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;if(typeof view!='undefined'&&(view=='stats'||view=='lab_analysis')&&$('#bscard'))render()}).catch(()=>{});
 const BOW=d=>(String(d||'').match(/Compound|Recurve|Longbow|Barebow/i)||['Other'])[0].replace(/^./,c=>c.toUpperCase());
-const DISC=['Outdoor','Indoor','Field','Clout'],DN={Outdoor:'Outdoor target',Indoor:'Indoor',Field:'Field',Clout:'Clout'};
+const DISC=['Outdoor','Indoor','Field','3D','Clout'],DN={Outdoor:'Outdoor target',Indoor:'Indoor',Field:'Field','3D':'3D',Clout:'Clout'};
 /* Official results round -> ScoreTool round with the same ends (for Ghost match). 1440s shot in 3-arrow ends at 50/30 m are paired into 6s. */
 const GHOST_MAP={'WA 90/1440':'WA 90/1440 (90/70/50/30m)','WA 70/1440':'WA 70/1440 (70/60/50/30m)','WA 60/1440':'WA 60/1440 (60/50/40/30m)',
  'WA 70/720':'WA 720 (70m)','WA 60/720':'WA 720 (60m)','WA 50/720':'WA 720 (50m Compound)','WA 60/900 (Canberra)':'WA 60/900 (60/50/40m)',
@@ -27,8 +27,16 @@ function entries(){if(!BS||!isMe())return[];const L=BS.sheets.map(s=>({...s,bow:
  return L}
 const arrowsOf=s=>s.ds.flatMap(d=>d.e).filter(e=>e.some(Boolean));
 const nArrows=s=>arrowsOf(s).reduce((t,e)=>t+e.length,0);
-const maxOf=s=>{const n=s.ds.reduce((t,d)=>t+d.e.reduce((k,e)=>k+e.length,0),0);return n?n*(s.disc=='Field'?6:10):null};
+/* 31 Oct 2026 (queue B2): Personal bests also count this phone's finished practice shoots, every round type (outdoor, indoor, field, Vegas,
+   practice and your own rounds, 3D). They join the official round with the same name (Stats round names), or get their own round.
+   Display only: entries(), the ghost and the official ghost lists are unchanged, and nothing is stored. */
+function practice(){if(typeof done!='function')return[];const bow=BOW(typeof myBow=='function'?myBow():(S.bow||(typeof TESTER!='undefined'&&TESTER&&TESTER.bow)||''));
+ return done().filter(s=>!s.sample&&ROUNDS[s.round]&&total(s)>0).map(s=>{const R=ROUNDS[s.round],F=typeof faceR=='function'?faceR(R,0):null,
+  disc=R.aba?'3D':(F&&typeof isFld=='function'&&isFld(F))||/field/i.test(s.round)?'Field':/indoor|18 ?m|25 ?m|vegas/i.test(s.round)?'Indoor':'Outdoor';
+  return{d:s.date,ev:'Scored on this phone',club:'',disc,div:'',cls:'',rd:s.round,sc:total(s),rt:'',url:'',ds:[{dist:'Practice',face:s.round,e:s.ends.filter(e=>e&&e.length).map(e=>e.map(a=>a&&typeof a=='object'?String(val(a)):String(a)))}],ok:true,part:false,bow,src:'practice'}})}
+const maxOf=s=>{if(s.disc=='3D')return null;const n=s.ds.reduce((t,d)=>t+d.e.reduce((k,e)=>k+e.length,0),0);return n?n*(s.disc=='Field'?6:10):null};
 function groups(bow){const G={};entries().filter(s=>s.bow==bow&&s.sc>0).forEach(s=>{(G[s.rd]=G[s.rd]||{rd:s.rd,disc:s.disc,all:[]}).all.push(s)});
+ practice().filter(s=>s.bow==bow).forEach(s=>{const k=anRoundOf(s.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:s.disc,all:[]});g.all.push(s)});
  Object.values(G).forEach(g=>{const full=g.all.filter(s=>!s.part);g.full=full.slice().sort((a,b)=>b.sc-a.sc||(a.d<b.d?-1:1));g.best=g.full[0]||null});
  return Object.values(G).filter(g=>g.best).sort((a,b)=>b.all.length-a.all.length||(a.rd<b.rd?-1:1))}
 function chip(a,disc){const k=disc=='Field'?(a=='M'?'k-m':v(a)>=5?'k-y':'k-k'):disc=='Clout'?(a=='M'?'k-m':'k-u'):(a=='M'?'k-m':v(a)>=9?'k-y':v(a)>=7?'k-r':v(a)>=5?'k-b':v(a)>=3?'k-k':'k-w');return`<span class="adb ${k} bs-a">${esc(a||'·')}</span>`}
@@ -37,7 +45,7 @@ function endsHTML(s){if(!s.ds.length)return`<p class="small bs-na"><span class="
   return`<div class="bs-dist"><div class="bs-dh"><b>${esc(d.dist||(s.disc=='Field'?'Field course':''))}</b><span>${esc(s.disc=='Field'?d.e.length+' targets × '+((d.e[0]||[]).length||3)+' arrows':d.face||'')}</span><b class="bs-sub">${sub}</b></div>
   <table class="bs-tab"><tr><th>${s.disc=='Field'?'Tgt':'End'}</th><th class="bs-ar">Arrows</th><th>End</th><th>Total</th></tr>${d.e.map((e,i)=>{k++;const t=e.reduce((x,a)=>x+v(a),0),shot=e.some(Boolean);run+=t;
    return`<tr${shot?'':' class="bs-blank"'}><td>${esc(d.tg?d.tg[i]:String(k))}</td><td class="bs-ar">${shot?e.map(a=>chip(a,s.disc)).join(''):'<span class="small muted">not shot</span>'}</td><td><b>${shot?t:'–'}</b></td><td>${shot?run:'–'}</td></tr>`}).join('')}</table></div>`}).join('')}
-function statsRow(s){const A=arrowsOf(s).flat(),n=A.length,c=x=>A.filter(a=>a==x).length,st=(a,b)=>`<div class="stat"><b>${a}</b>${b}</div>`;if(!n)return'';
+function statsRow(s){if(s.disc=='3D')return'';const A=arrowsOf(s).flat(),n=A.length,c=x=>A.filter(a=>a==x).length,st=(a,b)=>`<div class="stat"><b>${a}</b>${b}</div>`;if(!n)return'';
  const top=s.disc=='Field'?st(c('6'),"6's")+st(c('5'),"5's"):s.disc=='Clout'?st(c('10'),"10's")+st(c('9'),"9's"):st(c('10')+c('X'),"10's+X")+st(c('X'),"X's");
  return`<div class="stats" style="grid-template-columns:repeat(4,1fr)">${st((s.sc/n).toFixed(2),'avg arrow')}${top}${st(n,'arrows')}</div>`}
 /* ghost: ends in the shape of the matching ScoreTool round, or null */
@@ -58,11 +66,11 @@ window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)r
  window._anSel={round:anRoundOf(s.rd),rd:s.rd,d:s.d,sc:s.sc,bow:s.bow};
  const mx=maxOf(s),gm=GHOST_MAP[s.rd],ge=gm&&ghostEnds(s,gm);
  const opts=DISC.map(d=>{const L=G.filter(x=>x.disc==d);return L.length?`<optgroup label="${DN[d]}">${L.map(x=>`<option value="${esc(x.rd)}" ${x===g?'selected':''}>${esc(x.rd)} · ${x.best.sc} · ${fmt(x.best.d)}</option>`).join('')}</optgroup>`:''}).join('');
- return`<div class="card bs-card" id="bscard"><span class="kicker">${(window.icon&&window.icon('trophy'))||''} My best scores <span class="real">official</span></span><h2 style="margin:2px 0 8px">Personal bests</h2>
+ return`<div class="card bs-card" id="bscard"><span class="kicker">${(window.icon&&window.icon('trophy'))||''} My best scores <span class="small">practice and official</span></span><h2 style="margin:2px 0 8px">Personal bests</h2>
  ${B.length>1?`<div class="bs-bows">${B.map(([b,n])=>`<button type="button" data-bsb="${esc(b)}" class="${b==bow?'on':''}">${esc(b)} <span>${n}</span></button>`).join('')}</div>`:''}
  <label for="bssel" class="small">Pick a round (${plN(G.length,'round','rounds')}, best full score each)</label><select id="bssel">${opts}</select>
  <div class="bs-hero"><div class="bs-big">${s.sc}${mx?`<small>/${mx}</small>`:''}</div><div class="bs-meta"><span class="pill" style="background:${isBest?'var(--gold)':'var(--blue)'}">${isBest?((window.icon&&window.icon('star'))||'')+' PB':'#'+(g.full.indexOf(s)+1)+' on this round'}</span>
-  <b>${fmt(s.d)}</b><span>${esc(s.ev)}</span><span class="muted">${esc(s.club||'')}${s.rt&&s.rt!='0'?' · rating '+esc(s.rt):''}</span></div></div>
+  <b>${fmt(s.d)}</b><span>${s.src=='practice'?'<span class="sample">practice</span>':'<span class="real">official</span>'} ${esc(s.ev)}</span><span class="muted">${esc(s.club||'')}${s.rt&&s.rt!='0'?' · rating '+esc(s.rt):''}</span></div></div>
  <p class="small muted" style="margin:6px 0">${esc(s.rd)} · ${esc(s.div||bow)} · best of ${g.full.length} full round${g.full.length==1?'':'s'}${g.all.length>g.full.length?` (${g.all.length-g.full.length} partial not counted)`:''}${s.url?` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Scoresheet ↗</a>`:''}</p>
  ${statsRow(s)}
  ${ge?`<button class="btn full bs-ghost" id="bsgh">${(window.icon&&window.icon('ghost'))||''} Shoot against this score</button>`:''}

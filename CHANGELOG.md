@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-1828-pbbest (2026-10-31)
+### What changed
+- Queue B2: Personal bests listed official results only. They now also count this phone's finished practice shoots, every round type (outdoor, indoor, field, Vegas, practice and own rounds, and a new 3D group). A practice shoot joins the official round with the same name, or gets its own row.
+- Each score is labelled practice or official; the card heading reads "My best scores, practice and official".
+- Display only: nothing is stored, the official ghost lists are unchanged, no saved data changed.
+### Files
+best.js, tools/pbbest_test.py (new), qa/run_regression.py and qa/regression.md (new Personal bests area), whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html (?v= bump).
+### Tests
+- Before (baseline): the pbnote after-run on identical app code (caa964f): 62 passed / 5 failed, only the known five (nav, real, field_faces, ghost on port 8765; vegas 58/2).
+- pbbest_test: 17 passed / 0 failed.
+- After: 63 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2), pbbest_test 17/0 in the run.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1828-pbbest): pbbest_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-1646-pbnote (2026-10-31)
 ### What changed
 - Queue B1, PB note (Needs Nathe's decision in QA audit A: "your PB" in the finish compare card counted official results while the Personal best line at the finish was practice-only). Fixed so both use the same scores: the Personal best note at the end of a shoot now counts the same earlier shoots as "your PB" / "previous PB" in This shoot vs your usual (practice and official results for the round, full rounds only, earlier dates), so the two can never disagree.
@@ -18,6 +31,7 @@ app.js (pbPrev helper + roundSummary note), tools/pbnote_test.py (new), qa/run_r
 - whatsnew_test 33/0.
 - Before (baseline): the fullround after-run (8c8bfb8): 61 passed / 5 failed, only the known five: nav, real, field_faces, ghost ("waiting for [data-tester=nathe]": these four use port 8765, which another local app's server already holds on the test machine, so they load the wrong page; fixed in the failing-tests release) and vegas 58/2 (two stale checks, same release).
 - After: 62 passed / 5 failed (3041 s), the same known five only (nav, real, field_faces, ghost on port 8765; vegas 58/2). pbnote_test 13 passed / 0 failed.
+- Live (version.json v2026-10-31-1646-pbnote, confirmed 31 Oct 18:27 AWST, commit caa964f): pbnote_test 13 passed / 0 failed.
 
 ## v2026-10-31-1642-fullround (2026-10-31)
 ### What changed
