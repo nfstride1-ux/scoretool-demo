@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-1642-fullround (2026-10-31)
+### What changed
+- Data integrity check (paid-ready programme item 1). The Vegas 300 report (End 3 blank in the ghost table, End box 0 while Prog 144) was root-caused on 26 Oct: End 3 was saved (30) and the total 144 was right; the tied 30-30 end was drawn white on white in the light theme, fixed in v2026-10-26-1955-ghosttie (c1072bd). End box 0 on a new, empty end is by design (the box shows the end being shot). Re-checked today: no data fault.
+- New automated full-round check, tools/fullround_test.py (WebKit, 390 px, touch, installed iPhone app emulated). Every round offered in Score is scored start to finish by real taps on the keys with seeded random arrows: WA 720 x3, Short and Junior Canberra, Indoor WA 18 m, Australian Indoor 18 m, WA 90/70/60/1440, AA 50/1440, WA 60/900, Indoor WA 25 m and Combined, the three WA Field rounds (gold/black), Vegas 300 and Vegas 300 (18 m), both practice rounds, ABA Interclub 3D, a custom block round (full face then 6-ring) and a custom 3D round, plus a League 300 week (Onion Shed, Vegas 300 18 m, relay mocked) and a Peel group card two-day competition (three test archers, Day 1, Day 2, Competition complete).
+- Checked for each: every end on the sheet (arrows highest first, End box, running total), the finish (round finishes by itself when full, the X/10 or 6/5 counts and total), the Score row, the saved record (every arrow, hits, total, counted as a finished shoot), the record unchanged after reloading the app, the Past sessions row total, and Open from Past sessions showing the same ends and total. League: the league record and the copy in my sessions. Peel: every target per archer, archer chips, days unchanged after reload, event and Competition complete totals equal Day 1 + Day 2, nothing written into the archer's own sessions. No page errors.
+- Clout is not a scored round in the app (it only appears in the official results arrow table), so there is no clout check.
+- App code unchanged. What's new: one plain-text note; the clarity note now names its commit 99bc9de.
+### Files
+tools/fullround_test.py (new), qa/run_regression.py and qa/regression.md (new Full round area), whatsnew.js, version.json, sw.js (rebuilt with tools/build_sw.py), index.html (?v= bump).
+### Tests
+- Before (baseline): the clarity after-run on identical app code (99bc9de): 60 passed / 5 failed, the known nav, real, field_faces, ghost ("waiting for [data-tester=nathe]") and vegas 58/2.
+- fullround_test: 409 passed / 0 failed. Every failure found: none in the app. (Test-side fixes while writing it: keys re-read each end for block rounds; League sheet read from its own table; Nathe's 17 May 2025 paper-sheet ABA seed, added by aba.js by design, excluded from the Peel "own sessions" check.)
+
 ## v2026-10-31-1409-clarity (2026-10-31)
 ### What changed
 - Microsoft Clarity (Nathe, 31 Oct, approved: project z660yw0kiw, to see how the app is used). New clarity.js, loaded from the page head: the official Clarity snippet, which adds https://www.clarity.ms/tag/z660yw0kiw as an async script.
