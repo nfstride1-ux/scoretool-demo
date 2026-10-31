@@ -77,7 +77,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 const state={busy:false,off:false,offAt:0};
 async function rpc(fn,body){const r=await fetch(SB+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(r.ok)return'ok';let j=null;try{j=await r.json()}catch(e){}const c=j&&j.code||'';if(r.status==404||c=='PGRST202'||c=='42P01'||c=='42883')return'off';if(c=='28000'||/not linked/i.test(j&&j.message||''))return'unlinked';return'err'}
-async function tick(force){if(state.off&&!force&&Date.now()-state.offAt<600000)return;if(state.busy||!WHO()||typeof S=='undefined'||!S.unlocked)return;const tok=get('link');if(!okTok(tok)||navigator.onLine===false)return;if(!loaded)return;
+async function tick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('photos');return}if(state.off&&!force&&Date.now()-state.offAt<600000)return;if(state.busy||!WHO()||typeof S=='undefined'||!S.unlocked)return;const tok=get('link');if(!okTok(tok)||navigator.onLine===false)return;if(!loaded)return;
  state.busy=true;let changed=false;
  try{const D=(get('phdel')||[]).slice();for(const id of D){const r=await rpc('scoretool_remove_photo',{p_token:tok,p_source_id:WHO()+':'+id});if(r=='off'){state.off=true;state.offAt=Date.now();return}if(r!='ok')return;put('phdel',(get('phdel')||[]).filter(x=>x!=id))}
   const sent=get('phsent')||{};

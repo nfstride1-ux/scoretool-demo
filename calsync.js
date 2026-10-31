@@ -44,7 +44,7 @@ window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.
 async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
   body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:String(tiedRound(s)||s.round).slice(0,120),p_score:total(s),p_max:maxOf(s),p_location:(c=>c?String(c).slice(0,120):null)(tiedRound(s)?evs()[s.id].club:s.loc)})});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
-async function tick(){let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo();if(!L.length)return 0;
+async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo();if(!L.length)return 0;
  const tok=get('link');if(!okTok(tok)){maybePrompt();return 0}
  if(!navigator.onLine)return 0;state.busy=true;const sent=get('sent')||{};
  for(const s of L){const r=await send(s,tok);if(r=='ok'){sent[s.id]=sig(s);put('sent',sent);state.live=true;state.err='';k++}

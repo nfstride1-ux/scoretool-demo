@@ -17,6 +17,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | PB note | pbnote | Finish Personal best note uses the same earlier shoots as "your PB" in This shoot vs your usual (practice and official, full rounds, earlier dates): first time, beats practice, official higher (no New PB), equal, beats official, later-dated shoot ignored; no page errors. Official result stubbed in the test browser only. |
 | Personal bests | pbbest | My archery > Personal bests counts finished practice shoots on this phone as well as official results, every round type (outdoor, indoor, field, Vegas, practice, own rounds, 3D), labelled practice or official; no page errors. |
 | Bow filter | bowfilter | My archery > Analysis bow filter lists Compound, Recurve, Barebow, Longbow (plus Other only when a shoot has no bow type), no All bows, starts on your own bow; no page errors. |
+| Admin view relay | avrelay | Viewing another tester's app (read only): league, casual, match, name, calendar and photo background sync do not run, nothing is sent, no 'this would change' notice without a tap; normal use still syncs; no page errors. |
 | Casual shoot | casual, mixedface, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
 | League | league | Onion Shed 6 x Vegas 300, cumulative ranking, X ties, missing weeks |
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |

@@ -4,6 +4,18 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-2016-avrelay (2026-10-31)
+### What changed
+- Queue C1: in admin view (Nathe viewing another tester's app, read only) the background sync loops still ran; every send was blocked, but each try was logged and could raise the read-only notice. Now the league, casual, match, name, calendar and photo background sync does not run at all in admin view, quietly (logged once each as relay-skip in window.__avBlocked).
+- Normal use is unchanged; no saved data changed.
+### Files
+h2h.js, league.js, casual.js, names.js, calsync.js, photos.js, tools/avrelay_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): the bowfilter after-run on identical app code apart from this change (4c2a6a7): 64 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2).
+- avrelay_test: 10 passed / 0 failed (old code: 8 passed / 2 failed).
+- After: 64 passed / 6 failed: the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test, because its fixed port 8799 was taken from 19:54 by an unrelated local server (it failed the same way on the previous release's code). photos_test run on a free port: 29 passed / 0 failed on this release and on 4c2a6a7. avrelay_test 10/0 in the run.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2016-avrelay): avrelay_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-1922-bowfilter (2026-10-31)
 ### What changed
 - Queue B3: the Analysis bow filter only listed bows found in your results, plus All bows. It now always lists Compound, Recurve, Barebow and Longbow (Other only appears when a shoot has no bow type), with no All bows, and starts on the archer's own bow.
@@ -16,7 +28,7 @@ analytics.js, tools/bowfilter_test.py (new), tools/redesign_test.py (expected bo
 - Before (baseline): the pbbest after-run on identical app code apart from this change (e38c1b6): 63 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2).
 - bowfilter_test: 10 passed / 0 failed.
 - After: 64 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2), bowfilter_test 10/0 and redesign_test 142/0 in the run.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1922-bowfilter): bowfilter_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1922-bowfilter): bowfilter_test 10 passed / 0 failed (31 Oct 20:15 AWST); version.json, the top whatsnew note and noindex checked.
 
 ## v2026-10-31-1828-pbbest (2026-10-31)
 ### What changed

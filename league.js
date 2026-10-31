@@ -111,7 +111,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
  return ch}
 let lgBusy=false;const lgOpened={};
-async function lgTick(force){if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
+async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
   const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true}save()}
   if(lgFinal(lg))ch=ch||false;
   if(lg.dirty||!lgOpened[lg.code]||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}

@@ -84,7 +84,7 @@ function nmScrub(t){if(!t||typeof t!='string')return t;NM_RX.lastIndex=0;if(!NM_
 window.dispName=dispName;window.testerName=testerName;window.myName=myName;window.nmScrub=nmScrub;window.nmCheck=nmCheck;
 /* --- relay sync --- */
 const NM_TOPIC=()=>H2H_NS+'-names';
-async function nmPublish(force){if(!TESTER)return;const o=nmOwn(TESTER.id);if(!o)return;const last=+localStorage.getItem(nmPostKey(TESTER.id))||0;
+async function nmPublish(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('name');return}if(!TESTER)return;const o=nmOwn(TESTER.id);if(!o)return;const last=+localStorage.getItem(nmPostKey(TESTER.id))||0;
  if(!force&&last>=NM_RESET&&Date.now()-last<6*36e5)return;if(await h2hPost(NM_TOPIC(),{k:'nm',id:TESTER.id,n:o.n,nt:o.nt,t:Date.now()}))localStorage.setItem(nmPostKey(TESTER.id),String(Date.now()))}
 let nmBusy=false;
 async function nmSync(){if(nmBusy)return false;nmBusy=true;let ch=false;try{const before=TESTER&&nmClash(TESTER.id);

@@ -18,6 +18,10 @@ const h2hMe=()=>TESTER?TESTER.id:null,h2hShort=id=>testerName(id);
 const h2hAll=()=>S.matches=S.matches||[],h2hGet=c=>h2hAll().find(m=>m.code==c);
 const h2hSess=m=>m&&m.sid?S.sessions.find(s=>s.id==m.sid):null;
 function h2hCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=new Uint32Array(8);crypto.getRandomValues(a);return Array.from(a,x=>L[x%L.length]).join('')}
+/* 31 Oct 2026 (queue C1): admin view (Nathe viewing another tester's app, read only). Background sync (league, casual, matches, name,
+   calendar and photo sync) does not run at all, so nothing is sent for that tester and the 'this would change ...'s data' notice only
+   shows for things Nathe actually taps. Logged in window.__avBlocked as relay-skip. */
+function avSkip(k){const L=window.__avBlocked;if(L&&!L.includes('relay-skip:'+k))L.push('relay-skip:'+k)}
 async function h2hPost(topic,o){try{const r=await fetch(H2H_BASE+'/'+topic,{method:'POST',body:JSON.stringify(o)});return r.ok}catch(e){return false}}
 async function h2hPoll(topic,since){try{const r=await fetch(H2H_BASE+'/'+topic+'/json?poll=1&since='+(since||'all'),{cache:'no-store'});if(!r.ok)return null;
  return(await r.text()).split('\n').filter(Boolean).map(l=>{try{const j=JSON.parse(l);if(j.event!='message')return null;const d=JSON.parse(j.message);d._id=j.id;return d}catch(e){return null}}).filter(Boolean)}catch(e){return null}}
@@ -85,7 +89,7 @@ window.h2hView=function(code){const m=h2hGet(code);if(!m)return;if(m.g)return h2
  <div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap">${s&&!h2hMyDone(m)?`<button class="btn alt" id="h2hback">Back to scoring</button>`:''}<button class="btn ghost" id="h2hrf">Refresh now</button><button class="btn ghost" id="h2hout">All matches</button></div></div></div>`;
  const b=$('#h2hback');if(b)b.onclick=()=>{cur=s;sv='entry';fix=null;score()};$('#h2hrf').onclick=()=>h2hTick(true);$('#h2hout').onclick=()=>{cur=null;sv='sheet';if(view!='score')nav('score');else score()}};
 let h2hN=0,h2hBusy=false;
-async function h2hTick(force){if(h2hBusy||(document.hidden&&!force)||!TESTER)return;h2hBusy=true;try{const me=h2hMe();let ch=false;
+async function h2hTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('matches');return}if(h2hBusy||(document.hidden&&!force)||!TESTER)return;h2hBusy=true;try{const me=h2hMe();let ch=false;
  if(force||h2hN++%4==0){if(window.nmSync)nmSync();const L=await h2hPoll(h2hInbox(me),S.h2hIn);if(L&&L.length){L.forEach(d=>{S.h2hIn=d._id;if(d.k=='lginv'&&window.lgInvite&&lgInvite(d))ch=true;if(d.k=='csinv'&&window.csInvite&&csInvite(d))ch=true;if(d.k=='inv'&&d.to==me&&d.nm&&nmLearn(d.from,d.nm,d.nt,d.t))ch=true;if(d.k=='inv'&&d.to==me&&d.from!=me&&d.code&&ROUNDS[d.round]&&!h2hGet(d.code)&&(d.t||0)>=H2H_RESET){h2hAll().push(d.g?{code:d.code,round:d.round,mode:'total',g:1,host:d.from,opp:d.from,when:d.when||'',order:[],ops:{},created:d.t||Date.now(),status:'invite'}:{code:d.code,round:d.round,mode:d.mode=='sets'?'sets':'total',a:d.from,b:me,opp:d.from,created:d.t||Date.now(),status:'invite'});ch=true}});save()}}
  const live=h2hAll().filter(m=>!m.local&&m.status!='declined'&&m.status!='invite'&&m.status!='full'&&Date.now()-(m.created||0)<2*864e5&&!(m.g?(m.closed||h2hBoard(m).fin)&&(!m.sid||m.sentDone)&&m.finSeen&&!(window.suKeepPolling&&suKeepPolling(m)):(m.op&&m.op.done&&h2hMyDone(m)&&m.sentDone)));
  for(const m of live){if(m.sid){const st=h2hState(m),sig=JSON.stringify(st.ends)+st.done+(st.sf?'s':'');if(sig!=m.sent){if(await h2hPost(h2hTopic(m.code),st)){m.sent=sig;if(st.done)m.sentDone=true;save()}}}

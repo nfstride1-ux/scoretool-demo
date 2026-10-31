@@ -188,7 +188,7 @@ function csMerge(cs,d){if(!d||d.code!=cs.code||(d.t||0)<H2H_RESET)return false;c
   if(id==me&&by!=me)continue;cs.sc[id]={e:csDec(v.e,R),u:+v.u||0,by,...(v.f=='single'||v.f=='three'?{f:v.f}:{})};ch=true}
  if(ch){csOwnSession(cs);csMatchSync(cs)}return ch}
 let csBusy=false;const csOpened={};
-async function csTick(force){if(csBusy||!TESTER)return;csBusy=true;let ch=false;const me=csMe();try{for(const cs of csAll()){if(cs.status=='invite')continue;
+async function csTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('casual');return}if(csBusy||!TESTER)return;csBusy=true;let ch=false;const me=csMe();try{for(const cs of csAll()){if(cs.status=='invite')continue;
   if(csHost(cs)&&cs.invq&&cs.invq.length){const left=[];for(const to of cs.invq){if(!csP(cs,to))continue;if(!await h2hPost(h2hInbox(to),{k:'csinv',code:cs.code,name:cs.name,round:cs.round,from:me,to,...h2hNm(),t:Date.now()}))left.push(to)}cs.invq=left;save()}
   if(cs.nosend){if(await h2hPost(csTopic(cs.code),{k:'csno',code:cs.code,by:me,t:Date.now()}))cs.nosend=0;save();continue}
   const L=await h2hPoll(csTopic(cs.code),cs.since);if(L&&L.length){for(const d of L){cs.since=d._id;if(csMerge(cs,d))ch=true}save()}

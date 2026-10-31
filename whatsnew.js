@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-31-2016-avrelay',d:'2026-10-31',items:[
+   ['lock',"Viewing another archer sends nothing","When Nathe views another tester's app to help them, the app no longer tries to sync that archer's league, matches, group scores, name, calendar or photos in the background. Nothing is sent for them, and the read-only notice only shows for things actually tapped."]]},
   {v:'v2026-10-31-1922-bowfilter',d:'2026-10-31',items:[
-   ['bars',"Analysis bow filter shows every bow","The bow filter in My archery > Analysis now always lists Compound, Recurve, Barebow and Longbow, and starts on your own bow. All bows is gone, so scores from different bows are never mixed in one chart."]]},
+   ['bars',"Analysis bow filter shows every bow","The bow filter in My archery > Analysis now always lists Compound, Recurve, Barebow and Longbow, and starts on your own bow. All bows is gone, so scores from different bows are never mixed in one chart.",'4c2a6a7']]},
   {v:'v2026-10-31-1828-pbbest',d:'2026-10-31',items:[
    ['trophy',"Personal bests include your practice","My archery > Personal bests now counts the shoots you finish on this phone as well as your official results, for every round type: outdoor, indoor, field, Vegas, practice, your own rounds and 3D. Each score is labelled practice or official, so you can see where your best came from.",'e38c1b6']]},
   {v:'v2026-10-31-1646-pbnote',d:'2026-10-31',items:[
