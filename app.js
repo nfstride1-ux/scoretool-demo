@@ -520,7 +520,7 @@ function roundSummary(s){const sc=total(s),prev=done().filter(x=>x.round==s.roun
  const row=(k,v,x='')=>`<tr><th>${k}</th><td>${v}</td><td class="small muted">${x}</td></tr>`;
  /* 31 Oct 2026 (queue B1): the Personal best note uses the same earlier shoots as the 'your PB' figure in This shoot vs your usual (practice and official results, full rounds only), so the two always agree. */
  const pp=pbPrev(s),pbv=pp?pp.pb:best?total(best):null,pbn=pp?pp.n:best?1:0;
- const pb=pbn?(sc>pbv?`🎉 New PB for this round, beating ${pbv}.`:sc==pbv?'Equal to your PB for this round.':''):'First time you have scored this round here.';
+ const pb=pbn?(sc>pbv?`New PB for this round, beating ${pbv}.`:sc==pbv?'Equal to your PB for this round.':''):'First time you have scored this round here.';
  const pbx=pbn&&pb?'<span class="small muted" style="display:block;margin-top:2px">Your PB counts your practice and official scores for this round, full rounds only.</span>':'';
  return`<div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><table class="ad-kv">${div?row('Division',esc(div),'from your official results'):''}${row('Round Name',esc(s.round))}${row('Score',sc)}
  ${best?row('Best Score',Math.max(total(best),sc),total(best)>=sc?fmtD(best.date):fmtD(s.date)):''}${rt!=null?row('AA Rating',rt.toFixed(1)):''}${lv?row('Classification',esc(lv.name),'level for this rating · practice isn\'t counted'):''}</table>

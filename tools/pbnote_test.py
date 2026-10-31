@@ -31,6 +31,8 @@ with sync_playwright() as p:
   chk('no earlier shoot: First time you have scored this round here.','First time you have scored this round here.' in sm,sm[-200:])
   t,sm,cp=run([['p1','2026-10-01',590]],['c1','2026-10-20',600])
   chk('beats an earlier practice 590: New PB for this round, beating 590.','New PB for this round, beating 590.' in sm,sm[-200:])
+  import unicodedata;ln=[l for l in sm.split('\n') if 'New PB' in l]
+  chk('the PB message has no emoji (plain text)',bool(ln) and not any(unicodedata.category(c)=='So' or ord(c)>0x2FFF for c in ln[0]),ln)
   chk('compare card agrees (previous PB 590)',re.search(r'590 previous PB',cp) is not None,cp[:300])
   chk('the note says what it counts','counts your practice and official scores' in sm,sm[-200:])
   chk('the word practice PB is gone','practice PB' not in sm and 'practice best' not in sm,sm[-200:])

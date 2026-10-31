@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-2113-pbplain (2026-10-31)
+### What changed
+- Queue C2: removed the party emoji from the New PB message at the end of a shoot (app.js). The wording is unchanged.
+- tools/pbnote_test.py gains a check that the PB message has no emoji.
+- Not changed (outside this item): the win streak line in the ghost match card still has its flame symbol.
+### Files
+app.js, tools/pbnote_test.py (new check), whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): the avrelay after-run on identical app code apart from this change (e67fa0e): 64 passed / 6 failed, the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test (its port 8799 is held by an unrelated local server; 29/0 on a free port).
+- pbnote_test: 14 passed / 0 failed (the new check fails on the old code).
+- After: 64 passed / 6 failed, the same six as before (known five plus photos_test on its held port 8799); photos_test on a free port with the relay stubbed: 29 passed / 0 failed. pbnote_test 14/0 in the run.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2113-pbplain): pbnote_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-2016-avrelay (2026-10-31)
 ### What changed
 - Queue C1: in admin view (Nathe viewing another tester's app, read only) the background sync loops still ran; every send was blocked, but each try was logged and could raise the read-only notice. Now the league, casual, match, name, calendar and photo background sync does not run at all in admin view, quietly (logged once each as relay-skip in window.__avBlocked).
@@ -14,7 +27,7 @@ h2h.js, league.js, casual.js, names.js, calsync.js, photos.js, tools/avrelay_tes
 - Before (baseline): the bowfilter after-run on identical app code apart from this change (4c2a6a7): 64 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2).
 - avrelay_test: 10 passed / 0 failed (old code: 8 passed / 2 failed).
 - After: 64 passed / 6 failed: the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test, because its fixed port 8799 was taken from 19:54 by an unrelated local server (it failed the same way on the previous release's code). photos_test run on a free port: 29 passed / 0 failed on this release and on 4c2a6a7. avrelay_test 10/0 in the run.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2016-avrelay): avrelay_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2016-avrelay): avrelay_test 10 passed / 0 failed (31 Oct 21:12 AWST, relay stubbed); version.json, the top whatsnew note and noindex checked.
 
 ## v2026-10-31-1922-bowfilter (2026-10-31)
 ### What changed
