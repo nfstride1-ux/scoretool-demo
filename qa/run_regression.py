@@ -65,9 +65,10 @@ def main():
             if suite and f not in suite and f[:-3] not in suite:continue
             if not os.path.exists(os.path.join(tools,f)):res.append((area,f,None,'missing'));continue
             srv=None
-            if f=='field_faces_test.py':  # this suite expects a server already running on 8765 (the others start their own)
-                srv=subprocess.Popen([sys.executable,'-m','http.server','8765','--directory',root],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1.5)
-            t=time.time();p=subprocess.run([sys.executable,f],cwd=tools,capture_output=True,text=True,timeout=1500)
+            if f=='field_faces_test.py':  # this suite uses a server we start on a free port, passed as ST_PORT (the others start their own on free ports)
+                sys.path.insert(0,tools);import freeport;fp=freeport.get();env=dict(os.environ,ST_PORT=fp)
+                srv=subprocess.Popen([sys.executable,'-m','http.server',fp,'--directory',root],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1.5)
+            t=time.time();p=subprocess.run([sys.executable,f],cwd=tools,capture_output=True,text=True,timeout=1500,env=env if srv else None)
             if srv:srv.terminate()
             out=(p.stdout+p.stderr).strip().splitlines();last=out[-1] if out else ''
             res.append((area,f,p.returncode==0,last[:160]));print(('PASS' if p.returncode==0 else 'FAIL'),f,f'{time.time()-t:.0f}s',last[:120],flush=True)

@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 from PIL import Image
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-photos');os.makedirs(SH,exist_ok=True)
-PORT='8799';ok=[];bad=[]
+import freeport;PORT=freeport.get();ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n,flush=True)
 srv=subprocess.Popen([sys.executable,'-m','http.server',PORT],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 EMO=re.compile('[\U0001F300-\U0001FAFF\u2600-\u27BF]')
@@ -35,6 +35,7 @@ with sync_playwright() as p:
   pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and 'Failed to load resource' not in m.text and errs.append(m.text))
   pg.on('dialog',lambda d:d.accept())
   ctx.route('https://sllsqpfqwckwtljzjxli.supabase.co/**',sb)
+  ctx.route('https://ntfy.sh/**',lambda r:r.fulfill(status=200,content_type='application/json',body='',headers={'access-control-allow-origin':'*'}))   # never the real relay
   ctx.route('https://archerycalendars.com/**',lambda r:r.fulfill(status=200,content_type='application/json',body='{"events":[]}',headers={'access-control-allow-origin':'*'}))
   pg.goto(f'http://localhost:{PORT}/?tester=steven');pg.wait_for_timeout(1200)
   E=pg.evaluate

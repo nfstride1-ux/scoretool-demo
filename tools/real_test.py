@@ -1,18 +1,19 @@
-# Checks for real rankings + Coach's read (Nathe only). Serves the repo on :8765 and drives Chrome at 390 px.
+# Checks for real rankings + Coach's read (Nathe only). Serves the repo on a free port (or ST_PORT) and drives Chrome at 390 px.
 import json,subprocess,time,sys,os
 from playwright.sync_api import sync_playwright
 import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)
-srv=subprocess.Popen([sys.executable,'-m','http.server','8765'],cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+import freeport;PORT=freeport.get()   # ST_PORT or a free port, never a fixed one
+srv=subprocess.Popen([sys.executable,'-m','http.server',PORT],cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 KEYS="""(F,P)=>JSON.stringify({n:F.rs.length,sum:F.sum,pd:F.dls.map(d=>[d,F.perDist[d][0]]),cons:F.cons.map(c=>[c.n,c.esd,c.asd]),ph:F.ph.map(p=>p.h),f:P?[P.avgF,P.pot]:null,E:F.E.length})"""
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
   # playground reference numbers
-  pg=b.new_page();pg.add_init_script('window.__NORENDER=true');pg.goto('http://localhost:8765/c-7q4m9x2k/');pg.wait_for_timeout(800)
+  pg=b.new_page();pg.add_init_script('window.__NORENDER=true');pg.goto('http://localhost:'+PORT+'/c-7q4m9x2k/');pg.wait_for_timeout(800)
   ap=b.new_page(viewport={'width':390,'height':844});errs=[];ap.on('console',lambda m:m.type=='error' and errs.append(m.text));ap.on('pageerror',lambda e:errs.append(str(e)))
-  ap.goto('http://localhost:8765/');ap.wait_for_timeout(1000);nm_seed.pick(ap,'nathe');ap.wait_for_timeout(600)
+  ap.goto('http://localhost:'+PORT+'/');ap.wait_for_timeout(1000);nm_seed.pick(ap,'nathe');ap.wait_for_timeout(600)
   ap.get_by_text('Demo unlock').first.click();ap.wait_for_timeout(600)
   for _ in range(3):
    if ap.locator('nav [data-v=stats]').is_visible():break

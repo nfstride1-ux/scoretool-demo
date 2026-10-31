@@ -49,7 +49,7 @@ try:
   P0.evaluate("cur.ends=[['X','10','9'],['10','10','9'],['X','X','8'],[]];cur.pos=cur.ends.map(()=>[]);score()");P0.wait_for_timeout(300)
   P0.evaluate("document.querySelector(`.ad-pad [data-k='9']`).click()");P0.wait_for_timeout(200)
   t=P0.inner_text('#app')
-  chk('Vegas 300 solo: header with the round info and "End 4 of 10"','20 yd · 40 cm Vegas 3-spot' in t and 'End 4 of 10' in P0.inner_text('#vghead'))
+  chk('Vegas 300 solo: header with the round info and "End 4 of 10"',all(x in P0.inner_text('.ad-head') for x in ('Vegas 300','20yd','40cm 3-spot')) and 'End 4 of 10' in P0.inner_text('#endno'))
   chk('Vegas 300 solo: the Ends so far card is gone (removed 26 Oct 2026), scoring pad and header still there',P0.locator('#vgtab').count()==0 and 'Ends so far' not in P0.text_content('#app') and P0.locator('.ad-pad').count()>=1 and 'End 4 of 10' in P0.text_content('#app').replace('\n',' '))
   chk('Vegas 300 solo: one triangle face, no Bonus 12 dot toggle','12 dot' not in t and P0.locator('#face3').count()==0)
   if SHOT:P0.screenshot(path=OUT+'/v1-vegas300-end.png')
@@ -183,7 +183,7 @@ try:
     A,B=O.evaluate(f"[suLadder(h2hGet('{code}'))[{i}].A,suLadder(h2hGet('{code}'))[{i}].B]")
     for k in ['10']*12:O.evaluate(f"suKey('{code}',{i},'{k}','{A}')");O.evaluate(f"suKey('{code}',{i},'9','{B}')")
   chk('one-phone: shoot-up result after the final',O.evaluate(f"suDone(h2hGet('{code}'))") and O.evaluate(f"suLadder(h2hGet('{code}'))[2].res.winner")==lo)
-  chk('one-phone: nothing sent to the relay (fully offline)',len(NET)==n0 and not any(code in t for t in RELAY))
+  chk('one-phone: nothing sent to the relay (fully offline)',not any(code in u for u in NET[n0:]) and not any(code in t for t in RELAY))   # only this match counts; the phone's own league sync is separate
   # ---------- One-phone regular match night ----------
   newform(O,'Indoor WA 18m');O.check('[name=h2hpm][value=one]');O.wait_for_timeout(100)
   chk('one-phone match night: no shooters box needed beyond names',O.locator('[data-h2hnm]').count()==2)

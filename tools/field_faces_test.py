@@ -1,13 +1,17 @@
 from playwright.sync_api import sync_playwright
 import nm_seed
-import json
+import json,os,sys,subprocess,time,freeport
+# Uses the server on ST_PORT if run_regression started one; otherwise starts its own on a free port.
+PORT=os.environ.get('ST_PORT');srv=None
+if not PORT:
+    PORT=freeport.get();srv=subprocess.Popen([sys.executable,'-m','http.server',PORT,'--directory',os.path.dirname(os.path.dirname(os.path.abspath(__file__)))],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1.5)
 ok=[];bad=[]
 def chk(name,cond):
     (ok if cond else bad).append(name)
 with sync_playwright() as p:
     b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']); pg=b.new_page(viewport={'width':390,'height':844})
     errs=[]; pg.on('console',lambda m: m.type=='error' and errs.append(m.text)); pg.on('pageerror',lambda e: errs.append(str(e)))
-    pg.goto('http://localhost:8765/'); pg.wait_for_timeout(1200)
+    pg.goto('http://localhost:'+PORT+'/'); pg.wait_for_timeout(1200)
     nm_seed.pick(pg,'nathe'); pg.wait_for_timeout(800)
     pg.get_by_text('Demo unlock').first.click(); pg.wait_for_timeout(800)
     for _ in range(3):
@@ -82,3 +86,4 @@ with sync_playwright() as p:
     print('ERR',errs)
     b.close()
 print('PASS',len(ok),'FAIL',len(bad),bad)
+if srv:srv.terminate()

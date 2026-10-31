@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-2302-testfix (2026-10-31)
+### What changed
+- Queue: check the failing tests. The six long-standing failures were test problems, not app faults:
+- nav, real, ghost and field_faces used fixed port 8765 and photos_test used fixed port 8799. Other local servers hold those ports on the test machine, so the tests loaded the wrong page ("waiting for [data-tester=nathe]") or could not start. New tools/freeport.py gives each test a free port chosen by the system, or ST_PORT if set. run_regression starts the field_faces server on a free port and passes it as ST_PORT; run on its own, field_faces starts its own server. No other server is stopped or touched.
+- photos_test now stubs the ntfy relay, so it never sends to the real relay.
+- vegas_test had two stale checks: the round header (now "20yd · 40cm 3-spot" with End 4 of 10) and a one-phone relay check that counted other matches' sends; it now counts only this match.
+- App code unchanged.
+### Files
+tools/freeport.py (new), tools/nav_test.py, tools/real_test.py, tools/ghost_test.py, tools/field_faces_test.py, tools/photos_test.py, tools/vegas_test.py, qa/run_regression.py, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): df2537f ghostx after-run 65 passed / 6 failed (nav, real, field_faces, ghost on port 8765; vegas 58/2; photos_test on port 8799).
+- Single runs: with ports 8765 and 8799 still held by other local servers: nav 99/0, real 250/0, ghost 92/0, field_faces 54/0, photos 29/0, vegas 60/0.
+- After: full regression 71 passed / 0 failed (3090s), with ports 8765 and 8799 still held by the other local servers. photos_test now passes inside the regression, so no separate free-port run is needed.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2302-testfix): nav_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-2206-ghostx (2026-10-31)
 ### What changed
 - Queue: ghost match X count. The ghost result card now shows "X count: you N, ghost M." (with "Level on points. " first on a draw) when the ghost has arrow values, is not a total-only ghost, and either of you shot an X.
@@ -14,7 +29,7 @@ insights.js, tools/ghostx_test.py (new), qa/run_regression.py, qa/regression.md,
 - Before (baseline): the pbplain after-run on identical app code apart from this change (8791f05): 64 passed / 6 failed, the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test (its port 8799 is held by an unrelated local server; 29/0 on a free port).
 - ghostx_test: 8 passed / 0 failed (old code: 6 passed / 2 failed).
 - After: full regression 65 passed / 6 failed (3082s). The 6 failures are the same known environmental ones as before: nav, real, field_faces and ghost (port 8765 held by another server), vegas 58/2, photos_test (port 8799 held). photos_test run on free port 8981 with ntfy stubbed: 29 passed / 0 failed. ghostx_test 8/0 in the regression.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2206-ghostx): ghostx_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2206-ghostx): ghostx_test 8 passed / 0 failed on the live URL at 23:00 AWST; noindex present.
 
 ## v2026-10-31-2113-pbplain (2026-10-31)
 ### What changed
