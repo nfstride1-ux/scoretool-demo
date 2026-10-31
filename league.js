@@ -62,10 +62,15 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
  /* a complete end is put in order (highest first, X before 10) with its plots, exactly as Just me does */
  if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((e.p&&e.p[ix])||[])],[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
- /* 27 Oct 2026 (Nathe): after the third arrow the card STAYS on this archer, showing the three arrows and a Next button; Next (lgNextArcher) moves on in the same order auto-advance used. Display only. */
- if(E.length==3){window._lgAct=id;window._lgHold={id,n:e.e.length}}
+ /* 31 Oct 2026 (queue): auto-advance is the default again. Only once the third arrow is saved (save() above) does the card move to the
+    next archer, in the same order as before, keeping the page where it is. The 27 Oct Next button stays as an option (S.lgNextBtn):
+    the card then stays on this archer showing the three arrows until Next is tapped. Display only. */
+ if(E.length==3){if(S.lgNextBtn){window._lgAct=id;window._lgHold={id,n:e.e.length};window._lgLast=null}else{window._lgLast={code,w,id,n:e.e.length,E:[...E]};lgNextArcher(code,w,id)}}
  lgAfter(lg);return true}
 /* the archer after `id` in this phone's group (same order the old auto-advance used), skipping finished archers; null when everyone is finished */
+/* the line that confirms the end just saved when the card has moved on by itself */
+function lgLastLine(lg,w,ids){const L=window._lgLast;if(S.lgNextBtn||!L||L.code!=lg.code||L.w!=w||!ids.includes(L.id)||ids.length<2)return'';return`<p class="small" id="lglast" style="margin:0 0 4px">Saved: ${esc(lgName(L.id))}, end ${L.n}: ${L.E.map(esc).join(' ')}.</p>`}
+const lgNextPref=(lg,ids)=>ids.length>1?`<label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0 0"><input type="checkbox" id="lgnextpref" ${S.lgNextBtn?'checked':''}> Stay on each archer after the 3rd arrow and tap Next to move on</label>`:'';
 function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
 function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
@@ -198,10 +203,11 @@ function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes
  window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
- ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>${lgLastLine(lg,w,ids)}
  ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:hold?`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot on">${esc(last[j]||'')}</span>`).join('')}</div>
  <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?'300 finished.':'End '+e.e.length+' of 10 is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>`}
+ ${AD?'':lgNextPref(lg,ids)}
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
 function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
@@ -258,7 +264,8 @@ else app.innerHTML=`<div id="lgview"><div class="card dark"><span class="kicker"
  app.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{window._lgAct=act;window._lgKeep=1;lgKey(code,w,act,b.dataset.lgk);window._lgKeep=null});
  if(window.csAdBind)csAdBind(()=>lgView(code));if(q('#csdelarrow'))q('#csdelarrow').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgFxDel(code,w,act);window._lgKeep=null};
  if(q('#lgnextarcher'))q('#lgnextarcher').onclick=()=>{window._lgKeep=1;lgNextArcher(code,w,act);lgView(code);window._lgKeep=null};
- if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;window._lgKeep=1;lgUndo(code,w,act);window._lgKeep=null};
+ if(q('#lgundo'))q('#lgundo').onclick=()=>{window._lgAct=act;window._lgLast=null;window._lgKeep=1;lgUndo(code,w,act);window._lgKeep=null};
+ if(q('#lgnextpref'))q('#lgnextpref').onchange=e=>{S.lgNextBtn=e.target.checked?1:0;if(!S.lgNextBtn&&window._lgHold){const h=window._lgHold;lgNextArcher(code,w,h.id)}window._lgLast=null;save();window._lgKeep=1;lgView(code);window._lgKeep=null};
  if(q('#lgtake'))q('#lgtake').onclick=()=>{window._lgAct=act;lgTake(code,w,act)};
  const setG=G2=>{const ok=lgSetGroups(code,w,G2);if(!ok){q('#lggmsg').textContent='Only the host can change how the week is scored.';return}lgView(code)};
  app.querySelectorAll('[data-lggb]').forEach(b=>b.onclick=()=>{const id=b.dataset.lggb,g=b.dataset.g,G2=[0,1,2,3].map(k=>(GA[k]||[]).filter(x=>x!=id));if(g!=='')G2[+g].push(id);setG(G2)});

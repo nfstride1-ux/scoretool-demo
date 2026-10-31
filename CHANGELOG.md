@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0418-lgauto (2026-11-01)
+### What changed
+- Item 4, League Next setting. Shared-phone league scoring now moves to the next archer by itself once the 3rd arrow of the end is saved (never before), with no jump to the top. A line shows "Saved: Name, end N: X 9 8." Undo clears it.
+- New setting on the shared-phone league screen: "Stay on each archer after the 3rd arrow and tap Next to move on" (saved as lgNextBtn); unticking it while held moves on.
+- Tests updated for the new default: lgpage_test sets the Next setting, league_test expects the auto-advance, lgscroll only taps Next when it is there.
+- No saved scores changed.
+### Files
+league.js, tools/lgauto_test.py (new), tools/lgpage_test.py, tools/league_test.py, tools/lgscroll_test.py, qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): full regression 73 passed, 0 failed (squadfix after-run, 7d171df)
+- First full run (bd972e0, not pushed): 73 passed, 1 failed; lgpage_test stopped after 4 s because this release's edit to it left the 2 second wait after the reload inside a comment, so under load the page was not ready. Fixed (the wait is back), then run again.
+- Single runs: lgauto_test 16 passed, 0 failed; lgpage_test 40/0; league_test 60/0 (61 before: the two Next-button checks are now one auto-advance check, approved with item 4); lgscroll_test 19/0; whatsnew_test 33/0; peel_data_test 2/0; guards_test 7/0; casual3d_test 26/0
+- After: full regression 74 passed, 0 failed, 3129 s (7d97baa)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0418-lgauto): lgauto_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0320-squadfix (2026-11-01)
 ### What changed
 - Extra release (Nathe, 31 Oct; shipped alone per Nathe's option C, 1 Nov): the live page error "Can't find variable: squad". Cause: app.js drew the first screen as soon as the results fetch finished, which on a slow connection could be before later scripts (squads.js and others) had loaded. The first draw now also waits for DOMContentLoaded (every script has run).
@@ -15,7 +30,7 @@ app.js, tools/slowload_test.py (new), qa/run_regression.py, qa/regression.md, wh
 - Before (baseline): full regression 72 passed, 0 failed (stubtests after-run, 0f41815)
 - Single runs: slowload_test 6 passed, 0 failed; clarity_test 16/0; whatsnew_test 33/0; guards_test 7/0; peel_data_test 2/0
 - After: full regression 73 passed, 0 failed, 3127 s (c2083a1)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0320-squadfix): slowload_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0320-squadfix): slowload_test (BASE=live) 6 passed, 0 failed (1 Nov 2026, 04:16 AWST); version.json, newest whatsnew v and noindex checked.
 
 ## v2026-11-01-0058-stubtests (2026-11-01)
 ### What changed

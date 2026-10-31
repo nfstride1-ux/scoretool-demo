@@ -17,7 +17,7 @@ try:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
   ctx=b.new_context(viewport={'width':390,'height':844},has_touch=True,is_mobile=True);ctx.route('https://ntfy.sh/**',relay)
   H=ctx.new_page();H.on('pageerror',lambda e:errs.append(str(e)));H.on('dialog',lambda d:d.accept())
-  H.goto(f'http://localhost:{PORT}/?tester=nathe');H.wait_for_timeout(1200);H.evaluate("()=>{S.unlocked=true;if(!S.profile)S.profile='Test';save()}");H.reload();H.wait_for_timeout(2000)
+  H.goto(f'http://localhost:{PORT}/?tester=nathe');H.wait_for_timeout(1200);H.evaluate("()=>{S.unlocked=true;if(!S.profile)S.profile='Test';S.lgNextBtn=1;save()}");H.reload();H.wait_for_timeout(2000)   # 31 Oct 2026: the Next button is now an option (lgauto_test covers the default)
   code=H.evaluate("(()=>{const lg=lgCreate('Page test',['logan','steven','joseph','michael','dana'],[]);return lg.code})()")
   chk('test league has its own test code (not a real league)',code!='ONIONSHD' and len(code)==8)
   H.evaluate(f"(()=>{{const lg=lgGet('{code}');lgSetGroups('{code}',1,[['nathe','logan','steven'],['joseph','michael']]);window._csMode='league';lgView('{code}')}})()");H.wait_for_timeout(500)

@@ -35,7 +35,7 @@ try:
        s=H.evaluate(ST);who=s['act']
        if j==0:order.append(who)
        H.evaluate(f"document.querySelector('#lgentry [data-lgk=\"{keys[(a+j)%9]}\"]').click()");H.wait_for_timeout(150);tot+=1
-       if j==2:H.evaluate("document.querySelector('#lgnextarcher').click()");H.wait_for_timeout(150)  # lgnext: the card stays on the archer until Next is tapped
+       if j==2 and H.locator('#lgnextarcher').count():H.evaluate("document.querySelector('#lgnextarcher').click()");H.wait_for_timeout(150)  # with the Next option on; auto-advance is the default (31 Oct 2026)
        t=H.evaluate(ST)
        if abs(t['y']-y0)>40 or not t['vis'] or not t['keys']:allok=False;badwhy.append((tag,a,j,t))
    chk(f'{tag} 21 arrows (7 archers x 3): page stayed where it was (at most a nudge of a line to keep the keys clear of the bottom bar) and the keys stayed fully on screen',allok,badwhy[:2])

@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-0418-lgauto',d:'2026-11-01',items:[
+   ['people',"League scoring moves on by itself","On a shared phone at league, once an archer's 3rd arrow is saved the next archer opens straight away, without jumping to the top of the page, and a line shows whose end was just saved. If you prefer, tick Stay on each archer after the 3rd arrow and tap Next to move on."]]},
   {v:'v2026-11-01-0320-squadfix',d:'2026-11-01',items:[
-   ['check',"Steadier start on a slow connection","On a slow connection the app could stop with an error while it was still loading. It now waits for all of itself to arrive before showing the first screen."]]},
+   ['check',"Steadier start on a slow connection","On a slow connection the app could stop with an error while it was still loading. It now waits for all of itself to arrive before showing the first screen.",'7d171df']]},
   {v:'v2026-11-01-0058-stubtests',d:'2026-11-01',items:[
    ['check',"Behind the scenes: safer checks","Behind the scenes only: every automatic check now uses a stand-in for the score relay and switches off offline caching, so a check can never send to the real relay or test an old copy of the app. Nothing in the app changed.",'0f41815']]},
   {v:'v2026-10-31-2302-testfix',d:'2026-10-31',items:[
