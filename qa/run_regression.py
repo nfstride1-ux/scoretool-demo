@@ -17,6 +17,7 @@ AREAS=[
  ('Full round (every round type: ends, totals, saved record)',['fullround_test.py']),
  ('Personal best note (same scores as your PB on the card)',['pbnote_test.py']),
  ("Personal bests (practice and official, every round type)",["pbbest_test.py"]),
+ ("Analytics bow filter (every bow type, no All bows)",["bowfilter_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),

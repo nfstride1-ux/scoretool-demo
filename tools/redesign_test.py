@@ -91,7 +91,7 @@ try:
   chk('B3 true PBs 823/865/672',ap=={'Holt':823,'WA 60/900 (Canberra)':865,'WA 50/720':672})
   E("window._af={range:'all',round:'Holt',bow:'all',kind:'all'}");E("nav('analytics')");pg.wait_for_timeout(700)
   chk('B2 Analytics PB progression has 823','823' in pg.inner_text('#app'))
-  chk('B6 Analytics bow filter has no Practice',pg.eval_on_selector_all('#fb option','o=>o.map(x=>x.value)')==['all','Compound'])
+  chk('B6 Analytics bow filter has no Practice',pg.eval_on_selector_all('#fb option','o=>o.map(x=>x.value)')==['Compound','Recurve','Barebow','Longbow'])
   E("window._af.kind='practice'");E("nav('analytics')");pg.wait_for_timeout(500)
   chk('B9 Analytics: the 782 paper sheet is not practice',E("_anShoots().filter(s=>s.kind=='practice').length")==0 and E("_anShoots().some(s=>s.score==782&&s.kind=='comp')"))
   # legend ranges

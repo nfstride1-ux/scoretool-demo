@@ -4,6 +4,20 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-1922-bowfilter (2026-10-31)
+### What changed
+- Queue B3: the Analysis bow filter only listed bows found in your results, plus All bows. It now always lists Compound, Recurve, Barebow and Longbow (Other only appears when a shoot has no bow type), with no All bows, and starts on the archer's own bow.
+- Bow names from results are matched without caring about capitals.
+- Display only; no saved data changed.
+- tools/redesign_test.py: its bow-filter check now expects the four bow types instead of the old list.
+### Files
+analytics.js, tools/bowfilter_test.py (new), tools/redesign_test.py (expected bow list), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): the pbbest after-run on identical app code apart from this change (e38c1b6): 63 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2).
+- bowfilter_test: 10 passed / 0 failed.
+- After: 64 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2), bowfilter_test 10/0 and redesign_test 142/0 in the run.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1922-bowfilter): bowfilter_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-1828-pbbest (2026-10-31)
 ### What changed
 - Queue B2: Personal bests listed official results only. They now also count this phone's finished practice shoots, every round type (outdoor, indoor, field, Vegas, practice and own rounds, and a new 3D group). A practice shoot joins the official round with the same name, or gets its own row.
@@ -15,7 +29,7 @@ best.js, tools/pbbest_test.py (new), qa/run_regression.py and qa/regression.md (
 - Before (baseline): the pbnote after-run on identical app code (caa964f): 62 passed / 5 failed, only the known five (nav, real, field_faces, ghost on port 8765; vegas 58/2).
 - pbbest_test: 17 passed / 0 failed.
 - After: 63 passed / 5 failed, only the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2), pbbest_test 17/0 in the run.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1828-pbbest): pbbest_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-1828-pbbest): pbbest_test 17 passed / 0 failed (31 Oct 19:21 AWST); version.json, the top whatsnew note and noindex checked.
 
 ## v2026-10-31-1646-pbnote (2026-10-31)
 ### What changed

@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-10-31-1922-bowfilter',d:'2026-10-31',items:[
+   ['bars',"Analysis bow filter shows every bow","The bow filter in My archery > Analysis now always lists Compound, Recurve, Barebow and Longbow, and starts on your own bow. All bows is gone, so scores from different bows are never mixed in one chart."]]},
   {v:'v2026-10-31-1828-pbbest',d:'2026-10-31',items:[
-   ['trophy',"Personal bests include your practice","My archery > Personal bests now counts the shoots you finish on this phone as well as your official results, for every round type: outdoor, indoor, field, Vegas, practice, your own rounds and 3D. Each score is labelled practice or official, so you can see where your best came from."]]},
+   ['trophy',"Personal bests include your practice","My archery > Personal bests now counts the shoots you finish on this phone as well as your official results, for every round type: outdoor, indoor, field, Vegas, practice, your own rounds and 3D. Each score is labelled practice or official, so you can see where your best came from.",'e38c1b6']]},
   {v:'v2026-10-31-1646-pbnote',d:'2026-10-31',items:[
    ['trophy',"Personal best note matches your PB","At the end of a shoot, the Personal best line now counts the same scores as your PB in This shoot vs your usual: your practice and your official results for that round, full rounds only. Before, it only counted practice, so it could say New PB while the card showed a higher official score. A short line under it says what it counts.",'caa964f']]},
   {v:'v2026-10-31-1642-fullround',d:'2026-10-31',items:[
