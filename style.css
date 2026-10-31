@@ -247,3 +247,14 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .shdone-act{display:grid;gap:8px;margin-top:12px}
 /* Peel group card: the live sheet keeps its half and round totals, a little tighter so the score buttons, the grid and Next fit one phone screen */
 #pglive .aba-tots .list-item{padding:3px 8px;margin:2px 0;min-height:0;font-size:14px}#pglive .aba-tots .list-item[style]{font-size:15px}
+/* End by end viewer (finished shoots only) */
+.evcard .ev-bar{display:flex;align-items:center;gap:8px;margin:6px 0 4px}
+.evcard .ev-go{min-width:48px;min-height:48px;padding:0 10px;font-size:26px;line-height:1;flex:0 0 auto}
+.evcard .ev-go:disabled{opacity:.35}
+.evcard .ev-t{flex:1;text-align:center;display:flex;flex-direction:column;gap:2px}
+.evcard .ev-n{font-size:18px}
+.evcard .ev-face{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.evcard .evwrap{margin-top:4px}
+.evcard .ev-list{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;padding:0;margin:6px 0 4px}
+.evcard .ev-b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0b1f4d;color:#fff;border:2px solid #ffc629;font-size:12px;font-weight:700}
+.evcard .ev-nw{white-space:nowrap}

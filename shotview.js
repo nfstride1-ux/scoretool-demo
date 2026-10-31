@@ -23,7 +23,7 @@ function shotPts(s){const R0=s&&ROUNDS[s.round];const out={target:[],field:[]};i
   else if(isFld(F)){const e=(s.ff||[])[i];mm=e&&e.f?e.f*5:null;k='field'}/* 20cm column: stored per spot already */
   else{if(use3(s,R0,F)){const L=s.face3=='vegas'?TRIC:BUGC,q=to1spot(p,L);x=q.x;y=q.y;k='spot';r=0.035;lay=s.face3=='vegas'?'vegas':'vert';sp=L.reduce((b,c,n)=>Math.hypot(p.x-c[0],p.y-c[1])<Math.hypot(p.x-L[b][0],p.y-L[b][1])?n:b,0);rx=p.x;ry=p.y}else k=isSix(F)?'six':isSpot(F)?'spot':'full';
    const cm=+(((F.face||'').match(/^(\d+)cm/)||[])[1]||0);mm=cm?cm*5:null}
-  let t=0;if(mm&&AD>0&&k!='bugs'){r=AD/2/mm;t=1}out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,r,t,sp,lay,rx,ry,e:i,j,a:(s.ends[i]||[])[j]})}));
+  let t=0;if(mm&&AD>0&&k!='bugs'){r=AD/2/mm;t=1}out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,r,t,sp,lay,rx,ry,e:i,j,sn:p.sn,a:(s.ends[i]||[])[j]})}));
  return out}
 let uid=0;
 function faceSvg(fam,P,zR){const ks=new Set(P.map(p=>p.k));let g='',hw;
@@ -138,6 +138,57 @@ function shotPlotCard(sess,prev){const q=shotPts(sess),fams=['target','field'].f
   ${window.arrowSizeLab&&P.some(p=>p.k!='bugs')?`<div class="shsz">${sess.lcT?`<span class="small arrowsz">Arrow size ${arrowSizeLab(sess)}</span><span class="small muted">Arrows are drawn and scored at this size.</span>`:`<span class="small muted">Scored before arrow sizes were used, so arrows are drawn at the line-cutter size that scored them.</span>`}</div>`:''}
   ${f=='target'?spotsSvg(P):''}${guide(G,f)}${UG&&G&&G.n>=3?`<div class="shg-tab" style="margin-top:8px"><div class="shg-row"><span>Your usual group</span><b>${offTxt(UG,f)}</b></div><div class="shg-row"><span>Usual spread</span><b>${rs(UG.sp,UG.ring,f=='field'?'zones':'rings')}</b></div></div><p class="small muted" style="margin:4px 0 0">Usual = ${plN(UG.n,'plotted arrow','plotted arrows')} from ${plN(nU,'earlier shoot','earlier shoots')} of this round.</p>`:''}</div>`}).join('')+`</div>`}
 window.shotPlotCard=shotPlotCard;
+
+/* End by end (31 Oct 2026, Nathe via Archery Coach): a finished shoot's ends one at a time, each end's face with its arrows numbered in shot order,
+   at the same radius shotPts gives them (true shaft size on lcT shoots, the old line-cutter size on older ones). 3-spot shoots show the three spots.
+   Swipe left / right on the face, or the arrow buttons / keyboard arrows. Shown only on a finished shoot's sheet (end-of-shoot summary and
+   Past sessions > Open), never on the live scoring screen. Read only: nothing is written. */
+const EVS={};
+function evNum(x,y,r,n,s,o){/* number badge just above and right of the arrow, kept inside the view box */
+ const b=0.03*s,a=Math.PI/4,d=r+b*0.9;let bx=x+d*Math.cos(a),by=y-d*Math.sin(a);if(o){bx=Math.min(o[2]-b,Math.max(o[0]+b,bx));by=Math.min(o[3]-b,Math.max(o[1]+b,by))}
+ return`<circle cx="${bx.toFixed(4)}" cy="${by.toFixed(4)}" r="${b.toFixed(4)}" fill="${NAVY}" stroke="${GOLD}" stroke-width="${(b*0.16).toFixed(4)}"/><text x="${bx.toFixed(4)}" y="${(by+b*0.42).toFixed(4)}" text-anchor="middle" font-size="${(b*1.2).toFixed(4)}" font-weight="700" fill="#fff">${n}</text>`}
+function evArrow(x,y,p,r,w,d,K){return`<circle cx="${x.toFixed(4)}" cy="${y.toFixed(4)}" r="${(p.t?r-w/2:r).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${K}" stroke-opacity=".6" stroke-width="${w.toFixed(4)}"/><circle cx="${x.toFixed(4)}" cy="${y.toFixed(4)}" r="${d.toFixed(4)}" fill="#fff" stroke="${K}" stroke-width="${(p.t?d*0.6:0.0075).toFixed(4)}"/>`}
+function evSpots(P,lay,lab){const C=SPW[lay],orig=lay=='vegas'?TRIC:BUGC,V=lay=='vegas'?[-0.66,-0.64,0.66,0.74]:[-0.99,-0.41,0.99,0.34];/* a little taller than the shot plot, so the spot labels are not cut off */
+ const Cc=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k];let g='',n='';
+ C.forEach((c,k)=>{for(let i=5;i<10;i++)g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${((1-i*0.1)*0.6).toFixed(3)}" fill="${Cc[i]}" stroke="${L[i]}" stroke-width="0.004"/>`;
+  g+=`<text x="${c[0]}" y="${(c[1]-0.315).toFixed(3)}" text-anchor="middle" font-size="0.07" font-weight="700" fill="#cfe0ff">Spot ${k+1}</text>`});
+ P.forEach(p=>{const c=C[p.sp],o=orig[p.sp],x=c[0]+p.rx-o[0],y=c[1]+p.ry-o[1],r=p.r*0.6,w=p.t?Math.min(0.003,r*0.3):0.003,d=p.t?Math.min(0.0075,r*0.35):0.0075;
+  g+=evArrow(x,y,p,r,w,d,NAVY);n+=evNum(x,y,r,p.n,1.1,V)});
+ return`<svg class="shspotsvg evsvg" data-ev-lay="${lay}" viewBox="${V[0]} ${V[1]} ${V[2]-V[0]} ${V[3]-V[1]}" role="img" aria-label="${H(lab)}">${g}${n}</svg>`}
+function evFace(fam,P,All,lab){let zR=null;/* zoom from the whole shoot, so the face keeps one size from end to end */
+ if(fam=='target'){let ext=0;All.forEach(p=>{ext=Math.max(ext,Math.hypot(p.x,p.y)+(p.r||0.028))});zR={ext,R:Math.min(1,Math.ceil((ext+0.004)*10-1e-9)/10)}}
+ const F=faceSvg(fam,All,zR),hw=F.hw,s=F.s,K=NAVY,V=[-hw,-hw,hw,hw];let g='',n='';
+ P.forEach(p=>{const r=p.r||0.028,w=p.t?Math.min(0.005*s,r*0.3):0.005*s,d=p.t?Math.min(0.0125*s,r*0.35):0.0125*s;g+=evArrow(p.x,p.y,p,r,w,d,K);n+=evNum(p.x,p.y,r,p.n,s,V)});
+ return`<svg class="shplot shclean evsvg" viewBox="${-hw} ${-hw} ${2*hw} ${2*hw}" role="img" aria-label="${H(lab)}">${F.g}${g}${n}</svg>`}
+function evEnds(s){return(s.ends||[]).map((e,i)=>e&&e.length?i:null).filter(i=>i!=null)}
+function evBody(s,k){const E=evEnds(s),i=E[k],q=shotPts(s),A=s.ends[i]||[];let run=0;for(let m=0;m<=k;m++)run+=endSum(s.ends[E[m]]);
+ const lab=`End ${k+1} of ${E.length}`,pl=[];let face='';
+ /* shot order: new shoots keep a shot number (sn) on each plotted arrow; ends saved without it (older shoots, keypad arrows) use the saved order */
+ const Pp=(s.pos||[])[i]||[],known=A.every((_,j)=>Pp[j]&&Pp[j].sn>0)&&new Set(A.map((_,j)=>Pp[j].sn)).size==A.length,num=j=>known?Pp[j].sn:j+1;
+ const ord=A.map((_,j)=>j).sort((a,b)=>num(a)-num(b));
+ ['target','field'].forEach(f=>{const All=q[f];if(!All.length)return;const P=All.filter(p=>p.e==i).map(p=>Object.assign({},p,{n:num(p.j)})).sort((a,b)=>a.n-b.n);pl.push(...P);
+  const al=`${lab}: ${plN(P.length,'plotted arrow','plotted arrows')} on the ${famName[f]}`;
+  const lay=All[0].lay;if(f=='target'&&lay&&All.every(p=>p.lay==lay&&p.sp!=null))face+=`<div class="shwrap shspots evwrap">${evSpots(P,lay,al)}</div>`;
+  else face+=`<div class="shwrap evwrap">${evFace(f,P,All,al)}</div>`});
+ const on=new Set(pl.map(p=>p.j));
+ return`<div class="ev-bar"><button type="button" class="btn ghost ev-go" data-ev-go="-1" aria-label="Previous end"${k<=0?' disabled':''}>‹</button>
+ <div class="ev-t" aria-live="polite" aria-atomic="true"><b class="ev-n">${lab}</b><span class="ev-sum"><span class="ev-nw">End total <b>${endSum(A)}</b></span> · <span class="ev-nw">running total ${run}</span></span></div>
+ <button type="button" class="btn ghost ev-go" data-ev-go="1" aria-label="Next end"${k>=E.length-1?' disabled':''}>›</button></div>
+ <div class="ev-face" data-ev-swipe="1">${face}</div>
+ <ol class="ev-list small" data-ev-order="${known?'shot':'saved'}" aria-label="${known?'Arrows in shot order':'Arrows in saved order'}">${ord.map(j=>`<li><span class="ev-b">${num(j)}</span> <b>${H(A[j])}</b>${on.has(j)?'':' <span class="muted">(not plotted)</span>'}</li>`).join('')}</ol>
+ ${pl.length?(known?'<p class="small muted ev-ord">Numbers are the order the arrows were shot.</p>':'<p class="small muted ev-ord">The shot order was not saved for this end (older shoots were saved highest score first), so the numbers follow the saved order.</p>'):'<p class="small muted ev-none">No arrows were plotted in this end (scored on the keypad).</p>'}`}
+function endViewHTML(s){try{if(!s||!s.ends)return'';const q=shotPts(s);if(!q.target.length&&!q.field.length)return'';const E=evEnds(s);if(!E.length)return'';
+ const sid=String(s.id||'cur');EVS[sid]=s;
+ return`<div class="card evcard" data-ev="${H(sid)}" data-ev-k="0" tabindex="0" role="group" aria-roledescription="end viewer" aria-label="End by end plot. Swipe or use the arrow buttons to move between ends."><span class="kicker">End by end</span><h3>Each end as you shot it</h3>
+ <div class="ev-in">${evBody(s,0)}</div><p class="small muted shkey">Swipe left or right on the face, or use the arrow buttons, to move between ends.</p></div>`}catch(e){console.warn('endView',e);return''}}
+function endViewBind(root){(root||document).querySelectorAll('[data-ev]').forEach(c=>{const s=EVS[c.dataset.ev];if(!s||c._ev)return;c._ev=1;const n=evEnds(s).length;
+ const go=d=>{const k=Math.max(0,Math.min(n-1,(+c.dataset.evK||0)+d));if(k==+c.dataset.evK)return;c.dataset.evK=k;const IN=c.querySelector('.ev-in');IN.innerHTML=evBody(s,k)};
+ c.addEventListener('click',ev=>{const b=ev.target.closest('[data-ev-go]');if(!b||b.disabled)return;go(+b.dataset.evGo);const f=c.querySelector(`[data-ev-go="${b.dataset.evGo}"]`);if(f&&!f.disabled)f.focus();else{const o=c.querySelector(`[data-ev-go="${-b.dataset.evGo}"]`);if(o)o.focus()}});
+ c.addEventListener('keydown',ev=>{if(ev.key=='ArrowLeft'){ev.preventDefault();go(-1)}else if(ev.key=='ArrowRight'){ev.preventDefault();go(1)}});
+ let x0=null,y0=0;c.addEventListener('touchstart',ev=>{const t=ev.changedTouches[0];x0=ev.target.closest('[data-ev-swipe]')&&t?t.clientX:null;y0=t?t.clientY:0},{passive:true});
+ c.addEventListener('touchend',ev=>{const t=ev.changedTouches[0];if(x0==null||!t)return;const dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>40&&Math.abs(dx)>1.5*Math.abs(dy))go(dx<0?1:-1)},{passive:true});
+ c.addEventListener('touchcancel',()=>{x0=null},{passive:true})})}
+window.endViewHTML=endViewHTML;window.endViewBind=endViewBind;
 
 /* done state after Finish session: the round is already saved; this screen only says so and offers next steps */
 const KEY='scoretool.doneId';
