@@ -4,6 +4,7 @@
 # registers on https or 127.0.0.1, so the other suites are unaffected). Port 8794.
 import subprocess,sys,time,os,json,shutil,tempfile
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nav_compat  # old-tab navigation (tests only)
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)

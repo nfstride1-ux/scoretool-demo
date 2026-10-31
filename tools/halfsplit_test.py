@@ -1,6 +1,7 @@
 # Half split + Averages follow the Personal bests pick (Coach recheck). nathe, steven, joseph at 390px; no console errors.
 import subprocess,sys,time,os,re
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-fix1022')
 ok=[];bad=[]

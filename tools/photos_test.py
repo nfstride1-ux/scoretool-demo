@@ -3,6 +3,7 @@
 # token-checked RPC, queued offline; missing RPC (SQL not run) = quietly nothing. Tester 'steven', 390px, TEST data only, network mocked.
 import subprocess,sys,time,os,json,re,base64,io,random
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 from PIL import Image
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-photos');os.makedirs(SH,exist_ok=True)

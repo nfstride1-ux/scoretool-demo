@@ -2,6 +2,7 @@
 # dialog with back button, PDF 2 pages A4, cards 85.6 x 54 mm, mirrored positions, 5-60 m = 56 rows, marks exact, data unchanged.
 import subprocess,sys,time,os,json,base64
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));OUT=sys.argv[1] if len(sys.argv)>1 else '/tmp/sightcard'
 os.makedirs(OUT,exist_ok=True);EXP=json.load(open(os.path.join(ROOT,'tools','nathe_ace_sightmarks.json')))

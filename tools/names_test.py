@@ -6,6 +6,7 @@
 import subprocess,sys,time,os,json,re,base64
 from urllib.parse import urlparse,parse_qs,unquote
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nav_compat  # old-tab navigation (tests only)
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)

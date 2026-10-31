@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-0058-stubtests',d:'2026-11-01',items:[
+   ['check',"Behind the scenes: safer checks","Behind the scenes only: every automatic check now uses a stand-in for the score relay and switches off offline caching, so a check can never send to the real relay or test an old copy of the app. Nothing in the app changed."]]},
   {v:'v2026-10-31-2302-testfix',d:'2026-10-31',items:[
-   ['check',"Behind the scenes: checks fixed","Behind the scenes only: six automatic checks that failed for test reasons, not app faults, now run cleanly. Each check now starts its own local server on a free port, so another program on the test computer can no longer break them. Nothing in the app changed."]]},
+   ['check',"Behind the scenes: checks fixed","Behind the scenes only: six automatic checks that failed for test reasons, not app faults, now run cleanly. Each check now starts its own local server on a free port, so another program on the test computer can no longer break them. Nothing in the app changed.",'ae27e5e']]},
   {v:'v2026-10-31-2206-ghostx',d:'2026-10-31',items:[
    ['ghost',"Ghost match shows the X count","When you shoot against a ghost, the result card now shows the X count for you and the ghost, so a draw on points shows who had more Xs.",'df2537f']]},
   {v:'v2026-10-31-2113-pbplain',d:'2026-10-31',items:[

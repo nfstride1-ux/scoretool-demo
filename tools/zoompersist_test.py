@@ -5,6 +5,7 @@
 # Phone-sized browser, tester profile "nate" only (throwaway test profile). Relay mocked in memory. Saved data is never rewritten.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 from indoor_common import click_face
 ok=[];bad=[]

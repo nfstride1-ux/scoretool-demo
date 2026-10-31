@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0058-stubtests (2026-11-01)
+### What changed
+- Test-only release (Nathe, 1 Nov): every test that loads the app must stub ntfy and block the service worker, including nav_test and ghost_pick_test, and field_faces must exit non-zero on failure.
+- New tools/guard.py, imported by every tool that loads the app (74 files, including nav_test, ghost_pick_test and build_help_shots). It gives every browser context and page an ntfy.sh stub and service_workers='block'. A test's own ntfy.sh route still takes priority (h2h, league, casual and others use their own relay mock), and a test that sets service_workers itself keeps it (offline_test needs 'allow').
+- field_faces_test now exits non-zero when a check fails (before, it printed the failures but still exited 0).
+- New tools/guards_test.py checks all of this.
+- App code unchanged.
+### Files
+tools/guard.py (new), tools/guards_test.py (new), 74 tools/*.py files (one import line each), tools/field_faces_test.py, qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): ae27e5e testfix after-run 71 passed / 0 failed.
+- guards_test: 7 passed / 0 failed (it loads the app on 127.0.0.1, the only local address where the app registers its service worker, so the blocking check is real). Single runs: nav 99/0, ghost_pick 22/0, field_faces 54/0, offline 12/0 (service worker still allowed), league 61/0, casual3d 26/0, clarity 16/0, whatsnew 33/0.
+- After: full regression 72 passed, 0 failed (3084 s, guards_test included), commit 332d105 tree.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0058-stubtests): ghost_pick_test (BASE=live, now guarded) is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-2302-testfix (2026-10-31)
 ### What changed
 - Queue: check the failing tests. The six long-standing failures were test problems, not app faults:
@@ -17,7 +32,7 @@ tools/freeport.py (new), tools/nav_test.py, tools/real_test.py, tools/ghost_test
 - Before (baseline): df2537f ghostx after-run 65 passed / 6 failed (nav, real, field_faces, ghost on port 8765; vegas 58/2; photos_test on port 8799).
 - Single runs: with ports 8765 and 8799 still held by other local servers: nav 99/0, real 250/0, ghost 92/0, field_faces 54/0, photos 29/0, vegas 60/0.
 - After: full regression 71 passed / 0 failed (3090s), with ports 8765 and 8799 still held by the other local servers. photos_test now passes inside the regression, so no separate free-port run is needed.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2302-testfix): nav_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2302-testfix): on a fetched copy of the live site at 23:59 AWST, photos_test 29 passed / 0 failed and field_faces 54 passed / 0 failed; noindex present. (nav_test cannot point at a live URL, so these two were run instead.)
 
 ## v2026-10-31-2206-ghostx (2026-10-31)
 ### What changed

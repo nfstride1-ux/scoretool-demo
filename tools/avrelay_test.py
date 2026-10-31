@@ -4,6 +4,7 @@
 # Fresh test browser, relay mocked (nothing leaves the machine). WebKit 390 x 844, touch, home-screen mode.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.environ.get('ROOT') or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ok=[];bad=[]
 def chk(n,c,i=''):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n+('' if c else '  '+str(i)[:300]),flush=True)

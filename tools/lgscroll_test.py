@@ -4,6 +4,7 @@
 # (the "next archer" choice) still opens at the top as before. TEST data only. Port 8898.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ok=[];bad=[]
 def chk(n,c,info=''):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n+((' '+str(info)) if (info and not c) else ''),flush=True)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));PORT=8898

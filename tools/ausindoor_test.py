@@ -3,6 +3,7 @@
 # == scored value on every face. Throwaway local test profile only, no network; existing sessions untouched.
 import subprocess,sys,time,os,json,re
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.path.abspath(sys.argv[1]) if len(sys.argv)>1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'shots-ausindoor');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]

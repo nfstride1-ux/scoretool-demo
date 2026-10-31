@@ -1,6 +1,7 @@
 import subprocess,sys,time,random,json
 import os;HERE=os.path.dirname(os.path.abspath(__file__));sys.path.insert(0,HERE)
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed,nav_compat
 srv=subprocess.Popen([sys.executable,'-m','http.server','8831'],cwd=os.path.dirname(HERE),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 random.seed(11);bad=[]

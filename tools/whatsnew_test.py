@@ -3,6 +3,7 @@
 # scoring), help guides that swap light/dark pictures by theme and print on white. Tester 'steven', 390px, TEST data only, network mocked.
 import subprocess,sys,time,os,json,re
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-whatsnew');os.makedirs(SH,exist_ok=True)
 PORT='8805';ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n,flush=True)

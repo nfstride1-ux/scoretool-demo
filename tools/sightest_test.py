@@ -4,6 +4,7 @@
 # below the shortest; fewer than 3 marks = no estimates; offline; light/dark; the other tester untouched.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-sightest');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]

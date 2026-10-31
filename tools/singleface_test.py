@@ -3,6 +3,7 @@
 # Remembered in S.face1. Vegas 300, match nights, Casual and leagues are unchanged; saved sessions untouched. Throwaway local profile, no network.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.path.abspath(sys.argv[1]) if len(sys.argv)>1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'shots-singleface');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]

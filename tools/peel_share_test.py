@@ -3,6 +3,7 @@
 import subprocess,sys,time,os,json
 HERE=os.path.dirname(os.path.abspath(__file__));sys.path.insert(0,HERE)
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nav_compat
 ROOT=os.environ.get('ROOT') or os.path.dirname(HERE)
 srv=subprocess.Popen([sys.executable,'/tmp/stwork/srv.py','8848',ROOT],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)

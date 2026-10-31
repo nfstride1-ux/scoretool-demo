@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 import json,os,sys,subprocess,time,freeport
 # Uses the server on ST_PORT if run_regression started one; otherwise starts its own on a free port.
@@ -87,3 +88,4 @@ with sync_playwright() as p:
     b.close()
 print('PASS',len(ok),'FAIL',len(bad),bad)
 if srv:srv.terminate()
+sys.exit(1 if bad else 0)   # a failed check now fails the run (1 Nov 2026)

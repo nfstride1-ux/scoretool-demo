@@ -5,6 +5,7 @@
 # Run:  python3 tools/build_help_shots.py   (then rebuild sw.js so the new files are precached)
 import subprocess,sys,time,os,io
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 from PIL import Image
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));OUT=os.path.join(ROOT,'help','g');os.makedirs(OUT,exist_ok=True)
 PORT=os.environ.get('HELP_PORT','8803')

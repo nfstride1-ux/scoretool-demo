@@ -1,6 +1,7 @@
 # Score start screen: 'Tip: side hill shots' card shows on field and 3D (ABA) rounds only, closed by default, expands, stays out of the scorer. 390x844.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)

@@ -12,6 +12,7 @@
 #  - an unfinished shoot reopened from Past sessions has no viewer.
 import subprocess,sys,time,os,json,re,hashlib,math
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.environ.get('ROOT') or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.environ.get('SHOTS','/tmp/shots-endview');os.makedirs(SH,exist_ok=True)
 CAP=os.environ.get('CAPTURE')

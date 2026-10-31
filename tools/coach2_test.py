@@ -2,6 +2,7 @@
 # early/late text from its numbers, per-value tables add up, plain words, end labels on every end chart. Chrome 390x844.
 import subprocess,sys,time,os,re
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n)

@@ -5,6 +5,7 @@
 # The same 30 arrow taps in Just me give the same scores, order and positions. League scores kept in the old format (e) plus plots (p).
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 from indoor_common import GEN,click_face,snap
 ok=[];bad=[]

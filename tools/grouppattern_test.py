@@ -4,6 +4,7 @@
 import subprocess,sys,time,os,json,re
 os.environ['ST_NO_COMPAT']='1'
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.path.abspath(sys.argv[1]) if len(sys.argv)>1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'shots-grouppattern');os.makedirs(SH,exist_ok=True)
 WHO=sys.argv[2] if len(sys.argv)>2 else 'after'

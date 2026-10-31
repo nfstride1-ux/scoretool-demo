@@ -4,6 +4,7 @@
 # Just me chips (.adb) are checked too. Phone viewport, tester "nate", relay answered locally.
 import subprocess,sys,time,os
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 import nm_seed
 ok=[];bad=[]
 def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)

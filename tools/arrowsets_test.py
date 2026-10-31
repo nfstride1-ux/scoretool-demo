@@ -2,6 +2,7 @@
 # they are "Arrows 1". New sets keep marks in b.setMarks. 390px light/dark screenshots; no emoji; back button.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-arrowsets');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]

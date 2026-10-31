@@ -8,6 +8,7 @@
 #  - the sight move has a direction and the amount on the target, towards the group; the strip and plotted dots are unchanged; nothing is saved.
 import subprocess,sys,time,os,json,re,math
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SH=os.environ.get('SHOTS','/tmp/shots-spotgroups');os.makedirs(SH,exist_ok=True)
 ok=[];bad=[]

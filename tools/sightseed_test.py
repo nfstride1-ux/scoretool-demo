@@ -6,6 +6,7 @@
 # success, idempotent, an existing ACE set is never overwritten, other testers never seeded; long list scrolls.
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-sightseed');os.makedirs(SH,exist_ok=True)
 EXP=json.load(open(os.path.join(ROOT,'tools','nathe_ace_sightmarks.json')))

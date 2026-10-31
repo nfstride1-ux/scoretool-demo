@@ -3,6 +3,7 @@
 # Fixture: tools/fixtures/ace-sightmarks-sheet.pdf (Nathe's sheet, same values as tools/nathe_ace_sightmarks.json).
 import subprocess,sys,time,os,json
 from playwright.sync_api import sync_playwright
+import guard   # stubs the ntfy.sh relay and blocks the service worker in every browser context (1 Nov 2026)
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)));import nm_seed
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));SH=os.path.join(ROOT,'shots-sightimport');os.makedirs(SH,exist_ok=True)
 EXP=json.load(open(os.path.join(ROOT,'tools','nathe_ace_sightmarks.json')));PDF=os.path.join(ROOT,'tools','fixtures','ace-sightmarks-sheet.pdf')

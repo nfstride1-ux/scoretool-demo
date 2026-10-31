@@ -20,6 +20,7 @@ AREAS=[
  ("Analytics bow filter (every bow type, no All bows)",["bowfilter_test.py"]),
  ("Viewing as another tester (no background sync)",["avrelay_test.py"]),
  ("Ghost match X count",["ghostx_test.py"]),
+ ("Test guards (relay stubbed, service worker blocked in every test)",["guards_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),
