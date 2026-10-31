@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-1446-relayhold',d:'2026-11-01',items:[
+   ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back."]]},
   {v:'v2026-11-01-1349-ac6',d:'2026-11-01',items:[
-   ['arrow',"Build an arrow: a new Help guide","Help has a new guide, Build an arrow: eight steps from your bow details and the spine chart to cutting, gluing and a bare-shaft or paper tune. Each step shows where it comes from (Easton's guides and Bow International) and has a link that opens the right box in the Arrow chooser."]]},
+   ['arrow',"Build an arrow: a new Help guide","Help has a new guide, Build an arrow: eight steps from your bow details and the spine chart to cutting, gluing and a bare-shaft or paper tune. Each step shows where it comes from (Easton's guides and Bow International) and has a link that opens the right box in the Arrow chooser.",'b58d178']]},
   {v:'v2026-11-01-1343-ac5',d:'2026-11-01',items:[
    ['arrow',"Fletching suggestion in the Arrow chooser","Under the Arrow chooser result there is now a fletching suggestion for what the arrow is for: bigger, longer vanes indoors, short low-profile vanes outdoors, and how to keep vanes clear of a launcher rest on a compound. Each line shows where it comes from: Easton's Tuning Guide or Bow International's vane guides. These suggestions are not from Dr Park.",'96361f8']]},
   {v:'v2026-11-01-1342-ac4',d:'2026-11-01',items:[

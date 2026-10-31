@@ -115,12 +115,19 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=LG_W))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
  return ch}
-let lgBusy=false;const lgOpened={};
+let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
+/* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
+const LG_RSOK=k=>'scoretool.opost.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'nathe')+'.'+k;function lgOpGet(k){try{return +localStorage.getItem(LG_RSOK(k))||0}catch(e){return 0}}function lgOpSet(k){try{localStorage.setItem(LG_RSOK(k),String(Date.now()))}catch(e){}}
+
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
   const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true}save()}
   if(lgFinal(lg))ch=ch||false;
-  if(lg.dirty||!lgOpened[lg.code]||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}
-   if(ok){lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}
+  /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
+     but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */
+  const dty=lg.dirty,reo=!dty&&!lgOpened[lg.code]&&Date.now()-lgOpGet(lg.code)>=LG_REOPEN;if(!lgOpened[lg.code]&&!reo&&!dty)lgOpened[lg.code]=1;
+  if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}
+   /* a re-send on open only stamps its own key and leaves the saved record untouched */
+   if(ok&&reo&&!dty&&!lg.qfail){lgOpSet(lg.code);lgOpened[lg.code]=1}else{if(ok){if(reo&&!dty)lgOpSet(lg.code);lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}}
  finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
 setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true),2500);addEventListener('online',()=>lgTick(true));
 /* invites + join */

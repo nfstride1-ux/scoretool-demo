@@ -187,13 +187,19 @@ function csMerge(cs,d){if(!d||d.code!=cs.code||(d.t||0)<H2H_RESET)return false;c
   const by=typeof v.by=='string'?v.by:'',ok=(by==cs.host&&(id==cs.host||!p.tid))||(p.tid&&id==by);if(!ok)continue;const mine=csEnt(cs,id);if(mine&&(mine.u||0)>=(+v.u||0))continue;
   if(id==me&&by!=me)continue;cs.sc[id]={e:csDec(v.e,R),u:+v.u||0,by,...(v.f=='single'||v.f=='three'?{f:v.f}:{})};ch=true}
  if(ch){csOwnSession(cs);csMatchSync(cs)}return ch}
-let csBusy=false;const csOpened={};
+let csBusy=false;const csOpened={},CS_REOPEN=30*6e4;
+/* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
+const CS_RSOK=k=>'scoretool.opost.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'nathe')+'.'+k;function csOpGet(k){try{return +localStorage.getItem(CS_RSOK(k))||0}catch(e){return 0}}function csOpSet(k){try{localStorage.setItem(CS_RSOK(k),String(Date.now()))}catch(e){}}
+
 async function csTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('casual');return}if(csBusy||!TESTER)return;csBusy=true;let ch=false;const me=csMe();try{for(const cs of csAll()){if(cs.status=='invite')continue;
   if(csHost(cs)&&cs.invq&&cs.invq.length){const left=[];for(const to of cs.invq){if(!csP(cs,to))continue;if(!await h2hPost(h2hInbox(to),{k:'csinv',code:cs.code,name:cs.name,round:cs.round,from:me,to,...h2hNm(),t:Date.now()}))left.push(to)}cs.invq=left;save()}
   if(cs.nosend){if(await h2hPost(csTopic(cs.code),{k:'csno',code:cs.code,by:me,t:Date.now()}))cs.nosend=0;save();continue}
   const L=await h2hPoll(csTopic(cs.code),cs.since);if(L&&L.length){for(const d of L){cs.since=d._id;if(csMerge(cs,d))ch=true}save()}
-  if(cs.dirty||!csOpened[cs.code]||Date.now()-(cs.posted||0)>CS_SNAP){let ok=true;for(const o of csSnapParts(cs))if(!await h2hPost(csTopic(cs.code),o)){ok=false;break}
-   if(ok){cs.posted=Date.now();cs.dirty=0;cs.qfail=0;csOpened[cs.code]=1}else cs.qfail=1;save()}}}
+  /* 1 Nov 2026 (queue): same as leagues, the snapshot is re-sent on open at most once every 30 minutes per group */
+  const dty=cs.dirty,reo=!dty&&!csOpened[cs.code]&&Date.now()-csOpGet(cs.code)>=CS_REOPEN;if(!csOpened[cs.code]&&!reo&&!dty)csOpened[cs.code]=1;
+  if(cs.dirty||reo||Date.now()-(cs.posted||0)>CS_SNAP){let ok=true;for(const o of csSnapParts(cs))if(!await h2hPost(csTopic(cs.code),o)){ok=false;break}
+   /* a re-send on open only stamps its own key and leaves the saved record untouched */
+   if(ok&&reo&&!dty&&!cs.qfail){csOpSet(cs.code);csOpened[cs.code]=1}else{if(ok){if(reo&&!dty)csOpSet(cs.code);cs.posted=Date.now();cs.dirty=0;cs.qfail=0;csOpened[cs.code]=1}else cs.qfail=1;save()}}}}
  finally{csBusy=false}
  if($('#csview')&&window._csv){const q=$('#csq');if(ch)csView(window._csv);else if(q){const cs=csGet(window._csv);if(cs)q.textContent=csQTxt(cs)}}else if(ch&&$('#cscard')&&!cur&&view=='score'&&!window._csMode)score()}
 setInterval(()=>{if(!document.hidden)csTick()},20000);setTimeout(()=>csTick(true),3000);addEventListener('online',()=>csTick(true));

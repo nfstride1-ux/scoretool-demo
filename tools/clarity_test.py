@@ -24,13 +24,14 @@ errs=[];hits=[]
 def local(r):
     u=r.request.url
     if 'clarity.ms' in u:hits.append(u);return r.fulfill(status=200,body=STUB,headers={'content-type':'application/javascript'})
+    if 'ntfy.sh' in u:return r.fulfill(status=200,body='',headers={'access-control-allow-origin':'*'})   # the relay is stubbed in live runs too (31 Oct 2026)
     if os.environ.get('BASE') or u.startswith(f'http://localhost:{PORT}'):return r.continue_()
     return r.abort()
 def page(b,real=True,block=False):
     ctx=b.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,device_scale_factor=3,user_agent=UA)
     ctx.add_init_script(STANDALONE)
     if real:ctx.add_init_script(REAL)
-    if block:ctx.route('**/*',lambda r:r.abort() if 'clarity.ms' in r.request.url else (r.continue_() if os.environ.get('BASE') or r.request.url.startswith(f'http://localhost:{PORT}') else r.abort()))
+    if block:ctx.route('**/*',lambda r:r.abort() if 'clarity.ms' in r.request.url else r.fulfill(status=200,body='',headers={'access-control-allow-origin':'*'}) if 'ntfy.sh' in r.request.url else (r.continue_() if os.environ.get('BASE') or r.request.url.startswith(f'http://localhost:{PORT}') else r.abort()))
     else:ctx.route('**/*',local)
     pg=ctx.new_page();pg.on('pageerror',lambda e:errs.append(str(e)));return ctx,pg
 try:

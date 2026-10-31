@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-1446-relayhold (2026-11-01)
+### What changed
+- Relay fix for ntfy.sh 429 throttling (Level 1 report item N1: about one relay message per league arrow; parked since 1 Nov 03:20 as 329c66e + 76604ee, never pushed). The slow-start half of that work already shipped alone as squadfix (7d171df), so it is not repeated here.
+- h2h.js: after a failed send (network error, 429 or 5xx) that topic waits 15 seconds before the next try. Any send or poll that gets through clears every hold, and so does the online event. Scores stay marked to send.
+- league.js and casual.js: the full snapshot is still re-sent when the app opens, so an away phone can catch up if the relay lost it, but at most once every 30 minutes per league or group (a send of new scores does not count towards the 30 minutes).
+- The time of the last re-send on open is kept in its own storage key, scoretool.opost.<archer>.<league or group code>, and a re-send on open writes nothing to the saved record. No saved data changed.
+- Test change (Nathe's choice from the Command Centre, 1 Nov 2026 2:43pm: "Exclude from the test"): whatsnew_test's "testers' data unchanged" check leaves out only keys matching scoretool.opost.<archer>.<CODE>; every other new key still fails it. peel_data_test needed no change (it compares the saved record only, which this release no longer touches). tools/clarity_test.py stubs ntfy.sh.
+- Not verified: how long ntfy.sh actually keeps messages. The 30 minute re-send on open does not depend on it.
+### Files
+h2h.js, league.js, casual.js, tools/relayhold_test.py (new), tools/whatsnew_test.py, tools/clarity_test.py, qa/run_regression.py, qa/regression.md, whatsnew.js (also AC6 commit hash), CHANGELOG.md (also AC6 live line), version.json, sw.js, index.html.
+### Tests
+- Before (baseline): full regression 81 passed, 0 failed (AC6 after-run, b58d178)
+- Single runs: relayhold_test 10 passed, 0 failed; peel_data_test 2/0 (unchanged); whatsnew_test 33 passed, 0 failed (with the unchanged test it fails only "testers' data unchanged", 32/1, which is the new key).
+- After: RESULT_AFTER
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1446-relayhold): relayhold_test and whatsnew_test are run on the live URL after the deploy; the result is added to this entry by the next release.
 ## v2026-11-01-1349-ac6 (2026-11-01)
 ### What changed
 - AC6, new Help guide "Build an arrow" (after Tools), eight steps in order: bow details; spine from the chart; shortest safe cut; point weight and FOC (Easton 7-16% range, indoor target 7-15%, outdoor target 10-15%); bushings and nocks; fletching (sourced, not from Dr Park); cutting, gluing and squaring; bare-shaft or paper tune.
@@ -13,10 +28,10 @@ Process (agreed 26 Oct 2026): do not change anything that already works while fi
 ### Files
 help.js (new guide), arrowchooser.js (acGo: open the chooser at a field), index.html (?v= bump), tools/ac6_test.py (new), tools/whatsnew_test.py (Help now has 11 guides), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac5 live line), version.json, sw.js.
 ### Tests
-- Before (baseline): RESULT_BEFORE
-- Single runs: TESTS_SINGLE
-- After: RESULT_AFTER
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1349-ac6): ac6_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Before (baseline): full regression 80 passed, 0 failed (AC5 after-run, 96361f8)
+- Single runs: ac6_test 24 passed, 0 failed
+- After: full regression 81 passed, 0 failed, 3228s (python3 qa/run_regression.py, 1 Nov 2026 AWST)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1349-ac6, commit b58d178, pushed 1 Nov 2026 18:30 AWST): ac6_test 24 passed, 0 failed on the live URL; sw.js version matches; noindex present; What's new shows this entry on top.
 
 ## v2026-11-01-1343-ac5 (2026-11-01)
 ### What changed
@@ -78,6 +93,7 @@ arrowchooser.js, help.js (Tools: Easton parts step), index.html (?v= bump), tool
 - Before (baseline): full regression 76 passed, 0 failed (AC1 after-run, 2eb62ef)
 - Single runs: ac2_test 45 passed, 0 failed; ac1_test 23/0; whatsnew_test 33/0; arrowchooser, arrowcheck, arrowuse and mybows tests pass. ac1_test and ac2_test now exit with an error when a check fails (before, the runner could only see failures in their output); both re-run after that change: 23/0 and 45/0
 - After: full regression 77 passed, 0 failed, 3531 s (includes ac2_test 45/0)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0941-ac2): ac2_test (BASE=live) 45 passed, 0 failed (1 Nov 2026, about 14:38 AWST); version.json, newest What's new v, sw.js version and noindex checked.
 - Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0941-ac2): ac2_test (BASE=live) 45 passed, 0 failed (1 Nov 2026, about 14:38 AWST); version.json, newest What's new, sw.js version and noindex checked.
 
 ## v2026-11-01-0810-ac1 (2026-11-01)

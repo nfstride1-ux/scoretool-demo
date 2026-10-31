@@ -30,6 +30,7 @@ AREAS=[
     ("Arrow chooser heavy point and FOC",["ac4_test.py"]),
     ("Arrow chooser fletching suggestion",["ac5_test.py"]),
     ("Help: Build an arrow guide",["ac6_test.py"]),
+ ("Relay hold (no resend storm on the relay)",["relayhold_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),

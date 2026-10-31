@@ -25,7 +25,9 @@ with sync_playwright() as p:
   E("()=>{S.unlocked=true;if(!S.profile)S.profile='Steven Test';save();localStorage.setItem('scoretool.cal.steven.prompted','1');localStorage.setItem('scoretool.whatsnew.seen','v2026-10-01-0000-old')}")
   pg.reload();pg.wait_for_timeout(2500)
   if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(400)
-  DATA="JSON.stringify([S.sessions,Object.keys(localStorage).filter(k=>!/whatsnew|theme|^scoretool\\.(v|dname)|lastTab|\\.state$/.test(k)).sort()])"
+  # relayhold (Nathe, 1 Nov 2026: "Exclude from the test"): the one relay-hold key, scoretool.opost.<archer>.<league or group code>
+  # (time of the last re-send on open), is left out of this check. Every other new key still fails it.
+  DATA="JSON.stringify([S.sessions,Object.keys(localStorage).filter(k=>!/whatsnew|theme|^scoretool\\.(v|dname)|lastTab|\\.state$/.test(k)&&!/^scoretool\\.opost\\.[a-z0-9_-]+\\.[A-Z0-9]+$/.test(k)).sort()])"
   d0=E(DATA)
   W=E("WHATSNEW")
   chk('WHATSNEW[0].v equals version.json',W[0]['v']==VER)

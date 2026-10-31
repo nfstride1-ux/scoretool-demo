@@ -22,8 +22,12 @@ function h2hCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=new Uint32Array(
    calendar and photo sync) does not run at all, so nothing is sent for that tester and the 'this would change ...'s data' notice only
    shows for things Nathe actually taps. Logged in window.__avBlocked as relay-skip. */
 function avSkip(k){const L=window.__avBlocked;if(L&&!L.includes('relay-skip:'+k))L.push('relay-skip:'+k)}
-async function h2hPost(topic,o){try{const r=await fetch(H2H_BASE+'/'+topic,{method:'POST',body:JSON.stringify(o)});return r.ok}catch(e){return false}}
-async function h2hPoll(topic,since){try{const r=await fetch(H2H_BASE+'/'+topic+'/json?poll=1&since='+(since||'all'),{cache:'no-store'});if(!r.ok)return null;
+/* 1 Nov 2026 (queue): when the relay turns a send away (too many requests, server error, or no network), that topic waits 15 seconds
+   before the phone tries it again, instead of retrying on every tick. Any send or poll that gets through clears every hold (1 Nov:
+   Nathe, a poll that gets through means the relay accepts again), and so does the phone coming back online. Nothing queued is lost: the callers already retry on a later tick. */
+const h2hHold={};addEventListener('online',()=>{for(const k in h2hHold)delete h2hHold[k]});
+async function h2hPost(topic,o){if(Date.now()<(h2hHold[topic]||0))return false;try{const r=await fetch(H2H_BASE+'/'+topic,{method:'POST',body:JSON.stringify(o)});if(r.ok){for(const k in h2hHold)delete h2hHold[k]}else if(r.status==429||r.status>=500)h2hHold[topic]=Date.now()+15000;return r.ok}catch(e){h2hHold[topic]=Date.now()+15000;return false}}
+async function h2hPoll(topic,since){try{const r=await fetch(H2H_BASE+'/'+topic+'/json?poll=1&since='+(since||'all'),{cache:'no-store'});if(!r.ok)return null;for(const k in h2hHold)delete h2hHold[k];
  return(await r.text()).split('\n').filter(Boolean).map(l=>{try{const j=JSON.parse(l);if(j.event!='message')return null;const d=JSON.parse(j.message);d._id=j.id;return d}catch(e){return null}}).filter(Boolean)}catch(e){return null}}
 const h2hNm=()=>{const o=TESTER&&nmOwn(TESTER.id);return o?{nm:o.n,nt:o.nt}:{}};
 const h2hMyDone=m=>{const s=h2hSess(m);return!!(s&&(isDone(s)||(s.finished&&arrowsIn(s)>0)))};
