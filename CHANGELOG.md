@@ -4,6 +4,18 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-10-31-2206-ghostx (2026-10-31)
+### What changed
+- Queue: ghost match X count. The ghost result card now shows "X count: you N, ghost M." (with "Level on points. " first on a draw) when the ghost has arrow values, is not a total-only ghost, and either of you shot an X.
+- Display only; who wins is unchanged and no saved data changed.
+### Files
+insights.js, tools/ghostx_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): the pbplain after-run on identical app code apart from this change (8791f05): 64 passed / 6 failed, the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test (its port 8799 is held by an unrelated local server; 29/0 on a free port).
+- ghostx_test: 8 passed / 0 failed (old code: 6 passed / 2 failed).
+- After: full regression 65 passed / 6 failed (3082s). The 6 failures are the same known environmental ones as before: nav, real, field_faces and ghost (port 8765 held by another server), vegas 58/2, photos_test (port 8799 held). photos_test run on free port 8981 with ntfy stubbed: 29 passed / 0 failed. ghostx_test 8/0 in the regression.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2206-ghostx): ghostx_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-10-31-2113-pbplain (2026-10-31)
 ### What changed
 - Queue C2: removed the party emoji from the New PB message at the end of a shoot (app.js). The wording is unchanged.
@@ -15,7 +27,7 @@ app.js, tools/pbnote_test.py (new check), whatsnew.js, CHANGELOG.md, version.jso
 - Before (baseline): the avrelay after-run on identical app code apart from this change (e67fa0e): 64 passed / 6 failed, the known five (nav, real, field_faces, ghost need port 8765, held by another local server; vegas 58/2) plus photos_test (its port 8799 is held by an unrelated local server; 29/0 on a free port).
 - pbnote_test: 14 passed / 0 failed (the new check fails on the old code).
 - After: 64 passed / 6 failed, the same six as before (known five plus photos_test on its held port 8799); photos_test on a free port with the relay stubbed: 29 passed / 0 failed. pbnote_test 14/0 in the run.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2113-pbplain): pbnote_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-10-31-2113-pbplain): pbnote_test 14 passed / 0 failed (31 Oct 22:06 AWST, relay stubbed); version.json, the top whatsnew note and noindex checked.
 
 ## v2026-10-31-2016-avrelay (2026-10-31)
 ### What changed
