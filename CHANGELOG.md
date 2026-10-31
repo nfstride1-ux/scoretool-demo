@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0320-squadfix (2026-11-01)
+### What changed
+- Extra release (Nathe, 31 Oct; shipped alone per Nathe's option C, 1 Nov): the live page error "Can't find variable: squad". Cause: app.js drew the first screen as soon as the results fetch finished, which on a slow connection could be before later scripts (squads.js and others) had loaded. The first draw now also waits for DOMContentLoaded (every script has run).
+- The relay hold change planned with it (relayhold, option A) is parked and not in this release: with the re-send time kept in its own storage key, whatsnew_test's check that testers' data is unchanged fails on the new key, and keeping it in the saved record fails peel_data_test.
+- No saved data changed.
+### Files
+app.js, tools/slowload_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): full regression 72 passed, 0 failed (stubtests after-run, 0f41815)
+- Single runs: slowload_test 6 passed, 0 failed; clarity_test 16/0; whatsnew_test 33/0; guards_test 7/0; peel_data_test 2/0
+- After: full regression 73 passed, 0 failed, 3127 s (c2083a1)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0320-squadfix): slowload_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0058-stubtests (2026-11-01)
 ### What changed
 - Test-only release (Nathe, 1 Nov): every test that loads the app must stub ntfy and block the service worker, including nav_test and ghost_pick_test, and field_faces must exit non-zero on failure.
@@ -17,7 +30,7 @@ tools/guard.py (new), tools/guards_test.py (new), 74 tools/*.py files (one impor
 - Before (baseline): ae27e5e testfix after-run 71 passed / 0 failed.
 - guards_test: 7 passed / 0 failed (it loads the app on 127.0.0.1, the only local address where the app registers its service worker, so the blocking check is real). Single runs: nav 99/0, ghost_pick 22/0, field_faces 54/0, offline 12/0 (service worker still allowed), league 61/0, casual3d 26/0, clarity 16/0, whatsnew 33/0.
 - After: full regression 72 passed, 0 failed (3084 s, guards_test included), commit 332d105 tree.
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0058-stubtests): ghost_pick_test (BASE=live, now guarded) is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0058-stubtests): ghost_pick_test (BASE=live, guarded) 22 passed, 0 failed; guards_test on a fetched live copy 7 passed, 0 failed (1 Nov 2026, 01:58 AWST); version.json, newest whatsnew v and noindex checked.
 
 ## v2026-10-31-2302-testfix (2026-10-31)
 ### What changed

@@ -20,6 +20,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | Admin view relay | avrelay | Viewing another tester's app (read only): league, casual, match, name, calendar and photo background sync do not run, nothing is sent, no 'this would change' notice without a tap; normal use still syncs; no page errors. |
 | Ghost X count | ghostx | Ghost match result card shows 'X count: you N, ghost M.' when either shot an X, 'Level on points.' first on a draw, nothing on total-only ghosts; no page errors. |
 | Test guards | guards | Every test that loads the app imports tools/guard.py: each browser context and page has the ntfy.sh relay stubbed and the service worker blocked (a test that sets service_workers itself, such as offline_test, keeps its choice). field_faces_test exits non-zero on a failed check. |
+| Slow start | slowload | squads.js, lab.js or update.js held back 2.5 s: the app still opens Home with no page errors (the first draw waits for every script). |
 | Casual shoot | casual, mixedface, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
 | League | league | Onion Shed 6 x Vegas 300, cumulative ranking, X ties, missing weeks |
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |

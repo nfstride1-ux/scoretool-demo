@@ -751,7 +751,9 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  const bk=$('#shpvback');if(bk)bk.onclick=()=>{try{sessionStorage.removeItem('scoretool.shprev')}catch(e){}history.replaceState(null,'',location.href.split('#')[0]);$('#tabs').hidden=false;nav(pv)}}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href*="#share="]');if(a&&typeof view!='undefined'&&!location.hash.startsWith('#share=')){try{sessionStorage.setItem('scoretool.shprev',view)}catch(e){}}},true);
 
-loadReal().then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
+/* 31 Oct 2026: wait until every script on the page has run before the first draw. On a slow connection the results fetch could
+   finish while later scripts (squads.js, lab.js...) were still loading, and the draw then failed with "Can't find variable: squad". */
+Promise.all([loadReal(),document.readyState=='loading'?new Promise(r=>addEventListener('DOMContentLoaded',r,{once:true})):null]).then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
 addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach='))render();else nav(location.hash=='#plot'?'score':'home')});
 
 /* ---------- scoring screen scroll bar (custom, so it shows on iOS too) ----------
