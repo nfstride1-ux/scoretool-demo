@@ -21,6 +21,9 @@ const SRC={
  easton:['Easton 2026 catalogue, Target Arrow Size Selection chart (pp. 56-57) and shaft specification tables (pp. 2-7)','https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf'],
  eastonTM:['Easton Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test p. 5; Adjustments Within the Bow and Arrow System p. 10; F.O.C. p. 32)','https://eastonarchery.com/wp-content/uploads/2019/08/TuningGuideEaston.pdf'],
  eastonCut:['Easton Arrow Tuning and Maintenance Guide, Measuring Correct Arrow Length and Determining Shaft Cut Length (pp. 15-17, Fig. 21)','https://eastonarchery.com/wp-content/uploads/2019/08/TuningGuideEaston.pdf'],
+ eastonClr:['Easton Arrow Tuning and Maintenance Guide (launcher rests p. 3; Clearance p. 5; Correcting Clearance Problems and shoot-through / shoot-around rests p. 6; Excessive Drag p. 9)','https://eastonarchery.com/wp-content/uploads/2019/08/TuningGuideEaston.pdf'],
+ biVanes:['Tippins A., "The essential guide to vanes", Bow International, 22 Jul 2020','https://www.bow-international.com/reviews/equipment/the-essential-guide-to-vanes/'],
+ biVaneQA:['Tippins A., "Q&A: Picking your vanes", Bow International, 3 Mar 2018','https://www.bow-international.com/faqs/qa-picking-your-vanes/'],
  eastonFOC:['Easton: The Simple Guidelines to Correct Arrow Balance (FOC), George Tekmitchov, June 2022','https://eastonarchery.com/2022/06/the-simple-guidelines-to-correct-arrow-balance-foc/'],
  gt:['Gold Tip Arrow Spine Selector charts (Recurve Bow; Compound Bow IBO 315- and 315+)','https://goldtip.com/pages/spine-selector'],
  victory:['Victory Archery Arrow Guide, compound chart "VF/RIP XV/RVL Spine Chart" (bow rating 300-340 fps)','https://victoryarchery.com/arrow-guide/'],
@@ -357,6 +360,18 @@ function cutHTML(st){const c=st.contact,cut=cutOf(st),fing=st.bow!='compound';le
   <p class="small muted" style="margin:8px 0 0">Easton's 1" is for target, field and 3D arrows from any bow, and hunting arrows from bows with a cutout sight window. Broadheads on bows without a cutout, and overdraws, need other clearances (Easton Figs. 22-26), not covered here.${fing?' Easton: beginners with recurve bows may want to add an extra 1/2"-1" so the arrow is not too short as they get stronger.':''} Correct Arrow Length includes the bit of nock below the groove, so the bare shaft is cut slightly shorter than it.</p>
   <p class="labsrc">${cite('eastonCut')}</p></div></details>`}
 let R0=()=>({});
+/* AC5: fletching suggestion by use, every line from Easton's Tuning Guide or Bow International's vane guides (Adrian Tippins).
+   Not from Dr Park. Reads only. */
+function fletchHTML(st){const cmp=st.bow=='compound',u=st.use,out=u=='target'||u=='field',ind=u=='indoor';
+ const indoor=`<li id="acfl_in"><b>Indoor:</b> the largest and longest vane you can shoot cleanly, for quick stability at short range. Bow International: "not uncommon" to see 3.00" vanes on recurve arrows and 4.00" on compound arrows; indoor vanes are often 3-4" long with a high profile. Fletching helical or with an offset adds stability (more drag and spin). <span class="labsrc">${cite('biVanes')} · ${cite('biVaneQA')}</span></li>`;
+ const outdoor=`<li id="acfl_out"><b>Outdoor:</b> short, low-profile vanes for less drag and wind drift. Compound: typically 1.87"-2.00" long and just over 1/4" high. Recurve plastic vanes: about 1.75", a little taller. Outdoor vanes are usually 1.75"-2.25" (spin vanes too). A longer arrow may need a longer vane: a 1.75" vane that suits a 28" arrow may not steady a 31" one. Easton: on light arrows, keep drag down with a smaller or less angled fletching. <span class="labsrc">${cite('biVanes')} · ${cite('biVaneQA')} · ${cite('eastonClr')}</span></li>`;
+ const launcher=cmp?`<li id="acfl_launch"><b>Launcher rest (compound, release):</b> the support arm must be narrow enough for the two lower vanes to pass over it without touching; small-diameter shafts, with less room between vanes, may need a much narrower launcher blade. Shoot-through rest: adjust the arm width so the fletching passes cleanly. Shoot-around rest: turn the nock to index the vanes for the most clearance. <span class="labsrc">${cite('eastonClr')}</span></li>`:'';
+ const which=ind?indoor:out?outdoor:u=='3d'?`<li id="acfl_3d"><b>3D:</b> these sources give no 3D-only fletching. For reference:</li>${indoor}${outdoor}`:`<li id="acfl_hunt"><b>Hunting:</b> these sources do not cover hunting fletching or broadheads.</li>`;
+ return`<details class="acmore" id="acfletch"${OPEN=='fletch'?' open':''}><summary>Fletching suggestion</summary><div>
+  <p class="small" style="margin:0 0 6px"><b>Not from Dr Park.</b> These suggestions come from Easton's Tuning Guide and Bow International's vane guides (Adrian Tippins), as shown on each line.</p>
+  <ul style="padding-left:18px;margin:0" class="small">${which}${launcher}
+  <li id="acfl_clr"><b>Check clearance</b> with dry powder spray on the last quarter of the shaft, the fletching and the rest${cmp?'':' (Bow International: clearance is especially a problem for recurve)'}. If the fletching touches: turn the nock 1/32 of a turn at a time, then try a lower-profile fletching. <span class="labsrc">${cite('eastonClr')}${cmp?'':' · '+cite('biVanes')}</span></li></ul>
+  <p class="small muted" style="margin:6px 0 0">A starting point only: what suits one archer's arrow may not suit another's.</p></div></details>`}
 /* AC4: FOC over Easton's limits: indoor 7-15% (Easton 2022), point-weight tuning 7-16% (Tuning Guide p. 10). Rounded the way it is shown. */
 function focWarn(st,B){if(!isFinite(B.foc))return'';const F=Math.round(B.foc*10)/10,w=[];
  if(F>16)w.push(`above the 16% top of Easton's 7-16% range for changing point weight while tuning (Tuning Guide p. 10)`);
@@ -469,6 +484,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   ${ptLines?`<ul style="padding-left:18px;margin:0">${ptLines}</ul>`:'<p class="small muted">Enter your bow above first.</p>'}
   <p class="small" style="margin:8px 0 0">Change point weight within Easton's 7-16% FOC range while tuning, and confirm with a bare-shaft tune.</p>
   <p class="labsrc">${cite('eastonTM')} · ${cite('eastonFOC')} · ${cite('easton')} · ${cite('gt')} · ${cite('skylonB')}</p></div></details>
+  ${fletchHTML(st)}
   <details class="acmore" id="acpark"${OPEN=='park'?' open':''}><summary>Dr James Park: what his research says</summary><div>
   <p class="small" style="margin:0 0 6px">Dr Park (Monash University) publishes measurements and models, not a spine chart or formula. So the spine numbers above come from the makers' charts, and nothing here is a formula of our own. Where his work is clear, the page follows it:</p>
   <ul style="padding-left:18px;margin:0" class="small">
@@ -491,7 +507,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
  app.querySelectorAll('[data-mod]').forEach(i=>i.onchange=()=>{const X=partsRaw(),m=+i.dataset.mod;X.parts.mods=(X.parts.mods||[]).filter(x=>x!=m).concat(i.checked?[m]:[]).sort((a,b)=>a-b);store(X);render()});
  app.querySelectorAll('[data-pick]').forEach(i=>i.onchange=()=>{const X=raw();X.pick=JSON.parse(i.dataset.pick);delete X.gpiU;store(X);render()});
  const cu=$('#accutuse');if(cu)cu.onclick=()=>{const c=cutOf(parsed().st);if(isFinite(c)){put('len',String(c));render()}};
- ['acfoc','acpt','acpark','accut'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
+ ['acfoc','acpt','acpark','accut','acfletch'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
  const u=$('#acuse');if(u)u.onclick=()=>{const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};const sent=[],left=[];
   if(isFinite(st.len)){C.len=String(st.len);sent.push('arrow length')}
   const b=build(st);

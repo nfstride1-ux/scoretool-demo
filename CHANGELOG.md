@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-1343-ac5 (2026-11-01)
+### What changed
+- AC5, sourced fletching suggestion in the Arrow chooser ("Fletching suggestion", under the result). Marked "Not from Dr Park"; every line names its source.
+- Indoor: largest and longest vane that clears; Bow International: 3.00" recurve and 4.00" compound vanes are "not uncommon", indoor vanes often 3-4" with a high profile; helical or offset adds stability (drag and rotation). Outdoor (Target, Field): compound typically 1.87"-2.00" and just over 1/4" high, recurve plastic about 1.75" and taller, outdoor vanes usually 1.75"-2.25"; longer arrows may need longer vanes (1.75" on 28" vs 31"); Easton p. 9: reduce fletching size or angle to cut drag on light arrows. 3D: no 3D-only figure in these sources, both lists shown for reference. Hunting: not covered by these sources.
+- Launcher rest (compound): Easton p. 3: support arm narrow enough for the two lower vanes to pass without contact, narrower blade for small-diameter shafts; p. 6: shoot-through arm width, shoot-around nock indexing. Clearance check for every bow: Easton p. 5 dry powder spray; p. 6 turn the nock 1/32 turn, then a lower-profile fletching; recurve adds Bow International's note that clearance is especially a problem for recurve.
+- Sources: Easton Arrow Tuning and Maintenance Guide (pp. 3, 5, 6, 9); A. Tippins, "The essential guide to vanes", Bow International, 22 Jul 2020; A. Tippins, "Q&A: Picking your vanes", Bow International, 3 Mar 2018 (research copies in /workspace/research).
+- Reads only; nothing saved and no saved data changed.
+### Files
+arrowchooser.js, help.js (Tools: Fletching suggestion step), index.html (?v= bump), tools/ac5_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac4 live line), version.json, sw.js.
+### Tests
+- Before (baseline): full regression 79 passed, 0 failed (AC4 after-run, 6bd55e3)
+- Single runs: ac5_test 22 passed, 0 failed; ac4_test 22/0; whatsnew_test 33/0
+- After: full regression 80 passed, 0 failed, 3318s (python3 qa/run_regression.py, 1 Nov 2026 16:39-17:34 AWST)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1343-ac5): ac5_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-1342-ac4 (2026-11-01)
 ### What changed
 - AC4, heavy point and FOC warnings in the Arrow chooser.
@@ -17,7 +32,7 @@ arrowchooser.js, help.js (Tools: Heavy point and FOC warnings step), index.html 
 - Before (baseline): full regression 78 passed, 0 failed (AC3 after-run, dd19439)
 - Single runs: ac4_test 22 passed, 0 failed; ac3_test 29/0; ac2_test 45/0; whatsnew_test 33/0
 - After: full regression 79 passed, 0 failed, 3530s (python3 qa/run_regression.py, 1 Nov 2026 15:37-16:36 AWST)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1342-ac4): ac4_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1342-ac4, commit 6bd55e3, pushed 1 Nov 2026 16:37 AWST): ac4_test 22 passed, 0 failed on the live URL (16:38 AWST); sw.js version matches; noindex present; What's new shows this entry on top.
 
 ## v2026-11-01-1334-ac3 (2026-11-01)
 ### What changed

@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-1343-ac5',d:'2026-11-01',items:[
+   ['arrow',"Fletching suggestion in the Arrow chooser","Under the Arrow chooser result there is now a fletching suggestion for what the arrow is for: bigger, longer vanes indoors, short low-profile vanes outdoors, and how to keep vanes clear of a launcher rest on a compound. Each line shows where it comes from: Easton's Tuning Guide or Bow International's vane guides. These suggestions are not from Dr Park."]]},
   {v:'v2026-11-01-1342-ac4',d:'2026-11-01',items:[
-   ['arrow',"Heavy point and FOC warnings","The Arrow chooser now warns when a heavy point takes Easton's chart past its top row, and tells you the heaviest point that still reads on it. Gold Tip says when your front weight is over its 150 gr column. Under FOC, a note shows when FOC is over Easton's 16% tuning limit, or over 15% for indoor."]]},
+   ['arrow',"Heavy point and FOC warnings","The Arrow chooser now warns when a heavy point takes Easton's chart past its top row, and tells you the heaviest point that still reads on it. Gold Tip says when your front weight is over its 150 gr column. Under FOC, a note shows when FOC is over Easton's 16% tuning limit, or over 15% for indoor.",'6bd55e3']]},
   {v:'v2026-11-01-1334-ac3',d:'2026-11-01',items:[
    ['arrow',"Shortest safe cut in the Arrow chooser","Under Arrow length there is a new helper for the shortest safe length. At full draw, have someone mark an extra-long arrow where it touches the front of your rest, measure from the bottom of the nock groove to the mark, and type it in. The chooser adds Easton's 1 inch for safety and shows the chart spine and FOC at that length. Tap Use to make it your arrow length. If your arrow is shorter than that, it says so.",'dd19439']]},
   {v:'v2026-11-01-0941-ac2',d:'2026-11-01',items:[
