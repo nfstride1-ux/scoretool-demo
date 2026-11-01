@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-1334-ac3 (2026-11-01)
+### What changed
+- AC3, shortest safe cut helper in the Arrow chooser (under Arrow length, "Shortest safe cut (helper)"). Source: Easton Arrow Tuning and Maintenance Guide, Measuring Correct Arrow Length (pp. 15-16, Fig. 21) and Determining Shaft Cut Length (p. 17), research copy /workspace/research/TuningGuideEaston.pdf.
+- Plain steps: draw an extra-long arrow, have someone mark it where it touches the most forward point of the launcher or rest, measure from the bottom of the nock groove to the mark, type it in. The chooser adds Easton's "about 1 inch" and shows that as the shortest safe Correct Arrow Length (point not included).
+- At that length it shows the spine from each chart (same chart reading as the Result card) and the FOC and total weight (component estimate, or a measured balance point moved by the length change, the same way as the point-weight lines). "Use ... as my arrow length" writes it to Arrow length. A warning shows when the arrow length typed is shorter than the shortest safe cut.
+- Notes from the same pages: the 1 inch is for target, field and 3D arrows from any bow and hunting arrows from bows with a cutout sight window; broadheads without a cutout and overdraws use other clearances (Figs. 22-26), not covered; recurve beginners may add 1/2-1 inch (shown for recurve and barebow); the bare shaft is cut slightly shorter than Correct Arrow Length (nock base).
+- The measurement is saved in the chooser record only when typed. Nothing is written when the page opens. No saved data changed.
+### Files
+arrowchooser.js, help.js (Tools: Shortest safe cut step), index.html (?v= bump), tools/ac3_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac2 live line), version.json, sw.js.
+### Tests
+- Before (baseline): full regression 77 passed, 0 failed (AC2 after-run, 8496ebc)
+- Single runs: ac3_test 29 passed, 0 failed (exits with an error on a failed check); ac2_test 45/0; whatsnew_test 33/0
+- After: full regression 78 passed, 0 failed, 3185 s (includes ac3_test)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1334-ac3): ac3_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0941-ac2 (2026-11-01)
 ### What changed
 - AC2, Easton parts in the Arrow chooser. Component weights copied from the parts list printed with each shaft in the Easton 2026 catalogue (research copy /workspace/research/easton2026.txt). Only printed figures are used; nothing estimated.
@@ -19,7 +34,7 @@ arrowchooser.js, help.js (Tools: Easton parts step), index.html (?v= bump), tool
 - Before (baseline): full regression 76 passed, 0 failed (AC1 after-run, 2eb62ef)
 - Single runs: ac2_test 45 passed, 0 failed; ac1_test 23/0; whatsnew_test 33/0; arrowchooser, arrowcheck, arrowuse and mybows tests pass. ac1_test and ac2_test now exit with an error when a check fails (before, the runner could only see failures in their output); both re-run after that change: 23/0 and 45/0
 - After: full regression 77 passed, 0 failed, 3531 s (includes ac2_test 45/0)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0941-ac2): ac2_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0941-ac2): ac2_test (BASE=live) 45 passed, 0 failed (1 Nov 2026, about 14:38 AWST); version.json, newest What's new, sw.js version and noindex checked.
 
 ## v2026-11-01-0810-ac1 (2026-11-01)
 ### What changed

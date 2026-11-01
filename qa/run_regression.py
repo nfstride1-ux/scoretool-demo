@@ -26,6 +26,7 @@ AREAS=[
  ("Your data (backup, restore, offline, privacy)",["backup_test.py"]),
  ("Arrow chooser uses your bow",["ac1_test.py"]),
  ("Arrow chooser Easton parts",["ac2_test.py"]),
+    ("Arrow chooser shortest cut",["ac3_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),

@@ -20,6 +20,7 @@ const f1=(x,d=1)=>isFinite(x)?(+x).toFixed(d):'-';
 const SRC={
  easton:['Easton 2026 catalogue, Target Arrow Size Selection chart (pp. 56-57) and shaft specification tables (pp. 2-7)','https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf'],
  eastonTM:['Easton Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test p. 5; Adjustments Within the Bow and Arrow System p. 10; F.O.C. p. 32)','https://eastonarchery.com/wp-content/uploads/2019/08/TuningGuideEaston.pdf'],
+ eastonCut:['Easton Arrow Tuning and Maintenance Guide, Measuring Correct Arrow Length and Determining Shaft Cut Length (pp. 15-17, Fig. 21)','https://eastonarchery.com/wp-content/uploads/2019/08/TuningGuideEaston.pdf'],
  eastonFOC:['Easton: The Simple Guidelines to Correct Arrow Balance (FOC), George Tekmitchov, June 2022','https://eastonarchery.com/2022/06/the-simple-guidelines-to-correct-arrow-balance-foc/'],
  gt:['Gold Tip Arrow Spine Selector charts (Recurve Bow; Compound Bow IBO 315- and 315+)','https://goldtip.com/pages/spine-selector'],
  victory:['Victory Archery Arrow Guide, compound chart "VF/RIP XV/RVL Spine Chart" (bow rating 300-340 fps)','https://victoryarchery.com/arrow-guide/'],
@@ -287,7 +288,7 @@ const speedEst=(st,tw)=>{/* the Calculators' own rule of thumb (IBO rating, comp
 
 /* state, with numbers parsed */
 function parsed(){const R=load();const st={bow:R.bow||'recurve',use:USES.some(u=>u[0]==R.use)?R.use:'target',limb:R.limb||'carbon',hand:R.hand||'R'};
- ['dw','dl','len','pt','ibo','ins','nock','vanes','vpos','bp','fps','gpiU'].forEach(k=>st[k]=num(R[k]));
+ ['dw','dl','len','pt','ibo','ins','nock','vanes','vpos','bp','fps','gpiU','contact'].forEach(k=>st[k]=num(R[k]));
  st.lenIn=st.len;if(!isFinite(st.len))st.len=st.dl;st.pick=R.pick||null;st.gpi=isFinite(st.gpiU)?st.gpiU:(st.pick&&isFinite(st.pick.gpi)?st.pick.gpi:NaN);
  /* AC2: an Easton shaft's chosen parts fill the point, insert and nock boxes left blank (typed boxes win); bushings, pins and collars at the nock end */
  const EPt=eaParts(st.pick,R,st.bow);st.ep=EPt;st.fromP=[];st.bush=NaN;
@@ -327,6 +328,30 @@ function css(){if(!document.getElementById('accss')){const s=document.createElem
 const seg=(k,v,opts)=>`<div class="labseg" role="group" aria-label="${k}">${opts.map(([val,l])=>`<button type="button" data-seg="${k}" data-val="${val}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
 const inp=(k,R,l,unit,ph,hint)=>`<label for="ac_${k}">${l}${unit?` <span class="muted small">(${unit})</span>`:''}</label><input id="ac_${k}" data-k="${k}" inputmode="decimal" value="${h(R[k]??'')}"${ph?` placeholder="${h(ph)}"`:''}>${hint?`<p class="hint">${hint}</p>`:''}`;
 
+/* AC3: shortest safe cut, Easton Tuning Guide p. 15 Fig. 21: mark an extra-long arrow at full draw about 1" in front of where it
+   touches the most forward point of the rest (launcher); Correct Arrow Length runs from the bottom of the nock groove. The archer types
+   the nock-groove-to-contact distance; the spine charts and FOC are worked out again at contact + 1". Reads only; "Use" writes len. */
+const cutOf=st=>isFinite(st.contact)&&st.contact>0?Math.round((st.contact+1)*100)/100:NaN;
+function cutHTML(st){const c=st.contact,cut=cutOf(st),fing=st.bow!='compound';let out='';
+ if(isFinite(cut)){const s2=Object.assign({},st,{len:cut}),r2=isFinite(st.dw)?results(s2):null;
+  const B2=isFinite(st.len)&&isFinite(st.bp)?build(st,{dlen:cut-st.len}):build(s2);
+  const sp=r2?r2.filter(b=>!b.off).map(b=>`${h(b.brand)} <b>${h(b.spine)}</b>`).join(' · '):'';
+  const short=isFinite(st.lenIn)&&st.lenIn<cut;
+  out=`<p id="accutout" style="margin:8px 0 0">Shortest safe cut: <span class="labout">${fmtN(cut)}"</span> <span class="small muted">= ${fmtN(c)}" + 1", nock groove to end of shaft</span></p>
+  <p class="small" id="accutcalc" style="margin:4px 0 0">At ${fmtN(cut)}": spine from the charts ${sp||'shows once draw weight and draw length are filled in'}${isFinite(B2.foc)?`; FOC ${f1(B2.foc)}% (${B2.meas?'moved from your measured balance point':'an estimate from the arrow parts'}); total arrow weight ${Math.round(B2.tw)} gr`:'; FOC shows once a shaft and point weight are filled in'}.</p>
+  ${short?`<div class="acwarn" role="note" id="accutshort">${ic('warn')}Your arrow length (${fmtN(st.lenIn)}") is shorter than this. Easton's extra 1" allows for small changes in your draw length, so the arrow does not fall behind the rest.</div>`:''}
+  <button class="btn alt" id="accutuse" type="button"${st.lenIn===cut?' disabled':''} style="margin-top:8px">${st.lenIn===cut?`${fmtN(cut)}" is your arrow length`:`Use ${fmtN(cut)}" as my arrow length`}</button>`}
+ return`<details class="acmore" id="accut"${OPEN=='cut'?' open':''}><summary>Shortest safe cut (helper)</summary><div>
+  <ol class="small" style="padding-left:18px;margin:0 0 6px">
+  <li>Nock an extra-long arrow and come to full draw.</li>
+  <li>Have someone mark the arrow where it touches the most forward point of your launcher or rest.</li>
+  <li>Let down and measure from the bottom of the nock groove to the mark.</li>
+  <li>Type it here. Easton adds about 1" for safety: that is the shortest safe Correct Arrow Length. The point is not included.</li></ol>
+  ${inp('contact',R0(),'Nock groove to rest contact at full draw','inches','e.g. 27.5')}
+  ${out}
+  <p class="small muted" style="margin:8px 0 0">Easton's 1" is for target, field and 3D arrows from any bow, and hunting arrows from bows with a cutout sight window. Broadheads on bows without a cutout, and overdraws, need other clearances (Easton Figs. 22-26), not covered here.${fing?' Easton: beginners with recurve bows may want to add an extra 1/2"-1" so the arrow is not too short as they get stronger.':''} Correct Arrow Length includes the bit of nock below the groove, so the bare shaft is cut slightly shorter than it.</p>
+  <p class="labsrc">${cite('eastonCut')}</p></div></details>`}
+let R0=()=>({});
 /* AC2: the Easton parts block for the picked shaft (choices only; nothing is saved until one is changed) */
 const gr=w=>`${fmtN(w)} gr`;
 function partsHTML(st){const E=st.ep;if(!E)return'';const nm=st.pick.model+' '+st.pick.spine;
@@ -344,7 +369,7 @@ function partsLine(st){const E=st.ep;if(!E)return'';const bits=[];
  if(st.fromP.includes('nock'))bits.push(`nock ${gr(st.nock)} (${h(E.nock.n)})`);
  return`<p class="small" id="acpartsline" style="margin:6px 0 0">${bits.length?`From Easton's parts for ${h(st.pick.model)}: ${bits.join(', ')}.`:`No Easton part weights in use for ${h(st.pick.model)}.`}${st.bushOff?` The ${h(st.ep.end.n)} is not added because you typed your own insert or nock; choose it under Easton parts to add it.`:''} <span class="muted">Change them under Arrow parts for FOC.</span></p>`}
 
-E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=st.bow!='compound';
+E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(st),fing=st.bow!='compound';
  const pickKey=s=>s.brand+'|'+s.model+'|'+s.spine;const pk=st.pick?pickKey(st.pick):'';
  const nearHTML=b=>{if(!b.near||!b.near.length)return'';const cmp=st.bow=='compound';
   const lab=n=>n.side=='weaker'?(n.al?'next chart cell on the weaker side':'one size weaker than the chart range'):(n.al?'next chart cell on the stiffer side':'one size stiffer than the chart range');
@@ -397,6 +422,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
   <label>What it's for</label>${seg('use',st.use,USES)}
   <p class="small acdia" id="acdia" style="margin:6px 0 0"><b>Listed:</b> ${h(DC.txt)} ${h(DC.not)}</p>
   ${inp('len',R,'Arrow length','inches, optional','same as draw length','Easton: draw an extra-long arrow and mark it about 1" in front of where it touches the rest. Leave blank to use your draw length.')}
+  ${cutHTML(st)}
   ${inp('pt',R,'Point weight','grains',st.fromP.includes('pt')?fmtN(st.pt)+' (Easton part)':'e.g. 100')}
   <details class="acmore" id="acfoc"${OPEN=='foc'?' open':''}><summary>Arrow parts for FOC (optional)</summary><div>
   ${partsHTML(st)}
@@ -452,7 +478,8 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
  app.querySelectorAll('[data-part]').forEach(i=>i.onchange=()=>{const X=partsRaw();X.parts[i.dataset.part]=parseInt(i.value,10);if(i.dataset.part=='pt')X.parts.mods=[];store(X);render()});
  app.querySelectorAll('[data-mod]').forEach(i=>i.onchange=()=>{const X=partsRaw(),m=+i.dataset.mod;X.parts.mods=(X.parts.mods||[]).filter(x=>x!=m).concat(i.checked?[m]:[]).sort((a,b)=>a-b);store(X);render()});
  app.querySelectorAll('[data-pick]').forEach(i=>i.onchange=()=>{const X=raw();X.pick=JSON.parse(i.dataset.pick);delete X.gpiU;store(X);render()});
- ['acfoc','acpt','acpark'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
+ const cu=$('#accutuse');if(cu)cu.onclick=()=>{const c=cutOf(parsed().st);if(isFinite(c)){put('len',String(c));render()}};
+ ['acfoc','acpt','acpark','accut'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
  const u=$('#acuse');if(u)u.onclick=()=>{const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};const sent=[],left=[];
   if(isFinite(st.len)){C.len=String(st.len);sent.push('arrow length')}
   const b=build(st);

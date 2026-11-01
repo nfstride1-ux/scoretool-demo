@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-1334-ac3',d:'2026-11-01',items:[
+   ['arrow',"Shortest safe cut in the Arrow chooser","Under Arrow length there is a new helper for the shortest safe length. At full draw, have someone mark an extra-long arrow where it touches the front of your rest, measure from the bottom of the nock groove to the mark, and type it in. The chooser adds Easton's 1 inch for safety and shows the chart spine and FOC at that length. Tap Use to make it your arrow length. If your arrow is shorter than that, it says so."]]},
   {v:'v2026-11-01-0941-ac2',d:'2026-11-01',items:[
-   ['arrow',"Easton parts in the Arrow chooser","Pick an Easton shaft in the Arrow chooser and its parts fill in from Easton's 2026 catalogue: for a SuperDrive 27 280, the 100 gr adjustable point with 10, 20 or 50 gr weights, the bushing and the nock. X10, A/C/E, Avance, Vector, Superdrive Micro, SuperDrive 23 and 25, X23 and X27 have their pins, bushings and nocks too. Change them under Arrow parts for FOC. A figure you type still wins."]]},
+   ['arrow',"Easton parts in the Arrow chooser","Pick an Easton shaft in the Arrow chooser and its parts fill in from Easton's 2026 catalogue: for a SuperDrive 27 280, the 100 gr adjustable point with 10, 20 or 50 gr weights, the bushing and the nock. X10, A/C/E, Avance, Vector, Superdrive Micro, SuperDrive 23 and 25, X23 and X27 have their pins, bushings and nocks too. Change them under Arrow parts for FOC. A figure you type still wins.",'8496ebc']]},
   {v:'v2026-11-01-0810-ac1',d:'2026-11-01',items:[
    ['bow',"Arrow chooser uses your bow","The Arrow chooser now starts from the bow you are using, filling in its draw weight, draw length and speed, and follows any change you make in My bows. Bows that are only in Setups & sight marks are listed too. Type in a box to use a different figure. The speed box says which charts use IBO and which use ATA. Is this arrow right? now uses your bow's speed instead of 340 fps.",'2eb62ef']]},
   {v:'v2026-11-01-0611-yourdata',d:'2026-11-01',items:[
