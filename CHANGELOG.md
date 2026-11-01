@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0810-ac1 (2026-11-01)
+### What changed
+- AC1, the Arrow chooser and your bow. Concept X 40 was already in the bow list (data/bow_specs.json), so nothing was added there.
+- The Arrow chooser now starts from the bow you are using (the one picked in Setups & sight marks, or your first bow). Its bow type, draw weight, draw length and (compound) speed fill the empty boxes each time the page opens, so a change in My bows shows up straight away. Nothing is written when the page opens.
+- A line under the picker says which bow is being used and which figures came from it, and for an ATA speed that ATA reads lower than IBO. Typing in a box wins; clearing it goes back to the bow's figure. Choosing "None, I'll type them" keeps the figures and stops following the bow.
+- Every bow is listed in the picker, including bows only in Setups & sight marks, marked "(no specs yet)"; picking one says to add its specs in My bows.
+- The speed box hint now says which rating each chart uses: Gold Tip's compound charts, IBO; Easton's hunting chart, ATA (301-340 fps ATA, Easton 2026 catalogue); Easton's target chart and Victory's chart, a bow speed rating without saying which. An ATA figure is used as it is.
+- Defect L6 fixed: "Is this arrow right?" used 340 fps unless the speed card was filled in. It now uses your saved bow (type, draw weight, draw length, speed) and says so, until you fill in the speed card or pick a bow there.
+- No saved data changed.
+### Files
+arrowchooser.js, bows.js, arrowcheck.js, index.html (?v= bump), tools/ac1_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the yourdata live line), version.json, sw.js.
+### Tests
+- Before (baseline): full regression 75 passed, 0 failed (yourdata after-run, 33f94c0); live diagnostic on 33f94c0 76 passed, 0 failed
+- Single runs: ac1_test 23 passed, 0 failed; whatsnew_test 33/0; mybows, arrowcheck, arrowchooser, arrowuse and arrowpick tests pass
+- After: full regression 76 passed, 0 failed, 3300 s (includes ac1_test 23/0)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0810-ac1): ac1_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0611-yourdata (2026-11-01)
 ### What changed
 - Item 5, paid-user basics. New backup.js (loaded after lab.js) adds a Your data card to Me > Settings & help, after the Settings card:
@@ -19,7 +36,7 @@ backup.js (new), index.html (script tag, ?v= bump), tools/backup_test.py (new), 
 - Before (baseline): full regression 74 passed, 0 failed (lgauto after-run, 7d97baa; pushed as 768812d with the CHANGELOG line only)
 - Single runs: backup_test 24 passed, 0 failed (its offline-worker check now sets service_workers='allow', which guard.py keeps; the first single run, without it, failed that one check); whatsnew_test 33/0; peel_data_test 2/0; guards_test 7/0; clarity_test 16/0; nav_test 99/0
 - After: full regression 75 passed, 0 failed, 3131 s (d1089cc)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0611-yourdata): backup_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0611-yourdata): backup_test (BASE=live) 24 passed, 0 failed (1 Nov 2026, 07:07 AWST); version.json, newest whatsnew v and noindex checked.
 
 ## v2026-11-01-0418-lgauto (2026-11-01)
 ### What changed

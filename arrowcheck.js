@@ -70,16 +70,19 @@ const _ca=E.lab_calc;if(_ca)E.lab_calc=function(){_ca();css();const C=S.calc||{}
  const fps=own?n('fpsU'):(C.spdOn&&isFinite(est)&&est>0?Math.round(est):NaN);
  const foc=(n('bp')-n('len')/2)/n('len')*100;
  const oF=C.arrF?window.myArrow&&myArrow(C.arrF):null,oS=C.arrS?window.myArrow&&myArrow(C.arrS):null;
- const use=USES.some(u=>u[0]==C.use)?C.use:'target',bt=bowType(C);
+ /* L6 (AC1, 1 Nov 2026): until the speed card is used or a bow is picked there, check with the current saved bow's figures, not the 340 fps default */
+ const BF=!C.spdOn&&!C.bowId&&window.curSavedBow?curSavedBow():null;
+ const use=USES.some(u=>u[0]==C.use)?C.use:'target',bt=BF&&!C.bowT?(BF.type=='recurve'?'recurve':'compound'):bowType(C);
+ const bdw=BF&&BF.dw?BF.dw:C.dw,bdl=BF&&BF.dl?BF.dl:C.dl,bibo=BF&&BF.type=='compound'&&BF.speed?BF.speed:C.ibo;
  const spine=has('spine')?C.spine:(oF&&oF.spine||''),pt=has('pt')?C.pt:(oF&&oF.pt||'');
  /* ---- (b) the verdict card ---- */
  const fv=focVerdict(foc,use);
- const sv=spineVerdict({bow:bt,use,dw:C.dw,dl:C.dl,len:C.len,pt,ibo:bt=='compound'?C.ibo:'',ins:oF&&oF.ins},spine,oF&&oF.shaft);
+ const sv=spineVerdict({bow:bt,use,dw:bdw,dl:bdl,len:C.len,pt,ibo:bt=='compound'?bibo:'',ins:oF&&oF.ins},spine,oF&&oF.shaft);
  const box=v=>v?`<div class="ackv${v.k=='good'||v.k=='right'?'':' warn'}" data-v="${v.k}"><b class="vh">${h(v.head)}</b><p>${v.txt}</p>${v.rng?`<p class="small muted">Range used: ${h(v.rng)}</p>`:''}</div>`:'';
  const seg=(k,v,o)=>`<div class="labseg" role="group" aria-label="${k}">${o.map(([val,l])=>`<button type="button" data-ackseg="${k}" data-val="${val}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
  const ip=(k,l,u,val,ph)=>`<label for="ack_${k}">${l} <span class="muted small">(${u})</span></label><input id="ack_${k}" data-ack="${k}" ${k=='spine'?'':'inputmode="decimal"'} value="${h(val)}" placeholder="${h(ph||'')}">`;
  grid.insertAdjacentHTML('beforeend',`<div class="card" id="ackcard"><span class="kicker">Is this arrow right?</span>
-  <p class="small muted" style="margin:0 0 8px">${oF?`Checking ${h(oF.name)} (picked in the FOC card).`:'Pick an arrow in the FOC card\'s My arrows list, or type the spine and point weight here.'} Draw weight${bt=='compound'?', IBO':''} and draw length come from the speed card, length from the FOC card.</p>
+  <p class="small muted" style="margin:0 0 8px">${oF?`Checking ${h(oF.name)} (picked in the FOC card).`:'Pick an arrow in the FOC card\'s My arrows list, or type the spine and point weight here.'} ${BF?`Draw weight${bt=='compound'?', speed rating':''} and draw length come from your saved bow, ${h(BF.name)}${bt=='compound'&&BF.speed?' ('+h(BF.speed)+' fps)':''}, until you fill in the speed card or pick a bow there`:`Draw weight${bt=='compound'?', IBO':''} and draw length come from the speed card`}, length from the FOC card.</p>
   <label>What it's for</label>${seg('use',use,USES)}<label>Bow</label>${seg('bowT',bt,[['compound','Compound'],['recurve','Recurve or barebow']])}
   ${ip('spine','Spine','number on the shaft',spine,'e.g. 375')}${ip('pt','Point weight','grains, point and any insert',pt,'e.g. 140')}
   <div id="ackv">${box(fv)}${box(sv)}</div>

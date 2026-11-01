@@ -105,6 +105,20 @@ const _ma=E.myarch;if(_ma)E.myarch=function(){_ma();const g=app.querySelector('[
 /* a 'Saved bow' picker that fills boxes; the archer can still change any of them afterwards */
 const picker=(id,sel,lbl)=>{const L=withSpec();if(!L.length)return`<p class="small muted" id="${id}w" style="margin:0 0 8px">Save your bow in <a href="#" data-mb="1">My archery › My bows</a> to fill these in.</p>`;
  return`<div id="${id}w" style="margin:0 0 8px"><label for="${id}">${lbl}</label><select id="${id}"><option value="">None, I'll type them</option>${L.map(b=>`<option value="${b.id}"${b.id==sel?' selected':''}>${h(bname(b,specs()[b.id]))}</option>`).join('')}</select></div>`};
+/* AC1: the bow the Arrow chooser uses. bowId undefined = follow the current saved bow (the one picked in Setups & sight marks);
+   '' = none (the archer types); an id = that bow. Blank boxes come from the bow each time; typed boxes win. */
+const curId=()=>{const L=mine(),sel=(S.bowSel||{})[S.profile],b=L.find(x=>x.id==sel)||L[0];return b?b.id:''};
+const acId=R=>R.bowId===undefined?curId():R.bowId;
+const blank=v=>v==null||String(v).trim()==='';
+window.acBowFill=R=>{const id=acId(R),s=id?bowSnap(id):null,o=Object.assign({},R);if(!s)return o;
+ const comp=s.type=='compound',fits=blank(R.bow)||(comp?R.bow=='compound':R.bow!='compound');if(!fits)return o;
+ if(blank(R.bow))o.bow=comp?'compound':'recurve';const got=[];
+ [['dw','draw weight'],['dl','draw length']].concat(comp?[['speed','speed rating']]:[]).forEach(([k,l])=>{const t=k=='speed'?'ibo':k;if(blank(R[t])&&!blank(s[k])){o[t]=String(s[k]);got.push(l)}});
+ o._bow={id,name:s.name,got,kind:s.kind,speed:s.speed,auto:R.bowId===undefined};return o};
+window.curSavedBow=()=>{const id=curId();return id?bowSnap(id):null};
+const acPicker=sel=>{const A=mine();if(!A.length)return picker('ac_mybow',sel,'Saved bow');
+ return`<div id="ac_myboww" style="margin:0 0 8px"><label for="ac_mybow">Saved bow</label><select id="ac_mybow"><option value=""${sel===''?' selected':''}>None, I'll type them</option>${A.map(b=>{const s=specs()[b.id];return`<option value="${b.id}"${b.id==sel?' selected':''}>${h(bname(b,s))}${s?'':' (no specs yet)'}</option>`}).join('')}</select></div>`};
+const KN={IBO:'IBO',ATA:'ATA',actual:'measured','':'standard not stated'};
 const bindMb=()=>app.querySelectorAll('[data-mb]').forEach(a=>a.onclick=e=>{e.preventDefault();nav('lab_mybows')});
 const filled=(s,keys)=>keys.filter(([k])=>s[k]).map(([,l])=>l);
 
@@ -112,9 +126,14 @@ const filled=(s,keys)=>keys.filter(([k])=>s[k]).map(([,l])=>l);
 const _ch=E.lab_chooser;if(_ch)E.lab_chooser=function(){_ch();const K='scoretool.arrowchooser.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest');
  let R={};try{R=JSON.parse(localStorage.getItem(K)||'{}')||{}}catch(e){}
  const card=app.querySelector('.acf');if(!card)return;const k=card.querySelector('h2');
- k.insertAdjacentHTML('afterend',picker('ac_mybow',R.bowId,'Saved bow')+(window._mbNote?`<p class="lab-note" id="mbnote">${h(window._mbNote)}</p>`:''));window._mbNote=null;bindMb();
- const p=$('#ac_mybow');if(p)p.onchange=()=>{const s=bowSnap(p.value);R.bowId=p.value;
-  if(s){R.bow=s.type=='compound'?'compound':(R.bow=='barebow'?'barebow':'recurve');if(s.dw)R.dw=s.dw;if(s.dl)R.dl=s.dl;if(s.type=='compound'&&s.speed)R.ibo=s.speed;
+ const sel=acId(R),F=acBowFill(R)._bow,b0=sel&&mine().find(x=>x.id==sel);
+ const line=F?`${F.auto?'Using your current bow':'Using'}, ${h(F.name)}${F.got.length?': '+F.got.join(', ')+' filled in':''}${F.got.includes('speed rating')?` (${h(KN[F.kind]??'IBO')} ${h(F.speed)} fps${F.kind=='ATA'?', which reads lower than IBO':''})`:''}. Type in a box to change it; clear the box to go back to the bow's figure.`
+  :b0&&!specs()[sel]?`No specs saved for ${h(b0.name)} yet. Add them in <a href="#" data-mb="1">My archery › My bows</a> to fill these in.`:'';
+ k.insertAdjacentHTML('afterend',acPicker(sel)+(window._mbNote?`<p class="lab-note" id="mbnote">${h(window._mbNote)}</p>`:'')+(line?`<p class="small muted" id="acbowline" style="margin:0 0 8px">${line}</p>`:''));window._mbNote=null;bindMb();
+ const p=$('#ac_mybow');if(p)p.onchange=()=>{const s=bowSnap(p.value);
+  if(!p.value){const C=acBowFill(R);['bow','dw','dl','ibo'].forEach(x=>{if(blank(R[x])&&!blank(C[x]))R[x]=C[x]})}
+  R.bowId=p.value;if(p.value)['dw','dl','ibo'].forEach(x=>delete R[x]);
+  if(s){R.bow=s.type=='compound'?'compound':(R.bow=='barebow'?'barebow':'recurve');
    const f=filled(s,s.type=='compound'?[['speed','IBO speed'],['dw','draw weight'],['dl','draw length']]:[['dw','draw weight'],['dl','draw length']]);
    const kn={ATA:' (ATA rating used as IBO)','':" (the maker doesn't say IBO or ATA; used as IBO)",actual:' (measured speed used as IBO)'}[s.kind];
    window._mbNote=`From your ${s.name}: ${f.join(', ')||'nothing'} filled in${s.type=='compound'&&s.speed&&kn?kn:''}. Change any box to override.`}

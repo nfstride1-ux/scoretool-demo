@@ -9,7 +9,9 @@ const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 const ic=n=>(window.icon&&window.icon(n))||'';
 const tid=()=>(typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest';
 const KEY=()=>'scoretool.arrowchooser.'+tid();
-const load=()=>{try{return JSON.parse(localStorage.getItem(KEY())||'{}')||{}}catch(e){return{}}};
+const raw=()=>{try{return JSON.parse(localStorage.getItem(KEY())||'{}')||{}}catch(e){return{}}};
+/* AC1 (1 Nov 2026): blank boxes are read from the saved bow (bows.js acBowFill) each time the page is drawn; nothing is written until the archer changes something */
+const load=()=>{const R=raw();try{return window.acBowFill?acBowFill(R):R}catch(e){return R}};
 const store=st=>localStorage.setItem(KEY(),JSON.stringify(st));
 const num=v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:NaN};
 const f1=(x,d=1)=>isFinite(x)?(+x).toFixed(d):'-';
@@ -323,7 +325,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
   ${inp('dw',R,fing?'Draw weight on your fingers':'Peak draw weight','lb',fing?'e.g. 40':'e.g. 60',fing?'The weight you actually hold at your own draw length, not the number on the limbs.':'The weight your limbs are set to now, not the maximum on the limb label.')}
   ${inp('dl',R,'Draw length','inches','e.g. 28')}
   ${fing?`<label for="ac_limb">Limbs</label><select id="ac_limb" data-k="limb"><option value="carbon"${st.limb=='carbon'?' selected':''}>Carbon or foam competition limbs</option><option value="wood"${st.limb=='wood'?' selected':''}>Wood/glass beginner limbs</option></select>`
-   :inp('ibo',R,'Speed rating (IBO or ATA)','fps, optional','e.g. 330','On the bow or its spec sheet. Easton\'s charts move the weight up or down by bow speed.')}
+   :inp('ibo',R,'Speed rating (IBO or ATA)','fps, optional','e.g. 330','On the bow or its spec sheet. Easton\'s charts move the weight up or down by bow speed. Which rating each chart uses: Gold Tip\'s compound charts, IBO; Easton\'s hunting chart, ATA (301-340 fps ATA); Easton\'s target chart and Victory\'s chart, a bow speed rating without saying which. An ATA figure (Hoyt: 350 gr, 70 lb, 30") reads lower than IBO, so it is used here as it is, as the speed rating.')}
   <label>What it's for</label>${seg('use',st.use,USES)}
   <p class="small acdia" id="acdia" style="margin:6px 0 0"><b>Listed:</b> ${h(DC.txt)} ${h(DC.not)}</p>
   ${inp('len',R,'Arrow length','inches, optional','same as draw length','Easton: draw an extra-long arrow and mark it about 1" in front of where it touches the rest. Leave blank to use your draw length.')}
@@ -374,10 +376,10 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
  </div>`;
  /* events */
  app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));
- const put=(k,v)=>{const X=load();X[k]=v;store(X)};
+ const put=(k,v)=>{const X=raw();X[k]=v;store(X)};
  app.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{put(b.dataset.seg,b.dataset.val);render()});
  app.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{put(i.dataset.k,i.value.trim());render()});
- app.querySelectorAll('[data-pick]').forEach(i=>i.onchange=()=>{const X=load();X.pick=JSON.parse(i.dataset.pick);delete X.gpiU;store(X);render()});
+ app.querySelectorAll('[data-pick]').forEach(i=>i.onchange=()=>{const X=raw();X.pick=JSON.parse(i.dataset.pick);delete X.gpiU;store(X);render()});
  ['acfoc','acpt','acpark'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
  const u=$('#acuse');if(u)u.onclick=()=>{const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};const sent=[],left=[];
   if(isFinite(st.len)){C.len=String(st.len);sent.push('arrow length')}
