@@ -78,3 +78,4 @@ with sync_playwright() as p:
   ctx.close();b.close()
 if srv:srv.terminate()
 print(f'{len(ok)} passed, {len(bad)} failed');bad and print('FAIL',bad)
+sys.exit(1 if bad else 0)

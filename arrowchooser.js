@@ -26,6 +26,7 @@ const SRC={
  skylon:['Skylon Archery target chart "Correct arrow length for Target - Field - 3D"','https://www.skylonarchery.com/images/chart/chart%20target.pdf'],
  skylonB:['Skylon Brixxon specification page (grains per inch, recommended point)','https://skylonarchery.com/arrows/2023-06-29-08-52-09/brixxon'],
  eastonAL:['Easton 2026 catalogue, Aluminum Arrow Cut Length chart (pp. 56-57) and X23 / X27 and SuperDrive 23 / 25 / 27 specification tables','https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf'],
+ eastonParts:['Easton 2026 catalogue, component lists printed with each target shaft (X10, X10 Parallel Pro, X10 4MM Parallel Pro, A/C/E, Avance, Vector, Superdrive Micro, SuperDrive 23 / 25 / 27, X23 / X27)','https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf'],
  eastonH:['Easton 2026 catalogue, Hunting Arrow Size Selection chart (pp. 58-59) and hunting shaft tables (pp. 18-29)','https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf'],
  gt25:['Gold Tip & Beestinger 2025 catalogue, target shaft table (O.D. of Series 22, Nine.3 Max, X-Cutter, 30X, Triple X)','https://jvd-archery.com/Files/Images/Brands/Catalogues/2025_GoldTip_Beestinger_Catalog_Web.pdf'],
  park11:['Park J.L. (2011) The behaviour of an arrow shot from a compound archery bow. Proc IMechE Part P 225(1):8-21','https://doi.org/10.1177/17543371JSET82'],
@@ -64,6 +65,48 @@ const EA_FAT=[
  {m:'SuperDrive 27',for:'C',od:[.420,.420],use:['indoor'],note:'27/64", over the World Archery 9.3 mm limit',s:[[280,9.0]]}];
 const EA_ALSZ=[{m:'X23',for:'RC',use:['indoor'],sz:{2312:[9.5,.363,''],2314:[10.8,.357,'Easton: World Archery compliant'],2315:[11.8,.365,'Easton: World Archery compliant'],2318:[13.7,.365,'']}},
  {m:'X27',for:'RC',use:['indoor'],sz:{2712:[11.3,.420,'over the World Archery 9.3 mm limit']}}];
+/* AC2: Easton component weights (grains), copied from the component list printed with each shaft in the 2026 catalogue.
+   Only printed figures are used. A point printed as a range (break-off points) has w:null: the archer types the weight.
+   at: where the part sits on the arrow. 'f' = point end (counted with the point), 'n' = nock end (counted with the nock).
+   Combined entries (pin + nock collar) are the sum of two printed figures. Not used: the X27 Adjustable Bullet Point
+   (printed "X27 200 grains", left out until checked) and the SD 23 Insert's use (listed, 40 gr, offered as a point-end part). */
+const EP={pin4:['4MM Pin',9],pc4:['4MM Pin + 4MM Nock Collar',12],col4:['4MM Nock Collar only',3],
+ pn:['Pin Nock',2],gpn:['G Pin Nock (compound)',4],g4:['4MM G Nock',7],ml4:['4MM Microlite Nock',6],
+ s3d:['6.5MM Super 3D Nock',13],mls:['6.5MM Microlite Super Nock',8],mods:[10,20,50]};
+const EP4=(pts,ins)=>({pt:pts,ins:ins||[],end:[EP.pin4,EP.pc4,EP.col4],nock:[EP.ml4,EP.g4,EP.pn,EP.gpn],d:{end:-1}});
+const EA_PARTS={
+ 'X10':{pt:[['X10 Ballistic Tungsten one-piece point 100 gr',100],['X10 Ballistic Tungsten one-piece point 120 gr',120],['X10 Tungsten break-off point (100-120 gr, 10 gr steps)',null],['X10 Stainless Steel break-off point (80-100 #1 only, or 100-120 gr)',null]],
+  ins:[],end:[['X10 Pin',8],['X10 Pin + X10 Nock Collar',11],['X10 Nock Collar only',3]],nock:[EP.pn,EP.gpn],d:{pt:-1}},
+ 'X10 Parallel Pro 3.2mm':{pt:[['X10 Ballistic Tungsten one-piece point 100 gr',100],['X10 Ballistic Tungsten one-piece point 120 gr',120],['X10 Tungsten break-off point (100-120 gr, sizes 750-1000 only)',null],['X10 Stainless Steel break-off point (80-100 #1 only, or 100-120 gr)',null]],
+  ins:[],end:[['X10 Pin',8],['X10 Pin + X10 Nock Collar',11],['X10 Nock Collar only',3]],nock:[EP.pn,EP.gpn],d:{pt:-1}},
+ 'X10 4MM Parallel Pro':Object.assign(EP4([['Match Grade 4MM HL stainless break-off point (80-130 gr)',null]],[['4MM Match Grade Half-out (aluminium), takes 8-32 5/16" field points',55]]),{d:{pt:-1,end:-1}}),
+ 'A/C/E':EP4([['Match Grade 4MM HL stainless break-off point (80-130 gr)',null],['4MM ML stainless point (50-70 gr)',null]]),
+ 'Superdrive Micro':EP4([['Match Grade 4MM HL stainless break-off point (80-130 gr)',null]]),
+ 'Avance':EP4([['4MM ML stainless point (50-70 #1, 70-90 #2, 90-110 #3, 100-120 #4 gr)',null]]),
+ 'Vector':{pt:[['4MM ML stainless point (50-70 #1, 70-90 #2, 90-110 #3 gr)',null]],ins:[],end:[],nock:[['4MM N Nock',7]],d:{}},
+ 'SuperDrive 23':{pt:[['SD 23 Adjustable Point',90]],mods:1,ins:[['SD 23 Insert',40]],
+  end:[['SD 23 4MM Bushing',18],['SD 23 4MM Kick Out Bushing',19],['SD 23 6.5MM Bushing',19],['SD 23 6.5MM Kick Out Bushing',12],['SD 23 Pin',14]],nock:[EP.g4,EP.ml4,EP.s3d,EP.mls,EP.pn,EP.gpn],d:{}},
+ 'SuperDrive 25':{pt:[['SD 25 Adjustable Point',90]],mods:1,ins:[],
+  end:[['SD 25 4MM Kick Out Bushing',24],['SD 25 6.5MM Bushing',16],['SD 25 6.5MM Kick Out Bushing',18.5],['SD 25 Pin',14]],nock:[EP.g4,EP.ml4,EP.s3d,EP.mls,EP.pn,EP.gpn],d:{}},
+ 'SuperDrive 27':{pt:[['SD 27 Adjustable Point',100]],mods:1,ins:[],
+  end:[['SD 27 4MM Bushing',18],['SD 27 4MM Kick Out Bushing',26],['SD 27 6.5MM Bushing',19],['SD 27 6.5MM Kick Out Bushing',22]],nock:[EP.g4,EP.ml4,EP.s3d,EP.mls],d:{}},
+ 'X23':{pt:[['X23 Adjustable Bullet Point',100]],mods:1,ins:[],end:[['6.5MM Super UNI Bushing',{2312:11,2314:10,2315:11,2318:11}]],nock:[EP.mls,EP.s3d],d:{}},
+ 'X27':{pt:[],ins:[],end:[['6.5MM Super UNI Bushing',{2712:19}]],nock:[EP.mls,EP.s3d],d:{},
+  note:'The catalogue prints the X27 Adjustable Bullet Point as "200 grains", so it is not filled in here. Weigh yours or check with your shop.'}};
+/* the parts list for a picked shaft, the choices (saved ones if they are for this shaft, else the defaults) and their weights */
+function eaParts(pick,R,bow){if(!pick||pick.brand!='Easton'||!EA_PARTS[pick.model])return null;const P=EA_PARTS[pick.model];
+ const w=o=>o?(o[1]&&typeof o[1]=='object'?o[1][pick.spine]:o[1]):undefined;
+ const opt=k=>(P[k]||[]).map(o=>({n:o[0],w:w(o)})).filter(o=>o.w!==undefined);
+ const O={pt:opt('pt'),ins:opt('ins'),end:opt('end'),nock:opt('nock')};
+ const sv=R.parts&&R.parts.m==pick.model?R.parts:null,d=P.d||{};
+ const def={pt:'pt' in d?d.pt:0,ins:'ins' in d?d.ins:-1,end:'end' in d?d.end:0,nock:'nock' in d?d.nock:0};
+ if(bow=='compound'&&!sv){const g=O.nock.findIndex(o=>o.n==EP.gpn[0]);if(O.end.length&&def.end>=0&&/Pin/.test(O.end[def.end].n)&&g>=0)def.nock=g}
+ if(def.end<0&&O.nock.length&&/Pin/.test(O.nock[def.nock].n))def.nock=0;
+ const ch={};['pt','ins','end','nock'].forEach(k=>{let i=sv&&Number.isInteger(sv[k])?sv[k]:def[k];if(i>=O[k].length)i=O[k].length?0:-1;ch[k]=O[k].length?i:-1});
+ const mods=P.mods&&ch.pt>=0&&Number.isFinite(O.pt[ch.pt].w)?(sv&&Array.isArray(sv.mods)?sv.mods.filter(x=>EP.mods.includes(x)):[]):[];
+ const get=k=>ch[k]>=0?O[k][ch[k]]:null;
+ const pt=get('pt'),ptW=pt&&Number.isFinite(pt.w)?pt.w+mods.reduce((a,b)=>a+b,0):NaN;
+ return{P,O,ch,mods,saved:!!sv,pt,ptW,ins:get('ins'),end:get('end'),nock:get('nock')}}
 /* Aluminum Arrow Cut Length chart: same rows as the A/C chart, columns 21"-32"; each cell is AL_SEQ[row+col] (checked cell by cell) */
 const AL_SEQ=['','','1214','1214','1416, 1516, 1514','1514','1614','1616, 1714','1716','1816, 1814','1914, 1913','1914, 1916, 2013, RX7-21','1916, 2013, 2014, RX7-21','2114, 2016, RX7-22','2114, 2213, RX7-23','2213, 2214, 2312, RX7-23','2214, 2314, 2413','2314, 2413, 2315','2512, 2613, 2712','2512, 2613, 2712','2512, 2613, 2712','2613, 2712',''];
 /* Hunting Arrow Size Selection chart: compound (release, 301-340 fps ATA, 100 gr screw-in points) and traditional recurve rows,
@@ -233,7 +276,7 @@ function skylon(st){const fing=st.bow!='compound',W=Math.round(st.dw),L=Math.rou
    If A was not measured, it is estimated from the component weights: shaft centred at L/2, point + insert at the end of the
    shaft (L), nock at 0, vanes at the distance the archer enters (or at the nock end if left blank). Clearly labelled as an estimate. */
 function build(st,d){d=d||{};const L=st.len+(d.dlen||0),pt=(isFinite(st.pt)?st.pt:NaN)+(d.dpt||0),gpi=st.gpi;
- const ins=isFinite(st.ins)?st.ins:0,nk=isFinite(st.nock)?st.nock:0,vn=isFinite(st.vanes)?st.vanes:0,vp=isFinite(st.vpos)?st.vpos:0;
+ const ins=isFinite(st.ins)?st.ins:0,nk=(isFinite(st.nock)?st.nock:0)+(isFinite(st.bush)?st.bush:0),vn=isFinite(st.vanes)?st.vanes:0,vp=isFinite(st.vpos)?st.vpos:0;
  const shaft=gpi*L,tw=shaft+pt+ins+nk+vn;let A,meas=false;
  if(isFinite(st.bp)){meas=true;/* move the measured balance point by the change in mass and position */
   const L0=st.len,pt0=st.pt,W0=gpi*L0+pt0+ins+nk+vn;A=(st.bp*W0-gpi*L0*L0/2-(pt0+ins)*L0+gpi*L*L/2+(pt+ins)*L)/tw;if(!d.dpt&&!d.dlen)A=st.bp}
@@ -245,7 +288,15 @@ const speedEst=(st,tw)=>{/* the Calculators' own rule of thumb (IBO rating, comp
 /* state, with numbers parsed */
 function parsed(){const R=load();const st={bow:R.bow||'recurve',use:USES.some(u=>u[0]==R.use)?R.use:'target',limb:R.limb||'carbon',hand:R.hand||'R'};
  ['dw','dl','len','pt','ibo','ins','nock','vanes','vpos','bp','fps','gpiU'].forEach(k=>st[k]=num(R[k]));
- st.lenIn=st.len;if(!isFinite(st.len))st.len=st.dl;st.pick=R.pick||null;st.gpi=isFinite(st.gpiU)?st.gpiU:(st.pick&&isFinite(st.pick.gpi)?st.pick.gpi:NaN);return{R,st}}
+ st.lenIn=st.len;if(!isFinite(st.len))st.len=st.dl;st.pick=R.pick||null;st.gpi=isFinite(st.gpiU)?st.gpiU:(st.pick&&isFinite(st.pick.gpi)?st.pick.gpi:NaN);
+ /* AC2: an Easton shaft's chosen parts fill the point, insert and nock boxes left blank (typed boxes win); bushings, pins and collars at the nock end */
+ const EPt=eaParts(st.pick,R,st.bow);st.ep=EPt;st.fromP=[];st.bush=NaN;
+ if(EPt){if(!isFinite(st.pt)&&isFinite(EPt.ptW)){st.pt=EPt.ptW;st.fromP.push('pt')}
+  if(!isFinite(st.ins)&&EPt.ins){st.ins=EPt.ins.w;st.fromP.push('ins')}
+  /* a typed insert or nock already covers the nock end (older saved figures) unless a part was chosen here */
+  if(EPt.end&&(EPt.saved||(!isFinite(st.ins)&&!isFinite(st.nock))))st.bush=EPt.end.w;else if(EPt.end)st.bushOff=1;
+  if(!isFinite(st.nock)&&EPt.nock){st.nock=EPt.nock.w;st.fromP.push('nock')}}
+ return{R,st}}
 function results(st){if(!isFinite(st.dw)||!isFinite(st.len))return null;return[easton(st),goldtip(st),victory(st),skylon(st)]}
 
 /* the archer's current arrow setup (used by the Arrow optimizer); null until there is a length and point weight */
@@ -257,7 +308,7 @@ window.arrowSetup=function(){const{st}=parsed();if(!isFinite(st.len)||!isFinite(
 window.arrowFocWith=function(d){const{st}=parsed();if(!isFinite(st.len)||!isFinite(st.pt)||!isFinite(st.gpi))return null;const a=build(st),b=build(st,d);return isFinite(a.foc)&&isFinite(b.foc)?{from:a.foc,to:b.foc,meas:a.meas}:null};
 /* the same FOC and total-weight maths for a saved arrow (My arrows): o = {len, pt, gpi, ins, nock, vanes, vpos, bp} as typed */
 window.arrowBuild=function(o){const st={};['len','pt','gpi','ins','nock','vanes','vpos','bp'].forEach(k=>st[k]=num(o&&o[k]));if(!isFinite(st.len))return null;const b=build(st);return{foc:isFinite(b.foc)?b.foc:NaN,tw:b.tw,meas:b.meas,missing:b.missing}};
-window.ARROW_SRC=SRC;
+window.ARROW_SRC=SRC;window.ARROW_PARTS=EA_PARTS;
 /* the same maker charts and chart-weight adjustments for any setup (the Calculators' 'Is this arrow right?' card); reads only */
 window.arrowCharts=function(o){const st=Object.assign({bow:'compound',use:'target',limb:'carbon',hand:'R'},o||{});['dw','dl','len','pt','ibo','ins'].forEach(k=>st[k]=num(st[k]));
  if(!isFinite(st.len))st.len=st.dl;return results(st)};
@@ -270,11 +321,28 @@ const CSS=`.acf .labseg{margin:0 0 10px}.acf label{display:block;margin:10px 0 4
 .acshaft input{width:22px;height:22px;flex:none}.acshaft small{color:var(--muted);font-weight:400}.acshaft{font-weight:400}.acwarn{border-left:4px solid var(--gold,#c9a227);background:var(--blue-bg);border-radius:10px;padding:10px 12px;font-size:15px;margin:8px 0}
 .acwarn .ic{width:18px;height:18px;vertical-align:-3px;margin-right:4px}.acmore{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--surf,transparent)}
 .acmore>summary{padding:12px 14px;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between}.acmore>summary::after{content:'+';font-weight:800}.acmore[open]>summary::after{content:'\\2212'}
-.acmore>div{padding:0 14px 12px}.acbig{font:800 30px var(--disp)}.aclinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.aclinks .btn{display:inline-flex;gap:6px;align-items:center}.aclinks .ic{width:18px;height:18px}
+.acmore>div{padding:0 14px 12px}.acparts{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 10px}.acparts select{width:100%;max-width:100%}.acbig{font:800 30px var(--disp)}.aclinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.aclinks .btn{display:inline-flex;gap:6px;align-items:center}.aclinks .ic{width:18px;height:18px}
 .acnear{margin:8px 0 0;border-top:1px dashed var(--line);padding-top:6px}.acnear>summary{font-weight:700;cursor:pointer;font-size:14px}.acdia{border-left:4px solid var(--blue);padding:6px 10px;background:var(--blue-bg);border-radius:8px}.acfrm{font-family:ui-monospace,Menlo,monospace;font-size:14px;background:var(--blue-bg);border-radius:8px;padding:8px 10px}`;
 function css(){if(!document.getElementById('accss')){const s=document.createElement('style');s.id='accss';s.textContent=CSS;document.head.appendChild(s)}}
 const seg=(k,v,opts)=>`<div class="labseg" role="group" aria-label="${k}">${opts.map(([val,l])=>`<button type="button" data-seg="${k}" data-val="${val}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
 const inp=(k,R,l,unit,ph,hint)=>`<label for="ac_${k}">${l}${unit?` <span class="muted small">(${unit})</span>`:''}</label><input id="ac_${k}" data-k="${k}" inputmode="decimal" value="${h(R[k]??'')}"${ph?` placeholder="${h(ph)}"`:''}>${hint?`<p class="hint">${hint}</p>`:''}`;
+
+/* AC2: the Easton parts block for the picked shaft (choices only; nothing is saved until one is changed) */
+const gr=w=>`${fmtN(w)} gr`;
+function partsHTML(st){const E=st.ep;if(!E)return'';const nm=st.pick.model+' '+st.pick.spine;
+ const sel=(k,l,none)=>E.O[k].length?`<label for="ac_part_${k}">${l}</label><select id="ac_part_${k}" data-part="${k}"><option value="-1"${E.ch[k]<0?' selected':''}>${none}</option>${E.O[k].map((o,i)=>`<option value="${i}"${E.ch[k]==i?' selected':''}>${h(o.n)}${Number.isFinite(o.w)?' ('+gr(o.w)+')':' (type the weight in Point weight)'}</option>`).join('')}</select>`:'';
+ const mods=E.P.mods&&E.pt&&Number.isFinite(E.pt.w)?`<p class="small" style="margin:6px 0 2px">Weight modules (screw onto the adjustable point):</p><div class="acmods">${EP.mods.map(m=>`<label class="small" style="display:inline-flex;gap:4px;align-items:center;margin-right:12px"><input type="checkbox" data-mod="${m}"${E.mods.includes(m)?' checked':''}> ${m} gr</label>`).join('')}</div>`:'';
+ return`<div class="acparts" id="acparts"><h3 style="margin:4px 0 4px;font-size:15px">Easton parts for ${h(nm)}</h3>
+  <p class="small muted" style="margin:0 0 6px">Weights as printed in Easton's 2026 catalogue. They fill the point, insert and nock boxes you leave blank; a figure you type wins. Bushings, pins and collars are counted at the nock end.</p>
+  <div class="labgrid2"><div>${sel('pt','Point','None or my own point')}${mods}${sel('ins','Point-end insert','None')}</div><div>${sel('end','Bushing, pin or collar (nock end)','None')}${sel('nock','Nock','None or my own nock')}</div></div>
+  ${E.P.note?`<p class="small muted" style="margin:6px 0 0">${h(E.P.note)}</p>`:''}
+  <p class="labsrc">${cite('eastonParts')}</p></div>`}
+function partsLine(st){const E=st.ep;if(!E)return'';const bits=[];
+ if(st.fromP.includes('pt'))bits.push(`point ${gr(st.pt)} (${h(E.pt.n)}${E.mods.length?' + '+E.mods.map(m=>m+' gr').join(' + ')+' modules':''})`);
+ if(st.fromP.includes('ins'))bits.push(`insert ${gr(st.ins)} (${h(E.ins.n)})`);
+ if(isFinite(st.bush))bits.push(`nock end ${gr(st.bush)} (${h(E.end.n)})`);
+ if(st.fromP.includes('nock'))bits.push(`nock ${gr(st.nock)} (${h(E.nock.n)})`);
+ return`<p class="small" id="acpartsline" style="margin:6px 0 0">${bits.length?`From Easton's parts for ${h(st.pick.model)}: ${bits.join(', ')}.`:`No Easton part weights in use for ${h(st.pick.model)}.`}${st.bushOff?` The ${h(st.ep.end.n)} is not added because you typed your own insert or nock; choose it under Easton parts to add it.`:''} <span class="muted">Change them under Arrow parts for FOC.</span></p>`}
 
 E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=st.bow!='compound';
  const pickKey=s=>s.brand+'|'+s.model+'|'+s.spine;const pk=st.pick?pickKey(st.pick):'';
@@ -329,11 +397,12 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
   <label>What it's for</label>${seg('use',st.use,USES)}
   <p class="small acdia" id="acdia" style="margin:6px 0 0"><b>Listed:</b> ${h(DC.txt)} ${h(DC.not)}</p>
   ${inp('len',R,'Arrow length','inches, optional','same as draw length','Easton: draw an extra-long arrow and mark it about 1" in front of where it touches the rest. Leave blank to use your draw length.')}
-  ${inp('pt',R,'Point weight','grains','e.g. 100')}
+  ${inp('pt',R,'Point weight','grains',st.fromP.includes('pt')?fmtN(st.pt)+' (Easton part)':'e.g. 100')}
   <details class="acmore" id="acfoc"${OPEN=='foc'?' open':''}><summary>Arrow parts for FOC (optional)</summary><div>
+  ${partsHTML(st)}
   <div class="labgrid2"><div>${inp('gpiU',R,'Shaft weight','grains per inch',st.pick&&isFinite(st.pick.gpi)?String(st.pick.gpi):'from the shaft you pick below')}
-   ${inp('ins',R,'Insert, pin or collar','grains','0','Easton 2026: 4MM Pin 9 gr; nock collar 3 gr; one-piece points need none.'+(st.use=='hunting'?' Easton hunting chart: inserts or outserts over 25 gr add 3 lb per 25 gr.':''))}
-   ${inp('nock',R,'Nock','grains','e.g. 6','Easton 2026: 4MM Microlite nock 6 gr; G Nock 7 gr; Pin nock 2 gr.')}</div><div>
+   ${inp('ins',R,'Insert, pin or collar','grains',st.fromP.includes('ins')?fmtN(st.ins)+' (Easton part)':'0',(st.ep?'Counted at the point end. Pins, collars and bushings for an Easton shaft are chosen in Easton parts above and counted at the nock end. ':'')+'Easton 2026: 4MM Pin 9 gr; nock collar 3 gr; one-piece points need none.'+(st.use=='hunting'?' Easton hunting chart: inserts or outserts over 25 gr add 3 lb per 25 gr.':''))}
+   ${inp('nock',R,'Nock','grains',st.fromP.includes('nock')?fmtN(st.nock)+' (Easton part)':'e.g. 6','Easton 2026: 4MM Microlite nock 6 gr; G Nock 7 gr; Pin nock 2 gr.')}</div><div>
    ${inp('vanes',R,'All vanes together','grains','weigh or check the pack')}
    ${inp('vpos',R,'Vane middle from the nock throat','inches','blank = counted at the nock')}
    ${inp('bp',R,'Measured balance point','inches from the nock throat, optional','','Measured beats worked out. Balance the finished arrow on a knife edge.')}
@@ -349,7 +418,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
   <p class="small" style="margin:0 0 6px">Easton's AMO-standard formula, as printed:</p>
   <p class="acfrm">F.O.C. % = 100 x (A - L/2) / L<br>L = Correct Arrow Length: bottom of nock groove to end of shaft<br>A = bottom of nock groove to the finished arrow's balance point (with point, insert, nock and fletching)</p>
   <p style="margin:10px 0 0" id="acfocout">FOC <span class="labout">${isFinite(B.foc)?f1(B.foc)+'%':'-'}</span> ${isFinite(B.foc)?`<span class="small muted">${B.meas?'from your measured balance point':'worked out from the component weights (an estimate)'}</span>`:'<span class="small muted">pick a shaft above and fill in the arrow parts</span>'}</p>
-  <p class="small" style="margin:2px 0 0">Total arrow weight <b>${isFinite(B.tw)?Math.round(B.tw)+' gr':'-'}</b>${isFinite(B.tw)?` <span class="muted">= ${st.gpi} gr/in x ${st.len}" + point ${st.pt}${isFinite(st.ins)?' + insert '+st.ins:''}${isFinite(st.nock)?' + nock '+st.nock:''}${isFinite(st.vanes)?' + vanes '+st.vanes:''}</span>`:''}${B.missing.length?`<br><span class="muted">Not counted yet: ${B.missing.join(', ')}.</span>`:''}</p>
+  <p class="small" style="margin:2px 0 0">Total arrow weight <b>${isFinite(B.tw)?Math.round(B.tw)+' gr':'-'}</b>${isFinite(B.tw)?` <span class="muted">= ${st.gpi} gr/in x ${st.len}" + point ${st.pt}${isFinite(st.ins)?' + insert '+st.ins:''}${isFinite(st.nock)?' + nock '+st.nock:''}${isFinite(st.bush)?' + bushing/pin '+fmtN(st.bush):''}${isFinite(st.vanes)?' + vanes '+st.vanes:''}</span>`:''}${B.missing.length?`<br><span class="muted">Not counted yet: ${B.missing.join(', ')}.</span>`:''}</p>${partsLine(st)}
   <p class="small" style="margin:6px 0 0">For ${h({target:'target',indoor:'indoor',field:'field','3d':'3D',hunting:'hunting'}[st.use])}: <b>${h(useFoc)}</b>.</p>
   <details class="acmore"><summary>FOC ranges</summary><div>${focRanges}<p class="small muted">The Calculators page has the same FOC formula for a measured balance point. "Use this arrow" sends the length and balance point there.</p></div></details>
   <p class="labsrc">${cite('eastonTM')} · ${cite('eastonFOC')}</p></div>
@@ -379,6 +448,9 @@ E.lab_chooser=function(){css();const{R,st}=parsed();const res=results(st),fing=s
  const put=(k,v)=>{const X=raw();X[k]=v;store(X)};
  app.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{put(b.dataset.seg,b.dataset.val);render()});
  app.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{put(i.dataset.k,i.value.trim());render()});
+ const partsRaw=()=>{const X=raw(),E=st.ep;X.parts=X.parts&&X.parts.m==st.pick.model?X.parts:{m:st.pick.model,pt:E.ch.pt,ins:E.ch.ins,end:E.ch.end,nock:E.ch.nock,mods:E.mods.slice()};return X};
+ app.querySelectorAll('[data-part]').forEach(i=>i.onchange=()=>{const X=partsRaw();X.parts[i.dataset.part]=parseInt(i.value,10);if(i.dataset.part=='pt')X.parts.mods=[];store(X);render()});
+ app.querySelectorAll('[data-mod]').forEach(i=>i.onchange=()=>{const X=partsRaw(),m=+i.dataset.mod;X.parts.mods=(X.parts.mods||[]).filter(x=>x!=m).concat(i.checked?[m]:[]).sort((a,b)=>a-b);store(X);render()});
  app.querySelectorAll('[data-pick]').forEach(i=>i.onchange=()=>{const X=raw();X.pick=JSON.parse(i.dataset.pick);delete X.gpiU;store(X);render()});
  ['acfoc','acpt','acpark'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
  const u=$('#acuse');if(u)u.onclick=()=>{const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};const sent=[],left=[];

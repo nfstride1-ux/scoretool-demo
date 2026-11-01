@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-0941-ac2 (2026-11-01)
+### What changed
+- AC2, Easton parts in the Arrow chooser. Component weights copied from the parts list printed with each shaft in the Easton 2026 catalogue (research copy /workspace/research/easton2026.txt). Only printed figures are used; nothing estimated.
+- Picking an Easton shaft shows "Easton parts for <shaft>" under Arrow parts for FOC: point, point-end insert, bushing/pin/collar (nock end) and nock, each with a None choice, plus 10/20/50 gr weight modules for adjustable points. The chosen parts fill the point, insert and nock boxes left blank; a typed figure wins and a cleared box goes back to the part. A line under the total weight says which parts were used.
+- SuperDrive 27 280 (9.0 gr/in): SD 27 Adjustable Point 100 gr, modules 10/20/50 gr, 4MM Bushing 18, 4MM Kick Out 26, 6.5MM Bushing 19, 6.5MM Kick Out 22, 4MM G Nock 7, 4MM Microlite 6, 6.5MM Super 3D 13, 6.5MM Microlite Super 8. Also SuperDrive 23 and 25, X23 and X27 (Super UNI bushing by size: 2312 11, 2314 10, 2315 11, 2318 11, 2712 19), X10, X10 Parallel Pro 3.2mm, X10 4MM Parallel Pro, A/C/E, Superdrive Micro, Avance and Vector (pins, collars, nocks, half-out). Pin + collar choices are the sum of the two printed figures.
+- Points printed as a range (break-off and ML points) are listed but not filled in; the archer types the weight. The X27 Adjustable Bullet Point is printed "200 grains" and is left out until checked. The nock page lists the 4MM G Nock as 6 gr while the shaft pages say 7 gr; the shaft-page 7 gr is used.
+- Bushings, pins and collars are counted at the nock end in the FOC estimate (before, the Insert box hint suggested entering a pin there, which counted it at the point). To keep older saved figures the same, a nock-end part is not added when the archer had typed their own insert or nock, unless they choose a part; the line says so.
+- Defaults (first listed, changeable): SuperDrive and X23 adjustable point with no modules, first bushing, first nock; X10 lines X10 Pin with Pin Nock (G Pin Nock for compound); 4MM shafts no pin and a 4MM Microlite nock; Vector N Nock. Hunting shafts are not covered.
+- Part choices are saved in the chooser record only when changed. Nothing is written when the page opens. No saved data changed.
+### Files
+arrowchooser.js, help.js (Tools: Easton parts step), index.html (?v= bump), tools/ac2_test.py (new), tools/ac1_test.py (exits with an error on a failed check), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac1 live line), version.json, sw.js.
+### Tests
+- Before (baseline): full regression 76 passed, 0 failed (AC1 after-run, 2eb62ef)
+- Single runs: ac2_test 45 passed, 0 failed; ac1_test 23/0; whatsnew_test 33/0; arrowchooser, arrowcheck, arrowuse and mybows tests pass. ac1_test and ac2_test now exit with an error when a check fails (before, the runner could only see failures in their output); both re-run after that change: 23/0 and 45/0
+- After: full regression 77 passed, 0 failed, 3531 s (includes ac2_test 45/0)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0941-ac2): ac2_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-0810-ac1 (2026-11-01)
 ### What changed
 - AC1, the Arrow chooser and your bow. Concept X 40 was already in the bow list (data/bow_specs.json), so nothing was added there.
@@ -19,7 +36,7 @@ arrowchooser.js, bows.js, arrowcheck.js, index.html (?v= bump), tools/ac1_test.p
 - Before (baseline): full regression 75 passed, 0 failed (yourdata after-run, 33f94c0); live diagnostic on 33f94c0 76 passed, 0 failed
 - Single runs: ac1_test 23 passed, 0 failed; whatsnew_test 33/0; mybows, arrowcheck, arrowchooser, arrowuse and arrowpick tests pass
 - After: full regression 76 passed, 0 failed, 3300 s (includes ac1_test 23/0)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0810-ac1): ac1_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-0810-ac1): ac1_test (BASE=live) 23 passed, 0 failed (1 Nov 2026, about 09:26 AWST); version.json, newest What's new v and noindex checked.
 
 ## v2026-11-01-0611-yourdata (2026-11-01)
 ### What changed

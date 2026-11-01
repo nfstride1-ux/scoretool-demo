@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-01-0941-ac2',d:'2026-11-01',items:[
+   ['arrow',"Easton parts in the Arrow chooser","Pick an Easton shaft in the Arrow chooser and its parts fill in from Easton's 2026 catalogue: for a SuperDrive 27 280, the 100 gr adjustable point with 10, 20 or 50 gr weights, the bushing and the nock. X10, A/C/E, Avance, Vector, Superdrive Micro, SuperDrive 23 and 25, X23 and X27 have their pins, bushings and nocks too. Change them under Arrow parts for FOC. A figure you type still wins."]]},
   {v:'v2026-11-01-0810-ac1',d:'2026-11-01',items:[
-   ['bow',"Arrow chooser uses your bow","The Arrow chooser now starts from the bow you are using, filling in its draw weight, draw length and speed, and follows any change you make in My bows. Bows that are only in Setups & sight marks are listed too. Type in a box to use a different figure. The speed box says which charts use IBO and which use ATA. Is this arrow right? now uses your bow's speed instead of 340 fps."]]},
+   ['bow',"Arrow chooser uses your bow","The Arrow chooser now starts from the bow you are using, filling in its draw weight, draw length and speed, and follows any change you make in My bows. Bows that are only in Setups & sight marks are listed too. Type in a box to use a different figure. The speed box says which charts use IBO and which use ATA. Is this arrow right? now uses your bow's speed instead of 340 fps.",'2eb62ef']]},
   {v:'v2026-11-01-0611-yourdata',d:'2026-11-01',items:[
    ['lock',"Back up your scores","Me > Settings & help has a new Your data card. Save a backup file of your scores, sight marks and settings, and restore it on a new phone or after a reset. When there is no signal a line at the top says the app is offline and saving on this phone. There is also a short privacy note: your scores are kept on this phone, league, match and group scores are shared through a relay, and anonymous usage is recorded by Microsoft Clarity. No account, no login, no payment details.",'33f94c0']]},
   {v:'v2026-11-01-0418-lgauto',d:'2026-11-01',items:[
