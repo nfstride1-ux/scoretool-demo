@@ -518,4 +518,12 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   if(!sent.length){$('#acusemsg').textContent='Nothing to send yet. Enter your draw length first.';return}
   save();window._acFrom={sent,left};nav('lab_calc')};
 };
+/* AC6 (1 Nov 2026): Help > Build an arrow links each step to its place here. data-acgo="<key>" opens the chooser, opens the section
+   the field sits in (Easton parts falls back to Arrow parts for FOC until a shaft is picked), scrolls to it and puts the cursor in the box. Only moves the screen; nothing is saved. */
+const GO={dw:'ac_dw',res:'acres',cut:'accut',pt:'ac_pt',foc:'acfoc',parts:'acparts acfoc',fletch:'acfletch',len:'ac_len'},GOOPEN={cut:'cut',foc:'foc',parts:'foc',fletch:'fletch'};
+window.acGo=function(k){if(!GO[k])return;if(GOOPEN[k])OPEN=GOOPEN[k];nav('lab_chooser');let n=0;
+ (function t(){const el=GO[k].split(' ').map(x=>document.getElementById(x)||document.querySelector('#app .'+x)).find(Boolean);if(!el){if(n++<20)setTimeout(t,50);return}
+  if(el.tagName=='DETAILS')el.open=true;const d=el.parentElement&&el.parentElement.closest('details');if(d&&!d.open)d.open=true;
+  el.scrollIntoView({block:'center'});if(el.matches('input,select'))el.focus({preventScroll:true})})()};
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-acgo]');if(a){e.preventDefault();window.acGo(a.dataset.acgo)}});
 })();

@@ -78,7 +78,7 @@ with sync_playwright() as p:
   chk('back goes to Settings & help',E("view")=='lab_settings')
   # ---- help guides ----
   E("()=>{window._hgOpen='start';nav('help')}");pg.wait_for_timeout(900)
-  chk('help: 10 guides',pg.locator('details.hg').count()==10)
+  chk('help: 11 guides',pg.locator('details.hg').count()==11)
   chk('help: no emoji',not EMO.search(pg.locator('#app').inner_text()))
   chk('help has a back button',pg.locator('.labbar button').count()>=1)
   vis=lambda: E("[...document.querySelectorAll('#hg-start img')].filter(i=>getComputedStyle(i).display!='none').map(i=>i.getAttribute('src'))")

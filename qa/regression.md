@@ -28,6 +28,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | Arrow chooser shortest cut | ac3 | Shortest safe cut helper (Easton Tuning Guide pp. 15-17, Fig. 21): plain steps, nock groove to rest contact + 1", chart spine and FOC worked out at that length, Use writes the arrow length, warning when the arrow is shorter. Nothing written on opening, old data unchanged, 390px. |
 | Arrow chooser heavy point and FOC | ac4 | Heavy point warning when the point-weight step takes Easton's target or hunting chart past the top row (heaviest point that still reads), Gold Tip front weight over 150 gr, FOC over Easton's 7-16% tuning range or 15% indoor. Nothing written, old data unchanged, 390px. |
 | Arrow chooser fletching suggestion | ac5 | Fletching suggestion by use (indoor, outdoor, 3D, hunting) and launcher rest for compound, figures as printed by Bow International and Easton's Tuning Guide, each line sourced, marked Not from Dr Park. Reads only, old data unchanged, 390px. |
+| Help: Build an arrow guide | ac6 | Help guide Build an arrow: 8 steps in order, each citing its source and opening its field in the Arrow chooser (shown, section open, cursor in the box); links write nothing; 390px; no emoji. |
 | Casual shoot | casual, mixedface, casual3d, custom3d, mel3d | Setup choice, discipline faces and keys, 3D/ABA, custom rounds |
 | League | league | Onion Shed 6 x Vegas 300, cumulative ranking, X ties, missing weeks |
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |

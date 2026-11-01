@@ -4,6 +4,20 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-1349-ac6 (2026-11-01)
+### What changed
+- AC6, new Help guide "Build an arrow" (after Tools), eight steps in order: bow details; spine from the chart; shortest safe cut; point weight and FOC (Easton 7-16% range, indoor target 7-15%, outdoor target 10-15%); bushings and nocks; fletching (sourced, not from Dr Park); cutting, gluing and squaring; bare-shaft or paper tune.
+- Every step names its source with a link: Easton Arrow Tuning and Maintenance Guide (pp. 1, 4-7, 10, 13, 15-17 Fig. 21, 19, 26-27), Easton 2026 catalogue (Target Arrow Size Selection chart pp. 56-57; component lists), Easton "The Simple Guidelines to Correct Arrow Balance (FOC)" (2022), and A. Tippins' Bow International vane guides (2018, 2020).
+- Each step has an "Open ... in the Arrow chooser" link that opens the chooser at that field (draw weight, result, Shortest safe cut, point weight, Easton parts, Fletching suggestion, arrow length), opening its section and putting the cursor in the box. The links only move the screen; nothing is saved.
+- The printable PDF of the guides (help/ScoreTool-help-guides.pdf, last built 23 Oct) is not rebuilt in this release; Print the guides in Help includes the new guide.
+### Files
+help.js (new guide), arrowchooser.js (acGo: open the chooser at a field), index.html (?v= bump), tools/ac6_test.py (new), tools/whatsnew_test.py (Help now has 11 guides), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac5 live line), version.json, sw.js.
+### Tests
+- Before (baseline): RESULT_BEFORE
+- Single runs: TESTS_SINGLE
+- After: RESULT_AFTER
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1349-ac6): ac6_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-1343-ac5 (2026-11-01)
 ### What changed
 - AC5, sourced fletching suggestion in the Arrow chooser ("Fletching suggestion", under the result). Marked "Not from Dr Park"; every line names its source.
@@ -17,7 +31,7 @@ arrowchooser.js, help.js (Tools: Fletching suggestion step), index.html (?v= bum
 - Before (baseline): full regression 79 passed, 0 failed (AC4 after-run, 6bd55e3)
 - Single runs: ac5_test 22 passed, 0 failed; ac4_test 22/0; whatsnew_test 33/0
 - After: full regression 80 passed, 0 failed, 3318s (python3 qa/run_regression.py, 1 Nov 2026 16:39-17:34 AWST)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1343-ac5): ac5_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1343-ac5, commit 96361f8, pushed 1 Nov 2026 17:34 AWST): ac5_test 22 passed, 0 failed on the live URL (17:35 AWST); sw.js version matches; noindex present; What's new shows this entry on top.
 
 ## v2026-11-01-1342-ac4 (2026-11-01)
 ### What changed
