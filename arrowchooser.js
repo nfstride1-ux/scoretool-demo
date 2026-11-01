@@ -195,13 +195,18 @@ function eaWeight(st){const fing=st.bow!='compound',hunt=st.use=='hunting',adj=[
 /* sizes just outside the chart range, per family: one weaker (higher spine number) and one stiffer (lower number) */
 function nearNum(m,hi,lo){const o=[],up=m.s.filter(x=>x[0]>hi).sort((a,b)=>a[0]-b[0])[0],dn=m.s.filter(x=>x[0]<lo).sort((a,b)=>b[0]-a[0])[0];
  if(up)o.push({model:m.m,spine:up[0],gpi:up[1],side:'weaker'});if(dn)o.push({model:m.m,spine:dn[0],gpi:dn[1],side:'stiffer'});return o}
+/* AC4: when only the point-weight step (3 lb per 25 gr over 100 gr) takes the reading past the top row, say so and give the
+   heaviest point that still reads inside the top row (found by stepping the same eaWeight sum down 1 gr at a time). */
+function ptOff(st,top){if(!isFinite(st.pt)||st.pt<=100)return null;if(eaWeight(Object.assign({},st,{pt:100})).W>top)return null;
+ let p=Math.floor(st.pt);while(p>100&&eaWeight(Object.assign({},st,{pt:p})).W>top)p--;
+ return{pt:st.pt,add:Math.round((st.pt-100)/25*3*10)/10,top,max:p}}
 function easton(st){const fing=st.bow!='compound',kind=fing?'R':'C',L=Math.round(st.len),use=st.use,hunt=use=='hunting';
  const{adj,W,work}=eaWeight(st);
  const out={brand:'Easton',src:hunt?'eastonH':'easton',adj,w:W,work,shafts:[],near:[],extra:[]};
  if(hunt){const rows=fing?H_R:H_C;Object.assign(out,{lenDef:'nock throat to the end of the shaft, not counting the point or insert'});
   if(W<rows[0][0])return Object.assign(out,{off:`${W} lb is below the hunting chart (lowest ${fing?'traditional recurve':'compound'} row ${rows[0][0]}-${rows[0][1]} lb)`});
   const r=rows.findIndex(x=>W<=x[1]);
-  if(r<0)return Object.assign(out,{off:`${W} lb is above the hunting chart (top ${fing?'traditional recurve':'compound'} row ${rows[rows.length-1][0]}-${rows[rows.length-1][1]} lb)`});
+  if(r<0)return Object.assign(out,{ptOff:ptOff(st,rows[rows.length-1][1]),off:`${W} lb is above the hunting chart (top ${fing?'traditional recurve':'compound'} row ${rows[rows.length-1][0]}-${rows[rows.length-1][1]} lb)`});
   if(L<23||L>34)return Object.assign(out,{off:`${L}" is outside the hunting chart (23" to 34")`});
   const cell=H_SEQ[r+L-23];if(!cell)return Object.assign(out,{off:`the hunting chart has no size for ${rows[r][0]}-${rows[r][1]} lb at ${L}"`});
   const[hi,lo]=rng(cell);EA_HUNT.forEach(m=>{const inR=m.s.filter(([sp])=>sp<=hi&&sp>=lo);inR.forEach(([sp,g])=>out.shafts.push({brand:'Easton',model:m.m,spine:sp,gpi:g,od:m.od}));if(!inR.length)out.near.push(...nearNum(m,hi,lo))});
@@ -209,7 +214,7 @@ function easton(st){const fing=st.bow!='compound',kind=fing?'R':'C',L=Math.round
    fams:EA_HUNT,tip:fing?'Easton\'s hunting chart lists recurve rows for traditional (hunting) recurves; it has no barebow or Olympic recurve column.':''})}
  const rows=fing?EA_R:EA_C;Object.assign(out,{lenDef:'cut length to the throat of the nock'});
  const r=rows.findIndex(x=>W<=x[1]);
- if(r<0)return Object.assign(out,{off:`${W} lb is above the chart (top row ${rows[rows.length-1][0]} lb)`});
+ if(r<0)return Object.assign(out,{ptOff:ptOff(st,rows[rows.length-1][1]),off:`${W} lb is above the chart (top row ${rows[rows.length-1][0]} lb)`});
  if(L<21||L>34)return Object.assign(out,{off:`${L}" is outside the chart (21" to 34")`});
  const cell=EA_SEQ[r+L-21],[hi,lo]=rng(cell);
  let fams;
@@ -244,7 +249,7 @@ function goldtip(st){const fing=st.bow!='compound',L=Math.round(st.len);const fr
  if(L<25||L>32)return Object.assign(out,{off:`${L}" is outside the chart (25" to 32")`});
  const sp=ch.g[r][L-25];
  return Object.assign(out,{cell:`${chartName}: ${lows[r]}-${lows[r]+4} lb in the ${col} gr column, ${L}"`,spine:String(sp),hi:sp,lo:sp,shafts:[],
-  tip:(front<100?'Your front weight is under 100 gr, the lightest column on this chart. ':'')+(fing?'Gold Tip: start 1" longer than your finished arrow and cut down 1/4" at a time while bare-shaft tuning.':''),
+  gtHeavy:front>150?front:0,tip:(front<100?'Your front weight is under 100 gr, the lightest column on this chart. ':'')+(fing?'Gold Tip: start 1" longer than your finished arrow and cut down 1/4" at a time while bare-shaft tuning.':''),
   gtFat:st.use=='indoor'})}
 function victory(st){const out={brand:'Victory',src:'victory',lenDef:'arrow length as printed on the chart'};
  if(st.use=='indoor')return Object.assign(out,{off:'Indoor lists large-diameter shafts only. Victory\'s chart covers its VF / RIP XV / RVL lines, and we have not confirmed any of them as a large-diameter indoor shaft'});
@@ -352,6 +357,12 @@ function cutHTML(st){const c=st.contact,cut=cutOf(st),fing=st.bow!='compound';le
   <p class="small muted" style="margin:8px 0 0">Easton's 1" is for target, field and 3D arrows from any bow, and hunting arrows from bows with a cutout sight window. Broadheads on bows without a cutout, and overdraws, need other clearances (Easton Figs. 22-26), not covered here.${fing?' Easton: beginners with recurve bows may want to add an extra 1/2"-1" so the arrow is not too short as they get stronger.':''} Correct Arrow Length includes the bit of nock below the groove, so the bare shaft is cut slightly shorter than it.</p>
   <p class="labsrc">${cite('eastonCut')}</p></div></details>`}
 let R0=()=>({});
+/* AC4: FOC over Easton's limits: indoor 7-15% (Easton 2022), point-weight tuning 7-16% (Tuning Guide p. 10). Rounded the way it is shown. */
+function focWarn(st,B){if(!isFinite(B.foc))return'';const F=Math.round(B.foc*10)/10,w=[];
+ if(F>16)w.push(`above the 16% top of Easton's 7-16% range for changing point weight while tuning (Tuning Guide p. 10)`);
+ if(st.use=='indoor'&&F>15)w.push(`above Easton's indoor target range of 7-15% (Easton 2022)`);
+ if(!w.length)return'';
+ return`<div class="acwarn" role="note" id="acfocwarn">${ic('warn')}<b>FOC ${f1(B.foc)}% is high.</b> It is ${w.join(', and ')}. A lighter point or insert brings it down.</div>`}
 /* AC2: the Easton parts block for the picked shaft (choices only; nothing is saved until one is changed) */
 const gr=w=>`${fmtN(w)} gr`;
 function partsHTML(st){const E=st.ep;if(!E)return'';const nm=st.pick.model+' '+st.pick.spine;
@@ -380,7 +391,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   <p class="small" style="margin:6px 0 0">${cmp?`Dr James Park tested compound arrows at the chart's recommended size and one and two sizes stiffer: all of them behaved similarly. He did not report on weaker sizes, so a weaker size needs a bare-shaft or paper tune. <span class="labsrc">${cite('park11')}</span>`
    :`Dr James Park's recurve study found that for any one bow there is usually no more than one size that matches it well, so outside the chart confirm with a bare-shaft tune. <span class="labsrc">${cite('park13')} (as summarised in ${cite('williams25')})</span>`}</p></details>`};
  const brandHTML=b=>{const working=b.work?`<p class="small" style="margin:4px 0 0">Chart weight: ${h(b.work)}.</p>`:'';
-  if(b.off)return`<div class="brand"><h3>${h(b.brand)}</h3><p class="off">Not shown: ${h(b.off)}.</p>${working}${b.work&&/above|below/.test(b.off)?'<p class="small muted" style="margin:4px 0 0">If that weight looks wrong, check the draw weight, speed rating and point weight boxes above. A saved bow fills in the maker\'s speed rating.</p>':''}<p class="labsrc">Chart: ${cite(b.src)}</p></div>`;
+  if(b.off)return`<div class="brand"><h3>${h(b.brand)}</h3><p class="off">Not shown: ${h(b.off)}.</p>${b.ptOff?`<div class="acwarn" role="note" id="acptoff">${ic('warn')}<b>Heavy point.</b> Your ${fmtN(b.ptOff.pt)} gr point adds ${fmtN(b.ptOff.add)} lb to Easton's chart reading, and that takes it past the top row (${b.ptOff.top} lb). With a point of ${b.ptOff.max} gr or lighter it reads inside the chart. Easton: "If your arrow is too weak, go to a lighter insert/point."</div>`:''}${working}${b.work&&/above|below/.test(b.off)?'<p class="small muted" style="margin:4px 0 0">If that weight looks wrong, check the draw weight, speed rating and point weight boxes above. A saved bow fills in the maker\'s speed rating.</p>':''}<p class="labsrc">Chart: ${cite(b.src)}</p></div>`;
   const shafts=b.shafts.length?b.shafts.map(s=>{const w=isFinite(s.gpi)&&isFinite(st.len)?Math.round(s.gpi*st.len):NaN;const id='p'+Math.random().toString(36).slice(2,8);
    const od=s.od?` · O.D. ${s.od[0]==s.od[1]?s.od[0].toFixed(3).replace(/^0/,''):s.od[0].toFixed(3).replace(/^0/,'')+'-'+s.od[1].toFixed(3).replace(/^0/,'')}"`:'';
    return`<label class="acshaft" for="${id}"><input type="radio" name="acpick" id="${id}" data-pick='${h(JSON.stringify({brand:s.brand,model:s.model,spine:s.spine,gpi:isFinite(s.gpi)?s.gpi:null}))}' ${pickKey(s)==pk?'checked':''}><span><b>${h(s.model)} ${h(s.spine)}</b> <small>${isFinite(s.gpi)?`${s.gpi} gr/in · shaft about ${w} gr at ${st.len}"`:'grains per inch not on this chart'}${od}${s.rp?` · Skylon recommended point ${h(s.rp)} gr`:''}${s.note?' · '+h(s.note):''}</small></span></label>`}).join('')
@@ -389,7 +400,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   const gtFat=b.gtFat?`<p class="small" style="margin:6px 0 0">Gold Tip's chart is the same for every Gold Tip shaft. Its large-diameter target shafts: ${GT_FAT.map(x=>`${h(x[0])} (${x[1]}"${x[2]?', '+x[2]:''})`).join(', ')}. Check the catalogue for the spines each is made in. <span class="labsrc">${cite('gt25')}</span></p>`:'';
   return`<div class="brand" data-brand="${h(b.brand)}"><h3>${h(b.brand)} <span class="spn">${h(b.spine)}</span></h3><p class="small muted" style="margin:0">${h(b.cell)}. Length on this chart: ${h(b.lenDef)}.</p>
   ${working}${b.alInfo?`<p class="small muted" style="margin:4px 0 0">${h(b.alInfo)}</p>`:''}
-  ${b.brand=='Skylon'?skList:''}${shafts}${b.brand=='Easton'?nearHTML(b):''}${gtFat}${b.tip?`<p class="small" style="margin:6px 0 0">${h(b.tip)}</p>`:''}<p class="labsrc" style="margin:6px 0 0">Chart: ${cite(b.src)}${b.alInfo?' · '+cite('eastonAL'):''}${b.brand=='Skylon'?' · '+cite('skylonB'):''}</p></div>`};
+  ${b.gtHeavy?`<div class="acwarn" role="note" id="acgtheavy">${ic('warn')}<b>Heavy point.</b> Your front weight (${fmtN(b.gtHeavy)} gr) is heavier than Gold Tip's heaviest column (150 gr), so this is the 150 gr reading. A heavier point makes the arrow act weaker than the chart shows (Easton Tuning Guide), so tune before buying a set.</div>`:''}${b.brand=='Skylon'?skList:''}${shafts}${b.brand=='Easton'?nearHTML(b):''}${gtFat}${b.tip?`<p class="small" style="margin:6px 0 0">${h(b.tip)}</p>`:''}<p class="labsrc" style="margin:6px 0 0">Chart: ${cite(b.src)}${b.alInfo?' · '+cite('eastonAL'):''}${b.brand=='Skylon'?' · '+cite('skylonB'):''}</p></div>`};
  const DC=diaClass(st);
  const cutLen=isFinite(st.len)?(isFinite(st.lenIn)?`${st.len}" (your measured length)`:`about ${st.len}" (your draw length; measure to be sure)`):'-';
  const B=build(st),fps=isFinite(st.fps)?st.fps:speedEst(st,B.tw);
@@ -446,6 +457,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   <p style="margin:10px 0 0" id="acfocout">FOC <span class="labout">${isFinite(B.foc)?f1(B.foc)+'%':'-'}</span> ${isFinite(B.foc)?`<span class="small muted">${B.meas?'from your measured balance point':'worked out from the component weights (an estimate)'}</span>`:'<span class="small muted">pick a shaft above and fill in the arrow parts</span>'}</p>
   <p class="small" style="margin:2px 0 0">Total arrow weight <b>${isFinite(B.tw)?Math.round(B.tw)+' gr':'-'}</b>${isFinite(B.tw)?` <span class="muted">= ${st.gpi} gr/in x ${st.len}" + point ${st.pt}${isFinite(st.ins)?' + insert '+st.ins:''}${isFinite(st.nock)?' + nock '+st.nock:''}${isFinite(st.bush)?' + bushing/pin '+fmtN(st.bush):''}${isFinite(st.vanes)?' + vanes '+st.vanes:''}</span>`:''}${B.missing.length?`<br><span class="muted">Not counted yet: ${B.missing.join(', ')}.</span>`:''}</p>${partsLine(st)}
   <p class="small" style="margin:6px 0 0">For ${h({target:'target',indoor:'indoor',field:'field','3d':'3D',hunting:'hunting'}[st.use])}: <b>${h(useFoc)}</b>.</p>
+  ${focWarn(st,B)}
   <details class="acmore"><summary>FOC ranges</summary><div>${focRanges}<p class="small muted">The Calculators page has the same FOC formula for a measured balance point. "Use this arrow" sends the length and balance point there.</p></div></details>
   <p class="labsrc">${cite('eastonTM')} · ${cite('eastonFOC')}</p></div>
   <details class="acmore" id="acpt"${OPEN=='pt'?' open':''}><summary>Point weight</summary><div>

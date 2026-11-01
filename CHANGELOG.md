@@ -4,6 +4,21 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-01-1342-ac4 (2026-11-01)
+### What changed
+- AC4, heavy point and FOC warnings in the Arrow chooser.
+- Easton target and hunting charts: when the point-weight step (Easton: 3 lb of bow weight per 25 gr over 100 gr) is what takes the reading past the top row, the Easton box shows a "Heavy point" note with the extra pounds and the heaviest point that still reads inside the top row (worked out with the same sum, 1 gr at a time), and quotes Easton: "If your arrow is too weak, go to a lighter insert/point." If the bow is over the top row even at 100 gr, there is no point note (the existing "above the chart" line stays).
+- Gold Tip: a note when the front weight is over its heaviest column (150 gr): the reading is the 150 gr column and a heavier point acts weaker.
+- FOC: a note under the FOC result when it is over 16% (top of Easton's 7-16% point-weight tuning range, Tuning Guide p. 10), and for Indoor when it is over 15% (Easton 2022 indoor target 7-15%). Uses the FOC shown (measured balance point when given, otherwise the estimate), rounded as shown.
+- Reads only; nothing saved and no saved data changed.
+### Files
+arrowchooser.js, help.js (Tools: Heavy point and FOC warnings step), index.html (?v= bump), tools/ac4_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js, CHANGELOG.md (also fills in the ac3 live line), version.json, sw.js.
+### Tests
+- Before (baseline): full regression 78 passed, 0 failed (AC3 after-run, dd19439)
+- Single runs: ac4_test 22 passed, 0 failed; ac3_test 29/0; ac2_test 45/0; whatsnew_test 33/0
+- After: full regression 79 passed, 0 failed, 3530s (python3 qa/run_regression.py, 1 Nov 2026 15:37-16:36 AWST)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1342-ac4): ac4_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+
 ## v2026-11-01-1334-ac3 (2026-11-01)
 ### What changed
 - AC3, shortest safe cut helper in the Arrow chooser (under Arrow length, "Shortest safe cut (helper)"). Source: Easton Arrow Tuning and Maintenance Guide, Measuring Correct Arrow Length (pp. 15-16, Fig. 21) and Determining Shaft Cut Length (p. 17), research copy /workspace/research/TuningGuideEaston.pdf.
@@ -17,7 +32,7 @@ arrowchooser.js, help.js (Tools: Shortest safe cut step), index.html (?v= bump),
 - Before (baseline): full regression 77 passed, 0 failed (AC2 after-run, 8496ebc)
 - Single runs: ac3_test 29 passed, 0 failed (exits with an error on a failed check); ac2_test 45/0; whatsnew_test 33/0
 - After: full regression 78 passed, 0 failed, 3185 s (includes ac3_test)
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1334-ac3): ac3_test is run on the live URL after the deploy; the result is added to this entry by the next release.
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1334-ac3): ac3_test (BASE=live) 29 passed, 0 failed (1 Nov 2026, about 15:37 AWST); version.json, newest What's new, sw.js version and noindex checked.
 
 ## v2026-11-01-0941-ac2 (2026-11-01)
 ### What changed
