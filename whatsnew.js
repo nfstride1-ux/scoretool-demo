@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-03-0636-r2',d:'2026-11-03',items:[
+   ['arrow',"Type in the tuning session's arrow setup card","In a tuning session, every box on the Arrow setup card, Before and After, can now be typed in: shaft, spine, length, point, FOC, total weight and speed. What you type is kept with that session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved, so you can fix a wrong figure and carry on with a bare shaft test."]]},
   {v:'v2026-11-03-0630-r1',d:'2026-11-03',items:[
-   ['arrow',"Arrow and bow figures are checked","In the Arrow chooser and the Calculators, a figure outside the usual range for that box, like a 12365 gr arrow or a 200 lb draw weight, is now pointed out under the box in plain words and left out until you fix it. The speed estimate shows a dash and the reason instead of a figure that cannot be right, and it is never below zero. Nothing you saved before is changed."]]},
+   ['arrow',"Arrow and bow figures are checked","In the Arrow chooser and the Calculators, a figure outside the usual range for that box, like a 12365 gr arrow or a 200 lb draw weight, is now pointed out under the box in plain words and left out until you fix it. The speed estimate shows a dash and the reason instead of a figure that cannot be right, and it is never below zero. Nothing you saved before is changed.",'7a7711b']]},
   {v:'v2026-11-01-1446-relayhold',d:'2026-11-01',items:[
    ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back.",'a7ea130']]},
   {v:'v2026-11-01-1349-ac6',d:'2026-11-01',items:[

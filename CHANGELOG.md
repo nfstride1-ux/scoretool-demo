@@ -4,6 +4,20 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-03-0636-r2 (2026-11-03)
+### What changed
+- R2 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): the tuning session's Arrow setup card was read-only and copied whatever the Arrow chooser had, including impossible figures, which blocked bare shaft vs fletched testing.
+- Every Before and After box on the card (shaft, spine, length, point, FOC, total weight, speed) is now a box you can type in. "Just a group" sessions have one Arrow column. Sessions without a saved setup show empty boxes (and "Use my current arrow setup for Before" when the chooser has one).
+- Same range check as R1 (window.arrowLim, FOC 0-40% added). A figure outside its range, or not a number, is kept in the box as typed, flagged under it in plain English, and not saved. A figure saved before that is out of range (for example 12365 gr or -3643 fps copied from the chooser before R1) is flagged when shown and left as it is until it is typed over.
+- Edits save to that session only (t.arrow, t.arrowAfter). The Arrow chooser, My bows, My arrows and the Calculators are never written. The first edit to an After box starts After as a copy of Before. A typed speed is marked as your figure, not an estimate. Shaft and spine are free text (up to 30 characters), not range-checked.
+- Showing the card writes nothing; old sessions are not rewritten.
+### Files
+lab.js (arwCard, arwWire, TA_F, FOC range), lab.css (.tarwtbl), tools/r2_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also R1 commit hash), CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): R1 branch full regression (see the R1 entry)
+- Single runs: r2_test 24 passed, 0 failed; arrowchooser_test tuning-session checks (setup in session, what changed point, snapshot fields, old sessions untouched) all pass. arrowchooser_test also reports "starting-point warning" at 390 and 1366px: it expects one "A starting point only" text and main (a7ea130) already shows two; the regression counts it as a pass because that test always exits 0. Not caused by this change.
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK, after R1).
 ## v2026-11-03-0630-r1 (2026-11-03)
 ### What changed
 - R1 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): input checks on the arrow and bow figures. 12365 gr was accepted and the Calculators speed estimate showed -3643 fps.

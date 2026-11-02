@@ -8,7 +8,7 @@ const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
    so a slip like 12365 gr can never give a negative speed. The typed text is kept as typed; nothing saved is changed or rewritten. */
 const ARROW_LIM={dw:['Draw weight',5,90,'lb'],dl:['Draw length',14,34,'inches'],ibo:['Speed rating',200,400,'fps'],tw:['Arrow weight',100,1000,'gr'],
  len:['Arrow length',14,36,'inches'],pt:['Point weight',10,400,'gr'],gpi:['Shaft weight',2,30,'grains per inch'],ins:['Insert, pin or collar',0,150,'gr'],
- nock:['Nock',0,40,'gr'],vanes:['Vanes',0,100,'gr'],fps:['Arrow speed',100,450,'fps'],sg:['Extra weight on the string',0,100,'gr'],bp:['Balance point',1,36,'inches']};
+ nock:['Nock',0,40,'gr'],vanes:['Vanes',0,100,'gr'],fps:['Arrow speed',100,450,'fps'],sg:['Extra weight on the string',0,100,'gr'],foc:['FOC',0,40,'%'],bp:['Balance point',1,36,'inches']};
 /* null if blank or fine; otherwise the message for that box */
 window.arrowLim=function(k,v){const L=ARROW_LIM[k];if(!L)return null;const t=String(v??'').trim();if(t==='')return null;const x=parseFloat(t.replace(',','.'));
  const nice=n=>String(n);if(!isFinite(x)||!/^-?\d*[.,]?\d+$/.test(t))return`${L[0]}: "${t}" is not a number. Type the number only, in ${L[3]}. It is left out until it is fixed.`;
@@ -196,19 +196,37 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
  $('#tdel').onclick=()=>{if(confirm('Delete this tuning session?')){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
  $('#tnote').onchange=e=>{T.note=e.target.value;save()};
- const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};
+ const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};arwWire(T);
  app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go))};
 /* Arrow setup in a tuning session (22 Oct 2026, Nathe): new sessions carry a snapshot of the Arrow chooser setup (t.arrow);
    'Use my current arrow setup for After' adds t.arrowAfter, so the session shows exactly what changed. Old sessions show nothing. */
 function arwSum(a){return[a.model&&a.spine?a.model+' '+a.spine:(a.spine?'spine '+a.spine:''),a.len?a.len+'"':'',a.pt!=null?a.pt+' gr point':''].filter(Boolean).join(' · ')}
-function arwCard(T,one){const a=T.arrow;if(!a)return'';const b=T.arrowAfter;
- const F=[['Spine',x=>x.spine?(x.model?x.model+' ':'')+x.spine:'-'],['Length',x=>x.len!=null?x.len+'"':'-'],['Point',x=>x.pt!=null?x.pt+' gr':'-'],['FOC',x=>x.foc!=null?x.foc.toFixed(1)+'%':'-'],['Total weight',x=>x.tw!=null?x.tw+' gr':'-'],['Speed',x=>x.fps!=null?x.fps+' fps'+(x.fpsSrc=='estimate'?' (estimate)':''):'-']];
- const rows=F.map(([n,f])=>{const v0=f(a),v1=b?f(b):'';const ch=b&&v0!=v1;return`<tr><th>${n}</th><td>${h(v0)}</td>${b?`<td>${ch?`<b>${h(v0)} → ${h(v1)}</b>`:'<span class="muted">same</span>'}</td>`:''}</tr>`}).join('');
- const changed=b?F.filter(([n,f])=>f(a)!=f(b)).map(([n,f])=>`${n.toLowerCase()} ${f(a)} → ${f(b)}`):[];
- return`<div class="card"><span class="kicker">Arrow setup</span>${b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
- <table class="labtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${b?'<th>After</th>':''}</tr></thead><tbody>${rows}</tbody></table>
- <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
- <p class="small muted" style="margin:6px 0 0">Saved with this session when it started. Change your arrow in the Arrow chooser, then tap the button to record the After setup.</p></div>`}
+/* R2 (3 Nov 2026, Nathe via Archery Coach): every Before and After box on the session's Arrow setup card can be typed in, with the same
+   range check as the Arrow chooser (arrowLim). Edits save to this session only (t.arrow, t.arrowAfter), never to the Arrow chooser,
+   My bows or My arrows. A figure outside its range is kept in the box as typed, flagged, and not saved; a figure already saved that is
+   out of range (copied from the chooser before R1) is flagged when shown and left as it is until it is typed over. */
+const TA_F=[['model','Shaft','text'],['spine','Spine','text'],['len','Length','in'],['pt','Point','gr'],['foc','FOC','%'],['tw','Total weight','gr'],['fps','Speed','fps']];
+const TA_PEND={};/* typed figures that failed the check, this visit only (never saved) */
+function arwCard(T,one){const a=T.arrow||null,b=T.arrowAfter||null,L=window.arrowLim||(()=>null);
+ const F=[['Spine',x=>x.spine?(x.model?x.model+' ':'')+x.spine:'-'],['Length',x=>x.len!=null?x.len+'"':'-'],['Point',x=>x.pt!=null?x.pt+' gr':'-'],['FOC',x=>x.foc!=null&&isFinite(x.foc)?(+x.foc).toFixed(1)+'%':'-'],['Total weight',x=>x.tw!=null?x.tw+' gr':'-'],['Speed',x=>x.fps!=null?x.fps+' fps'+(x.fpsSrc=='estimate'?' (estimate)':''):'-']];
+ const changed=a&&b?F.filter(([n,f])=>f(a)!=f(b)).map(([n,f])=>`${n.toLowerCase()} ${f(a)} → ${f(b)}`):[];
+ const cell=(side,o,k,u)=>{const id=`ta_${side}_${k}`,pk=T.id+':'+side+':'+k,pend=TA_PEND[pk];let v=pend!=null?pend:(o&&o[k]!=null?o[k]:'');
+  if(k=='foc'&&pend==null&&v!==''&&isFinite(v))v=(+v).toFixed(1);let m=u=='text'?null:L(k,v);if(m)m=m.replace(' It is left out until it is fixed.',pend!=null?' It is not saved. Type the right figure.':' Type the right figure to replace it.');
+  return`<td><input id="${id}" class="ta_in" data-ta="${side}:${k}" ${u=='text'?'maxlength="30"':'inputmode="decimal"'} value="${h(String(v))}" aria-label="${side=='b'?(one?'Arrow':'Before'):'After'} ${TA_F.find(x=>x[0]==k)[1]}${u!='text'?' ('+u+')':''}"${m?` aria-invalid="true" aria-describedby="${id}_bad"`:''}>${m?`<p class="labbad" id="${id}_bad" role="alert">${h(m)}</p>`:''}</td>`};
+ const rows=TA_F.map(([k,n,u])=>`<tr><th>${n}${u!='text'?` <span class="muted small">(${u})</span>`:''}</th>${cell('b',a,k,u)}${one?'':cell('a',b,k,u)}</tr>`).join('');
+ const sum=x=>x?h(arwSum(x)):'';
+ return`<div class="card" id="tarwcard"><span class="kicker">Arrow setup</span>${a&&b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
+ ${a&&arwSum(a)?`<p class="small" style="margin:0 0 6px">${one?'Arrow':'Before'}: ${sum(a)}${b&&arwSum(b)?`<br>After: ${sum(b)}`:''}</p>`:''}
+ <table class="labtbl tarwtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${one?'':'<th>After</th>'}</tr></thead><tbody>${rows}</tbody></table>
+ <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${!a&&window.arrowSetup&&arrowSetup()?`<button class="btn ghost" id="tarwbefore">Use my current arrow setup for ${one?'this group':'Before'}</button>`:''}${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
+ <p class="small muted" style="margin:6px 0 0">Type in any box to correct it. Changes are kept with this session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved.</p></div>`}
+function arwWire(T){app.querySelectorAll('[data-ta]').forEach(x=>x.onchange=()=>{const[side,k]=x.dataset.ta.split(':'),u=TA_F.find(f=>f[0]==k)[2],raw=x.value.trim(),pk=T.id+':'+side+':'+k;
+  if(u!='text'&&raw!==''&&window.arrowLim&&arrowLim(k,raw)){TA_PEND[pk]=raw;render();return}
+  delete TA_PEND[pk];
+  const o=side=='b'?(T.arrow=T.arrow||{}):(T.arrowAfter=T.arrowAfter||Object.assign({},T.arrow||{}));
+  if(u=='text')o[k]=raw;else{o[k]=raw===''?null:parseFloat(raw.replace(',','.'));if(k=='fps')o.fpsSrc=raw===''?'':'own'}
+  save();render()});
+ const tb=$('#tarwbefore');if(tb)tb.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrow=a;save();render()}}}
 /* Bare shaft vs fletched: reading and next step, only from Easton's Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test, p. 5;
    Adjustments Within the Bow and Arrow System, p. 10). The guide gives the left/right reading for a right-handed archer only. */
 function bareCard(T,B,A){const S2=window.ARROW_SRC||{},tm=S2.eastonTM?`<a href="${S2.eastonTM[1]}" target="_blank" rel="noopener">${h(S2.eastonTM[0])}</a>`:'Easton Arrow Tuning and Maintenance Guide';
