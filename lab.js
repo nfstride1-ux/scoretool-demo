@@ -3,6 +3,20 @@
 (function(){
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* R1 (3 Nov 2026, Nathe via Archery Coach): sane ranges for the arrow and bow figures typed into the Arrow chooser and the Calculators.
+   A figure outside its range (or not a number) is flagged on its own box in plain English and left out of the sums until it is fixed,
+   so a slip like 12365 gr can never give a negative speed. The typed text is kept as typed; nothing saved is changed or rewritten. */
+const ARROW_LIM={dw:['Draw weight',5,90,'lb'],dl:['Draw length',14,34,'inches'],ibo:['Speed rating',200,400,'fps'],tw:['Arrow weight',100,1000,'gr'],
+ len:['Arrow length',14,36,'inches'],pt:['Point weight',10,400,'gr'],gpi:['Shaft weight',2,30,'grains per inch'],ins:['Insert, pin or collar',0,150,'gr'],
+ nock:['Nock',0,40,'gr'],vanes:['Vanes',0,100,'gr'],fps:['Arrow speed',100,450,'fps'],sg:['Extra weight on the string',0,100,'gr'],bp:['Balance point',1,36,'inches']};
+/* null if blank or fine; otherwise the message for that box */
+window.arrowLim=function(k,v){const L=ARROW_LIM[k];if(!L)return null;const t=String(v??'').trim();if(t==='')return null;const x=parseFloat(t.replace(',','.'));
+ const nice=n=>String(n);if(!isFinite(x)||!/^-?\d*[.,]?\d+$/.test(t))return`${L[0]}: "${t}" is not a number. Type the number only, in ${L[3]}. It is left out until it is fixed.`;
+ if(x<L[1]||x>L[2])return`${L[0]}: ${nice(x)} ${L[3]} is outside the usual range of ${L[1]} to ${L[2]} ${L[3]}. Check the number. It is left out until it is fixed.`;return null};
+window.ARROW_LIM=ARROW_LIM;
+/* the speed rule of thumb only where it makes sense: every input in range and a result of at least 100 fps; otherwise NaN, never a negative speed */
+window.arrowSpeedEst=function(ibo,dl,dw,tw,sg){const L=window.arrowLim;if([['ibo',ibo],['dl',dl],['dw',dw],['tw',tw]].some(([k,v])=>!isFinite(v)||L(k,v))||(isFinite(sg)&&L('sg',sg)))return NaN;
+ const e=ibo-10*(30-dl)-Math.max(0,tw-5*dw)/3-(isFinite(sg)?sg:0)/3;return e>=100?Math.round(e):NaN};
 const SECTION={home:'home',score:'score',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',whatsnew:'me',me:'me'};
 const secOf=v=>v.startsWith('lab_')?(LABSEC[v]||'home'):(SECTION[v]||v);
 const LABSEC={};
@@ -219,16 +233,21 @@ LABSEC.lab_calc='tools';
    'fps' value (the 280 default) is left in storage but no longer read; overrides use new keys fpsU and grU. */
 E.lab_calc=function(){const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};
  const n=k=>parseFloat(C[k]),SL=7000*32.174,set=k=>C[k]!=null&&String(C[k]).trim()!=='';
- const gr0=n('gr'),est=n('ibo')-10*(30-n('dl'))-Math.max(0,gr0-5*n('dw'))/3-n('sg')/3;
+ /* R1: each box is checked against its range (arrowLim); a flagged box is left out, so the speed shows '-' with the reason, never a negative figure */
+ const LK={ibo:'ibo',dl:'dl',dw:'dw',gr:'tw',sg:'sg',grU:'tw',fpsU:'fps',len:'len',bp:'bp'},bad=k=>window.arrowLim?arrowLim(LK[k],C[k]):null;
+ const nOk=k=>bad(k)?NaN:n(k);
+ const gr0=nOk('gr'),sgV=set('sg')?nOk('sg'):0,spdBad=['ibo','dl','dw','gr','sg'].some(k=>bad(k));
+ const est=window.arrowSpeedEst?arrowSpeedEst(nOk('ibo'),nOk('dl'),nOk('dw'),gr0,sgV):n('ibo')-10*(30-n('dl'))-Math.max(0,gr0-5*n('dw'))/3-n('sg')/3;
+ const estWhy=isFinite(est)?'':spdBad?'Fix the flagged box above to see the speed.':['ibo','dl','dw','gr'].some(k=>!set(k))?'Fill in all four boxes to see the speed.':'No estimate: the rule of thumb gives under 100 fps for these figures, so it does not fit this setup. A chronograph reading is better.';
  const vAuto=C.spdOn&&isFinite(est)&&est>0?Math.round(est):NaN;
- const own=set('fpsU'),v=own?n('fpsU'):vAuto,gr=set('grU')?n('grU'):gr0,ok=isFinite(v)&&v>0&&isFinite(gr)&&gr>0;
+ const own=set('fpsU'),v=own?nOk('fpsU'):vAuto,gr=set('grU')?nOk('grU'):gr0,ok=isFinite(v)&&v>0&&isFinite(gr)&&gr>0;
  const ke=ok?gr*v*v/(2*SL):NaN,mo=ok?gr*v/SL:NaN;
- const foc=(n('bp')-n('len')/2)/n('len')*100;
+ const foc=bad('len')||bad('bp')?NaN:(n('bp')-n('len')/2)/n('len')*100;
  const f=(x,d=1)=>isFinite(x)?x.toFixed(d):'-';
- const inp=(k,l,u,val,ph)=>`<label for="c_${k}">${l} <span class="muted small">(${u})</span></label><input id="c_${k}" data-c="${k}" inputmode="decimal" value="${h(val!==undefined?val:(C[k]==null?'':C[k]))}"${ph?` placeholder="${ph}"`:''}>`;
+ const inp=(k,l,u,val,ph)=>{const m=bad(k);return`<label for="c_${k}">${l} <span class="muted small">(${u})</span></label><input id="c_${k}" data-c="${k}" inputmode="decimal" value="${h(val!==undefined?val:(C[k]==null?'':C[k]))}"${ph?` placeholder="${ph}"`:''}${m?` aria-invalid="true" aria-describedby="cbad_${k}"`:''}>${m?`<p class="labbad" id="cbad_${k}" role="alert">${h(m)}</p>`:''}`};
  app.innerHTML=`<div class="labgrid2">
  <div class="card"><span class="kicker">Arrow speed estimate · compound</span>${inp('ibo','IBO/ATA','fps')}${inp('dl','Draw length','inches')}${inp('dw','Draw weight','lb')}${inp('gr','Arrow weight','grains')}${inp('sg','Extra weight on the string','grains')}
-  <p>About <span class="labout">${f(est,0)}</span> fps <span class="muted">(${f(est*0.3048)} m/s)</span></p>
+  <p>About <span class="labout" id="c_est">${f(est,0)}</span> fps <span class="muted">(${f(est*0.3048)} m/s)</span></p>${estWhy?`<p class="small" id="c_estwhy">${h(estWhy)}</p>`:''}
   <p class="small muted">${C.spdOn?'This speed and arrow weight are used in the card below.':'Change any figure here and the speed is used in the card below.'}</p>
   <p class="labsrc">Estimate only, using the common rule of thumb from the IBO rating (30" draw, 5 grains per lb): −10 fps per inch under 30", −1 fps per 3 grains of arrow over 5 grains per lb, −1 fps per 3 grains on the string. A chronograph reading is always better.</p></div>
  <div class="card"><span class="kicker">Kinetic energy &amp; momentum</span>${inp('grU','Arrow weight','grains',set('grU')?C.grU:(isFinite(gr0)?C.gr:''))}${inp('fpsU','Arrow speed','feet per second',own?C.fpsU:(isFinite(vAuto)?String(vAuto):''),'0')}

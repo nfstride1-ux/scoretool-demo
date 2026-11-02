@@ -50,6 +50,21 @@ Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no 
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-03-0630-r1 (2026-11-03)
+### What changed
+- R1 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): input checks on the arrow and bow figures. 12365 gr was accepted and the Calculators speed estimate showed -3643 fps.
+- Usual ranges, one table in lab.js (ARROW_LIM, window.arrowLim): draw weight 5-90 lb, draw length 14-34 in, speed rating (IBO or ATA) 200-400 fps (379, the Concept X 40 prefill, is in range and left as it is), arrow weight 100-1000 gr, arrow length 14-36 in, point 10-400 gr, shaft 2-30 gr/in, insert/pin/collar 0-150 gr, nock 0-40 gr, vanes 0-100 gr, arrow speed 100-450 fps, string weight 0-100 gr, balance point 1-36 in.
+- A figure outside its range, or text that is not a number, is flagged under its own box in plain English (gold edge, no red, no icon; aria-invalid on the box), kept as typed and left out of every sum until it is fixed.
+- Speed estimate (window.arrowSpeedEst, used by the Calculators speed card, the Arrow chooser and Is this arrow right): worked out only when every figure is in range and the result is at least 100 fps; otherwise it shows - with the reason. It is never negative.
+- Arrow chooser: a worked-out total arrow weight over 1000 gr (or under 100) is flagged under the total and is not copied into a tuning session (arrowSetup) or sent by Use this arrow. Is this arrow right does not save a weight or speed from a flagged box.
+- No saved data is changed or rewritten: figures saved before stay as they were and are only flagged when shown.
+### Files
+lab.js (ranges, check, speed rule, Calculators boxes), arrowchooser.js (box notes, total weight note, speed, arrowSetup, Use this arrow), arrowcheck.js (speed and weight), lab.css (.labbad), tools/r1_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also relayhold commit hash), CHANGELOG.md (also fills in the relayhold after and live lines), version.json, sw.js, index.html.
+### Tests
+- Before (baseline): full regression 81 passed, 0 failed (relayhold, a7ea130)
+- Single runs: r1_test 32 passed, 0 failed; whatsnew_test 33 passed, 0 failed.
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK).
 ## v2026-11-01-1446-relayhold (2026-11-01)
 ### What changed
 - Relay fix for ntfy.sh 429 throttling (Level 1 report item N1: about one relay message per league arrow; parked since 1 Nov 03:20 as 329c66e + 76604ee, never pushed). The slow-start half of that work already shipped alone as squadfix (7d171df), so it is not repeated here.
@@ -63,8 +78,8 @@ h2h.js, league.js, casual.js, tools/relayhold_test.py (new), tools/whatsnew_test
 ### Tests
 - Before (baseline): full regression 81 passed, 0 failed (AC6 after-run, b58d178)
 - Single runs: relayhold_test 10 passed, 0 failed; peel_data_test 2/0 (unchanged); whatsnew_test 33 passed, 0 failed (with the unchanged test it fails only "testers' data unchanged", 32/1, which is the new key).
-- After: RESULT_AFTER
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1446-relayhold): relayhold_test and whatsnew_test are run on the live URL after the deploy; the result is added to this entry by the next release.
+- After: full regression 81 passed, 0 failed (recorded in /workspace/scoretool-queue-log.md at the relayhold release)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1446-relayhold): live since 1 Nov 2026, commit a7ea130.
 ## v2026-11-01-1349-ac6 (2026-11-01)
 ### What changed
 - AC6, new Help guide "Build an arrow" (after Tools), eight steps in order: bow details; spine from the chart; shortest safe cut; point weight and FOC (Easton 7-16% range, indoor target 7-15%, outdoor target 10-15%); bushings and nocks; fletching (sourced, not from Dr Park); cutting, gluing and squaring; bare-shaft or paper tune.
