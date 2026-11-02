@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-03-0630-r1',d:'2026-11-03',items:[
+   ['arrow',"Arrow and bow figures are checked","In the Arrow chooser and the Calculators, a figure outside the usual range for that box, like a 12365 gr arrow or a 200 lb draw weight, is now pointed out under the box in plain words and left out until you fix it. The speed estimate shows a dash and the reason instead of a figure that cannot be right, and it is never below zero. Nothing you saved before is changed."]]},
   {v:'v2026-11-01-1446-relayhold',d:'2026-11-01',items:[
-   ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back."]]},
+   ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back.",'a7ea130']]},
   {v:'v2026-11-01-1349-ac6',d:'2026-11-01',items:[
    ['arrow',"Build an arrow: a new Help guide","Help has a new guide, Build an arrow: eight steps from your bow details and the spine chart to cutting, gluing and a bare-shaft or paper tune. Each step shows where it comes from (Easton's guides and Bow International) and has a link that opens the right box in the Arrow chooser.",'b58d178']]},
   {v:'v2026-11-01-1343-ac5',d:'2026-11-01',items:[

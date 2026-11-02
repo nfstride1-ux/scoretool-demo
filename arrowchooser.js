@@ -291,12 +291,16 @@ function build(st,d){d=d||{};const L=st.len+(d.dlen||0),pt=(isFinite(st.pt)?st.p
   const L0=st.len,pt0=st.pt,W0=gpi*L0+pt0+ins+nk+vn;A=(st.bp*W0-gpi*L0*L0/2-(pt0+ins)*L0+gpi*L*L/2+(pt+ins)*L)/tw;if(!d.dpt&&!d.dlen)A=st.bp}
  else A=(shaft*L/2+(pt+ins)*L+vn*vp)/tw;
  const foc=100*(A-L/2)/L;return{L,pt,tw,A,foc,meas,missing:[!isFinite(gpi)&&'shaft GPI',!isFinite(st.pt)&&'point weight',!isFinite(st.nock)&&'nock',!isFinite(st.vanes)&&'vanes'].filter(Boolean)}}
-const speedEst=(st,tw)=>{/* the Calculators' own rule of thumb (IBO rating, compound only) */if(st.bow!='compound'||!isFinite(st.ibo)||!isFinite(st.dl)||!isFinite(tw))return NaN;
- return Math.round(st.ibo-10*(30-st.dl)-Math.max(0,tw-5*st.dw)/3)};
+const speedEst=(st,tw)=>{/* the Calculators' own rule of thumb (IBO rating, compound only); R1: never negative, NaN unless every figure is in range */if(st.bow!='compound'||!isFinite(st.ibo)||!isFinite(st.dl)||!isFinite(tw))return NaN;
+ if(window.arrowSpeedEst)return arrowSpeedEst(st.ibo,st.dl,st.dw,tw);const e=Math.round(st.ibo-10*(30-st.dl)-Math.max(0,tw-5*st.dw)/3);return e>0?e:NaN};
+/* R1: a total arrow weight outside the usual range (a slip in length, shaft weight or point weight) is shown with a note and not used */
+const twBad=tw=>isFinite(tw)&&window.arrowLim?arrowLim('tw',Math.round(tw)):null;
 
 /* state, with numbers parsed */
 function parsed(){const R=load();const st={bow:R.bow||'recurve',use:USES.some(u=>u[0]==R.use)?R.use:'target',limb:R.limb||'carbon',hand:R.hand||'R'};
  ['dw','dl','len','pt','ibo','ins','nock','vanes','vpos','bp','fps','gpiU','contact'].forEach(k=>st[k]=num(R[k]));
+ /* R1: a figure outside its usual range is flagged on its box (st.bad) and left out, as if blank; the typed text stays in the box */
+ st.bad={};if(window.arrowLim)Object.entries({dw:'dw',dl:'dl',ibo:'ibo',len:'len',pt:'pt',gpiU:'gpi',ins:'ins',nock:'nock',vanes:'vanes',fps:'fps'}).forEach(([k,l])=>{const m=arrowLim(l,R[k]);if(m){st.bad[k]=m;st[k]=NaN}});
  st.lenIn=st.len;if(!isFinite(st.len))st.len=st.dl;st.pick=R.pick||null;st.gpi=isFinite(st.gpiU)?st.gpiU:(st.pick&&isFinite(st.pick.gpi)?st.pick.gpi:NaN);
  /* AC2: an Easton shaft's chosen parts fill the point, insert and nock boxes left blank (typed boxes win); bushings, pins and collars at the nock end */
  const EPt=eaParts(st.pick,R,st.bow);st.ep=EPt;st.fromP=[];st.bush=NaN;
@@ -310,6 +314,7 @@ function results(st){if(!isFinite(st.dw)||!isFinite(st.len))return null;return[e
 
 /* the archer's current arrow setup (used by the Arrow optimizer); null until there is a length and point weight */
 window.arrowSetup=function(){const{st}=parsed();if(!isFinite(st.len)||!isFinite(st.pt))return null;const b=build(st);
+ if(twBad(b.tw))b.tw=NaN;/* R1: an impossible total weight is not copied into a session */
  const fps=isFinite(st.fps)?st.fps:speedEst(st,b.tw);
  return{bow:st.bow,spine:st.pick?String(st.pick.spine):'',model:st.pick?st.pick.brand+' '+st.pick.model:'',len:st.len,pt:st.pt,
   foc:isFinite(b.foc)?+b.foc.toFixed(1):null,tw:isFinite(b.tw)?Math.round(b.tw):null,fps:isFinite(fps)?Math.round(fps):null,fpsSrc:isFinite(st.fps)?'measured':isFinite(fps)?'estimate':''}};
@@ -334,7 +339,8 @@ const CSS=`.acf .labseg{margin:0 0 10px}.acf label{display:block;margin:10px 0 4
 .acnear{margin:8px 0 0;border-top:1px dashed var(--line);padding-top:6px}.acnear>summary{font-weight:700;cursor:pointer;font-size:14px}.acdia{border-left:4px solid var(--blue);padding:6px 10px;background:var(--blue-bg);border-radius:8px}.acfrm{font-family:ui-monospace,Menlo,monospace;font-size:14px;background:var(--blue-bg);border-radius:8px;padding:8px 10px}`;
 function css(){if(!document.getElementById('accss')){const s=document.createElement('style');s.id='accss';s.textContent=CSS;document.head.appendChild(s)}}
 const seg=(k,v,opts)=>`<div class="labseg" role="group" aria-label="${k}">${opts.map(([val,l])=>`<button type="button" data-seg="${k}" data-val="${val}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
-const inp=(k,R,l,unit,ph,hint)=>`<label for="ac_${k}">${l}${unit?` <span class="muted small">(${unit})</span>`:''}</label><input id="ac_${k}" data-k="${k}" inputmode="decimal" value="${h(R[k]??'')}"${ph?` placeholder="${h(ph)}"`:''}>${hint?`<p class="hint">${hint}</p>`:''}`;
+let BAD={};/* R1: messages for flagged boxes, set each time the page is drawn */
+const inp=(k,R,l,unit,ph,hint)=>{const m=BAD[k];return`<label for="ac_${k}">${l}${unit?` <span class="muted small">(${unit})</span>`:''}</label><input id="ac_${k}" data-k="${k}" inputmode="decimal" value="${h(R[k]??'')}"${ph?` placeholder="${h(ph)}"`:''}${m?` aria-invalid="true" aria-describedby="acbad_${k}"`:''}>${m?`<p class="labbad" id="acbad_${k}" role="alert">${h(m)}</p>`:''}${hint?`<p class="hint">${hint}</p>`:''}`};
 
 /* AC3: shortest safe cut, Easton Tuning Guide p. 15 Fig. 21: mark an extra-long arrow at full draw about 1" in front of where it
    touches the most forward point of the rest (launcher); Correct Arrow Length runs from the bottom of the nock groove. The archer types
@@ -395,7 +401,7 @@ function partsLine(st){const E=st.ep;if(!E)return'';const bits=[];
  if(st.fromP.includes('nock'))bits.push(`nock ${gr(st.nock)} (${h(E.nock.n)})`);
  return`<p class="small" id="acpartsline" style="margin:6px 0 0">${bits.length?`From Easton's parts for ${h(st.pick.model)}: ${bits.join(', ')}.`:`No Easton part weights in use for ${h(st.pick.model)}.`}${st.bushOff?` The ${h(st.ep.end.n)} is not added because you typed your own insert or nock; choose it under Easton parts to add it.`:''} <span class="muted">Change them under Arrow parts for FOC.</span></p>`}
 
-E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(st),fing=st.bow!='compound';
+E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;BAD=st.bad||{};const res=results(st),fing=st.bow!='compound';
  const pickKey=s=>s.brand+'|'+s.model+'|'+s.spine;const pk=st.pick?pickKey(st.pick):'';
  const nearHTML=b=>{if(!b.near||!b.near.length)return'';const cmp=st.bow=='compound';
   const lab=n=>n.side=='weaker'?(n.al?'next chart cell on the weaker side':'one size weaker than the chart range'):(n.al?'next chart cell on the stiffer side':'one size stiffer than the chart range');
@@ -470,7 +476,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
   <p class="small" style="margin:0 0 6px">Easton's AMO-standard formula, as printed:</p>
   <p class="acfrm">F.O.C. % = 100 x (A - L/2) / L<br>L = Correct Arrow Length: bottom of nock groove to end of shaft<br>A = bottom of nock groove to the finished arrow's balance point (with point, insert, nock and fletching)</p>
   <p style="margin:10px 0 0" id="acfocout">FOC <span class="labout">${isFinite(B.foc)?f1(B.foc)+'%':'-'}</span> ${isFinite(B.foc)?`<span class="small muted">${B.meas?'from your measured balance point':'worked out from the component weights (an estimate)'}</span>`:'<span class="small muted">pick a shaft above and fill in the arrow parts</span>'}</p>
-  <p class="small" style="margin:2px 0 0">Total arrow weight <b>${isFinite(B.tw)?Math.round(B.tw)+' gr':'-'}</b>${isFinite(B.tw)?` <span class="muted">= ${st.gpi} gr/in x ${st.len}" + point ${st.pt}${isFinite(st.ins)?' + insert '+st.ins:''}${isFinite(st.nock)?' + nock '+st.nock:''}${isFinite(st.bush)?' + bushing/pin '+fmtN(st.bush):''}${isFinite(st.vanes)?' + vanes '+st.vanes:''}</span>`:''}${B.missing.length?`<br><span class="muted">Not counted yet: ${B.missing.join(', ')}.</span>`:''}</p>${partsLine(st)}
+  ${twBad(B.tw)?`<p class="labbad" id="actwbad" role="alert">${h(twBad(B.tw))} The total is worked out from the length, shaft weight, point and parts boxes, so check those.</p>`:''}<p class="small" style="margin:2px 0 0">Total arrow weight <b>${isFinite(B.tw)?Math.round(B.tw)+' gr':'-'}</b>${isFinite(B.tw)?` <span class="muted">= ${st.gpi} gr/in x ${st.len}" + point ${st.pt}${isFinite(st.ins)?' + insert '+st.ins:''}${isFinite(st.nock)?' + nock '+st.nock:''}${isFinite(st.bush)?' + bushing/pin '+fmtN(st.bush):''}${isFinite(st.vanes)?' + vanes '+st.vanes:''}</span>`:''}${B.missing.length?`<br><span class="muted">Not counted yet: ${B.missing.join(', ')}.</span>`:''}</p>${partsLine(st)}
   <p class="small" style="margin:6px 0 0">For ${h({target:'target',indoor:'indoor',field:'field','3d':'3D',hunting:'hunting'}[st.use])}: <b>${h(useFoc)}</b>.</p>
   ${focWarn(st,B)}
   <details class="acmore"><summary>FOC ranges</summary><div>${focRanges}<p class="small muted">The Calculators page has the same FOC formula for a measured balance point. "Use this arrow" sends the length and balance point there.</p></div></details>
@@ -510,7 +516,7 @@ E.lab_chooser=function(){css();const{R,st}=parsed();R0=()=>R;const res=results(s
  ['acfoc','acpt','acpark','accut','acfletch'].forEach(id=>{const d=document.getElementById(id);if(d)d.ontoggle=()=>{OPEN=d.open?id.slice(2):(OPEN==id.slice(2)?null:OPEN)}});
  const u=$('#acuse');if(u)u.onclick=()=>{const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};const sent=[],left=[];
   if(isFinite(st.len)){C.len=String(st.len);sent.push('arrow length')}
-  const b=build(st);
+  const b=build(st);if(twBad(b.tw)){b.tw=NaN;left.push('arrow weight (outside the usual range)')}
   if(isFinite(st.bp)){C.bp=String(st.bp);sent.push('balance point (measured)')}else if(isFinite(b.A)&&!b.missing.length){C.bp=b.A.toFixed(2);sent.push('balance point (worked out)')}else left.push('balance point');
   if(isFinite(b.tw)&&!b.missing.includes('shaft GPI')&&isFinite(st.pt)){C.gr=String(Math.round(b.tw));C.grU='';C.spdOn=1;sent.push('arrow weight'+(b.missing.length?' (without '+b.missing.join(', ')+')':''))}else left.push('arrow weight');
   if(st.bow=='compound'){if(isFinite(st.dw)){C.dw=String(st.dw);sent.push('draw weight')}if(isFinite(st.dl)){C.dl=String(st.dl);sent.push('draw length')}if(isFinite(st.ibo)){C.ibo=String(st.ibo);sent.push('IBO speed')}else left.push('IBO speed')}
