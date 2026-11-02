@@ -178,7 +178,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  const dots=T.before.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="0.035" fill="#1d4ed8" stroke="#fff" stroke-width="0.01"/>`).join('')+T.after.map(p=>`<rect x="${p[0]-.032}" y="${p[1]-.032}" width="0.064" height="0.064" fill="#111" stroke="#fff" stroke-width="0.01"/>`).join('');
  const cen=(S2,c)=>S2?`<path d="M${S2.cx/rcm-.06} ${S2.cy/rcm}h.12M${S2.cx/rcm} ${S2.cy/rcm-.06}v.12" stroke="${c}" stroke-width="0.012"/>`:'';
  const line=(nm,s)=>s?`<tr><th>${nm}</th><td>${s.n}</td><td>${cm(s.mr*2)} cm</td><td>${cm(s.es)} cm</td><td>${dir(s.cx,s.cy)}</td></tr>`:`<tr><th>${nm}</th><td colspan="4" class="muted">No arrows yet</td></tr>`;
- let cmp='';if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
+ let cmp='';if(bare)cmp=bareVerdict(T,B,A);else if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
  app.innerHTML=`<div class="card"><span class="kicker">${h(T.date)} · ${h(T.change)}${T.dist?' · '+h(T.dist):''} · ${h(T.face)} face${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||T.change)}</h2>
  <div class="labgrid2"><div>
  ${one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">● ${LB}</button><button data-g="after" aria-pressed="${g=='after'}">■ ${LA}</button></div>`}
@@ -186,7 +186,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${one?'group':g}</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">🗑 Delete</button></div>
  </div><div>
  <table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● '+LB,B)}${one?'':line('■ '+LA,A)}</tbody></table>
- ${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
+ ${bare?`<label for="tvhand">Bow hand</label><select id="tvhand"><option value=""${T.hand?'':' selected'}>Not set</option><option value="R"${T.hand=='R'?' selected':''}>Right-handed archer</option><option value="L"${T.hand=='L'?' selected':''}>Left-handed archer</option></select>`:''}${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
  <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>${arwCard(T,one)}${bare?bareCard(T,B,A):''}`;
  bar('Tuning session','lab_opt','Arrow optimizer');
  const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()};
@@ -196,6 +196,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
  $('#tdel').onclick=()=>{if(confirm('Delete this tuning session?')){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
  $('#tnote').onchange=e=>{T.note=e.target.value;save()};
+ const th=$('#tvhand');if(th)th.onchange=()=>{if(th.value)T.hand=th.value;else delete T.hand;save();render()};
  const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};arwWire(T);
  app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go))};
 /* Arrow setup in a tuning session (22 Oct 2026, Nathe): new sessions carry a snapshot of the Arrow chooser setup (t.arrow);
@@ -227,19 +228,36 @@ function arwWire(T){app.querySelectorAll('[data-ta]').forEach(x=>x.onchange=()=>
   if(u=='text')o[k]=raw;else{o[k]=raw===''?null:parseFloat(raw.replace(',','.'));if(k=='fps')o.fpsSrc=raw===''?'':'own'}
   save();render()});
  const tb=$('#tarwbefore');if(tb)tb.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrow=a;save();render()}}}
+/* R3 (3 Nov 2026, Nathe via Archery Coach): for Fletched vs Bare the comparison line is a plain tuning verdict, not "X% tighter".
+   Side to side: for a right-handed archer bare shafts right of the fletched group read weak and left read stiff (Easton, Bare Shaft
+   Planing Test); mirrored for a left-handed archer (the session's bow hand). High or low points to the nocking point (Easton) or, on a
+   recurve or barebow, tiller. With the usual next step, labelled general tuning guidance. Easton writes the test for finger release,
+   so a compound (release aid) session gets a note to paper tune first. Uses the same spread rule as the Bare shaft reading card. */
+function bareVerdict(T,B,A){if(!B||!A||B.n<3||A.n<2)return`<p class="lab-note" id="bareverdict">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the verdict.</p>`;
+ const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,hd=T.hand,lh=hd=='L',side=Math.abs(dx)<=sp?'ok':(lh?dx<0:dx>0)?'weak':'stiff',vert=Math.abs(dy)<=sp?'':dy<0?'high':'low';
+ const comp=(T.arrow&&T.arrow.bow=='compound')||/compound/i.test(T.bowName||'');
+ const parts=[];let next=[];
+ if(!hd&&side!='ok')parts.push(`bare shafts ${cm(Math.abs(dx))} cm ${dx>0?'right':'left'} of the fletched group; choose the bow hand to see weak or stiff`);
+ else if(side=='ok')parts.push('side to side the bare shafts are with the fletched group, so spine looks right');
+ else{parts.push(`bare shafts ${cm(Math.abs(dx))} cm ${dx>0?'right':'left'} of the fletched group: the arrow is acting <b>${side}</b>${lh?' (left-handed, so the right-handed reading is mirrored)':''}`);
+  next.push(side=='weak'?'weak: a lighter point, more plunger tension, slightly less draw weight, or a shorter arrow if it still clears the rest':'stiff: a heavier point, less plunger tension, slightly more draw weight, or a weaker spine (do not cut it shorter)')}
+ if(vert){parts.push(`bare shafts ${cm(Math.abs(dy))} cm ${vert} of the fletched group: check the nocking point${comp?'':' or tiller'}`);
+  next.push(vert=='high'?`high: move the nocking point up a little at a time${comp?'':', then look at tiller if that does not fix it'}`:`low: move the nocking point down a little at a time${comp?'':', then look at tiller if that does not fix it'}`)}
+ const ok=side=='ok'&&!vert&&hd;
+ return`<div class="lab-note" id="bareverdict"><p style="margin:0"><b>Verdict:</b> ${ok?'the bare shafts and fletched arrows land together, so the arrow is basically tuned.':parts.join('; ')+'.'}</p>${next.length?`<p style="margin:6px 0 0"><b>Usual next step</b> <span class="small muted">(general tuning guidance)</span>: ${next.join('; ')}. Change one thing at a time, then shoot the test again.</p>`:''}${comp?`<p class="small" style="margin:6px 0 0">Compound with a release aid: Easton writes this test for finger release and says paper tuning is the usual first step with a release, so treat the side-to-side reading as a clue, not an answer.</p>`:''}</div>`}
 /* Bare shaft vs fletched: reading and next step, only from Easton's Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test, p. 5;
    Adjustments Within the Bow and Arrow System, p. 10). The guide gives the left/right reading for a right-handed archer only. */
 function bareCard(T,B,A){const S2=window.ARROW_SRC||{},tm=S2.eastonTM?`<a href="${S2.eastonTM[1]}" target="_blank" rel="noopener">${h(S2.eastonTM[0])}</a>`:'Easton Arrow Tuning and Maintenance Guide';
  const head=`<div class="card" id="barecard"><span class="kicker">Bare shaft reading</span>`,tail=`<p class="small muted" style="margin:8px 0 0">Easton's Bare Shaft Planing Test: three fletched arrows, then two bare shafts aimed the same, at 15 to 20 yards or metres. It is written for finger release.</p><p class="labsrc">${tm}</p></div>`;
  if(!B||!A||B.n<3||A.n<2)return head+`<p style="margin:2px 0 0">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the reading.</p>`+tail;
  const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,out=[];
- if(Math.abs(dy)>sp)out.push(`<p>Bare shafts are <b>${cm(Math.abs(dy))} cm ${dy<0?'higher':'lower'}</b> than the fletched group. Easton: ${dy<0?'move the nocking point <b>up</b>':'move the nocking point <b>down</b>'} until they hit at the same height${dy>0?' (slightly lower is sometimes wanted)':''}.</p>`);
- if(T.hand!='R'){out.push(`<p>Side to side, bare shafts are ${cm(Math.abs(dx))} cm ${dx>=0?'right':'left'} of the fletched group. Easton's guide gives the weak or stiff reading for right-handed archers only, so no reading is shown for a left-handed archer. Ask your coach.</p>`);return head+out.join('')+tail}
+ if(Math.abs(dy)>sp)out.push(`<p>Bare shafts are <b>${cm(Math.abs(dy))} cm ${dy<0?'higher':'lower'}</b> than the fletched group. Easton: ${dy<0?'move the nocking point <b>up</b>':'move the nocking point <b>down</b>'} until they hit at the same height${dy>0?' (slightly lower is sometimes wanted)':''}. On a recurve or barebow, if moving the nocking point does not bring them level, tiller can also move bare shafts up or down (general tuning guidance, not from Easton's guide).</p>`);
+ if(T.hand!='R'&&T.hand!='L'){out.push(`<p>Side to side, bare shafts are ${cm(Math.abs(dx))} cm ${dx>=0?'right':'left'} of the fletched group. Choose the bow hand above to see the weak or stiff reading.</p>`);return head+out.join('')+tail}
  if(Math.abs(dx)<=sp){out.push(`<p>Side to side, the bare shafts are within the fletched group's average spread. Easton: "Your equipment is basically tuned when the bare shafts and fletched shafts impact at the same or very near the same location."</p>`);return head+out.join('')+tail}
- const weak=dx>0,fw=window.arrowFocWith,pt=fw&&fw({dpt:weak?-25:25}),ct=weak&&fw&&fw({dlen:-0.25});
+ const lh=T.hand=='L',weak=lh?dx<0:dx>0,fw=window.arrowFocWith,pt=fw&&fw({dpt:weak?-25:25}),ct=weak&&fw&&fw({dlen:-0.25});
  const focTxt=r=>r?(r.to.toFixed(1)==r.from.toFixed(1)?`FOC about the same (${r.from.toFixed(1)}% → ${r.to.toFixed(2)}%)`:`FOC ${r.from.toFixed(1)}% → <b>${r.to.toFixed(1)}%</b>`):'FOC: set up your arrow in the Arrow chooser to see this';
  const m=(T.dist||'').match(/(\d+(?:\.\d+)?)\s*(m|yd|y)/i),d=m?+m[1]:NaN,far=isFinite(d)&&d>=18&&d<=20&&Math.abs(dx)>15;
- out.push(`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${weak?'right':'left'}</b> of the fletched group. For a right-handed archer Easton reads this as <b>${weak?'weak':'stiff'}</b>.</p>`);
+ out.push(lh?`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${dx>0?'right':'left'}</b> of the fletched group. For a left-handed archer this reads as <b>${weak?'weak':'stiff'}</b>: Easton's guide gives the reading for right-handed archers, and for a left-handed archer it is mirrored (general tuning guidance).</p>`:`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${weak?'right':'left'}</b> of the fletched group. For a right-handed archer Easton reads this as <b>${weak?'weak':'stiff'}</b>.</p>`);
  return head+out.join('')+`</div><div class="card" id="nextcard"><span class="kicker">Next step to try</span><p class="small" style="margin:2px 0 8px">Starting points from Easton's guide. Change one thing at a time, then shoot the test again.</p>
  <table class="labtbl"><tbody>
  <tr><th>${weak?'Lighter':'Heavier'} point or insert</th><td>${weak?'−':'+'}25 gr is a first step to try (Easton's chart counts 25 gr as 3 lb of bow weight)<br><span class="small">${focTxt(pt)}</span></td></tr>
