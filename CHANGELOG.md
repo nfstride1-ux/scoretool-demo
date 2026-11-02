@@ -50,6 +50,23 @@ Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no 
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-03-0640-r3 (2026-11-03)
+### What changed
+- R3 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): in a Fletched vs Bare session the "X% tighter / wider" line is replaced with a plain tuning verdict (bareVerdict in lab.js). Other change types keep the % line.
+- Side to side, using the same spread rule as the Bare shaft reading card (offset bigger than the fletched group's average spread): right-handed archer, bare shafts right = acting weak, left = acting stiff (Easton Bare Shaft Planing Test). Left-handed archer (session bow hand): mirrored, and the verdict says so. No bow hand on the session: it gives the offset and asks for the bow hand, no guess.
+- High or low: points to the nocking point (move up for high, down for low), then tiller on a recurve or barebow. Tiller is not mentioned on a compound session.
+- Usual next step, labelled general tuning guidance: weak = a lighter point, more plunger tension, slightly less draw weight, or a shorter arrow; stiff = a heavier point, less plunger tension, slightly more draw weight, or a weaker spine. This follows Easton's guide (weak: decrease bow weight), not "more draw weight" for weak.
+- Compound session (arrow setup bow = compound, or bow name says compound): note that Easton writes the test for finger release and paper tuning is the usual first step with a release aid.
+- Bare shaft reading card: left-handed archers now get the mirrored reading (it used to say right-handed only), and the high/low line mentions tiller on recurve or barebow as general guidance.
+- A Bow hand select on Fletched vs Bare sessions; changing it saves T.hand on that session only. Viewing a session writes nothing.
+### Files
+lab.js (bareVerdict, bareCard, #tvhand), tools/r3_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also R2 commit hash), CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): R1 branch full regression (see the R1 entry)
+- Single runs: r3_test 21 passed, 0 failed
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK, after R1 and R2).
+
 ## v2026-11-03-0636-r2 (2026-11-03)
 ### What changed
 - R2 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): the tuning session's Arrow setup card was read-only and copied whatever the Arrow chooser had, including impossible figures, which blocked bare shaft vs fletched testing.
