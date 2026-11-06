@@ -56,7 +56,14 @@ function taken(date,round,score){
 function optNum(v){const t=String(v??'').trim();if(t==='')return null;const n=parseInt(t.replace(/[^\d]/g,''),10);return n>=0&&String(n)===t?n:null}
 function parseEnds(text){return String(text||'').split(/\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/[\s,]+/).map(a=>a.toUpperCase()).filter(a=>a==='X'||a==='M'||/^\d+$/.test(a))).filter(e=>e.length)}
 function endsTotal(ends){return ends.reduce((t,e)=>t+e.reduce((s,a)=>s+(a==='X'?10:a==='M'?0:+a),0),0)}
-let offMsg='';
+let offMsg='',shotFile=null;
+function dropShot(){shotFile=null;const prev=$('#ofshotprev'),inp=$('#ofshot');if(prev&&prev._url){URL.revokeObjectURL(prev._url);prev._url='';prev.removeAttribute('src');prev.hidden=true}if(inp)inp.value=''}
+function keepPhoto(id,file){return new Promise(res=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const m=800,s=Math.min(1,m/Math.max(img.width,img.height,1)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*s));c.height=Math.max(1,Math.round(img.height*s));c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  c.toBlob(blob=>{if(!blob){res(false);return}
+   const put=db=>{try{const tx=db.transaction('photos','readwrite');tx.objectStore('photos').put(blob,who()+':'+id);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false)}catch(e){res(false)}};
+   const req=indexedDB.open('scoretool-official-photos');req.onerror=()=>res(false);req.onblocked=()=>res(false);
+   req.onsuccess=()=>{const db=req.result;if(db.objectStoreNames.contains('photos')){put(db);return}const v=db.version+1;db.close();const req2=indexedDB.open('scoretool-official-photos',v);req2.onerror=()=>res(false);
+    req2.onupgradeneeded=()=>{if(!req2.result.objectStoreNames.contains('photos'))req2.result.createObjectStore('photos')};req2.onsuccess=()=>put(req2.result)}},'image/jpeg',0.7)};img.onerror=()=>{URL.revokeObjectURL(url);res(false)};img.src=url})}
 function view(){
  const o=src(),other=o.body==='other',url=httpUrl(o.url);
  const cols=grid[0]?grid[0].map((_,i)=>header?grid[0][i]||('Column '+(i+1)):'Column '+(i+1)):[];
@@ -105,6 +112,11 @@ function view(){
  <label for="oftens">10s, if you know them</label><input id="oftens" inputmode="numeric" autocomplete="off" placeholder="Optional">
  <label for="ofxs">Xs, if you know them</label><input id="ofxs" inputmode="numeric" autocomplete="off" placeholder="Optional">
  <label for="ofends">Ends, if you have them</label><textarea id="ofends" rows="3" placeholder="One end a line, arrows separated by spaces. Optional."></textarea>
+ <label for="ofshot">Screenshot, if you have one</label>
+ <input id="ofshot" type="file" accept="image/*">
+ <p class="small muted" id="ofshotnote" style="margin:4px 0 0">The picture stays on this screen so you can read it and type the score. ScoreTool does not read the picture. After you save, the picture is deleted unless you tick Keep the photo.</p>
+ <img id="ofshotprev" alt="Your screenshot" hidden style="max-width:100%;margin-top:8px;border-radius:8px">
+ <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="ofkeep" type="checkbox" style="width:auto"> Keep the photo on this phone</label>
  <button class="btn full" id="ofsave" type="button" style="margin-top:10px">Save official result</button>
  <p class="small" id="ofnote" style="margin:6px 0 0">${h(offMsg)}</p>
  </div>`;
@@ -131,7 +143,8 @@ function view(){
    $('#rsdone').textContent=`Saved ${n} on this phone.${skip?` Left ${skip} that were already scored or already saved.`:''}${bad?` ${bad} row${bad==1?'':'s'} had no round, date or score.`:''} They show on your personal bests as imported, and they are not used for ratings.`;
   }}
  const or=$('#ofround');if(or)or.onchange=()=>{if(or.value)$('#ofroundx').value=or.value};
- const os=$('#ofsave');if(os)os.onclick=()=>{
+ const shot=$('#ofshot');if(shot)shot.onchange=()=>{shotFile=shot.files&&shot.files[0]||null;const prev=$('#ofshotprev');if(!prev)return;if(prev._url)URL.revokeObjectURL(prev._url);if(!shotFile){prev.hidden=true;prev.removeAttribute('src');return}prev._url=URL.createObjectURL(shotFile);prev.src=prev._url;prev.hidden=false};
+ const os=$('#ofsave');if(os)os.onclick=async()=>{
   const date=$('#ofdate').value,event=$('#ofevent').value.trim();
   let round=($('#ofroundx').value||$('#ofround').value).trim();
   const score=parseScore($('#ofscore').value),max=optNum($('#ofmax').value),tens=optNum($('#oftens').value),xs=optNum($('#ofxs').value);
@@ -141,10 +154,13 @@ function view(){
   if((($('#ofmax').value||'').trim()&&max==null)||(($('#oftens').value||'').trim()&&tens==null)||(($('#ofxs').value||'').trim()&&xs==null)){say('Maximum, 10s and Xs need a whole number, or leave them blank.');return}
   if(ends.length&&endsTotal(ends)!==score){say(`Those ends add up to ${endsTotal(ends)}, not ${score}. Fix them, or clear the ends.`);return}
   if(taken(date,round,score)){say('That round is already scored on this phone. It was left as it is.');return}
-  const keep=officials();
-  keep.push({id:'off-'+Date.now(),date,event,round,score,max,tens,xs,ends,official:true,finished:true});
+  const id='off-'+Date.now(),file=shotFile,hold=!!($('#ofkeep')&&$('#ofkeep').checked&&file);
+  const row={id,date,event,round,score,max,tens,xs,ends,official:true,finished:true};
+  if(hold){const ok=await keepPhoto(id,file);row.photoKept=!!ok}
+  const keep=officials();keep.push(row);
   localStorage.setItem(OKEY(),JSON.stringify(keep));
-  say('Saved on this phone as an official result.');
+  dropShot();if($('#ofkeep'))$('#ofkeep').checked=false;
+  say('Saved on this phone as an official result.'+(file?(hold&&row.photoKept?' The photo is kept on this phone.':' The photo was not kept.'):''));
  };
 }
 E.lab_results=view;

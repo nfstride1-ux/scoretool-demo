@@ -4,6 +4,10 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C5 — screenshot on the official result form (v2026-11-06-1959-c5)
+- Attach a screenshot to look at while you type. The picture is not read. After save it is deleted unless Keep the photo is ticked. A kept photo stays in IndexedDB on this phone and is not sent.
+- On-device reading of an iScoredToday or score-card picture is not reliable, so this is attach-and-type.
+
 ### C4 — add an official result (v2026-11-06-1959-c4)
 - Tools, My results source: date, event, round, score, and optional maximum, 10s, Xs and ends.
 - Saved on this phone as a finished official result (`official`, `finished`). It counts for personal bests and is queued to the calendar with the C3 path (`off-`).

@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-06-1959-c5',d:'2026-11-06',items:[
+   ['camera',"Attach a score screenshot","On Add an official result you can attach a screenshot to look at while you type. The picture is not read. After you save, it is deleted unless you tick Keep the photo."]]},
   {v:'v2026-11-06-1959-c4',d:'2026-11-06',items:[
-   ['trophy',"Add an official result","Tools, My results source, has a form for a finished official round: date, event, round, score, and maximum, 10s, Xs or ends if you know them. It counts for personal bests. A round you already scored is left as it is."]]},
+   ['trophy',"Add an official result","Tools, My results source, has a form for a finished official round: date, event, round, score, and maximum, 10s, Xs or ends if you know them. It counts for personal bests. A round you already scored is left as it is.",'1c5e6f8']]},
   {v:'v2026-11-06-1957-c3',d:'2026-11-06',items:[
    ['calendar',"Official and imported scores go to your calendar","Official scoresheets, competition results and scores you imported are added to My events as well, once each. A score you already sent for that day, round and total is not sent again. A personal best still has (PB) on the round name.",'3cbd431']]},
   {v:'v2026-11-06-1957-c2',d:'2026-11-06',items:[
