@@ -35,6 +35,7 @@ AREAS=[
  ("Tuning session arrow setup card editable (R2)",["r2_test.py"]),
  ("Bare shaft plain tuning verdict (R3)",["r3_test.py"]),
  ("Calendar PB tag (C1)",["c1_test.py"]),
+ ("Calendar auto-send finished rounds (C2)",["c2_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),

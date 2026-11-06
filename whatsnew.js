@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-06-1957-c2',d:'2026-11-06',items:[
+   ['calendar',"Finished rounds go to your calendar","Every finished round is added to My events, practice and club alike, including rounds you finished before you linked. A round is sent once. Sample rounds and rounds you discarded are left out."]]},
   {v:'v2026-11-06-1957-c1',d:'2026-11-06',items:[
-   ['trophy',"A personal best is marked on your calendar","When a finished round is your personal best for that round, the same best the Personal bests card shows, Archery Calendar gets the round name with (PB) on the end. Your scores on this phone are not changed."]]},
+   ['trophy',"A personal best is marked on your calendar","When a finished round is your personal best for that round, the same best the Personal bests card shows, Archery Calendar gets the round name with (PB) on the end. Your scores on this phone are not changed.",'98a3729']]},
   {v:'v2026-11-03-0640-r3',d:'2026-11-03',items:[
    ['arrow',"Bare shaft test gives a plain verdict","In a Fletched vs Bare tuning session, the comparison line now tells you what the bare shafts mean instead of how much tighter the group is: for a right-handed archer, bare shafts right of the fletched group usually mean the arrow is acting weak and left means stiff, and it is mirrored for a left-handed archer. High or low points you to the nocking point, or tiller on a recurve or barebow. The usual next step is shown as general tuning guidance. You can set the bow hand on the session if it was not set.",'60c2e83']]},
   {v:'v2026-11-03-0636-r2',d:'2026-11-03',items:[

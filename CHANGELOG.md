@@ -4,6 +4,11 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C2 — every finished round is sent (v2026-11-06-1957-c2)
+- Practice and club rounds that were already finished are sent as well. The first-run list no longer blocks them.
+- A round is sent once for its source id. It is sent again only when the payload changed. Sample rounds and discarded rounds stay out.
+- Tests stub the RPC and use a fake link token.
+
 ### C1 — personal best on the calendar round name (v2026-11-06-1957-c1)
 - A finished full round that is the Personal bests card's best for that round is sent with ` (PB)` on the end of the round string. No new column. Scores stored on the phone are not changed.
 - The comparison is the card's own one (`bsCurrentPb`: highest full score, earlier date if the score is the same, practice and official and imported together).

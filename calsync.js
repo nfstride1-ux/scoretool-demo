@@ -43,11 +43,12 @@ function sessionIsPb(s){if(!s||s.sample||typeof isFull!='function'||!isFull(s)||
 function roundOut(s){return withPb(tiedRound(s)||s.round,sessionIsPb(s))}
 function locOf(s){const t=tiedRound(s),c=t&&evs()[s.id]?evs()[s.id].club:s.loc;return c?String(c).slice(0,120):null}
 const sig=s=>JSON.stringify([s.date,roundOut(s),total(s),maxOf(s),locOf(s)]);
-/* first run for this archer: everything already finished is marked as 'before the update' and never sent */
+/* The first run still records which rounds were already finished. C2 (6 Nov 2026, Nathe) sends those too:
+   practice and club alike. A round is sent once per source id, and again only when the payload changed. */
 function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(finished).map(s=>s.id))}
-/* 'force' (23 Oct 2026): ids of past finished rounds the archer chose to send untied (Send to Archery Calendar), even if shot before the link */
+/* 'force' (23 Oct 2026): ids of past finished rounds the archer chose to send untied (Send to Archery Calendar) */
 const forceSet=()=>new Set(get('force')||[]);
-function todo(){const base=new Set(get('base')||[]),gone=new Set(get('discarded')||[]),sent=get('sent')||{},fo=forceSet();return (S.sessions||[]).filter(s=>(forced(s)||finished(s)&&(!base.has(s.id)||fo.has(s.id)))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
+function todo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>(forced(s)||finished(s))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
 window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
 async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
   body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:roundOut(s),p_score:total(s),p_max:maxOf(s),p_location:locOf(s)})});
@@ -96,8 +97,8 @@ function forceAdd(id){const f=get('force')||[];if(!f.includes(id)){f.push(id);pu
 /* status for Past sessions: 'sent' | 'queued' (chosen, waiting for a connection) | 'can' (finished, not sent) | null */
 window.calStatus=s=>{if(!WHO()||!s||!s.id||s.sample)return null;const sent=get('sent')||{};if(sent[s.id]&&sent[s.id]===sig(s))return 'sent';
  if(!finished(s)&&!forced(s))return null;if(!okTok(get('link')))return 'can';
- const gone=new Set(get('discarded')||[]);if(gone.has(s.id))return 'can';const base=new Set(get('base')||[]);
- return forced(s)||forceSet().has(s.id)||get('base')&&!base.has(s.id)?'queued':'can'};
+ const gone=new Set(get('discarded')||[]);if(gone.has(s.id))return 'can';
+ return 'queued'};
 window.calRowHtml=s=>{const st=window.calStatus(s);if(!st)return'';
  if(st=='sent')return`<div class="small calst calst-on" data-calst="sent">${IC('check')} On Archery Calendar</div>`;
  if(st=='queued')return`<div class="small calst" data-calst="queued">${IC('calendar')} Waiting to send to Archery Calendar</div>`;
@@ -131,7 +132,7 @@ async function sendList(L){if(!WHO()||!L.length)return;
 window.calSendPast=id=>{const s=(S.sessions||[]).find(x=>x.id==id);if(s)return sendList([s])};
 window.calRowBind=root=>{(root||document).querySelectorAll('[data-calsend]').forEach(b=>b.onclick=e=>{e.stopPropagation();window.calSendPast(b.dataset.calsend)})};
 /* Me › Settings › Archery Calendar: 'Send all past finished rounds' (checkbox list, newest first) */
-const pastCan=()=>(S.sessions||[]).filter(s=>window.calStatus(s)=='can'&&finished(s)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+const pastCan=()=>{const gone=new Set(get('discarded')||[]);return (S.sessions||[]).filter(s=>window.calStatus(s)=='can'&&finished(s)&&!gone.has(s.id)).sort((a,b)=>(b.date||'').localeCompare(a.date||''))};
 async function bulk(){if(!okTok(get('link'))){maybePrompt(1);return}const L=pastCan();
  const html=`<span class="kicker">Archery Calendar</span><h2>Send past finished rounds</h2>${L.length?`<p class="small">Tick the rounds to add to My events. Each one is matched to an Archery Calendar event on its date if there is one.</p>
   <button class="btn ghost" id="calAll" type="button">Select all</button><div class="callist">${L.map(s=>`<label class="calrow"><input type="checkbox" value="${escC(s.id)}"><span>${rowLine(s)}</span></label>`).join('')}</div>
@@ -144,9 +145,9 @@ async function bulk(){if(!okTok(get('link'))){maybePrompt(1);return}const L=past
 /* Me › Settings & help: link status */
 window.calCard=function(){if(!WHO())return'';const tok=get('link'),n=Object.keys(get('sent')||{}).length;
  return`<div class="card" id="calcard"><span class="kicker">Archery Calendar</span><h2>Scores in My events</h2>
- ${okTok(tok)?`<p class="small" style="margin:0 0 8px">${(window.icon?icon('check'):'')} Linked. Rounds you finish are added to My events on archerycalendars.com on the day you shot them${n?` (${n} so far)`:''}.${state.live===false?' Waiting for Archery Calendar to switch this on; nothing is lost, they’ll go when it’s ready.':''}</p>${(c=>`<button class="btn ghost" id="calPast" style="margin:0 6px 6px 0">${IC('calendar')} Send all past finished rounds${c?' ('+c+')':''}</button>`)(pastCan().length)}<button class="btn ghost" id="calUn">Unlink</button>`
- :`<p class="small" style="margin:0 0 8px">Link once and every round you finish from now on shows in your Archery Calendar's My events. Rounds finished before you link aren't sent. Only you can see them.</p><a class="btn alt" href="${linkUrl()}">Add to my Archery Calendar</a>
- <div style="margin-top:12px;font-size:1.05rem;line-height:1.55"><b>How to link</b><ol style="margin:6px 0 6px 1.3em;padding:0"><li>Tap <b>Add to my Archery Calendar</b>.</li><li>On archerycalendars.com, sign in (or make a free account), then tap <b>Link ScoreTool</b>.</li><li>Tap <b>Back to ScoreTool</b>. This card will say <b>Linked</b>.</li></ol><p style="margin:4px 0">Finished rounds then show in My events on the day you shot them. Rounds from before you link aren't sent. Only you can see them.</p><p style="margin:4px 0">Using ScoreTool from your home screen? Copy the code shown on the link page and paste it below.</p></div>
+ ${okTok(tok)?`<p class="small" style="margin:0 0 8px">${(window.icon?icon('check'):'')} Linked. Finished rounds are added to My events on archerycalendars.com on the day you shot them, practice and club alike, including rounds you finished before you linked${n?` (${n} so far)`:''}.${state.live===false?' Waiting for Archery Calendar to switch this on; nothing is lost, they’ll go when it’s ready.':''}</p>${(c=>`<button class="btn ghost" id="calPast" style="margin:0 6px 6px 0">${IC('calendar')} Send all past finished rounds${c?' ('+c+')':''}</button>`)(pastCan().length)}<button class="btn ghost" id="calUn">Unlink</button>`
+ :`<p class="small" style="margin:0 0 8px">Link once and every finished round shows in your Archery Calendar's My events, practice and club alike, including rounds you finished before you linked. Only you can see them.</p><a class="btn alt" href="${linkUrl()}">Add to my Archery Calendar</a>
+ <div style="margin-top:12px;font-size:1.05rem;line-height:1.55"><b>How to link</b><ol style="margin:6px 0 6px 1.3em;padding:0"><li>Tap <b>Add to my Archery Calendar</b>.</li><li>On archerycalendars.com, sign in (or make a free account), then tap <b>Link ScoreTool</b>.</li><li>Tap <b>Back to ScoreTool</b>. This card will say <b>Linked</b>.</li></ol><p style="margin:4px 0">Finished rounds then show in My events on the day you shot them, including ones you shot before you linked. Only you can see them.</p><p style="margin:4px 0">Using ScoreTool from your home screen? Copy the code shown on the link page and paste it below.</p></div>
  <details style="margin-top:10px"><summary class="small">Using ScoreTool as an installed app? Paste the code instead</summary><label for="calCode">Link code from Archery Calendar</label><input id="calCode" autocomplete="off" inputmode="latin" placeholder="48 letters and numbers"><button class="btn ghost" id="calPaste" style="margin-top:8px">Link</button></details>`}
  ${state.err?`<p class="small" role="alert" style="margin:8px 0 0">${state.err}</p>`:''}</div>`};
 window.calBind=function(){const pb=document.getElementById('calPast');if(pb)pb.onclick=()=>bulk();const u=document.getElementById('calUn');if(u)u.onclick=async()=>{if(!confirm('Unlink Archery Calendar? Scores already added stay there.'))return;const tok=get('link');localStorage.removeItem(K('link'));
