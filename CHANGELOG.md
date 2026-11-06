@@ -19,6 +19,18 @@ Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no 
 - Names, diary, score photos and the score-sheet share image stay.
 - Tests: redesign_test 142 passed, 0 failed.
 
+
+### Rest of the test build (not live)
+- Badges, rewards, season, monthly recap and the badge card editor are removed. Rankings and classification stay. Names, diary, score photos and the score-sheet share image stay.
+- The shared tester squad starts blank off the live site. A squad you create is kept. The live host is not cleared.
+- Fair play shows once per round.
+- One Analysis screen. One Tune helper (paper, torque, draw weight/spine, cut length, bare shaft, node, creep, Dudley). Head-to-head and match night open from Casual.
+- A new archer can create a profile. Under-16s show nicknames only.
+- No tester or demo wording on screen.
+- Plan is a switch: Free (score card), Plus (your shooting), Pro (gear and tuning). Current archers are Founding member, free for life, until the switch is moved. No payment. Locked items say Available on Plus or Pro.
+- Photo to score was not built.
+- mybows_test 62/0 after the Tune helper. redesign_test 142/0 after badges were removed. ac1_test 23/0. Full regression is recorded when it finishes. Do not deploy.
+
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
