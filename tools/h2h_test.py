@@ -126,15 +126,13 @@ try:
   ff=set(re.findall(r'fill="(#[0-9a-f]+)"',J.inner_html('#pface')))
   chk('field Bugs Eyes is gold and black only '+str(ff),J.inner_text('#bugface')=='Face: Bugs Eyes' and ff<={'#ffd84d','#111','#fff'})
   J.evaluate("S.sessions=S.sessions.filter(s=>s!==cur);cur=null;save()")
-  # squad: all 10 testers (Darnie is not a tester)
+  # test build: the shared tester squad is not seeded (live host still seeds it; these tests run on localhost)
   J.evaluate("nav('squad')");J.wait_for_timeout(500)
-  chk('squad has all 10 testers',J.evaluate("S.squad.members.length")==10 and '10 members' in J.inner_text('.card.dark'))
-  chk('weekly league lists 10',J.evaluate("leagueTable().length")==10)
-  if SHOT:J.screenshot(path=OUT+'/9-squad-9-members.png')
-  J.evaluate("S.squad.members=S.squad.members.slice(0,3);delete S.presetTop;save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
-  chk('an old 3-member tester squad is topped up to 10 once',J.evaluate("S.squad.members.length")==10 and J.evaluate("S.squad.code")=='STRIDE-3T7')
-  J.evaluate("S.squad.members=S.squad.members.filter(m=>m.id!='m_estiaan'&&m.id!='m_steven');S.presetTop='all-testers';save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
-  mm=J.evaluate("S.squad.members.map(m=>m.id)");chk('a phone topped up before Estiaan joined gets him once; an admin removal still sticks','m_estiaan' in mm and 'm_steven' not in mm and len(mm)==9)
+  chk('tester squad starts blank',J.evaluate("!(S.squad&&(S.squad.code=='STRIDE-3T7'||S.squad.preset=='st-testers-1'))"))
+  J.evaluate("S.squad={name:'Tuesday juniors',code:'ABC-1234',admin:S.profile,rawRank:false,members:[{id:'m1',name:S.profile,status:'active'}],adults:[{id:'a1',name:S.profile,role:'Admin'}],cheers:{}};save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
+  chk('a squad you make is kept',J.evaluate("S.squad&&S.squad.code")=='ABC-1234' and J.evaluate("S.squad.members.length")==1)
+  J.evaluate("S.squad.preset='st-testers-1';S.squad.code='STRIDE-3T7';S.squad.name='ScoreTool Testers';save()");J.reload();J.wait_for_timeout(2200)
+  chk('the old tester squad is cleared on this test build',J.evaluate("!(S.squad&&S.squad.code=='STRIDE-3T7')"))
   # ---------- display names through the relay ----------
   REALN=['Nathaniel','Stride','Arthur','Wolfe','Snook','Choong','Chapman','Bureny','Burney','Engelen','Evans','Matete','George Philip']
   msgs=[json.loads(m['message']) for L_ in RELAY.values() for m in L_]

@@ -161,8 +161,9 @@ try:
     pg.evaluate("cur=null;nav('squad')");pg.wait_for_timeout(400)
     if SHOT and nm=='Logan':pg.screenshot(path=OUT+'/5-squad-logan.png')
   sq=L.evaluate("nav('squad')") or L.inner_text('#app')
-  chk('squad lists nicknames and defaults, no Tester N','JoJo' in sq and 'Comet' in sq and 'Skipper' in sq and 'Dana' in sq and 'Tester ' not in sq)
-  chk('Darnie (not a tester) is not in the testers squad','Darnie' not in sq and L.evaluate("PRESET_SQ.members.every(m=>m.id!='m_darnie')"))
+  chk('tester squad starts blank, no Tester N','Tester ' not in sq and L.evaluate("!(S.squad&&S.squad.code=='STRIDE-3T7')"))
+  chk('nicknames still resolve',L.evaluate("testerName('joseph')")=='JoJo' and L.evaluate("testerName('michael')")=='Comet' and L.evaluate("testerName('nathe')")=='Skipper')
+  chk('Darnie (not a tester) is not seeded into a tester squad',L.evaluate("PRESET_SQ.members.every(m=>m.id!='m_darnie')"))
   rk=L.evaluate("nav('rewards')") or L.inner_text('#app');chk('Ranks shows nicknames, never Tester N','Tester ' not in rk)
   # Darnie: an archer who is not a tester
   cd_,D=phone(b,'darnie')

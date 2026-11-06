@@ -22,7 +22,13 @@ function bindCreate(){if(!$('#cb'))return;$('#cb').onclick=()=>{const n=$('#cn')
  S.squad={name:n,code,admin:S.profile,rawRank:false,members:[{id:'m'+Date.now(),name:S.profile,status:'active'}],adults:[{id:'a'+Date.now(),name:S.profile,role:'Admin'}],cheers:{},created:today()};save();
  $('#co').innerHTML=`<div class="card dark" style="margin-top:10px"><span class="kicker">Squad created</span><h3>${esc(n)}</h3><p>Invite code</p><p style="font-size:28px;font-weight:800;letter-spacing:2px;margin:4px 0">${code}</p><button class="btn ghost" id="cc">Copy code</button> <button class="btn" id="cgo">Open squad</button><p class="small muted">Share it with your archers. They enter it in Squads → Join a squad.</p></div>`;
  $('#cc').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(code);$('#cc').textContent='Copied'};$('#cgo').onclick=()=>squad()}}
-function seedSquad(){seedPreset();if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
+/* Test build only (Nathe, 6 Nov 2026): the shared ScoreTool Testers squad starts blank so people make their own.
+   This never runs on the live GitHub Pages host, so saved squads there are left exactly as they are. */
+function liveScoreHost(){return location.hostname==='nfstride1-ux.github.io'}
+function testerSquad(s){return !!(s&&(s.preset==='st-testers-1'||s.code==='STRIDE-3T7'||s.name==='ScoreTool Testers'))}
+function seedSquad(){if(!liveScoreHost()){if(testerSquad(S.squad)){delete S.squad;S.presetSeeded='test-build-blank';S.presetTop='test-build-blank';save()}
+ if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}return}
+ seedPreset();if(S.squad){S.squad.members=S.squad.members||[];S.squad.adults=S.squad.adults||[];S.squad.cheers=S.squad.cheers||{}}}
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
 const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
