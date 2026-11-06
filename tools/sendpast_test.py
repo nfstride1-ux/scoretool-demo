@@ -35,7 +35,7 @@ with sync_playwright() as p:
    localStorage.setItem('scoretool.cal.steven.prompted','1')}""")
   OTHER=E("()=>JSON.stringify(Object.keys(localStorage).filter(k=>!k.startsWith('scoretool.cal.steven.')&&!/^scoretool\\.(v|state|steven|dname)/.test(k)).sort().map(k=>[k,localStorage.getItem(k)]))")
   pg.reload();pg.wait_for_timeout(2500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(400)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(400)
   SN="JSON.stringify(S.sessions)";s0=E(SN)
   base=E("JSON.parse(localStorage.getItem('scoretool.cal.steven.base')||'null')")
   chk('past rounds are in the baseline (never sent on their own)',isinstance(base,list) and 'sp1' in base)

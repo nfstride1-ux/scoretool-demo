@@ -18,7 +18,7 @@ try:
   errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
   def rpc(route):sent.append(json.loads(route.request.post_data));route.fulfill(status=200,content_type='application/json',body='{"ok":true}')
   pg.route('**/rest/v1/rpc/scoretool_save_score',rpc)
-  pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500);pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500);pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

@@ -9,7 +9,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 srv=subprocess.Popen([sys.executable,'-m','http.server','8772'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 def login(pg,who):
   pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

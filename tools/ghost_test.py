@@ -19,7 +19,7 @@ try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox']);pg=b.new_page(viewport={'width':390,'height':844})
   errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and errs.append(m.text))
-  pg.goto('http://localhost:'+PORT+'/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500);pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  pg.goto('http://localhost:'+PORT+'/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500);pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

@@ -21,7 +21,7 @@ with sync_playwright() as p:
    S.sessions.push({id:'pkfull',date:'2026-10-21',round:'Practice 10 ends × 3',ends:e(10),pos:[],src:'practice'});
    S.sessions.push({id:'pkaba',date:'2026-10-20',round:ABA_IC,ends:[['20'],['18'],['16'],['14'],['12']],pos:[],aba:[...Array(5)].map(()=>({m:0,k:1,z:'A'})),src:'practice'});save()}""")
   pg.reload();pg.wait_for_timeout(2000)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(400)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(400)
   SN="JSON.stringify(S.sessions)";s0=E(SN)
   E("()=>{cur=null;sv='sheet';go('score')}") if E("typeof go=='function'") else pg.click('nav [data-v=score]')
   pg.wait_for_timeout(800)

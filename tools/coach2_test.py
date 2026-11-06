@@ -15,7 +15,7 @@ RECALC='''()=>{const P=statPool(),W=P.filter(s=>s.ends.length),A=W.flatMap(s=>s.
  const m=v=>v.reduce((a,b)=>a+b,0)/v.length;return{nP:P.length,nW:W.length,D,late:fl.length?[m(fl.map(f=>f[0])),m(fl.map(f=>f[1]))]:null,low:A.length?Math.round(100*A.filter(a=>(val(a)||0)<=(fld?4:8)).length/A.length):null}}'''
 def login(pg,who):
   pg.goto('http://localhost:8773/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

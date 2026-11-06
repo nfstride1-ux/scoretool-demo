@@ -15,7 +15,7 @@ try:
   pg=b.new_page();pg.add_init_script('window.__NORENDER=true');pg.goto('http://localhost:'+PORT+'/c-7q4m9x2k/');pg.wait_for_timeout(800)
   ap=b.new_page(viewport={'width':390,'height':844});errs=[];ap.on('console',lambda m:m.type=='error' and errs.append(m.text));ap.on('pageerror',lambda e:errs.append(str(e)))
   ap.goto('http://localhost:'+PORT+'/');ap.wait_for_timeout(1000);nm_seed.pick(ap,'nathe');ap.wait_for_timeout(600)
-  ap.get_by_text('Demo unlock').first.click();ap.wait_for_timeout(600)
+  ap.locator('#unlock').first.click();ap.wait_for_timeout(600)
   for _ in range(3):
    if ap.locator('nav [data-v=stats]').is_visible():break
    ap.locator('#app button').first.click();ap.wait_for_timeout(500)
