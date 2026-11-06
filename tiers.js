@@ -15,7 +15,7 @@ const PLUS=new Set(['stats','analytics','lab_analysis','diary','lab_diary','lab_
 const PRO=new Set(['lab_mybows','lab_myarrows','lab_chooser','lab_tune','lab_opt','lab_calc']);
 function card(){const t=tierOf();
  return `<div class="card" id="tiercard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">${tierLabel(t)}</h2>
- <p class="small" style="margin:0 0 8px">${t==='founding'?'Founding member, free for life. Full access. Prices are not set, and nothing is charged.':'A switch for this test build. Prices are not set, and nothing is charged.'}</p>
+ <p class="small" style="margin:0 0 8px">${t==='founding'?'Founding member, free for life. Full access. Prices are not set, and nothing is charged.':'A switch so you can look at each plan. Prices are not set, and nothing is charged.'}</p>
  <label for="tierpick">Preview a plan</label>
  <select id="tierpick"><option value="free"${t==='free'?' selected':''}>Free</option><option value="plus"${t==='plus'?' selected':''}>Plus</option><option value="pro"${t==='pro'?' selected':''}>Pro</option><option value="founding"${t==='founding'?' selected':''}>Founding member</option></select>
  <p class="small muted" style="margin:8px 0 0">Free is the score card. Plus adds your own shooting, analysis, diary, photos and group scoring. Pro adds bows, arrows and the Tune helper.</p></div>`}
