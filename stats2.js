@@ -28,6 +28,7 @@ function allShoots(){const me=S.profile||'',out=[],O=offFor(me).slice(),used=new
   out.push({id:s.id,date:s.date,round:canon(s.round),score:total(s),ends:EN,dists:EN.map((_,i)=>distOf(faceR(R,i),s.round)),flagged:0,src:s.src=='paper'?'paper':'practice',inc:!isDone(s),
    event:s.src=='paper'?'Paper score sheet (competition)':'Practice',rating:null,field:isFld(faceR(R,0))||!!R.aba,aba:!!R.aba,s})});
  if(window.importedShoots)window.importedShoots().forEach(s=>out.push(Object.assign({},s,{round:canon(s.round),src:'imported',inc:false,rating:null,imported:true})));
+ if(window.officialAdded)window.officialAdded().forEach(s=>out.push({id:s.id,date:s.date,round:canon(s.round),score:s.score,ends:s.ends||[],dists:[],flagged:0,src:'official',inc:false,event:s.event||'Official',club:'',rating:null,url:'',field:/field/i.test(s.round),official:true}));
  return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.id<b.id?-1:1))}
 window.statShoots=allShoots;
 /* ONE round list for Stats and Analytics: canonical names, rounds with a counted shoot (complete, or any when Include incomplete is ticked), newest first */

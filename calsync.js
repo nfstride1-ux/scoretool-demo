@@ -69,6 +69,7 @@ function extraRows(){const rows=[],seen=new Set();
  const add=x=>{if(!x||x.incomplete||!x.date||!x.round||!(+x.score>0))return;const k=x.date+'|'+x.round+'|'+x.score;if(seen.has(k))return;seen.add(k);rows.push(x)};
  if(typeof findReal=='function')findReal(S.profile||'').forEach(r=>{const date=dayOf(r.date);add({id:srcId(r.sheet?'sheet-':'diary-',date,r.round,r.score,r.event||''),date,round:String(r.round),score:+r.score,max:maxKnown(r.round),loc:r.club?String(r.club).slice(0,120):null,incomplete:!!r.incomplete})});
  if(window.importedShoots)window.importedShoots().forEach(s=>add({id:srcId('imp-',s.date,s.round,s.score,s.event||'',s.id),date:s.date,round:String(s.round),score:+s.score,max:maxKnown(s.round),loc:null}));
+ if(window.officialAdded)window.officialAdded().forEach(s=>add({id:srcId('off-',s.date,s.round,s.score,s.event||'',s.id),date:s.date,round:String(s.round),score:+s.score,max:s.max>0?+s.max:maxKnown(s.round),loc:null}));
  return rows}
 function extraTodo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};
  return extraRows().filter(x=>{if(gone.has(x.id)||sameSent(x.date,x.round,x.score))return false;const label=withPb(x.round,recPb(x.round,x.date,x.score));x._round=label;x._sig=JSON.stringify([x.date,label,x.score,x.max,x.loc||null]);return sent[x.id]!==x._sig})}

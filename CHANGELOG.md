@@ -4,6 +4,11 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C4 — add an official result (v2026-11-06-1959-c4)
+- Tools, My results source: date, event, round, score, and optional maximum, 10s, Xs and ends.
+- Saved on this phone as a finished official result (`official`, `finished`). It counts for personal bests and is queued to the calendar with the C3 path (`off-`).
+- A round already scored, or the same official result again, is left as it is. Tests stub the RPC.
+
 ### C3 — official and imported scores (v2026-11-06-1957-c3)
 - Official scoresheets (`sheet-`), competition results that are not a scoresheet (`diary-`) and My results imports (`imp-`) are queued to the same calendar call, once each.
 - A row that matches an already-sent score on date, round and total is skipped. The personal-best `(PB)` rule is the same one.

@@ -39,6 +39,8 @@ function groups(bow){const G={};entries().filter(s=>s.bow==bow&&s.sc>0).forEach(
  practice().filter(s=>s.bow==bow).forEach(s=>{const k=anRoundOf(s.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:s.disc,all:[]});g.all.push(s)});
  if(window.importedShoots)importedShoots().forEach(s=>{const bowI=bow,row={d:s.date,ev:s.event||'Imported',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:[],ok:false,part:false,bow:bowI,src:'imported'};
   const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
+ if(window.officialAdded)officialAdded().forEach(s=>{const bowI=bow,ends=s.ends||[],row={d:s.date,ev:s.event||'Official',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:ends.length?[{dist:'Official',face:s.round,e:ends}]:[],ok:!!ends.length,part:false,bow:bowI,src:'official'};
+  const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
  Object.values(G).forEach(g=>{const full=g.all.filter(s=>!s.part);g.full=full.slice().sort((a,b)=>b.sc-a.sc||(a.d<b.d?-1:1));g.best=g.full[0]||null});
  return Object.values(G).filter(g=>g.best).sort((a,b)=>b.all.length-a.all.length||(a.rd<b.rd?-1:1))}
 function chip(a,disc){const k=disc=='Field'?(a=='M'?'k-m':v(a)>=5?'k-y':'k-k'):disc=='Clout'?(a=='M'?'k-m':'k-u'):(a=='M'?'k-m':v(a)>=9?'k-y':v(a)>=7?'k-r':v(a)>=5?'k-b':v(a)>=3?'k-k':'k-w');return`<span class="adb ${k} bs-a">${esc(a||'·')}</span>`}

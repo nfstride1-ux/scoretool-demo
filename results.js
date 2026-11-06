@@ -7,6 +7,7 @@ const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 const who=()=>(typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest';
 const SKEY=()=>'scoretool.resultsSource.'+who();
 const IKEY=()=>'scoretool.imported.'+who();
+const OKEY=()=>'scoretool.official.'+who();
 /* Home pages checked 6 Nov 2026. Archery GB answers 403 to a scripted fetch and 200 in a browser; the address is the body's own site. */
 const BODIES=[
  ['aa','Archery Australia','https://archery.org.au/'],
@@ -23,6 +24,11 @@ function imports(){const a=read(IKEY());return Array.isArray(a)?a:[]}
 window.importedShoots=function(){return imports().filter(r=>r&&r.imported&&r.date&&r.round&&r.score>0).map(r=>({
  id:r.id,date:r.date,round:r.round,score:+r.score,ends:[],dists:[],flagged:0,src:'imported',inc:false,
  event:r.event||'',club:'',rating:null,url:'',field:/field/i.test(r.round),imported:true}))};
+function officials(){const a=read(OKEY());return Array.isArray(a)?a:[]}
+/* C4: a finished official round the archer typed in. Not a scored session, so it cannot replace one. */
+window.officialAdded=function(){return officials().filter(r=>r&&r.official&&r.finished&&r.date&&r.round&&r.score>0).map(r=>({
+ id:r.id,date:r.date,round:r.round,score:+r.score,max:r.max>0?+r.max:null,tens:r.tens===0||r.tens>0?+r.tens:null,xs:r.xs===0||r.xs>0?+r.xs:null,
+ ends:Array.isArray(r.ends)?r.ends:[],event:r.event||'',official:true,finished:true,src:'official'}))};
 function httpUrl(u){const s=String(u||'').trim();return /^https:\/\/.+/i.test(s)?s:''}
 function parseTable(text){const raw=String(text||'').replace(/^\uFEFF/,'').trim();if(!raw)return [];
  const lines=raw.split(/\r?\n/).filter(l=>l.trim());
@@ -45,7 +51,12 @@ function taken(date,round,score){
  if((S.sessions||[]).some(s=>!s.sample&&s.ends&&same(s.date,s.round,typeof total=='function'?total(s):s.score)))return 'scored';
  if(typeof findReal=='function'&&findReal(S.profile||'').some(r=>same(typeof normDate=='function'?normDate(r.date):r.date,r.round,r.score)))return 'scored';
  if(imports().some(r=>r.imported&&same(r.date,r.round,r.score)))return 'already';
+ if(officials().some(r=>r.official&&same(r.date,r.round,r.score)))return 'already';
  return ''}
+function optNum(v){const t=String(v??'').trim();if(t==='')return null;const n=parseInt(t.replace(/[^\d]/g,''),10);return n>=0&&String(n)===t?n:null}
+function parseEnds(text){return String(text||'').split(/\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/[\s,]+/).map(a=>a.toUpperCase()).filter(a=>a==='X'||a==='M'||/^\d+$/.test(a))).filter(e=>e.length)}
+function endsTotal(ends){return ends.reduce((t,e)=>t+e.reduce((s,a)=>s+(a==='X'?10:a==='M'?0:+a),0),0)}
+let offMsg='';
 function view(){
  const o=src(),other=o.body==='other',url=httpUrl(o.url);
  const cols=grid[0]?grid[0].map((_,i)=>header?grid[0][i]||('Column '+(i+1)):'Column '+(i+1)):[];
@@ -82,6 +93,20 @@ function view(){
  <p class="small muted">${prev.length} row${prev.length==1?'':'s'}${prev.length>show.length?`, first ${show.length} shown`:''}. Ratings are not worked out from these.</p>
  <button class="btn alt full" id="rsconfirm" type="button">Confirm and save</button>
  <p class="small" id="rsdone" style="margin:6px 0 0"></p>`:''}
+ </div>
+ <div class="card" id="rsofficial"><span class="kicker">Official result</span><h2 style="margin:2px 0 8px">Add an official result</h2>
+ <p class="small" style="margin:0 0 8px">A finished official round, kept on this phone. It counts for personal bests. A round you already scored is left as it is.</p>
+ <label for="ofdate">Date</label><input id="ofdate" type="date">
+ <label for="ofevent">Event</label><input id="ofevent" autocomplete="off" placeholder="Event name">
+ <label for="ofround">Round</label><select id="ofround"><option value="">Choose a round, or type one below</option>${(typeof ROUNDS=='object'?Object.keys(ROUNDS):[]).map(n=>`<option>${h(n)}</option>`).join('')}</select>
+ <label for="ofroundx">Round name</label><input id="ofroundx" autocomplete="off" placeholder="Filled from the list, or type a round">
+ <label for="ofscore">Score</label><input id="ofscore" inputmode="numeric" autocomplete="off">
+ <label for="ofmax">Maximum, if you know it</label><input id="ofmax" inputmode="numeric" autocomplete="off" placeholder="Optional">
+ <label for="oftens">10s, if you know them</label><input id="oftens" inputmode="numeric" autocomplete="off" placeholder="Optional">
+ <label for="ofxs">Xs, if you know them</label><input id="ofxs" inputmode="numeric" autocomplete="off" placeholder="Optional">
+ <label for="ofends">Ends, if you have them</label><textarea id="ofends" rows="3" placeholder="One end a line, arrows separated by spaces. Optional."></textarea>
+ <button class="btn full" id="ofsave" type="button" style="margin-top:10px">Save official result</button>
+ <p class="small" id="ofnote" style="margin:6px 0 0">${h(offMsg)}</p>
  </div>`;
  $('#rsback').onclick=()=>nav('tools');
  const grab=()=>{const b=$('#rsbody').value,known=bodyOf(b);return {body:b,url:b==='other'?$('#rsurl').value.trim():known[2],member:$('#rsmem').value.trim()}};
@@ -104,6 +129,23 @@ function view(){
     keep.push({id:'imp'+Date.now()+'-'+n,round:r.round,date:r.date,score:r.score,event:r.event,imported:true});n++});
    localStorage.setItem(IKEY(),JSON.stringify(keep));
    $('#rsdone').textContent=`Saved ${n} on this phone.${skip?` Left ${skip} that were already scored or already saved.`:''}${bad?` ${bad} row${bad==1?'':'s'} had no round, date or score.`:''} They show on your personal bests as imported, and they are not used for ratings.`;
-  }}}
+  }}
+ const or=$('#ofround');if(or)or.onchange=()=>{if(or.value)$('#ofroundx').value=or.value};
+ const os=$('#ofsave');if(os)os.onclick=()=>{
+  const date=$('#ofdate').value,event=$('#ofevent').value.trim();
+  let round=($('#ofroundx').value||$('#ofround').value).trim();
+  const score=parseScore($('#ofscore').value),max=optNum($('#ofmax').value),tens=optNum($('#oftens').value),xs=optNum($('#ofxs').value);
+  const ends=parseEnds($('#ofends').value);
+  const say=t=>{offMsg=t;const n=$('#ofnote');if(n)n.textContent=t};
+  if(!date||!round||!score){say('Date, round and score are needed.');return}
+  if((($('#ofmax').value||'').trim()&&max==null)||(($('#oftens').value||'').trim()&&tens==null)||(($('#ofxs').value||'').trim()&&xs==null)){say('Maximum, 10s and Xs need a whole number, or leave them blank.');return}
+  if(ends.length&&endsTotal(ends)!==score){say(`Those ends add up to ${endsTotal(ends)}, not ${score}. Fix them, or clear the ends.`);return}
+  if(taken(date,round,score)){say('That round is already scored on this phone. It was left as it is.');return}
+  const keep=officials();
+  keep.push({id:'off-'+Date.now(),date,event,round,score,max,tens,xs,ends,official:true,finished:true});
+  localStorage.setItem(OKEY(),JSON.stringify(keep));
+  say('Saved on this phone as an official result.');
+ };
+}
 E.lab_results=view;
 })();
