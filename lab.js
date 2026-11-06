@@ -65,10 +65,8 @@ setInterval(()=>{try{if(typeof cur!=='undefined'&&cur&&isNew(cur)&&!cur.bow&&typ
 /* ---------- My archery ---------- */
 LABSEC.myarch='myarch';
 E.myarch=()=>menu('My archery',[
- row('lab_analysis','🔬','Full analysis','Analysis read, group patterns, best scores, stats detail and trends'),
+ row('lab_analysis','🔬','Analysis','Stats, personal bests, trends and the full read, in one place'),
  row('lab_latest','⭐','Latest shoot','How your last shoot went, wins of the day, notes'),
- row('stats','📈','Stats & PBs','Pick a round: last shoot, trend, personal bests, history'),
- row('analytics','📊','Analytics','Trends across shoots, distances, 10+X rate'),
  row('lab_arrows','➕','Practice arrows','Today\'s arrow count and weekly progress'),
  row('lab_diary','📝','Diary','Shooting diary in your own words'),
  row('lab_gear','🏹','Setups & sight marks','Bow setups, sight marks by distance, scores per setup'),
@@ -91,7 +89,6 @@ LABSEC.clubs='clubs';
 E.clubs=()=>menu('Clubs & leagues',[
  row('lab_squad','🛡️','Squads','Your private squad: board, activity, people'),
  row('lab_leagues','🏁','Leagues','Leagues you belong to. Join with a code or start one'),
- row('lab_match','⚔️','Match play','Head-to-head on two phones, shoot-ups'),
  row('lab_group','📋','Group score card','Score your whole group on one phone'),
  row('follow','👣','Following','Archers you follow and your feed')]);
 sub('lab_leagues','clubs','Leagues','clubs','Clubs',SC,e=>e.id=='lgcard');
@@ -122,13 +119,12 @@ sub('lab_settings','me','Settings & help','lab_me','Me',()=>me(),(e,t)=>['settin
 /* ---------- Tools ---------- */
 LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
- row('lab_opt','🎯','Arrow optimizer & tuning','Plot practice groups. Compare before and after a change'),
+ row('lab_tune','🎯','Tune helper','Paper, torque, draw weight and spine, cut length, bare shaft, node, creep, Dudley'),
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
- row('lab_calc','🧮','Calculators','Arrow speed, kinetic energy, momentum, FOC'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO and ASA, with sources')]);
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
-LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';
+LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';
 const CHANGES=['Just a group','Bare shaft vs fletched','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
 const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};
 function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length;
@@ -138,7 +134,7 @@ const cm=v=>(Math.round(v*10)/10).toFixed(1);
 const dir=(x,y)=>`${cm(Math.abs(x))} cm ${x>=0?'right':'left'}, ${cm(Math.abs(y))} cm ${y>=0?'low':'high'}`;
 E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.profile),T=mine.find(t=>t.id==S._tuneId);
  if(!T){const b=typeof curBow=='function'&&curBow();
-  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>What are you testing?</h2>
+  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>What are you changing?</h2>
   <div class="labgrid2"><div><label for="tn">Name</label><input id="tn" placeholder="e.g. Paper tune after new rest"></div>
   <div><label for="tc">Change</label><select id="tc">${CHANGES.map(c=>`<option>${c}</option>`).join('')}</select></div>
   <div><label for="td">Distance</label><input id="td" placeholder="e.g. 18m or 20yd"></div>
@@ -292,8 +288,8 @@ function rulesFind(){
 /* ---------- Full analysis: everything from the testers' Stats in one place ---------- */
 LABSEC.lab_analysis='myarch';
 E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBestCard&&labBestCard()||''}catch(e){}try{an=window.labAnalysisHTML?labAnalysisHTML():''}catch(e){an='<div class="card"><p class="small">The analysis could not be built from this data.</p></div>'}
- app.innerHTML=`<div class="card"><span class="kicker">Everything in one place</span><p class="small" style="margin:0 0 10px">Built from your past competition results and rounds scored here. Real results only.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">📈 Stats &amp; PBs, with More detail</button><button class="btn ghost" data-go="analytics">📊 Analytics: trends across shoots</button></div></div>${bc}${an}`;
- bar('Full analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
+ app.innerHTML=`<div class="card" id="oneanalysis"><span class="kicker">Analysis</span><h2 style="margin:2px 0 8px">One analysis</h2><p class="small" style="margin:0 0 10px">Stats, personal bests and trends are on this screen. Built from your past competition results and rounds scored here.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">Stats and personal bests</button><button class="btn ghost" data-go="analytics">Trends across shoots</button></div></div>${bc}${an}`;
+ bar('Analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
 
 /* ---------- Back buttons: every screen below a section names its parent and goes there (works on a direct load) ---------- */
 const TOP=new Set(['home','score','myarch','clubs','tools']);
