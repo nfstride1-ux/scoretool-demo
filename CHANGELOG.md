@@ -31,6 +31,14 @@ Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no 
 - Photo to score was not built.
 - mybows_test 62/0 after the Tune helper. redesign_test 142/0 after badges were removed. ac1_test 23/0. Full regression is recorded when it finishes. Do not deploy.
 
+
+### My results source
+- Tools > My results source: country or body (Archery Australia, Archery WA, World Archery, Archery GB, USA Archery, Other) with that body's home page filled in. Other leaves the website blank for you to type.
+- Member / archer ID and the website stay in localStorage (`scoretool.resultsSource.<archer>`). They are not sent anywhere. Open my results only opens the saved address.
+- Paste a table or choose a CSV, map round, date, score and event, preview, then confirm. Nothing is saved before confirm. A round already scored is left as it is. Saved rows live in `scoretool.imported.<archer>`, tagged imported, left out of ratings, and shown on personal bests with an imported badge.
+- Plus. A Free plan sees Available on Plus. No fetch and no scrape.
+- Tests: results_test 20 passed, 0 failed. redesign_test 141 passed, 0 failed after the activity league was taken off rankings.
+
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 

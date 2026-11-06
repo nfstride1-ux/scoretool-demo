@@ -121,10 +121,11 @@ LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
  row('lab_tune','🎯','Tune helper','Paper, torque, draw weight and spine, cut length, bare shaft, node, creep, Dudley'),
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
+ row('lab_results','📋','My results source','Country or body, member number, and scores you confirm yourself'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO and ASA, with sources')]);
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
-LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';
+LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_results='tools';
 const CHANGES=['Just a group','Bare shaft vs fletched','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
 const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};
 function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length;

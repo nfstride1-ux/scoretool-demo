@@ -11,7 +11,7 @@ window.tierOf=function(){let p=null;try{p=localStorage.getItem('scoretool.tierpr
  return 'free'};
 window.tierHas=function(need){const n=need==='pro'?'pro':need==='plus'?'plus':'free';return RANK[tierOf()]>=RANK[n]};
 window.tierLabel=function(t){return {free:'Free',plus:'Plus',pro:'Pro',founding:'Founding member, free for life'}[t||tierOf()]||'Free'};
-const PLUS=new Set(['stats','analytics','lab_analysis','diary','lab_diary','lab_latest','lab_arrows','lab_gear','lab_squad','squad','lab_leagues','lab_group','follow','lab_match']);
+const PLUS=new Set(['stats','analytics','lab_analysis','diary','lab_diary','lab_latest','lab_arrows','lab_gear','lab_squad','squad','lab_leagues','lab_group','follow','lab_match','lab_results']);
 const PRO=new Set(['lab_mybows','lab_myarrows','lab_chooser','lab_tune','lab_opt','lab_calc']);
 function card(){const t=tierOf();
  return `<div class="card" id="tiercard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">${tierLabel(t)}</h2>
