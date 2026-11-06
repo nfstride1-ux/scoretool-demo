@@ -254,7 +254,7 @@ try:
     for x in [H]+[g_ for _,_,g_ in PH]:tick(x)
   gv(H,code);rk=ranks(H);print('   ranks10',rk)
   chk('group: 10 archers on the host leaderboard',len(rk)==10)
-  gr=[r[0] for r in rk if r[1].strip('▲ ')=='Tester'];chk('group: simulated archers with equal ends share a place',len(gr)==2 and gr[0]==gr[1] and gr[0].startswith('='))
+  gr=[r[0] for r in rk if r[1].strip('▲ ')=='Archer'];chk('group: simulated archers with equal ends share a place',len(gr)==2 and gr[0]==gr[1] and gr[0].startswith('='))
   chk('group: no real names on the 10-archer board',not any(n.lower() in H.inner_text('#h2hview').lower() for n in REALN))
   if SHOT:H.screenshot(path=OUT+'/14-group-10.png',full_page=True)
   H.click('#h2hclose');H.wait_for_timeout(400);gv(H,code);chk('group: host close shows final results','Final results' in H.text_content('#h2hview') and 'closed by the host' in H.inner_text('#h2hview'))

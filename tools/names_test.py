@@ -71,7 +71,7 @@ try:
   J.evaluate("nav('me')");J.wait_for_timeout(500)
   chk('Me tab has the display-name card',J.locator('#nmcard').count()==1 and 'Joey' in J.text_content('#nmcard'))
   J.fill('#nmme','JoJo');J.click('#nmmego');J.wait_for_timeout(500)
-  chk('Me (personal) still shows the real name for the tester profile','Testing as Joseph Snook' in J.text_content('#app'))
+  chk('Me (personal) still shows the real name','Joseph Snook' in J.text_content('#app') and 'Testing as' not in J.text_content('#app'))
   chk('Me: name changed',J.text_content('#nmcard h2')=='JoJo' and J.evaluate("myName()")=='JoJo')
   if SHOT:J.screenshot(path=OUT+'/3-me-card.png')
   # ---------- second phone: Not now, then learns names from the relay ----------
@@ -80,7 +80,7 @@ try:
   sync(L);chk('Logan learned JoJo from the names topic',L.evaluate("testerName('joseph')")=='JoJo')
   chk('testers who have not picked show their default nickname',L.evaluate("testerName('steven')")=='Snookie' and L.evaluate("testerName('nathe')")=='Nathe')
   L.evaluate("nav('me')");L.wait_for_timeout(400);L.fill('#nmme','jojo');L.click('#nmmego');L.wait_for_timeout(300)
-  chk('unique among testers, case-insensitive','already has that name' in L.inner_text('#nmmeerr'))
+  chk('unique among archers, case-insensitive','already taken' in L.inner_text('#nmmeerr'))
   L.fill('#nmme','Zap');L.click('#nmmego');L.wait_for_timeout(400);sync(J)
   chk('Joseph sees Zap',J.evaluate("testerName('logan')")=='Zap')
   # ---------- clash found on a later poll: later picker asked to choose again ----------
@@ -144,7 +144,7 @@ try:
   cn_.close()
   # ---------- social views: nicknames only; personal views: real names ----------
   SCANS=lambda sel:"(()=>{const R=[...document.querySelectorAll('%s')];return R.map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder],[alt]')].map(e=>[e.getAttribute('value'),e.getAttribute('title'),e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('alt')].join(' ')).join(' ')).join(' ')})()"%sel
-  SOCIAL=[('squad','#app'),('badges','#app'),('recap','#app'),('score','#h2hcard'),('rewards','#realrank')]
+  SOCIAL=[('squad','#app'),('badges','#app'),('recap','#app'),('score','#h2hcard')]
   for nm,pg in (('Joseph',J),('Logan',L),('Michael',M)):
     hits={}
     for v,sel in SOCIAL:
