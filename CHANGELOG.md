@@ -4,6 +4,11 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C3 — official and imported scores (v2026-11-06-1957-c3)
+- Official scoresheets (`sheet-`), competition results that are not a scoresheet (`diary-`) and My results imports (`imp-`) are queued to the same calendar call, once each.
+- A row that matches an already-sent score on date, round and total is skipped. The personal-best `(PB)` rule is the same one.
+- A diary note with no round or score is not sent. Tests stub the RPC and use a fake link token.
+
 ### C2 — every finished round is sent (v2026-11-06-1957-c2)
 - Practice and club rounds that were already finished are sent as well. The first-run list no longer blocks them.
 - A round is sent once for its source id. It is sent again only when the payload changed. Sample rounds and discarded rounds stay out.

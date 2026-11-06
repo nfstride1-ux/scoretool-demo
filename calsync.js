@@ -50,14 +50,37 @@ function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(fin
 const forceSet=()=>new Set(get('force')||[]);
 function todo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>(forced(s)||finished(s))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
 window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
-async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
-  body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:roundOut(s),p_score:total(s),p_max:maxOf(s),p_location:locOf(s)})});
+async function postScore(body){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
-async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo();if(!L.length)return 0;
+async function send(s,tok){return postScore({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:roundOut(s),p_score:total(s),p_max:maxOf(s),p_location:locOf(s)})}
+/* C3 (6 Nov 2026, Nathe): official scoresheets (sheet-), competition results that are not a scoresheet (diary-), and My results
+   imports (imp-) are queued too, once each. A row that matches an already-sent score on date + round + score is skipped.
+   A diary note with no round or score is not a score, so it is not sent. The (PB) rule is the same one. */
+function slugId(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,32)}
+function srcId(prefix,date,round,score,event,given){if(given){let g=String(given);if(g.indexOf(prefix)==0)return g.slice(0,80);if(prefix=='imp-'&&g.indexOf('imp')==0)g=g.slice(3).replace(/^-/,'');return (prefix+g).slice(0,80)}
+ return (prefix+date+'-'+score+'-'+slugId(round)+'-'+slugId(event)).slice(0,80)}
+function dayOf(d){return typeof normDate=='function'?normDate(d):d}
+function maxKnown(round){const R=typeof ROUNDS!='undefined'&&ROUNDS[round];if(!R||R.aba)return null;const m=R.max;return m>0&&m<=5000?m:null}
+function recPb(round,date,score){if(!(score>0)||typeof window.bsCurrentPb!='function')return false;const b=window.bsCurrentPb(round);return !!(b&&b.date==date&&+b.score==+score)}
+function sameSent(date,round,score){const sent=get('sent')||{};
+ if((S.sessions||[]).some(s=>s&&!s.sample&&sent[s.id]&&s.date==date&&String(s.round)==String(round)&&total(s)==+score))return true;
+ return Object.keys(sent).some(id=>{try{const a=JSON.parse(sent[id]);if(!a)return false;return a[0]==date&&String(a[1]||'').replace(/ \(PB\)$/,'')==String(round)&&+a[2]==+score}catch(e){return false}})}
+function extraRows(){const rows=[],seen=new Set();
+ const add=x=>{if(!x||x.incomplete||!x.date||!x.round||!(+x.score>0))return;const k=x.date+'|'+x.round+'|'+x.score;if(seen.has(k))return;seen.add(k);rows.push(x)};
+ if(typeof findReal=='function')findReal(S.profile||'').forEach(r=>{const date=dayOf(r.date);add({id:srcId(r.sheet?'sheet-':'diary-',date,r.round,r.score,r.event||''),date,round:String(r.round),score:+r.score,max:maxKnown(r.round),loc:r.club?String(r.club).slice(0,120):null,incomplete:!!r.incomplete})});
+ if(window.importedShoots)window.importedShoots().forEach(s=>add({id:srcId('imp-',s.date,s.round,s.score,s.event||'',s.id),date:s.date,round:String(s.round),score:+s.score,max:maxKnown(s.round),loc:null}));
+ return rows}
+function extraTodo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};
+ return extraRows().filter(x=>{if(gone.has(x.id)||sameSent(x.date,x.round,x.score))return false;const label=withPb(x.round,recPb(x.round,x.date,x.score));x._round=label;x._sig=JSON.stringify([x.date,label,x.score,x.max,x.loc||null]);return sent[x.id]!==x._sig})}
+async function sendExtra(x,tok){return postScore({p_token:tok,p_source_id:WHO()+':'+x.id,p_shot_date:x.date,p_round:x._round,p_score:x.score,p_max:x.max,p_location:x.loc})}
+async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo(),X=extraTodo();if(!L.length&&!X.length)return 0;
  const tok=get('link');if(!okTok(tok)){maybePrompt();return 0}
  if(!navigator.onLine)return 0;state.busy=true;const sent=get('sent')||{};
- for(const s of L){const r=await send(s,tok);if(r=='ok'){sent[s.id]=sig(s);put('sent',sent);state.live=true;state.err='';k++}
-  else if(r=='off'){state.live=false;break}else if(r=='unlinked'){localStorage.removeItem(K('link'));state.err='The link was removed on Archery Calendar. Link again to keep adding scores.';break}else{state.err='Couldn’t reach Archery Calendar. Will try again.';break}}
+ const take=async(id,sg,run)=>{const r=await run();if(r=='ok'){sent[id]=sg;put('sent',sent);state.live=true;state.err='';k++;return 'ok'}
+  if(r=='off'){state.live=false;return 'stop'}if(r=='unlinked'){localStorage.removeItem(K('link'));state.err='The link was removed on Archery Calendar. Link again to keep adding scores.';return 'stop'}
+  state.err='Couldn’t reach Archery Calendar. Will try again.';return 'stop'};
+ for(const s of L){if(await take(s.id,sig(s),()=>send(s,tok))=='stop')return k}
+ for(const x of extraTodo()){if(await take(x.id,x._sig,()=>sendExtra(x,tok))=='stop')break}
 }catch(e){}finally{state.busy=false}return k}
 setInterval(tick,4000);addEventListener('online',tick);setTimeout(tick,1500);
 /* once only, never in the way: a small card after a round is finished, if not linked */
@@ -145,7 +168,7 @@ async function bulk(){if(!okTok(get('link'))){maybePrompt(1);return}const L=past
 /* Me › Settings & help: link status */
 window.calCard=function(){if(!WHO())return'';const tok=get('link'),n=Object.keys(get('sent')||{}).length;
  return`<div class="card" id="calcard"><span class="kicker">Archery Calendar</span><h2>Scores in My events</h2>
- ${okTok(tok)?`<p class="small" style="margin:0 0 8px">${(window.icon?icon('check'):'')} Linked. Finished rounds are added to My events on archerycalendars.com on the day you shot them, practice and club alike, including rounds you finished before you linked${n?` (${n} so far)`:''}.${state.live===false?' Waiting for Archery Calendar to switch this on; nothing is lost, they’ll go when it’s ready.':''}</p>${(c=>`<button class="btn ghost" id="calPast" style="margin:0 6px 6px 0">${IC('calendar')} Send all past finished rounds${c?' ('+c+')':''}</button>`)(pastCan().length)}<button class="btn ghost" id="calUn">Unlink</button>`
+ ${okTok(tok)?`<p class="small" style="margin:0 0 8px">${(window.icon?icon('check'):'')} Linked. Finished rounds are added to My events on archerycalendars.com on the day you shot them, practice and club alike, including rounds you finished before you linked. Official scoresheets, competition results and scores you imported are added too${n?` (${n} so far)`:''}.${state.live===false?' Waiting for Archery Calendar to switch this on; nothing is lost, they’ll go when it’s ready.':''}</p>${(c=>`<button class="btn ghost" id="calPast" style="margin:0 6px 6px 0">${IC('calendar')} Send all past finished rounds${c?' ('+c+')':''}</button>`)(pastCan().length)}<button class="btn ghost" id="calUn">Unlink</button>`
  :`<p class="small" style="margin:0 0 8px">Link once and every finished round shows in your Archery Calendar's My events, practice and club alike, including rounds you finished before you linked. Only you can see them.</p><a class="btn alt" href="${linkUrl()}">Add to my Archery Calendar</a>
  <div style="margin-top:12px;font-size:1.05rem;line-height:1.55"><b>How to link</b><ol style="margin:6px 0 6px 1.3em;padding:0"><li>Tap <b>Add to my Archery Calendar</b>.</li><li>On archerycalendars.com, sign in (or make a free account), then tap <b>Link ScoreTool</b>.</li><li>Tap <b>Back to ScoreTool</b>. This card will say <b>Linked</b>.</li></ol><p style="margin:4px 0">Finished rounds then show in My events on the day you shot them, including ones you shot before you linked. Only you can see them.</p><p style="margin:4px 0">Using ScoreTool from your home screen? Copy the code shown on the link page and paste it below.</p></div>
  <details style="margin-top:10px"><summary class="small">Using ScoreTool as an installed app? Paste the code instead</summary><label for="calCode">Link code from Archery Calendar</label><input id="calCode" autocomplete="off" inputmode="latin" placeholder="48 letters and numbers"><button class="btn ghost" id="calPaste" style="margin-top:8px">Link</button></details>`}

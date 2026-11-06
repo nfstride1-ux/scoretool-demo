@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-06-1957-c3',d:'2026-11-06',items:[
+   ['calendar',"Official and imported scores go to your calendar","Official scoresheets, competition results and scores you imported are added to My events as well, once each. A score you already sent for that day, round and total is not sent again. A personal best still has (PB) on the round name."]]},
   {v:'v2026-11-06-1957-c2',d:'2026-11-06',items:[
-   ['calendar',"Finished rounds go to your calendar","Every finished round is added to My events, practice and club alike, including rounds you finished before you linked. A round is sent once. Sample rounds and rounds you discarded are left out."]]},
+   ['calendar',"Finished rounds go to your calendar","Every finished round is added to My events, practice and club alike, including rounds you finished before you linked. A round is sent once. Sample rounds and rounds you discarded are left out.",'eec2d6b']]},
   {v:'v2026-11-06-1957-c1',d:'2026-11-06',items:[
    ['trophy',"A personal best is marked on your calendar","When a finished round is your personal best for that round, the same best the Personal bests card shows, Archery Calendar gets the round name with (PB) on the end. Your scores on this phone are not changed.",'98a3729']]},
   {v:'v2026-11-03-0640-r3',d:'2026-11-03',items:[
