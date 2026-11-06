@@ -1,6 +1,18 @@
 # ScoreTool changelog
 
 Newest first. Each entry names the version tag shown in Settings.
+
+## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
+Branch cursor/scoretool-test-build-2026-11-06-52a5 off a7ea130. Nothing here is on GitHub Pages. Saved data on https://nfstride1-ux.github.io/scoretool-demo/ is not touched.
+
+### R1, R2, R3
+Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no other branches, tags, pull requests or dangling commits. Those changes are not in this repository, so they were not invented.
+
+### IBO/ATA 327 for Hoyt Concept X 40
+- data/bow_specs.json: hoyt-cx40 speed stays 327; speedKind is IBO/ATA (was ATA).
+- My bows, the Arrow chooser and Calculators label the speed field IBO/ATA. Other bows keep IBO, ATA, not stated or measured.
+- Tests: mybows_test 62 passed, 0 failed (PORT 8791). ac1_test 23 passed, 0 failed (PORT 8792). arrowchooser_test "starting-point warning" also fails on main a7ea130 with this Playwright, so it is not from this change.
+
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 

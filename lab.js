@@ -232,7 +232,7 @@ E.lab_calc=function(){const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60'
  const f=(x,d=1)=>isFinite(x)?x.toFixed(d):'-';
  const inp=(k,l,u,val,ph)=>`<label for="c_${k}">${l} <span class="muted small">(${u})</span></label><input id="c_${k}" data-c="${k}" inputmode="decimal" value="${h(val!==undefined?val:(C[k]==null?'':C[k]))}"${ph?` placeholder="${ph}"`:''}>`;
  app.innerHTML=`<div class="labgrid2">
- <div class="card"><span class="kicker">Arrow speed estimate · compound</span>${inp('ibo','IBO speed rating','fps')}${inp('dl','Draw length','inches')}${inp('dw','Draw weight','lb')}${inp('gr','Arrow weight','grains')}${inp('sg','Extra weight on the string','grains')}
+ <div class="card"><span class="kicker">Arrow speed estimate · compound</span>${inp('ibo','IBO/ATA','fps')}${inp('dl','Draw length','inches')}${inp('dw','Draw weight','lb')}${inp('gr','Arrow weight','grains')}${inp('sg','Extra weight on the string','grains')}
   <p>About <span class="labout">${f(est,0)}</span> fps <span class="muted">(${f(est*0.3048)} m/s)</span></p>
   <p class="small muted">${C.spdOn?'This speed and arrow weight are used in the card below.':'Change any figure here and the speed is used in the card below.'}</p>
   <p class="labsrc">Estimate only, using the common rule of thumb from the IBO rating (30" draw, 5 grains per lb): −10 fps per inch under 30", −1 fps per 3 grains of arrow over 5 grains per lb, −1 fps per 3 grains on the string. A chronograph reading is always better.</p></div>

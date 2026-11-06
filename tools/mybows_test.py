@@ -35,6 +35,7 @@ with sync_playwright() as p:
     if w==390:pg.screenshot(path=os.path.join(SH,'mybows-suggest-390.png'))
     pg.click('[data-sug=hoyt-cx40]');pg.wait_for_timeout(500)
     chk(tag+' CX40 specs filled',pg.input_value('#mb_speed')=='327' and pg.input_value('#mb_bh')=='7.25' and pg.input_value('#mb_ata')=='40')
+    chk(tag+' CX40 field labelled IBO/ATA at 327',pg.locator('label[for=mb_speed]').inner_text().startswith('IBO/ATA') and pg.input_value('#mb_kind')=='IBO/ATA' and pg.input_value('#mb_speed')=='327')
     chk(tag+' let-off left blank',pg.input_value('#mb_lo')=='')
     pg.fill('#mb_dw','58');pg.fill('#mb_dl','29.5');pg.click('#mbsave');pg.wait_for_timeout(500)
     chk(tag+' saved',pg.get_by_text('Concept X 40').count()>0 and pg.locator('#mbform').count()==0)
