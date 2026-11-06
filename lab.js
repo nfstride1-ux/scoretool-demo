@@ -72,13 +72,11 @@ E.myarch=()=>menu('My archery',[
  row('lab_arrows','➕','Practice arrows','Today\'s arrow count and weekly progress'),
  row('lab_diary','📝','Diary','Shooting diary in your own words'),
  row('lab_gear','🏹','Setups & sight marks','Bow setups, sight marks by distance, scores per setup'),
- row('lab_ranks','🏅','Rankings & classification','Real AA rankings and classification progress'),
- row('lab_season','🏆','Season, badges & recap','Season points, badge collection, monthly recap')]);
+ row('lab_ranks','🏅','Rankings & classification','Real AA rankings and classification progress')]);
 sub('lab_latest','myarch','Latest shoot','myarch','My archery',()=>_home(),(e,t,i)=>i<3||/FROM YOUR NOTES/.test(t));
 sub('lab_arrows','myarch','Practice arrows','myarch','My archery',()=>_home(),(e,t,i)=>i==0||/TODAY'S ARROWS/.test(t));
 sub('lab_diary','myarch','Diary','myarch','My archery',()=>diary(),(e,t)=>/SHOOTING DIARY|TIMELINE/.test(t));
-sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class');
-sub('lab_season','myarch','Season, badges & recap','myarch','My archery',()=>E.rewards(),(e,t)=>/SEASON|RECAP/.test(t),()=>{app.insertAdjacentHTML('beforeend',`<button class="btn ghost full" data-go="badges">🎖️ Badge collection</button>`)});
+sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class'||e.id=='rankcard');
 sub('lab_gear','myarch','Setups & sight marks','myarch','My archery',()=>diary(),(e,t)=>e.id=='gearcard'||/BOW & SETUP DIARY|CURRENT SETUP/.test(t),()=>{app.insertAdjacentHTML('beforeend',setupScores())});
 function setupScores(){const L=(typeof myBows=='function'?myBows():[]);if(!L.length)return'';
  const ss=(S.sessions||[]).filter(s=>s.bow&&!s.sample&&typeof isDone=='function'&&isDone(s));
@@ -114,7 +112,7 @@ const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='unde
  return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p>${window.ADMIN_VIEW?`<button class="btn full" id="whoback" data-tester="nathe" style="margin:0 0 8px">Back to my profile</button>`:''}<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id&&!(window.ADMIN_VIEW&&t.id=='nathe')).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
 E.lab_me=()=>{menuMe();const w=whoCard();if(w){app.querySelector('.labbar').insertAdjacentHTML('afterend',w);if(typeof bindTesterPicker=='function')bindTesterPicker(app)}};
 const menuMe=()=>menu('Me',[
- row('lab_profile','🪪','Profile & card','Display name, archer card, badges, best moments'),
+ row('lab_profile','🪪','Profile','Display name and best moments'),
  row('lab_people','🧑‍🏫','Coaches & parents','Your details, coach access, parent link'),
  row('lab_settings','⚙️','Settings & help','Settings, linked apps, help guides')]);
 sub('lab_profile','me','Profile & card','lab_me','Me',()=>me(),(e,t)=>['nmcard'].includes(e.id)||e.classList.contains('pcard')||/^BADGES|MY BEST MOMENTS/.test(t));
@@ -302,7 +300,7 @@ const TOP=new Set(['home','score','myarch','clubs','tools']);
 const PAR={stats:['Stats & PBs','myarch','My archery'],analytics:['Analytics','myarch','My archery'],badges:['Badge collection','lab_season','Season & badges'],recap:['Monthly recap','lab_season','Season & badges'],
  follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],whatsnew:['What\'s new','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home']};
 Object.assign(LABSEC,{lab_analysis:'myarch'});
-const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?(view=='profile'?'lab_profile':'lab_season'):v;
+const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?'lab_ranks':v=='lab_season'?'lab_ranks':v;
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';
 function inner(){if(view=='lab_leagues'&&window._lgv&&window._lgE&&window._lgE.code==window._lgv)return['League',()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;lgView(window._lgv);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))}];
  if(view=='lab_leagues'&&window._lgv)return['Leagues',()=>{window._lgv=null;window._lgE=null;nav('lab_leagues')}];

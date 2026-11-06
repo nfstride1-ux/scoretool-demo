@@ -54,8 +54,7 @@ try:
     for w in ['localStorage','Evidence bank','AA rule 4.1','Elite III','Bronze III','Diamond','Platinum','Peak rank']:chk(f'{nm} has no "{w}"',w not in t)
     chk(f'{nm} has no Champion tier',not re.search(r'Champion(?!ship)',t,re.I))
   chk('Score: Ghost match explained','shoot against a past score' in score)
-  chk('Ranks: activity points, no XP','activity points' in ranks and not re.search(r'\bXP\b',ranks))
-  chk('Ranks: Season stripe explained','banner designs' in ranks)
+  chk('Ranks: season and badges removed, no XP','activity points' not in ranks and 'banner designs' not in ranks and 'BADGES' not in ranks and not re.search(r'\bXP\b',ranks))
   chk('Ranks: no QRE (plain words)','QRE' not in ranks and 'Qualifying' not in ranks)
   # ---------- one home each ----------
   T('home');chk('Home: no rank card',pg.locator('#rank-slot,#rankcard,#realrank').count()==0 and 'Grand Master' not in home)
@@ -64,7 +63,7 @@ try:
   chk('Home: competition scores once',home.count('COMPETITION SCORES')<=1)
   T('rewards');chk('Ranks: no profile card, no badges',pg.locator('.pcard').count()==0 and 'BADGES' not in ranks)
   chk('Ranks: rank shown',pg.locator('#realrank').count()==1 and 'Grand Master Bowman' in ranks)
-  T('me');chk('Me: badges, no rank',pg.locator('.pcard').count()==1 and 'BADGES' in me and 'Grand Master' not in me and pg.locator('.pcard .pill').count()==0)
+  T('me');chk('Me: no badges, no rank',pg.locator('.pcard').count()==1 and 'BADGES' not in me and 'Grand Master' not in me and pg.locator('.pcard .pill').count()==0)
   st();t=pg.inner_text('#app');chk('Stats: no wins, no competition list, no rank pill',('WINS' not in t) and ('COMPETITION SCORES' not in t) and pg.locator('.pill').count()==0)
   chk('Stats: one PB view',pg.locator('#c-pb').count()==1 and pg.locator('#bscard').count()==0 and t.count('PERSONAL BEST')==1)
   # ---------- bugs ----------
