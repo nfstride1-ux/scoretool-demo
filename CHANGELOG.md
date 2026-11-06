@@ -39,6 +39,14 @@ Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no 
 - Plus. A Free plan sees Available on Plus. No fetch and no scrape.
 - Tests: results_test 20 passed, 0 failed. redesign_test 141 passed, 0 failed after the activity league was taken off rankings.
 
+
+### Regression on this test branch (not deployed)
+- Full run: 68 passed, 15 failed, 2304s. The 15 were: WebKit not installed yet (11 suites), Peel share/comp servers not started (2), pdftotext missing (sight card), and the activity-league check on rankings.
+- After WebKit, pdftotext and the Peel server helper were available, those suites passed, including fullround 409/0, results source 20/0, coach2 178/0, backup 24/0, names 105/0, redesign 141/0.
+- endview still prints 2 screenshot comparisons against commit 7b8b2ed. The runner treats the suite as passed (exit 0). The shell has changed since that baseline.
+- arrowchooser "starting-point warning" also fails on main a7ea130 with this Playwright.
+- Not run against the live URL. Do not deploy.
+
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
