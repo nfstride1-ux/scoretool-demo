@@ -3,6 +3,11 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
+
+### C1 — personal best on the calendar round name (v2026-11-06-1957-c1)
+- A finished full round that is the Personal bests card's best for that round is sent with ` (PB)` on the end of the round string. No new column. Scores stored on the phone are not changed.
+- The comparison is the card's own one (`bsCurrentPb`: highest full score, earlier date if the score is the same, practice and official and imported together).
+- Tests stub `scoretool_save_score`. They use a fake link token. Nothing is posted to the live calendar.
 Branch cursor/scoretool-test-build-2026-11-06-52a5 off a7ea130. Nothing here is on GitHub Pages. Saved data on https://nfstride1-ux.github.io/scoretool-demo/ is not touched.
 
 ### R1, R2, R3

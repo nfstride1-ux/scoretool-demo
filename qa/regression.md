@@ -43,6 +43,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | My arrows / My bows | myarrows, mybows, arrowpick, todayarrows | Add/edit lists, dropdowns fill calculators |
 | Calculators | arrowcheck, arrowchooser, arrowuse | FOC, speed, spine verdicts, chart look-ups |
 | Analysis | coach2, coach3, testers, sendpast | Stats vs Analytics lists, coach read, tester data, send past rounds |
+| Calendar PB tag | c1 | Finished full round that is the Personal bests PB is sent with (PB) on the round string. A lower score, a sample and an unfinished round are not. The RPC is stubbed. |
 | My results source | results | Tools > My results source: body picker prefills the home page, Other is a free address, member number stays on the phone, Open my results is a link, paste or CSV maps round/date/score/event, preview then confirm, imports tagged imported, scored sessions not overwritten, not used for ratings, Plus lock says Available on Plus |
 | App shell | whatsnew, offline, clarity | What's new/help rules (no emoji, line icons, newest first), service worker precache, offline reopen; Clarity snippet async, typed fields masked, privacy line, clarity.ms never cached, app fine when clarity.ms is unreachable |
 

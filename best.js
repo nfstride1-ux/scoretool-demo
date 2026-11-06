@@ -62,6 +62,11 @@ window.offGhost=function(appRound){const b=bestForApp(appRound,window._bsBow||cu
  return{mode:'off',src:'off',ends:E.map(e=>e.reduce((t,a)=>t+v(a),0)),ar:E.map(e=>e.slice()),pos:null,date:fmt(b.s.d),ev:b.s.ev}};
 function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])}
 function curBow(){const B=bows();if(!B.length)return null;if(window._bsBow&&B.some(b=>b[0]==window._bsBow))return window._bsBow;const L=entries().sort((a,b)=>a.d<b.d?1:-1);return L[0]?L[0].bow:B[0][0]}
+/* The one score the Personal bests card marks PB for this round: highest full score, earlier date on a tie, same bow the card opens on.
+   Practice, official sheets and imported rows are counted together, the same way groups() builds the card. */
+function practiceBow(){return BOW(typeof myBow=='function'?myBow():(S.bow||(typeof TESTER!='undefined'&&TESTER&&TESTER.bow)||''))}
+window.bsCurrentPb=function(round){try{const bow=curBow()||practiceBow();if(!bow||!round)return null;const G=groups(bow),k=anRoundOf(round),g=G.find(x=>anRoundOf(x.rd)==k);
+ if(!g||!g.best)return null;return {date:g.best.d,score:+g.best.sc,round:g.best.rd,src:g.best.src}}catch(e){return null}};
 window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)return'';const G=groups(bow);if(!G.length)return'';
  let g=G.find(x=>x.rd==window._bsRd)||G[0];const pick=g.full.find(s=>s.d+'|'+s.sc==window._bsPick)||g.best,s=pick,isBest=s===g.best,B=bows();
  /* one shared selection: the shoot shown here drives Full analysis > Analysis (same round names as Stats: SHEET_ALIAS then canonRound) */

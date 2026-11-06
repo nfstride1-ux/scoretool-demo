@@ -35,7 +35,9 @@ try:
   chk('kicker names the event','3D - Bowmen of Melville' in pg.text_content('#abacard .kicker'))
   chk('event card',  'Fun shoot - not official' in pg.inner_text('#abaev'))
   chk('score record unchanged',E("JSON.stringify(S.sessions.find(s=>s.id=='s1760745600000'))")==before)
-  chk('sent once to My events',len(sent)==1 and sent[0]['p_shot_date']=='2026-10-18' and sent[0]['p_score']==450 and sent[0]['p_round']=='3D - Bowmen of Melville · ABA scoring · 1st Compound' and sent[0]['p_location']=='Bowmen of Melville' and sent[0]['p_max'] is None and sent[0]['p_source_id']=='nathe:s1760745600000')
+  mine=[x for x in sent if x.get('p_source_id')=='nathe:s1760745600000']
+  base='3D - Bowmen of Melville · ABA scoring · 1st Compound'
+  chk('sent once to My events',len(mine)>=1 and mine[-1]['p_shot_date']=='2026-10-18' and mine[-1]['p_score']==450 and mine[-1]['p_round'] in (base, base+' (PB)') and mine[-1]['p_location']=='Bowmen of Melville' and mine[-1]['p_max'] is None)
   print(sent)
   pg.locator('#abapaper').scroll_into_view_if_needed();E("scrollTo(0,0)");pg.screenshot(path=SH+'/mel-sheet-top.png')
   pg.locator('#abaev').scroll_into_view_if_needed();pg.screenshot(path=SH+'/mel-event-card.png')

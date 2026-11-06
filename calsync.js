@@ -34,7 +34,15 @@ const tiedRound=s=>{const e=evs()[s.id];if(!e)return null;const R=ROUNDS[s.round
  return (e.name+(R.aba?' · ABA scoring':'')+(e.full&&e.res&&e.res.pos==1?' · 1st '+e.res.div:'')+(e.full||isFull(s)?'':' (partial: '+n+' of '+R.ends+(R.aba?' targets)':' ends)'))).slice(0,120)};
 const finished=s=>s&&!s.sample&&Array.isArray(s.ends)&&ROUNDS[s.round]&&(isDone(s)||(!!s.finished&&arrowsIn(s)>0));
 const maxOf=s=>{const R=ROUNDS[s.round];if(!isFull(s))return null;const m=bugsOn(s)?R.ends*R.ape*6:R.max;return m>0&&m<=5000?m:null};
-const sig=s=>{const t=tiedRound(s);return JSON.stringify(t?[s.date,t,total(s),maxOf(s),evs()[s.id].club||null]:[s.date,s.round,total(s),maxOf(s),s.loc||null])};
+/* C1 (6 Nov 2026, Nathe): a finished full round that is the Personal bests card's PB for that round is sent with " (PB)" on the round string.
+   Same comparison as that card (window.bsCurrentPb). No new column. The tag is kept inside the existing 120-character round. */
+const PBTAG=' (PB)';
+function withPb(label,on){const s=String(label||'');if(!on)return s.slice(0,120);return s.slice(0,120-PBTAG.length)+PBTAG}
+function sessionIsPb(s){if(!s||s.sample||typeof isFull!='function'||!isFull(s)||!(total(s)>0)||typeof window.bsCurrentPb!='function')return false;
+ const b=window.bsCurrentPb(s.round);return !!(b&&b.date==s.date&&+b.score==total(s))}
+function roundOut(s){return withPb(tiedRound(s)||s.round,sessionIsPb(s))}
+function locOf(s){const t=tiedRound(s),c=t&&evs()[s.id]?evs()[s.id].club:s.loc;return c?String(c).slice(0,120):null}
+const sig=s=>JSON.stringify([s.date,roundOut(s),total(s),maxOf(s),locOf(s)]);
 /* first run for this archer: everything already finished is marked as 'before the update' and never sent */
 function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(finished).map(s=>s.id))}
 /* 'force' (23 Oct 2026): ids of past finished rounds the archer chose to send untied (Send to Archery Calendar), even if shot before the link */
@@ -42,7 +50,7 @@ const forceSet=()=>new Set(get('force')||[]);
 function todo(){const base=new Set(get('base')||[]),gone=new Set(get('discarded')||[]),sent=get('sent')||{},fo=forceSet();return (S.sessions||[]).filter(s=>(forced(s)||finished(s)&&(!base.has(s.id)||fo.has(s.id)))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
 window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
 async function send(s,tok){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},
-  body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:String(tiedRound(s)||s.round).slice(0,120),p_score:total(s),p_max:maxOf(s),p_location:(c=>c?String(c).slice(0,120):null)(tiedRound(s)?evs()[s.id].club:s.loc)})});
+  body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:roundOut(s),p_score:total(s),p_max:maxOf(s),p_location:locOf(s)})});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
 async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo();if(!L.length)return 0;
  const tok=get('link');if(!okTok(tok)){maybePrompt();return 0}
