@@ -48,6 +48,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | Calendar official and imported | c3 | Official scoresheets, competition results and imported scores are queued once. A row matching an already-sent date, round and score is skipped. (PB) still applies. The RPC is stubbed. |
 | Add official result | c4 | Form saves a finished official round. It counts for personal bests, is queued to the calendar, and does not replace a scored session. The RPC is stubbed. |
 | Screenshot attach | c5 | A screenshot can be attached while typing an official result. The picture is not read. It is deleted after save unless Keep the photo is ticked. The RPC is stubbed. |
+| Sync now | c6 | Plus and Pro see Sync now. The pull flag defaults off. The note says coming once the national body approves, with a way to the paste or CSV form. No organisation is called, even if the flag is switched on. |
 | My results source | results | Tools > My results source: body picker prefills the home page, Other is a free address, member number stays on the phone, Open my results is a link, paste or CSV maps round/date/score/event, preview then confirm, imports tagged imported, scored sessions not overwritten, not used for ratings, Plus lock says Available on Plus |
 | App shell | whatsnew, offline, clarity | What's new/help rules (no emoji, line icons, newest first), service worker precache, offline reopen; Clarity snippet async, typed fields masked, privacy line, clarity.ms never cached, app fine when clarity.ms is unreachable |
 

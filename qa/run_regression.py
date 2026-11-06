@@ -39,6 +39,7 @@ AREAS=[
  ("Calendar official and imported scores (C3)",["c3_test.py"]),
  ("Add official result (C4)",["c4_test.py"]),
  ("Official result from a screenshot (C5)",["c5_test.py"]),
+ ("Sync now flag off (C6)",["c6_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),

@@ -57,6 +57,7 @@ function optNum(v){const t=String(v??'').trim();if(t==='')return null;const n=pa
 function parseEnds(text){return String(text||'').split(/\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/[\s,]+/).map(a=>a.toUpperCase()).filter(a=>a==='X'||a==='M'||/^\d+$/.test(a))).filter(e=>e.length)}
 function endsTotal(ends){return ends.reduce((t,e)=>t+e.reduce((s,a)=>s+(a==='X'?10:a==='M'?0:+a),0),0)}
 let offMsg='',shotFile=null;
+function syncOn(){try{return localStorage.getItem('scoretool.flag.waSync')==='1'}catch(e){return false}}
 function dropShot(){shotFile=null;const prev=$('#ofshotprev'),inp=$('#ofshot');if(prev&&prev._url){URL.revokeObjectURL(prev._url);prev._url='';prev.removeAttribute('src');prev.hidden=true}if(inp)inp.value=''}
 function keepPhoto(id,file){return new Promise(res=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const m=800,s=Math.min(1,m/Math.max(img.width,img.height,1)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*s));c.height=Math.max(1,Math.round(img.height*s));c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
   c.toBlob(blob=>{if(!blob){res(false);return}
@@ -119,7 +120,12 @@ function view(){
  <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="ofkeep" type="checkbox" style="width:auto"> Keep the photo on this phone</label>
  <button class="btn full" id="ofsave" type="button" style="margin-top:10px">Save official result</button>
  <p class="small" id="ofnote" style="margin:6px 0 0">${h(offMsg)}</p>
- </div>`;
+ </div>
+ ${(typeof tierHas!='function'||tierHas('plus'))?`<div class="card" id="rssyncard"><span class="kicker">Sync</span><h2 style="margin:2px 0 8px">Sync now</h2>
+ <p class="small" id="rssyncnote" style="margin:0 0 8px">${syncOn()?'No organisation has approved a pull, so nothing is fetched.':'Coming once your national body approves.'}</p>
+ <button class="btn" id="rssync" type="button">Sync now</button>
+ <button class="btn ghost" id="rssyncpaste" type="button">Paste a table or a CSV</button>
+ </div>`:''}`;
  $('#rsback').onclick=()=>nav('tools');
  const grab=()=>{const b=$('#rsbody').value,known=bodyOf(b);return {body:b,url:b==='other'?$('#rsurl').value.trim():known[2],member:$('#rsmem').value.trim()}};
  $('#rsbody').onchange=()=>{const b=$('#rsbody').value,mem=$('#rsmem').value.trim();
@@ -162,6 +168,8 @@ function view(){
   dropShot();if($('#ofkeep'))$('#ofkeep').checked=false;
   say('Saved on this phone as an official result.'+(file?(hold&&row.photoKept?' The photo is kept on this phone.':' The photo was not kept.'):''));
  };
+ const sy=$('#rssync');if(sy)sy.onclick=()=>{const n=$('#rssyncnote');if(n)n.textContent=syncOn()?'No organisation has approved a pull, so nothing is fetched.':'Coming once your national body approves.'};
+ const sp=$('#rssyncpaste');if(sp)sp.onclick=()=>{const box=$('#rsimport');if(box)box.scrollIntoView({block:'start'})};
 }
 E.lab_results=view;
 })();

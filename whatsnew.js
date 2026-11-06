@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-06-1959-c6',d:'2026-11-06',items:[
+   ['calendar',"Sync now waits for approval","Sync now is there for Plus and Pro. It stays off until a national body approves a pull. Nothing is fetched. Paste a table or a CSV is the way to bring scores in."]]},
   {v:'v2026-11-06-1959-c5',d:'2026-11-06',items:[
-   ['camera',"Attach a score screenshot","On Add an official result you can attach a screenshot to look at while you type. The picture is not read. After you save, it is deleted unless you tick Keep the photo."]]},
+   ['camera',"Attach a score screenshot","On Add an official result you can attach a screenshot to look at while you type. The picture is not read. After you save, it is deleted unless you tick Keep the photo.",'56ce6ad']]},
   {v:'v2026-11-06-1959-c4',d:'2026-11-06',items:[
    ['trophy',"Add an official result","Tools, My results source, has a form for a finished official round: date, event, round, score, and maximum, 10s, Xs or ends if you know them. It counts for personal bests. A round you already scored is left as it is.",'1c5e6f8']]},
   {v:'v2026-11-06-1957-c3',d:'2026-11-06',items:[

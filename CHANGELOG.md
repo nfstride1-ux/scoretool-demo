@@ -4,6 +4,10 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C6 — Sync now, flag off (v2026-11-06-1959-c6)
+- Plus and Pro see Sync now on My results source. The flag `scoretool.flag.waSync` defaults off.
+- Off: "Coming once your national body approves" and a way to paste or CSV. Nothing is fetched. Switching the flag on still does not call an organisation.
+
 ### C5 — screenshot on the official result form (v2026-11-06-1959-c5)
 - Attach a screenshot to look at while you type. The picture is not read. After save it is deleted unless Keep the photo is ticked. A kept photo stays in IndexedDB on this phone and is not sent.
 - On-device reading of an iScoredToday or score-card picture is not reliable, so this is attach-and-type.
