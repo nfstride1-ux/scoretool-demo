@@ -28,7 +28,7 @@ const _nav=nav;
 nav=function(v){const need=PRO.has(v)?'pro':PLUS.has(v)?'plus':null;
  if(need&&!tierHas(need)){view=v;locked(need);scrollTo(0,0);return}return _nav.apply(this,arguments)};
 const E=window.EXTRA_VIEWS||{};
-const _s=E.lab_settings;if(_s)E.lab_settings=function(){_s();const host=$('#settingscard')||app;host.insertAdjacentHTML('afterend',card());bind()};
+const _s=E.lab_settings;if(_s)E.lab_settings=function(){_s();const host=$('#datacard')||$('#settingscard')||app;host.insertAdjacentHTML('afterend',card());bind()};
 /* score screen: Ghost match is Plus. Founding members are unchanged. */
 const _gh=window.EXTRA_VIEWS;void _gh;
 document.addEventListener('click',function(ev){if(tierHas('plus'))return;const b=ev.target.closest&&ev.target.closest('#ghon');if(!b)return;ev.preventDefault();ev.stopPropagation();
