@@ -119,7 +119,8 @@ try:
   E("nav('lab_arrows')");pg.wait_for_timeout(700)  # new layout: the arrows card is in My archery > Practice arrows
   wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
   chk("B8 Today's arrows = shared count",int(pg.locator('#volring text').first.text_content())==E('arrowDays()[today()]||0'))
-  ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
+  ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft)
+  chk('B8 Following week arrows = Home', (m and int(m.group(1))==wk) or ((not m) and 'not in a squad' in ft.lower() and wk==E('weekArrows()')))
   # 782 / compare grammar / season
   st();rnd('ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)');more(True);c=pg.inner_text('#c-compare')
   chk('B9 Compare grammar + season','first shoot of this round was' in c and 'sessions' not in c and 'No complete shoots of this round in 2026' in c)

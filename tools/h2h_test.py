@@ -145,7 +145,7 @@ try:
   chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Snookie')
   J.evaluate("cur=null;nav('home')");J.wait_for_timeout(300);chk("personal: Joseph's home greets him by real name","G'day Joseph" in J.text_content('#app'))
   for nm_,pg_ in (('Joseph',J),('Logan',L)):
-    for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#leaguecard')):
+    for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#realrank')):
       pg_.evaluate(f"cur=null;nav('{v}')");pg_.wait_for_timeout(350)
       txt=pg_.evaluate("sel=>[...document.querySelectorAll(sel)].map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder]')].map(e=>[e.getAttribute('value'),e.title,e.getAttribute('aria-label'),e.placeholder].join(' ')).join(' ')).join(' ')",sel)
       bad_=[n for n in REALN if re.search(r'\b'+n+r'\b',txt)]

@@ -144,7 +144,7 @@ try:
   cn_.close()
   # ---------- social views: nicknames only; personal views: real names ----------
   SCANS=lambda sel:"(()=>{const R=[...document.querySelectorAll('%s')];return R.map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder],[alt]')].map(e=>[e.getAttribute('value'),e.getAttribute('title'),e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('alt')].join(' ')).join(' ')).join(' ')})()"%sel
-  SOCIAL=[('squad','#app'),('badges','#app'),('recap','#app'),('score','#h2hcard'),('rewards','#leaguecard')]
+  SOCIAL=[('squad','#app'),('badges','#app'),('recap','#app'),('score','#h2hcard'),('rewards','#realrank')]
   for nm,pg in (('Joseph',J),('Logan',L),('Michael',M)):
     hits={}
     for v,sel in SOCIAL:
@@ -154,7 +154,7 @@ try:
       if f:hits[v]=f
     chk(f'{nm}: no real name in social views (squad, league, badges, recap, head-to-head)',not hits)
     if hits:print('   ',hits)
-    pg.evaluate("cur=null;nav('rewards')");pg.wait_for_timeout(400);chk(f'{nm}: weekly league is on the Ranks tab',pg.locator('#leaguecard').count()==1)
+    pg.evaluate("cur=null;nav('rewards')");pg.wait_for_timeout(400);chk(f'{nm}: activity league is not on rankings',pg.locator('#leaguecard').count()==0 and pg.locator('#realrank').count()==1)
     for v in ('home','me','stats','diary','suggest'):
       try:pg.evaluate(f"cur=null;nav('{v}')");pg.wait_for_timeout(300)
       except Exception as e:errs.append(f'{nm} {v}: {e}')

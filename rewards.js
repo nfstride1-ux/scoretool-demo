@@ -121,7 +121,7 @@ function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
  <p class="small muted">I–III inside Bronze to Diamond splits each AA band into thirds by rating. That split is ScoreTool's, not Archery Australia's. Barebow and Longbow tables aren't loaded yet, so those show as provisional.${rk.unrated?` ${rk.unrated} of your rounds this year use a round ScoreTool can't rate yet.`:''}</p></details></div>`}
 function rankFeed(m,n){const rk=rankFor(m.name);return rk.state=='ranked'?[{id:m.id+'r'+rk.lvl,date:rk.date,who:m,html:`<b>${esc(n)}</b>: Archery Australia <b style="color:var(--cyan)">${esc(aaLabel(rk))}</b>`,sub:'Archery Australia '+rk.aa+' · verified',ver:'official'}]:[]}
 function rewardsView(){const p=S.profile;
- app.innerHTML=`${rankCard(p)}${typeof estRating=='function'?`<div class="card" id="c-class">${estRating(findReal(p||'')).replace('<div class="card">','<div>')}</div>`:''}${window.leagueCard?leagueCard():''}`;
+ app.innerHTML=`${rankCard(p)}${typeof estRating=='function'?`<div class="card" id="c-class">${estRating(findReal(p||'')).replace('<div class="card">','<div>')}</div>`:''}`;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
 /* ---------- Profile cards (replace animal avatars) ---------- */
