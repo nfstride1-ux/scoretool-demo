@@ -38,10 +38,7 @@ try:
   T('rewards');chk('1 Ranks shows AA classification progress',pg.locator('#c-class').count()==1 and 'AA classification progress' in pg.text_content('#c-class'))
   chk('1 only Ranks has it',[v for v,t in tabs.items() if 'AA classification progress' in t]==['rewards'])
   # 7 plain words
-  league=pg.locator('.card:has-text("This week\'s league")').inner_text()
-  chk('7 league: no Placement',not re.search('placement',league,re.I))
-  chk('7 league: no Elite Gold',('Elite Gold' not in league))
-  chk('7 league: no rank pills',pg.locator('.card:has-text("This week\'s league") .pill').count()==0)
+  chk('7 activity league is not on rankings',pg.locator('.card:has-text("This week\'s league")').count()==0)
   rk=tabs['rewards'];chk('7 Ranks: no Placement',not re.search(r'\bplacement\b',rk,re.I))
   chk('7 Ranks: Elite Gold only with AA context',all('AA' in c or 'Archery Australia' in c for c in pg.locator('#app .card').all_inner_texts() if 'Elite Gold' in c))
   for v,t in tabs.items():
