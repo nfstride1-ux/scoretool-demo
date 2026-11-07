@@ -40,7 +40,7 @@ with sync_playwright() as p:
     ctx.add_init_script(f"localStorage.setItem('scoretool.theme','{tag}')")
     pg=ctx.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and not any(x in m.text for x in ('INTERNET_DISCONNECTED','ERR_FAILED','net::')) and errs.append(m.text))
     pg.goto(f'http://localhost:{PORT}/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500)
-    if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+    if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
     for _ in range(3):
       if pg.locator('nav [data-v=home]').is_visible():break
       pg.locator('#app button').first.click();pg.wait_for_timeout(400)

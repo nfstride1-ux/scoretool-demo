@@ -170,3 +170,9 @@ details.hg .go{color:var(--muted);font-size:22px;transition:transform .15s}detai
 [data-theme=light] .vg-slot.on{background:#e3ecff;border-color:#b7791f;color:#0f172a}
 [data-theme=light] .lc-chip{background:#e3ecff;color:#0f172a;border-color:#bcd0f5}
 [data-theme=light] .lc-chip.on{background:#1d4ed8;color:#fff;border:2px solid #ffc629}
+
+/* R1: a box whose figure is outside its usual range: plain note under the box, gold edge like the chooser's warnings (no red, no icon) */
+.labbad{border-left:4px solid var(--gold,#c9a227);background:var(--blue-bg);border-radius:8px;padding:6px 10px;font-size:14px;margin:4px 0 8px}
+input[aria-invalid=true]{border-color:var(--gold,#c9a227);box-shadow:0 0 0 1px var(--gold,#c9a227)}
+/* R2: the session Arrow setup card, typed boxes in the table */
+.tarwtbl{table-layout:fixed;width:100%}.tarwtbl th:first-child{width:28%}.tarwtbl td{padding:3px 4px;vertical-align:top}.tarwtbl .ta_in{width:100%;min-width:0;box-sizing:border-box;min-height:40px;padding:6px 8px;font-size:16px}.tarwtbl .labbad{font-size:13px}

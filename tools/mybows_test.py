@@ -16,7 +16,7 @@ with sync_playwright() as p:
     tag=f'{w}px';ctx=b.new_context(viewport={'width':w,'height':hh});pg=ctx.new_page();errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and errs.append(m.text))
     pg.goto(URL);pg.wait_for_timeout(1200);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500)
-    if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+    if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
     for _ in range(3):
       if pg.locator('nav [data-v=home]').is_visible():break
       pg.locator('#app button').first.click();pg.wait_for_timeout(400)
@@ -35,6 +35,7 @@ with sync_playwright() as p:
     if w==390:pg.screenshot(path=os.path.join(SH,'mybows-suggest-390.png'))
     pg.click('[data-sug=hoyt-cx40]');pg.wait_for_timeout(500)
     chk(tag+' CX40 specs filled',pg.input_value('#mb_speed')=='327' and pg.input_value('#mb_bh')=='7.25' and pg.input_value('#mb_ata')=='40')
+    chk(tag+' CX40 field labelled IBO/ATA at 327',pg.locator('label[for=mb_speed]').inner_text().startswith('IBO/ATA') and pg.input_value('#mb_kind')=='IBO/ATA' and pg.input_value('#mb_speed')=='327')
     chk(tag+' let-off left blank',pg.input_value('#mb_lo')=='')
     pg.fill('#mb_dw','58');pg.fill('#mb_dl','29.5');pg.click('#mbsave');pg.wait_for_timeout(500)
     chk(tag+' saved',pg.get_by_text('Concept X 40').count()>0 and pg.locator('#mbform').count()==0)
@@ -74,11 +75,11 @@ with sync_playwright() as p:
     if w==390:pg.screenshot(path=os.path.join(SH,'mybows-chooser-390.png'))
     pg.fill('#ac_dw','60');pg.press('#ac_dw','Tab');pg.wait_for_timeout(300);pg.fill('#ac_ibo','335');pg.press('#ac_ibo','Tab');pg.wait_for_timeout(300)
     chk(tag+' override kept',pg.input_value('#ac_dw')=='60' and pg.input_value('#ac_ibo')=='335' and pg.input_value('#ac_dl')=='29.5')
-    pg.click('.labback');pg.wait_for_timeout(300)
+    pg.click('nav [data-v=tools]');pg.wait_for_timeout(300);pg.get_by_text('Tune helper').first.click();pg.wait_for_timeout(400)
     pg.get_by_text('Calculators').first.click();pg.wait_for_timeout(400);pg.select_option('#c_mybow','bOLD');pg.wait_for_timeout(400)
     chk(tag+' calc filled',pg.input_value('#c_ibo')=='327' and pg.input_value('#c_dw')=='58' and pg.input_value('#c_dl')=='29.5')
     pg.fill('#c_dw','62');pg.press('#c_dw','Tab');pg.wait_for_timeout(300);chk(tag+' calc override',pg.input_value('#c_dw')=='62')
-    pg.click('.labback');pg.wait_for_timeout(300);pg.get_by_text('Arrow optimizer').first.click();pg.wait_for_timeout(500)
+    pg.click('nav [data-v=tools]');pg.wait_for_timeout(300);pg.get_by_text('Tune helper').first.click();pg.wait_for_timeout(400);pg.get_by_text('Arrow optimizer').first.click();pg.wait_for_timeout(500)
     chk(tag+' tuning picker',pg.locator('#t_mybow').count()==1)
     pg.select_option('#t_mybow','bOLD');pg.click('#tgo');pg.wait_for_timeout(500)
     t=pg.evaluate("(()=>{const d=JSON.parse(localStorage.getItem('scoretool.v1'));return d.tune[d.tune.length-1]})()")

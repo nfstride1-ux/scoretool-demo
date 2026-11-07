@@ -14,7 +14,7 @@ with sync_playwright() as p:
     errs=[]; pg.on('console',lambda m: m.type=='error' and errs.append(m.text)); pg.on('pageerror',lambda e: errs.append(str(e)))
     pg.goto('http://localhost:'+PORT+'/'); pg.wait_for_timeout(1200)
     nm_seed.pick(pg,'nathe'); pg.wait_for_timeout(800)
-    pg.get_by_text('Demo unlock').first.click(); pg.wait_for_timeout(800)
+    pg.locator('#unlock').first.click(); pg.wait_for_timeout(800)
     for _ in range(3):
         if pg.locator('nav [data-v=score]').is_visible(): break
         print('APP:',pg.inner_text('#app')[:200]); pg.locator('#app button').first.click(); pg.wait_for_timeout(600)

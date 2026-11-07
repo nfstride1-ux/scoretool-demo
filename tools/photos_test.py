@@ -46,7 +46,7 @@ with sync_playwright() as p:
    Object.keys(localStorage).filter(k=>/^scoretool\\.cal\\.steven\\.ph/.test(k)||k=='scoretool.cal.steven.link').forEach(k=>localStorage.removeItem(k));
    localStorage.setItem('scoretool.cal.steven.prompted','1');indexedDB.deleteDatabase('scoretool-photos')}""")
   pg.reload();pg.wait_for_timeout(2500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(400)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(400)
   OTH="JSON.stringify(Object.keys(localStorage).filter(k=>!/^scoretool\\.cal\\.steven\\.(ph|link|base|sent|events|force|prompted)/.test(k)&&!/^scoretool\\.(v|dname)/.test(k)).sort().map(k=>[k,k=='scoretool.state'||/^scoretool\\.steven/.test(k)?'':localStorage.getItem(k)]))"
   o0=E(OTH);SN="JSON.stringify(S.sessions.filter(s=>/^ph/.test(s.id)))";s0=E(SN)
   def fin(id):E(f"()=>{{cur=S.sessions.find(s=>s.id=='{id}');sv='sheet';nav('score')}}");pg.wait_for_timeout(600)

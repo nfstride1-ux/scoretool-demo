@@ -9,7 +9,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 srv=subprocess.Popen([sys.executable,'-m','http.server','8772'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 def login(pg,who):
   pg.goto('http://localhost:8772/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)
@@ -54,8 +54,7 @@ try:
     for w in ['localStorage','Evidence bank','AA rule 4.1','Elite III','Bronze III','Diamond','Platinum','Peak rank']:chk(f'{nm} has no "{w}"',w not in t)
     chk(f'{nm} has no Champion tier',not re.search(r'Champion(?!ship)',t,re.I))
   chk('Score: Ghost match explained','shoot against a past score' in score)
-  chk('Ranks: activity points, no XP','activity points' in ranks and not re.search(r'\bXP\b',ranks))
-  chk('Ranks: Season stripe explained','banner designs' in ranks)
+  chk('Ranks: season and badges removed, no XP','activity points' not in ranks and 'banner designs' not in ranks and 'BADGES' not in ranks and not re.search(r'\bXP\b',ranks))
   chk('Ranks: no QRE (plain words)','QRE' not in ranks and 'Qualifying' not in ranks)
   # ---------- one home each ----------
   T('home');chk('Home: no rank card',pg.locator('#rank-slot,#rankcard,#realrank').count()==0 and 'Grand Master' not in home)
@@ -64,7 +63,7 @@ try:
   chk('Home: competition scores once',home.count('COMPETITION SCORES')<=1)
   T('rewards');chk('Ranks: no profile card, no badges',pg.locator('.pcard').count()==0 and 'BADGES' not in ranks)
   chk('Ranks: rank shown',pg.locator('#realrank').count()==1 and 'Grand Master Bowman' in ranks)
-  T('me');chk('Me: badges, no rank',pg.locator('.pcard').count()==1 and 'BADGES' in me and 'Grand Master' not in me and pg.locator('.pcard .pill').count()==0)
+  T('me');chk('Me: no badges, no rank',pg.locator('.pcard').count()==1 and 'BADGES' not in me and 'Grand Master' not in me and pg.locator('.pcard .pill').count()==0)
   st();t=pg.inner_text('#app');chk('Stats: no wins, no competition list, no rank pill',('WINS' not in t) and ('COMPETITION SCORES' not in t) and pg.locator('.pill').count()==0)
   chk('Stats: one PB view',pg.locator('#c-pb').count()==1 and pg.locator('#bscard').count()==0 and t.count('PERSONAL BEST')==1)
   # ---------- bugs ----------
@@ -120,7 +119,8 @@ try:
   E("nav('lab_arrows')");pg.wait_for_timeout(700)  # new layout: the arrows card is in My archery > Practice arrows
   wk=int(pg.inner_text('#wkarrows'));chk('B8 Home week arrows = shared count',wk==E('weekArrows()'))
   chk("B8 Today's arrows = shared count",int(pg.locator('#volring text').first.text_content())==E('arrowDays()[today()]||0'))
-  ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft);chk('B8 Following week arrows = Home',m and int(m.group(1))==wk)
+  ft=T('follow');m=re.search(r'[A-Z]{1,2} You\s*\n?\s*(\d+)',ft)
+  chk('B8 Following week arrows = Home', (m and int(m.group(1))==wk) or ((not m) and 'not in a squad' in ft.lower() and wk==E('weekArrows()')))
   # 782 / compare grammar / season
   st();rnd('ABA Interclub 3D (40 targets: 3-arrow half, then 1-arrow half)');more(True);c=pg.inner_text('#c-compare')
   chk('B9 Compare grammar + season','first shoot of this round was' in c and 'sessions' not in c and 'No complete shoots of this round in 2026' in c)

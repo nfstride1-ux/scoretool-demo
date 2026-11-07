@@ -37,6 +37,10 @@ function practice(){if(typeof done!='function')return[];const bow=BOW(typeof myB
 const maxOf=s=>{if(s.disc=='3D')return null;const n=s.ds.reduce((t,d)=>t+d.e.reduce((k,e)=>k+e.length,0),0);return n?n*(s.disc=='Field'?6:10):null};
 function groups(bow){const G={};entries().filter(s=>s.bow==bow&&s.sc>0).forEach(s=>{(G[s.rd]=G[s.rd]||{rd:s.rd,disc:s.disc,all:[]}).all.push(s)});
  practice().filter(s=>s.bow==bow).forEach(s=>{const k=anRoundOf(s.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:s.disc,all:[]});g.all.push(s)});
+ if(window.importedShoots)importedShoots().forEach(s=>{const bowI=bow,row={d:s.date,ev:s.event||'Imported',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:[],ok:false,part:false,bow:bowI,src:'imported'};
+  const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
+ if(window.officialAdded)officialAdded().forEach(s=>{const bowI=bow,ends=s.ends||[],row={d:s.date,ev:s.event||'Official',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:ends.length?[{dist:'Official',face:s.round,e:ends}]:[],ok:!!ends.length,part:false,bow:bowI,src:'official'};
+  const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
  Object.values(G).forEach(g=>{const full=g.all.filter(s=>!s.part);g.full=full.slice().sort((a,b)=>b.sc-a.sc||(a.d<b.d?-1:1));g.best=g.full[0]||null});
  return Object.values(G).filter(g=>g.best).sort((a,b)=>b.all.length-a.all.length||(a.rd<b.rd?-1:1))}
 function chip(a,disc){const k=disc=='Field'?(a=='M'?'k-m':v(a)>=5?'k-y':'k-k'):disc=='Clout'?(a=='M'?'k-m':'k-u'):(a=='M'?'k-m':v(a)>=9?'k-y':v(a)>=7?'k-r':v(a)>=5?'k-b':v(a)>=3?'k-k':'k-w');return`<span class="adb ${k} bs-a">${esc(a||'·')}</span>`}
@@ -60,6 +64,11 @@ window.offGhost=function(appRound){const b=bestForApp(appRound,window._bsBow||cu
  return{mode:'off',src:'off',ends:E.map(e=>e.reduce((t,a)=>t+v(a),0)),ar:E.map(e=>e.slice()),pos:null,date:fmt(b.s.d),ev:b.s.ev}};
 function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])}
 function curBow(){const B=bows();if(!B.length)return null;if(window._bsBow&&B.some(b=>b[0]==window._bsBow))return window._bsBow;const L=entries().sort((a,b)=>a.d<b.d?1:-1);return L[0]?L[0].bow:B[0][0]}
+/* The one score the Personal bests card marks PB for this round: highest full score, earlier date on a tie, same bow the card opens on.
+   Practice, official sheets and imported rows are counted together, the same way groups() builds the card. */
+function practiceBow(){return BOW(typeof myBow=='function'?myBow():(S.bow||(typeof TESTER!='undefined'&&TESTER&&TESTER.bow)||''))}
+window.bsCurrentPb=function(round){try{const bow=curBow()||practiceBow();if(!bow||!round)return null;const G=groups(bow),k=anRoundOf(round),g=G.find(x=>anRoundOf(x.rd)==k);
+ if(!g||!g.best)return null;return {date:g.best.d,score:+g.best.sc,round:g.best.rd,src:g.best.src}}catch(e){return null}};
 window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)return'';const G=groups(bow);if(!G.length)return'';
  let g=G.find(x=>x.rd==window._bsRd)||G[0];const pick=g.full.find(s=>s.d+'|'+s.sc==window._bsPick)||g.best,s=pick,isBest=s===g.best,B=bows();
  /* one shared selection: the shoot shown here drives Full analysis > Analysis (same round names as Stats: SHEET_ALIAS then canonRound) */
@@ -70,7 +79,7 @@ window.bestCard=function(){if(!BS||!isMe())return'';const bow=curBow();if(!bow)r
  ${B.length>1?`<div class="bs-bows">${B.map(([b,n])=>`<button type="button" data-bsb="${esc(b)}" class="${b==bow?'on':''}">${esc(b)} <span>${n}</span></button>`).join('')}</div>`:''}
  <label for="bssel" class="small">Pick a round (${plN(G.length,'round','rounds')}, best full score each)</label><select id="bssel">${opts}</select>
  <div class="bs-hero"><div class="bs-big">${s.sc}${mx?`<small>/${mx}</small>`:''}</div><div class="bs-meta"><span class="pill" style="background:${isBest?'var(--gold)':'var(--blue)'}">${isBest?((window.icon&&window.icon('star'))||'')+' PB':'#'+(g.full.indexOf(s)+1)+' on this round'}</span>
-  <b>${fmt(s.d)}</b><span>${s.src=='practice'?'<span class="sample">practice</span>':'<span class="real">official</span>'} ${esc(s.ev)}</span><span class="muted">${esc(s.club||'')}${s.rt&&s.rt!='0'?' · rating '+esc(s.rt):''}</span></div></div>
+  <b>${fmt(s.d)}</b><span>${s.src=='imported'?'<span class="sample" data-imported="1">imported</span>':s.src=='practice'?'<span class="sample">practice</span>':'<span class="real">official</span>'} ${esc(s.ev)}</span><span class="muted">${esc(s.club||'')}${s.src==='imported'?'':s.rt&&s.rt!='0'?' · rating '+esc(s.rt):''}</span></div></div>
  <p class="small muted" style="margin:6px 0">${esc(s.rd)} · ${esc(s.div||bow)} · best of ${g.full.length} full round${g.full.length==1?'':'s'}${g.all.length>g.full.length?` (${g.all.length-g.full.length} partial not counted)`:''}${s.url?` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Scoresheet ↗</a>`:''}</p>
  ${statsRow(s)}
  ${ge?`<button class="btn full bs-ghost" id="bsgh">${(window.icon&&window.icon('ghost'))||''} Shoot against this score</button>`:''}

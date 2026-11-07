@@ -3,6 +3,20 @@
 (function(){
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* R1 (3 Nov 2026, Nathe via Archery Coach): sane ranges for the arrow and bow figures typed into the Arrow chooser and the Calculators.
+   A figure outside its range (or not a number) is flagged on its own box in plain English and left out of the sums until it is fixed,
+   so a slip like 12365 gr can never give a negative speed. The typed text is kept as typed; nothing saved is changed or rewritten. */
+const ARROW_LIM={dw:['Draw weight',5,90,'lb'],dl:['Draw length',14,34,'inches'],ibo:['Speed rating',200,400,'fps'],tw:['Arrow weight',100,1000,'gr'],
+ len:['Arrow length',14,36,'inches'],pt:['Point weight',10,400,'gr'],gpi:['Shaft weight',2,30,'grains per inch'],ins:['Insert, pin or collar',0,150,'gr'],
+ nock:['Nock',0,40,'gr'],vanes:['Vanes',0,100,'gr'],fps:['Arrow speed',100,450,'fps'],sg:['Extra weight on the string',0,100,'gr'],foc:['FOC',0,40,'%'],bp:['Balance point',1,36,'inches']};
+/* null if blank or fine; otherwise the message for that box */
+window.arrowLim=function(k,v){const L=ARROW_LIM[k];if(!L)return null;const t=String(v??'').trim();if(t==='')return null;const x=parseFloat(t.replace(',','.'));
+ const nice=n=>String(n);if(!isFinite(x)||!/^-?\d*[.,]?\d+$/.test(t))return`${L[0]}: "${t}" is not a number. Type the number only, in ${L[3]}. It is left out until it is fixed.`;
+ if(x<L[1]||x>L[2])return`${L[0]}: ${nice(x)} ${L[3]} is outside the usual range of ${L[1]} to ${L[2]} ${L[3]}. Check the number. It is left out until it is fixed.`;return null};
+window.ARROW_LIM=ARROW_LIM;
+/* the speed rule of thumb only where it makes sense: every input in range and a result of at least 100 fps; otherwise NaN, never a negative speed */
+window.arrowSpeedEst=function(ibo,dl,dw,tw,sg){const L=window.arrowLim;if([['ibo',ibo],['dl',dl],['dw',dw],['tw',tw]].some(([k,v])=>!isFinite(v)||L(k,v))||(isFinite(sg)&&L('sg',sg)))return NaN;
+ const e=ibo-10*(30-dl)-Math.max(0,tw-5*dw)/3-(isFinite(sg)?sg:0)/3;return e>=100?Math.round(e):NaN};
 const SECTION={home:'home',score:'score',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',whatsnew:'me',me:'me'};
 const secOf=v=>v.startsWith('lab_')?(LABSEC[v]||'home'):(SECTION[v]||v);
 const LABSEC={};
@@ -65,20 +79,16 @@ setInterval(()=>{try{if(typeof cur!=='undefined'&&cur&&isNew(cur)&&!cur.bow&&typ
 /* ---------- My archery ---------- */
 LABSEC.myarch='myarch';
 E.myarch=()=>menu('My archery',[
- row('lab_analysis','🔬','Full analysis','Analysis read, group patterns, best scores, stats detail and trends'),
+ row('lab_analysis','🔬','Analysis','Stats, personal bests, trends and the full read, in one place'),
  row('lab_latest','⭐','Latest shoot','How your last shoot went, wins of the day, notes'),
- row('stats','📈','Stats & PBs','Pick a round: last shoot, trend, personal bests, history'),
- row('analytics','📊','Analytics','Trends across shoots, distances, 10+X rate'),
  row('lab_arrows','➕','Practice arrows','Today\'s arrow count and weekly progress'),
  row('lab_diary','📝','Diary','Shooting diary in your own words'),
  row('lab_gear','🏹','Setups & sight marks','Bow setups, sight marks by distance, scores per setup'),
- row('lab_ranks','🏅','Rankings & classification','Real AA rankings and classification progress'),
- row('lab_season','🏆','Season, badges & recap','Season points, badge collection, monthly recap')]);
+ row('lab_ranks','🏅','Rankings & classification','Real AA rankings and classification progress')]);
 sub('lab_latest','myarch','Latest shoot','myarch','My archery',()=>_home(),(e,t,i)=>i<3||/FROM YOUR NOTES/.test(t));
 sub('lab_arrows','myarch','Practice arrows','myarch','My archery',()=>_home(),(e,t,i)=>i==0||/TODAY'S ARROWS/.test(t));
 sub('lab_diary','myarch','Diary','myarch','My archery',()=>diary(),(e,t)=>/SHOOTING DIARY|TIMELINE/.test(t));
-sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class');
-sub('lab_season','myarch','Season, badges & recap','myarch','My archery',()=>E.rewards(),(e,t)=>/SEASON|RECAP/.test(t),()=>{app.insertAdjacentHTML('beforeend',`<button class="btn ghost full" data-go="badges">🎖️ Badge collection</button>`)});
+sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class'||e.id=='rankcard');
 sub('lab_gear','myarch','Setups & sight marks','myarch','My archery',()=>diary(),(e,t)=>e.id=='gearcard'||/BOW & SETUP DIARY|CURRENT SETUP/.test(t),()=>{app.insertAdjacentHTML('beforeend',setupScores())});
 function setupScores(){const L=(typeof myBows=='function'?myBows():[]);if(!L.length)return'';
  const ss=(S.sessions||[]).filter(s=>s.bow&&!s.sample&&typeof isDone=='function'&&isDone(s));
@@ -93,7 +103,6 @@ LABSEC.clubs='clubs';
 E.clubs=()=>menu('Clubs & leagues',[
  row('lab_squad','🛡️','Squads','Your private squad: board, activity, people'),
  row('lab_leagues','🏁','Leagues','Leagues you belong to. Join with a code or start one'),
- row('lab_match','⚔️','Match play','Head-to-head on two phones, shoot-ups'),
  row('lab_group','📋','Group score card','Score your whole group on one phone'),
  row('follow','👣','Following','Archers you follow and your feed')]);
 sub('lab_leagues','clubs','Leagues','clubs','Clubs',SC,e=>e.id=='lgcard');
@@ -114,7 +123,7 @@ const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='unde
  return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p>${window.ADMIN_VIEW?`<button class="btn full" id="whoback" data-tester="nathe" style="margin:0 0 8px">Back to my profile</button>`:''}<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id&&!(window.ADMIN_VIEW&&t.id=='nathe')).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
 E.lab_me=()=>{menuMe();const w=whoCard();if(w){app.querySelector('.labbar').insertAdjacentHTML('afterend',w);if(typeof bindTesterPicker=='function')bindTesterPicker(app)}};
 const menuMe=()=>menu('Me',[
- row('lab_profile','🪪','Profile & card','Display name, archer card, badges, best moments'),
+ row('lab_profile','🪪','Profile','Display name and best moments'),
  row('lab_people','🧑‍🏫','Coaches & parents','Your details, coach access, parent link'),
  row('lab_settings','⚙️','Settings & help','Settings, linked apps, help guides')]);
 sub('lab_profile','me','Profile & card','lab_me','Me',()=>me(),(e,t)=>['nmcard'].includes(e.id)||e.classList.contains('pcard')||/^BADGES|MY BEST MOMENTS/.test(t));
@@ -124,13 +133,13 @@ sub('lab_settings','me','Settings & help','lab_me','Me',()=>me(),(e,t)=>['settin
 /* ---------- Tools ---------- */
 LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
- row('lab_opt','🎯','Arrow optimizer & tuning','Plot practice groups. Compare before and after a change'),
+ row('lab_tune','🎯','Tune helper','Paper, torque, draw weight and spine, cut length, bare shaft, node, creep, Dudley'),
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
- row('lab_calc','🧮','Calculators','Arrow speed, kinetic energy, momentum, FOC'),
+ row('lab_results','📋','My results source','Country or body, member number, and scores you confirm yourself'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO and ASA, with sources')]);
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
-LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';
+LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_results='tools';
 const CHANGES=['Just a group','Bare shaft vs fletched','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
 const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};
 function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length;
@@ -140,7 +149,7 @@ const cm=v=>(Math.round(v*10)/10).toFixed(1);
 const dir=(x,y)=>`${cm(Math.abs(x))} cm ${x>=0?'right':'left'}, ${cm(Math.abs(y))} cm ${y>=0?'low':'high'}`;
 E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.profile),T=mine.find(t=>t.id==S._tuneId);
  if(!T){const b=typeof curBow=='function'&&curBow();
-  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>What are you testing?</h2>
+  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>What are you changing?</h2>
   <div class="labgrid2"><div><label for="tn">Name</label><input id="tn" placeholder="e.g. Paper tune after new rest"></div>
   <div><label for="tc">Change</label><select id="tc">${CHANGES.map(c=>`<option>${c}</option>`).join('')}</select></div>
   <div><label for="td">Distance</label><input id="td" placeholder="e.g. 18m or 20yd"></div>
@@ -164,7 +173,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  const dots=T.before.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="0.035" fill="#1d4ed8" stroke="#fff" stroke-width="0.01"/>`).join('')+T.after.map(p=>`<rect x="${p[0]-.032}" y="${p[1]-.032}" width="0.064" height="0.064" fill="#111" stroke="#fff" stroke-width="0.01"/>`).join('');
  const cen=(S2,c)=>S2?`<path d="M${S2.cx/rcm-.06} ${S2.cy/rcm}h.12M${S2.cx/rcm} ${S2.cy/rcm-.06}v.12" stroke="${c}" stroke-width="0.012"/>`:'';
  const line=(nm,s)=>s?`<tr><th>${nm}</th><td>${s.n}</td><td>${cm(s.mr*2)} cm</td><td>${cm(s.es)} cm</td><td>${dir(s.cx,s.cy)}</td></tr>`:`<tr><th>${nm}</th><td colspan="4" class="muted">No arrows yet</td></tr>`;
- let cmp='';if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
+ let cmp='';if(bare)cmp=bareVerdict(T,B,A);else if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
  app.innerHTML=`<div class="card"><span class="kicker">${h(T.date)} · ${h(T.change)}${T.dist?' · '+h(T.dist):''} · ${h(T.face)} face${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||T.change)}</h2>
  <div class="labgrid2"><div>
  ${one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">● ${LB}</button><button data-g="after" aria-pressed="${g=='after'}">■ ${LA}</button></div>`}
@@ -172,7 +181,7 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${one?'group':g}</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">🗑 Delete</button></div>
  </div><div>
  <table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● '+LB,B)}${one?'':line('■ '+LA,A)}</tbody></table>
- ${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
+ ${bare?`<label for="tvhand">Bow hand</label><select id="tvhand"><option value=""${T.hand?'':' selected'}>Not set</option><option value="R"${T.hand=='R'?' selected':''}>Right-handed archer</option><option value="L"${T.hand=='L'?' selected':''}>Left-handed archer</option></select>`:''}${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
  <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>${arwCard(T,one)}${bare?bareCard(T,B,A):''}`;
  bar('Tuning session','lab_opt','Arrow optimizer');
  const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()};
@@ -182,32 +191,68 @@ E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.p
  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
  $('#tdel').onclick=()=>{if(confirm('Delete this tuning session?')){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
  $('#tnote').onchange=e=>{T.note=e.target.value;save()};
- const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};
+ const th=$('#tvhand');if(th)th.onchange=()=>{if(th.value)T.hand=th.value;else delete T.hand;save();render()};
+ const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};arwWire(T);
  app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go))};
 /* Arrow setup in a tuning session (22 Oct 2026, Nathe): new sessions carry a snapshot of the Arrow chooser setup (t.arrow);
    'Use my current arrow setup for After' adds t.arrowAfter, so the session shows exactly what changed. Old sessions show nothing. */
 function arwSum(a){return[a.model&&a.spine?a.model+' '+a.spine:(a.spine?'spine '+a.spine:''),a.len?a.len+'"':'',a.pt!=null?a.pt+' gr point':''].filter(Boolean).join(' · ')}
-function arwCard(T,one){const a=T.arrow;if(!a)return'';const b=T.arrowAfter;
- const F=[['Spine',x=>x.spine?(x.model?x.model+' ':'')+x.spine:'-'],['Length',x=>x.len!=null?x.len+'"':'-'],['Point',x=>x.pt!=null?x.pt+' gr':'-'],['FOC',x=>x.foc!=null?x.foc.toFixed(1)+'%':'-'],['Total weight',x=>x.tw!=null?x.tw+' gr':'-'],['Speed',x=>x.fps!=null?x.fps+' fps'+(x.fpsSrc=='estimate'?' (estimate)':''):'-']];
- const rows=F.map(([n,f])=>{const v0=f(a),v1=b?f(b):'';const ch=b&&v0!=v1;return`<tr><th>${n}</th><td>${h(v0)}</td>${b?`<td>${ch?`<b>${h(v0)} → ${h(v1)}</b>`:'<span class="muted">same</span>'}</td>`:''}</tr>`}).join('');
- const changed=b?F.filter(([n,f])=>f(a)!=f(b)).map(([n,f])=>`${n.toLowerCase()} ${f(a)} → ${f(b)}`):[];
- return`<div class="card"><span class="kicker">Arrow setup</span>${b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
- <table class="labtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${b?'<th>After</th>':''}</tr></thead><tbody>${rows}</tbody></table>
- <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
- <p class="small muted" style="margin:6px 0 0">Saved with this session when it started. Change your arrow in the Arrow chooser, then tap the button to record the After setup.</p></div>`}
+/* R2 (3 Nov 2026, Nathe via Archery Coach): every Before and After box on the session's Arrow setup card can be typed in, with the same
+   range check as the Arrow chooser (arrowLim). Edits save to this session only (t.arrow, t.arrowAfter), never to the Arrow chooser,
+   My bows or My arrows. A figure outside its range is kept in the box as typed, flagged, and not saved; a figure already saved that is
+   out of range (copied from the chooser before R1) is flagged when shown and left as it is until it is typed over. */
+const TA_F=[['model','Shaft','text'],['spine','Spine','text'],['len','Length','in'],['pt','Point','gr'],['foc','FOC','%'],['tw','Total weight','gr'],['fps','Speed','fps']];
+const TA_PEND={};/* typed figures that failed the check, this visit only (never saved) */
+function arwCard(T,one){const a=T.arrow||null,b=T.arrowAfter||null,L=window.arrowLim||(()=>null);
+ const F=[['Spine',x=>x.spine?(x.model?x.model+' ':'')+x.spine:'-'],['Length',x=>x.len!=null?x.len+'"':'-'],['Point',x=>x.pt!=null?x.pt+' gr':'-'],['FOC',x=>x.foc!=null&&isFinite(x.foc)?(+x.foc).toFixed(1)+'%':'-'],['Total weight',x=>x.tw!=null?x.tw+' gr':'-'],['Speed',x=>x.fps!=null?x.fps+' fps'+(x.fpsSrc=='estimate'?' (estimate)':''):'-']];
+ const changed=a&&b?F.filter(([n,f])=>f(a)!=f(b)).map(([n,f])=>`${n.toLowerCase()} ${f(a)} → ${f(b)}`):[];
+ const cell=(side,o,k,u)=>{const id=`ta_${side}_${k}`,pk=T.id+':'+side+':'+k,pend=TA_PEND[pk];let v=pend!=null?pend:(o&&o[k]!=null?o[k]:'');
+  if(k=='foc'&&pend==null&&v!==''&&isFinite(v))v=(+v).toFixed(1);let m=u=='text'?null:L(k,v);if(m)m=m.replace(' It is left out until it is fixed.',pend!=null?' It is not saved. Type the right figure.':' Type the right figure to replace it.');
+  return`<td><input id="${id}" class="ta_in" data-ta="${side}:${k}" ${u=='text'?'maxlength="30"':'inputmode="decimal"'} value="${h(String(v))}" aria-label="${side=='b'?(one?'Arrow':'Before'):'After'} ${TA_F.find(x=>x[0]==k)[1]}${u!='text'?' ('+u+')':''}"${m?` aria-invalid="true" aria-describedby="${id}_bad"`:''}>${m?`<p class="labbad" id="${id}_bad" role="alert">${h(m)}</p>`:''}</td>`};
+ const rows=TA_F.map(([k,n,u])=>`<tr><th>${n}${u!='text'?` <span class="muted small">(${u})</span>`:''}</th>${cell('b',a,k,u)}${one?'':cell('a',b,k,u)}</tr>`).join('');
+ const sum=x=>x?h(arwSum(x)):'';
+ return`<div class="card" id="tarwcard"><span class="kicker">Arrow setup</span>${a&&b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
+ ${a&&arwSum(a)?`<p class="small" style="margin:0 0 6px">${one?'Arrow':'Before'}: ${sum(a)}${b&&arwSum(b)?`<br>After: ${sum(b)}`:''}</p>`:''}
+ <table class="labtbl tarwtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${one?'':'<th>After</th>'}</tr></thead><tbody>${rows}</tbody></table>
+ <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${!a&&window.arrowSetup&&arrowSetup()?`<button class="btn ghost" id="tarwbefore">Use my current arrow setup for ${one?'this group':'Before'}</button>`:''}${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
+ <p class="small muted" style="margin:6px 0 0">Type in any box to correct it. Changes are kept with this session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved.</p></div>`}
+function arwWire(T){app.querySelectorAll('[data-ta]').forEach(x=>x.onchange=()=>{const[side,k]=x.dataset.ta.split(':'),u=TA_F.find(f=>f[0]==k)[2],raw=x.value.trim(),pk=T.id+':'+side+':'+k;
+  if(u!='text'&&raw!==''&&window.arrowLim&&arrowLim(k,raw)){TA_PEND[pk]=raw;render();return}
+  delete TA_PEND[pk];
+  const o=side=='b'?(T.arrow=T.arrow||{}):(T.arrowAfter=T.arrowAfter||Object.assign({},T.arrow||{}));
+  if(u=='text')o[k]=raw;else{o[k]=raw===''?null:parseFloat(raw.replace(',','.'));if(k=='fps')o.fpsSrc=raw===''?'':'own'}
+  save();render()});
+ const tb=$('#tarwbefore');if(tb)tb.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrow=a;save();render()}}}
+/* R3 (3 Nov 2026, Nathe via Archery Coach): for Fletched vs Bare the comparison line is a plain tuning verdict, not "X% tighter".
+   Side to side: for a right-handed archer bare shafts right of the fletched group read weak and left read stiff (Easton, Bare Shaft
+   Planing Test); mirrored for a left-handed archer (the session's bow hand). High or low points to the nocking point (Easton) or, on a
+   recurve or barebow, tiller. With the usual next step, labelled general tuning guidance. Easton writes the test for finger release,
+   so a compound (release aid) session gets a note to paper tune first. Uses the same spread rule as the Bare shaft reading card. */
+function bareVerdict(T,B,A){if(!B||!A||B.n<3||A.n<2)return`<p class="lab-note" id="bareverdict">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the verdict.</p>`;
+ const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,hd=T.hand,lh=hd=='L',side=Math.abs(dx)<=sp?'ok':(lh?dx<0:dx>0)?'weak':'stiff',vert=Math.abs(dy)<=sp?'':dy<0?'high':'low';
+ const comp=(T.arrow&&T.arrow.bow=='compound')||/compound/i.test(T.bowName||'');
+ const parts=[];let next=[];
+ if(!hd&&side!='ok')parts.push(`bare shafts ${cm(Math.abs(dx))} cm ${dx>0?'right':'left'} of the fletched group; choose the bow hand to see weak or stiff`);
+ else if(side=='ok')parts.push('side to side the bare shafts are with the fletched group, so spine looks right');
+ else{parts.push(`bare shafts ${cm(Math.abs(dx))} cm ${dx>0?'right':'left'} of the fletched group: the arrow is acting <b>${side}</b>${lh?' (left-handed, so the right-handed reading is mirrored)':''}`);
+  next.push(side=='weak'?'weak: a lighter point, more plunger tension, slightly less draw weight, or a shorter arrow if it still clears the rest':'stiff: a heavier point, less plunger tension, slightly more draw weight, or a weaker spine (do not cut it shorter)')}
+ if(vert){parts.push(`bare shafts ${cm(Math.abs(dy))} cm ${vert} of the fletched group: check the nocking point${comp?'':' or tiller'}`);
+  next.push(vert=='high'?`high: move the nocking point up a little at a time${comp?'':', then look at tiller if that does not fix it'}`:`low: move the nocking point down a little at a time${comp?'':', then look at tiller if that does not fix it'}`)}
+ const ok=side=='ok'&&!vert&&hd;
+ return`<div class="lab-note" id="bareverdict"><p style="margin:0"><b>Verdict:</b> ${ok?'the bare shafts and fletched arrows land together, so the arrow is basically tuned.':parts.join('; ')+'.'}</p>${next.length?`<p style="margin:6px 0 0"><b>Usual next step</b> <span class="small muted">(general tuning guidance)</span>: ${next.join('; ')}. Change one thing at a time, then shoot the test again.</p>`:''}${comp?`<p class="small" style="margin:6px 0 0">Compound with a release aid: Easton writes this test for finger release and says paper tuning is the usual first step with a release, so treat the side-to-side reading as a clue, not an answer.</p>`:''}</div>`}
 /* Bare shaft vs fletched: reading and next step, only from Easton's Arrow Tuning and Maintenance Guide (Bare Shaft Planing Test, p. 5;
    Adjustments Within the Bow and Arrow System, p. 10). The guide gives the left/right reading for a right-handed archer only. */
 function bareCard(T,B,A){const S2=window.ARROW_SRC||{},tm=S2.eastonTM?`<a href="${S2.eastonTM[1]}" target="_blank" rel="noopener">${h(S2.eastonTM[0])}</a>`:'Easton Arrow Tuning and Maintenance Guide';
  const head=`<div class="card" id="barecard"><span class="kicker">Bare shaft reading</span>`,tail=`<p class="small muted" style="margin:8px 0 0">Easton's Bare Shaft Planing Test: three fletched arrows, then two bare shafts aimed the same, at 15 to 20 yards or metres. It is written for finger release.</p><p class="labsrc">${tm}</p></div>`;
  if(!B||!A||B.n<3||A.n<2)return head+`<p style="margin:2px 0 0">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the reading.</p>`+tail;
  const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,out=[];
- if(Math.abs(dy)>sp)out.push(`<p>Bare shafts are <b>${cm(Math.abs(dy))} cm ${dy<0?'higher':'lower'}</b> than the fletched group. Easton: ${dy<0?'move the nocking point <b>up</b>':'move the nocking point <b>down</b>'} until they hit at the same height${dy>0?' (slightly lower is sometimes wanted)':''}.</p>`);
- if(T.hand!='R'){out.push(`<p>Side to side, bare shafts are ${cm(Math.abs(dx))} cm ${dx>=0?'right':'left'} of the fletched group. Easton's guide gives the weak or stiff reading for right-handed archers only, so no reading is shown for a left-handed archer. Ask your coach.</p>`);return head+out.join('')+tail}
+ if(Math.abs(dy)>sp)out.push(`<p>Bare shafts are <b>${cm(Math.abs(dy))} cm ${dy<0?'higher':'lower'}</b> than the fletched group. Easton: ${dy<0?'move the nocking point <b>up</b>':'move the nocking point <b>down</b>'} until they hit at the same height${dy>0?' (slightly lower is sometimes wanted)':''}. On a recurve or barebow, if moving the nocking point does not bring them level, tiller can also move bare shafts up or down (general tuning guidance, not from Easton's guide).</p>`);
+ if(T.hand!='R'&&T.hand!='L'){out.push(`<p>Side to side, bare shafts are ${cm(Math.abs(dx))} cm ${dx>=0?'right':'left'} of the fletched group. Choose the bow hand above to see the weak or stiff reading.</p>`);return head+out.join('')+tail}
  if(Math.abs(dx)<=sp){out.push(`<p>Side to side, the bare shafts are within the fletched group's average spread. Easton: "Your equipment is basically tuned when the bare shafts and fletched shafts impact at the same or very near the same location."</p>`);return head+out.join('')+tail}
- const weak=dx>0,fw=window.arrowFocWith,pt=fw&&fw({dpt:weak?-25:25}),ct=weak&&fw&&fw({dlen:-0.25});
+ const lh=T.hand=='L',weak=lh?dx<0:dx>0,fw=window.arrowFocWith,pt=fw&&fw({dpt:weak?-25:25}),ct=weak&&fw&&fw({dlen:-0.25});
  const focTxt=r=>r?(r.to.toFixed(1)==r.from.toFixed(1)?`FOC about the same (${r.from.toFixed(1)}% → ${r.to.toFixed(2)}%)`:`FOC ${r.from.toFixed(1)}% → <b>${r.to.toFixed(1)}%</b>`):'FOC: set up your arrow in the Arrow chooser to see this';
  const m=(T.dist||'').match(/(\d+(?:\.\d+)?)\s*(m|yd|y)/i),d=m?+m[1]:NaN,far=isFinite(d)&&d>=18&&d<=20&&Math.abs(dx)>15;
- out.push(`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${weak?'right':'left'}</b> of the fletched group. For a right-handed archer Easton reads this as <b>${weak?'weak':'stiff'}</b>.</p>`);
+ out.push(lh?`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${dx>0?'right':'left'}</b> of the fletched group. For a left-handed archer this reads as <b>${weak?'weak':'stiff'}</b>: Easton's guide gives the reading for right-handed archers, and for a left-handed archer it is mirrored (general tuning guidance).</p>`:`<p>Bare shafts are <b>${cm(Math.abs(dx))} cm ${weak?'right':'left'}</b> of the fletched group. For a right-handed archer Easton reads this as <b>${weak?'weak':'stiff'}</b>.</p>`);
  return head+out.join('')+`</div><div class="card" id="nextcard"><span class="kicker">Next step to try</span><p class="small" style="margin:2px 0 8px">Starting points from Easton's guide. Change one thing at a time, then shoot the test again.</p>
  <table class="labtbl"><tbody>
  <tr><th>${weak?'Lighter':'Heavier'} point or insert</th><td>${weak?'−':'+'}25 gr is a first step to try (Easton's chart counts 25 gr as 3 lb of bow weight)<br><span class="small">${focTxt(pt)}</span></td></tr>
@@ -224,16 +269,21 @@ LABSEC.lab_calc='tools';
    'fps' value (the 280 default) is left in storage but no longer read; overrides use new keys fpsU and grU. */
 E.lab_calc=function(){const C=S.calc=S.calc||{gr:'400',ibo:'340',dl:'29',dw:'60',sg:'0',len:'29',bp:'17'};
  const n=k=>parseFloat(C[k]),SL=7000*32.174,set=k=>C[k]!=null&&String(C[k]).trim()!=='';
- const gr0=n('gr'),est=n('ibo')-10*(30-n('dl'))-Math.max(0,gr0-5*n('dw'))/3-n('sg')/3;
+ /* R1: each box is checked against its range (arrowLim); a flagged box is left out, so the speed shows '-' with the reason, never a negative figure */
+ const LK={ibo:'ibo',dl:'dl',dw:'dw',gr:'tw',sg:'sg',grU:'tw',fpsU:'fps',len:'len',bp:'bp'},bad=k=>window.arrowLim?arrowLim(LK[k],C[k]):null;
+ const nOk=k=>bad(k)?NaN:n(k);
+ const gr0=nOk('gr'),sgV=set('sg')?nOk('sg'):0,spdBad=['ibo','dl','dw','gr','sg'].some(k=>bad(k));
+ const est=window.arrowSpeedEst?arrowSpeedEst(nOk('ibo'),nOk('dl'),nOk('dw'),gr0,sgV):n('ibo')-10*(30-n('dl'))-Math.max(0,gr0-5*n('dw'))/3-n('sg')/3;
+ const estWhy=isFinite(est)?'':spdBad?'Fix the flagged box above to see the speed.':['ibo','dl','dw','gr'].some(k=>!set(k))?'Fill in all four boxes to see the speed.':'No estimate: the rule of thumb gives under 100 fps for these figures, so it does not fit this setup. A chronograph reading is better.';
  const vAuto=C.spdOn&&isFinite(est)&&est>0?Math.round(est):NaN;
- const own=set('fpsU'),v=own?n('fpsU'):vAuto,gr=set('grU')?n('grU'):gr0,ok=isFinite(v)&&v>0&&isFinite(gr)&&gr>0;
+ const own=set('fpsU'),v=own?nOk('fpsU'):vAuto,gr=set('grU')?nOk('grU'):gr0,ok=isFinite(v)&&v>0&&isFinite(gr)&&gr>0;
  const ke=ok?gr*v*v/(2*SL):NaN,mo=ok?gr*v/SL:NaN;
- const foc=(n('bp')-n('len')/2)/n('len')*100;
+ const foc=bad('len')||bad('bp')?NaN:(n('bp')-n('len')/2)/n('len')*100;
  const f=(x,d=1)=>isFinite(x)?x.toFixed(d):'-';
- const inp=(k,l,u,val,ph)=>`<label for="c_${k}">${l} <span class="muted small">(${u})</span></label><input id="c_${k}" data-c="${k}" inputmode="decimal" value="${h(val!==undefined?val:(C[k]==null?'':C[k]))}"${ph?` placeholder="${ph}"`:''}>`;
+ const inp=(k,l,u,val,ph)=>{const m=bad(k);return`<label for="c_${k}">${l} <span class="muted small">(${u})</span></label><input id="c_${k}" data-c="${k}" inputmode="decimal" value="${h(val!==undefined?val:(C[k]==null?'':C[k]))}"${ph?` placeholder="${ph}"`:''}${m?` aria-invalid="true" aria-describedby="cbad_${k}"`:''}>${m?`<p class="labbad" id="cbad_${k}" role="alert">${h(m)}</p>`:''}`};
  app.innerHTML=`<div class="labgrid2">
- <div class="card"><span class="kicker">Arrow speed estimate · compound</span>${inp('ibo','IBO speed rating','fps')}${inp('dl','Draw length','inches')}${inp('dw','Draw weight','lb')}${inp('gr','Arrow weight','grains')}${inp('sg','Extra weight on the string','grains')}
-  <p>About <span class="labout">${f(est,0)}</span> fps <span class="muted">(${f(est*0.3048)} m/s)</span></p>
+ <div class="card"><span class="kicker">Arrow speed estimate · compound</span>${inp('ibo','IBO/ATA','fps')}${inp('dl','Draw length','inches')}${inp('dw','Draw weight','lb')}${inp('gr','Arrow weight','grains')}${inp('sg','Extra weight on the string','grains')}
+  <p>About <span class="labout" id="c_est">${f(est,0)}</span> fps <span class="muted">(${f(est*0.3048)} m/s)</span></p>${estWhy?`<p class="small" id="c_estwhy">${h(estWhy)}</p>`:''}
   <p class="small muted">${C.spdOn?'This speed and arrow weight are used in the card below.':'Change any figure here and the speed is used in the card below.'}</p>
   <p class="labsrc">Estimate only, using the common rule of thumb from the IBO rating (30" draw, 5 grains per lb): −10 fps per inch under 30", −1 fps per 3 grains of arrow over 5 grains per lb, −1 fps per 3 grains on the string. A chronograph reading is always better.</p></div>
  <div class="card"><span class="kicker">Kinetic energy &amp; momentum</span>${inp('grU','Arrow weight','grains',set('grU')?C.grU:(isFinite(gr0)?C.gr:''))}${inp('fpsU','Arrow speed','feet per second',own?C.fpsU:(isFinite(vAuto)?String(vAuto):''),'0')}
@@ -294,15 +344,15 @@ function rulesFind(){
 /* ---------- Full analysis: everything from the testers' Stats in one place ---------- */
 LABSEC.lab_analysis='myarch';
 E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBestCard&&labBestCard()||''}catch(e){}try{an=window.labAnalysisHTML?labAnalysisHTML():''}catch(e){an='<div class="card"><p class="small">The analysis could not be built from this data.</p></div>'}
- app.innerHTML=`<div class="card"><span class="kicker">Everything in one place</span><p class="small" style="margin:0 0 10px">Built from your past competition results and rounds scored here. Real results only.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">📈 Stats &amp; PBs, with More detail</button><button class="btn ghost" data-go="analytics">📊 Analytics: trends across shoots</button></div></div>${bc}${an}`;
- bar('Full analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
+ app.innerHTML=`<div class="card" id="oneanalysis"><span class="kicker">Analysis</span><h2 style="margin:2px 0 8px">One analysis</h2><p class="small" style="margin:0 0 10px">Stats, personal bests and trends are on this screen. Built from your past competition results and rounds scored here.</p><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-start"><button class="btn ghost" id="anstats">Stats and personal bests</button><button class="btn ghost" data-go="analytics">Trends across shoots</button></div></div>${bc}${an}`;
+ bar('Analysis','myarch','My archery');$('#anstats').onclick=()=>{S.statsMore=true;save();nav('stats')};if(window.labBindAnalysis)labBindAnalysis();if(window.bindBest)bindBest()};
 
 /* ---------- Back buttons: every screen below a section names its parent and goes there (works on a direct load) ---------- */
 const TOP=new Set(['home','score','myarch','clubs','tools']);
 const PAR={stats:['Stats & PBs','myarch','My archery'],analytics:['Analytics','myarch','My archery'],badges:['Badge collection','lab_season','Season & badges'],recap:['Monthly recap','lab_season','Season & badges'],
  follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],whatsnew:['What\'s new','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home']};
 Object.assign(LABSEC,{lab_analysis:'myarch'});
-const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?(view=='profile'?'lab_profile':'lab_season'):v;
+const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?'lab_ranks':v=='lab_season'?'lab_ranks':v;
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';
 function inner(){if(view=='lab_leagues'&&window._lgv&&window._lgE&&window._lgE.code==window._lgv)return['League',()=>{const y=window._lgRet||0;window._lgE=null;window._lgRet=null;window._lgAct=null;lgView(window._lgv);scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))}];
  if(view=='lab_leagues'&&window._lgv)return['Leagues',()=>{window._lgv=null;window._lgE=null;nav('lab_leagues')}];

@@ -31,6 +31,15 @@ AREAS=[
     ("Arrow chooser fletching suggestion",["ac5_test.py"]),
     ("Help: Build an arrow guide",["ac6_test.py"]),
  ("Relay hold (no resend storm on the relay)",["relayhold_test.py"]),
+ ("Arrow and bow figure ranges (R1)",["r1_test.py"]),
+ ("Tuning session arrow setup card editable (R2)",["r2_test.py"]),
+ ("Bare shaft plain tuning verdict (R3)",["r3_test.py"]),
+ ("Calendar PB tag (C1)",["c1_test.py"]),
+ ("Calendar auto-send finished rounds (C2)",["c2_test.py"]),
+ ("Calendar official and imported scores (C3)",["c3_test.py"]),
+ ("Add official result (C4)",["c4_test.py"]),
+ ("Official result from a screenshot (C5)",["c5_test.py"]),
+ ("Sync now flag off (C6)",["c6_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
  ('ABA',['aba_test.py']),
@@ -41,6 +50,7 @@ AREAS=[
  ('My arrows / My bows',['myarrows_test.py','mybows_test.py','arrowpick_test.py','todayarrows_test.py']),
  ('Calculators',['arrowcheck_test.py','arrowchooser_test.py','arrowuse_test.py']),
  ('Analysis (stats, coach, testers)',['coach2_test.py','coach3_test.py','testers_test.py','sendpast_test.py']),
+ ('My results source (paste or CSV, no fetch)',['results_test.py']),
  ('App shell, What\'s new, offline, Clarity',['whatsnew_test.py','offline_test.py','clarity_test.py']),
 ]
 def fetch_live(url,dest):
