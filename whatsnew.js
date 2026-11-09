@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-09-d4',d:'2026-11-09',items:[
+   ['camera',"A photo fills in an official result","Photograph a paper scorecard, or a screenshot of a results page, and Add an official result fills in from it. Check the score, and how far it is above or below your personal best, then save. Nothing counts until you save. The picture is deleted once it has been read. A picture that cannot be read does not save a score."]]},
   {v:'v2026-11-09-d3',d:'2026-11-09',items:[
    ['target',"A blank round names itself","Save a practice round with the name left blank and it is named from the type and the distance, such as Target 70m, Indoor 18m, Field 50m, Clout 180m or 3D 20 targets. A name you type is kept."]]},
   {v:'v2026-11-09-d2',d:'2026-11-09',items:[

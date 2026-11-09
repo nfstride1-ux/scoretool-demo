@@ -40,8 +40,35 @@ function guess(headers){const i=n=>headers.findIndex(c=>new RegExp(n,'i').test(c
 function parseDate(s){s=String(s||'').trim();
  let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);if(m)return m[1]+'-'+m[2]+'-'+m[3];
  m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(s);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+ const mon={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+ m=/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/.exec(s);if(m&&mon[m[2].slice(0,3).toLowerCase()])return m[3]+'-'+String(mon[m[2].slice(0,3).toLowerCase()]).padStart(2,'0')+'-'+m[1].padStart(2,'0');
  const d=new Date(s);if(!isNaN(d)&&/\d{4}/.test(s))return d.toISOString().slice(0,10);
  return ''}
+/* Read a paper scorecard or a results-app screenshot. Only a clearly labelled score is used.
+   Anything else is a misread: the form is not filled and nothing is saved. */
+function readCardText(text){const t=String(text||'').replace(/\r/g,'');
+ const grab=re=>{const m=t.match(re);return m?String(m[1]).trim():''};
+ const date=parseDate(grab(/date\s*[:\-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})/i));
+ let score=grab(/score\s*[:\-]\s*(\d{1,4})\b/i),max=grab(/(?:max(?:imum)?|out of)\s*[:\-]\s*(\d{2,4})\b/i);
+ const slash=t.match(/\b(\d{2,4})\s*\/\s*(\d{2,4})\b/);
+ if(!score&&slash)score=slash[1];
+ if(!max&&slash)max=slash[2];
+ const sc=parseInt(score,10),mx=max?parseInt(max,10):null;
+ if(!(sc>0&&sc<=1440)||(mx!=null&&(mx<sc||mx>1440)))return {ok:false};
+ const round=grab(/round\s*[:\-]\s*([^\n]+)/i).replace(/\s+/g,' ').slice(0,80);
+ const event=grab(/event\s*[:\-]\s*([^\n]+)/i).replace(/\s+/g,' ').slice(0,80);
+ const tens=grab(/\b10s?\s*[:\-]\s*(\d{1,3})\b/i),xs=grab(/\bxs\s*[:\-]\s*(\d{1,3})\b/i);
+ return {ok:true,date,round,event,score:sc,max:mx,tens:tens===''?null:parseInt(tens,10),xs:xs===''?null:parseInt(xs,10)}}
+function pbWords(round,score){let pb=null;try{pb=round&&window.bsCurrentPb?bsCurrentPb(round):null}catch(e){}
+ if(!round||!score)return 'Check the score, then save. Nothing is saved until you do.';
+ if(!pb)return 'No personal best for this round yet. Check the score, then save. Nothing is saved until you do.';
+ const d=score-+pb.score;
+ const how=d>0?d+' above your PB of '+pb.score:d<0?(-d)+' below your PB of '+pb.score:'level with your PB of '+pb.score;
+ return how+'. Check it, then save. Nothing is saved until you do.'}
+let ocrBusy=false;
+function loadOcr(){if(window.Tesseract)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/ocr/tesseract.min.js';s.onload=()=>res();s.onerror=()=>rej(new Error('ocr'));document.head.appendChild(s)})}
+async function readScorePhoto(file){await loadOcr();const worker=await Tesseract.createWorker('eng',1,{workerPath:'vendor/ocr/worker.min.js',corePath:'vendor/ocr/tesseract-core-simd-lstm.wasm.js',langPath:'vendor/ocr',gzip:true});
+ try{const r=await worker.recognize(file);return readCardText(r&&r.data&&r.data.text)}finally{try{await worker.terminate()}catch(e){}}}
 function parseScore(s){const n=parseInt(String(s||'').replace(/[^\d]/g,''),10);return n>0?n:0}
 let grid=[],header=false,map={round:0,date:1,score:2,event:3};
 function applyMap(){const rows=header?grid.slice(1):grid;
@@ -113,11 +140,11 @@ function view(){
  <label for="oftens">10s, if you know them</label><input id="oftens" inputmode="numeric" autocomplete="off" placeholder="Optional">
  <label for="ofxs">Xs, if you know them</label><input id="ofxs" inputmode="numeric" autocomplete="off" placeholder="Optional">
  <label for="ofends">Ends, if you have them</label><textarea id="ofends" rows="3" placeholder="One end a line, arrows separated by spaces. Optional."></textarea>
- <label for="ofshot">Screenshot, if you have one</label>
+ <p class="small" id="ofpb" style="margin:6px 0 0"></p>
+ <label for="ofshot">Photo of a scorecard, or a screenshot</label>
  <input id="ofshot" type="file" accept="image/*">
- <p class="small muted" id="ofshotnote" style="margin:4px 0 0">The picture stays on this screen so you can read it and type the score. ScoreTool does not read the picture. After you save, the picture is deleted unless you tick Keep the photo.</p>
- <img id="ofshotprev" alt="Your screenshot" hidden style="max-width:100%;margin-top:8px;border-radius:8px">
- <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="ofkeep" type="checkbox" style="width:auto"> Keep the photo on this phone</label>
+ <p class="small muted" id="ofshotnote" style="margin:4px 0 0">The picture is read into this form. Check the score, then save. The picture is deleted once it has been read. It is not kept on this phone.</p>
+ <img id="ofshotprev" alt="Your scorecard" hidden style="max-width:100%;margin-top:8px;border-radius:8px">
  <button class="btn full" id="ofsave" type="button" style="margin-top:10px">Save official result</button>
  <p class="small" id="ofnote" style="margin:6px 0 0">${h(offMsg)}</p>
  </div>
@@ -148,8 +175,30 @@ function view(){
    localStorage.setItem(IKEY(),JSON.stringify(keep));
    $('#rsdone').textContent=`Saved ${n} on this phone.${skip?` Left ${skip} that were already scored or already saved.`:''}${bad?` ${bad} row${bad==1?'':'s'} had no round, date or score.`:''} They show on your personal bests as imported, and they are not used for ratings.`;
   }}
- const or=$('#ofround');if(or)or.onchange=()=>{if(or.value)$('#ofroundx').value=or.value};
- const shot=$('#ofshot');if(shot)shot.onchange=()=>{shotFile=shot.files&&shot.files[0]||null;const prev=$('#ofshotprev');if(!prev)return;if(prev._url)URL.revokeObjectURL(prev._url);if(!shotFile){prev.hidden=true;prev.removeAttribute('src');return}prev._url=URL.createObjectURL(shotFile);prev.src=prev._url;prev.hidden=false};
+ const or=$('#ofround');if(or)or.onchange=()=>{if(or.value)$('#ofroundx').value=or.value;pbLine()};
+ const touch=()=>pbLine();
+ ['ofroundx','ofscore'].forEach(id=>{const el=$('#'+id);if(el)el.oninput=touch});
+ pbLine();
+ const shot=$('#ofshot');if(shot)shot.onchange=async()=>{const file=shot.files&&shot.files[0]||null;shotFile=null;const prev=$('#ofshotprev');if(prev&&prev._url){URL.revokeObjectURL(prev._url);prev._url=''}if(!file){if(prev){prev.hidden=true;prev.removeAttribute('src')}return}
+  if(prev){prev._url=URL.createObjectURL(file);prev.src=prev._url;prev.hidden=false}
+  const say=t=>{offMsg=t;const n=$('#ofnote');if(n)n.textContent=t};
+  if(ocrBusy)return;ocrBusy=true;say('Reading the picture…');
+  let got=null;try{got=await readScorePhoto(file)}catch(e){got=null}
+  ocrBusy=false;
+  if(prev&&prev._url){URL.revokeObjectURL(prev._url);prev._url='';prev.removeAttribute('src');prev.hidden=true}
+  shot.value='';
+  if(!got||!got.ok){say('Could not read a score from that picture. Type it in. Nothing was saved.');return}
+  if(got.date&&$('#ofdate'))$('#ofdate').value=got.date;
+  if(got.event&&$('#ofevent'))$('#ofevent').value=got.event;
+  if(got.round&&$('#ofroundx'))$('#ofroundx').value=got.round;
+  if($('#ofscore'))$('#ofscore').value=String(got.score);
+  if($('#ofmax')&&got.max!=null)$('#ofmax').value=String(got.max);
+  if($('#oftens')&&got.tens!=null)$('#oftens').value=String(got.tens);
+  if($('#ofxs')&&got.xs!=null)$('#ofxs').value=String(got.xs);
+  pbLine();
+  say('Read from the picture. Check it, then save. The picture was not kept.');
+ };
+ function pbLine(){const el=$('#ofpb');if(!el)return;const round=(($('#ofroundx')&&$('#ofroundx').value)||($('#ofround')&&$('#ofround').value)||'').trim();const score=parseScore($('#ofscore')&&$('#ofscore').value);el.textContent=pbWords(round,score)}
  const os=$('#ofsave');if(os)os.onclick=async()=>{
   const date=$('#ofdate').value,event=$('#ofevent').value.trim();
   let round=($('#ofroundx').value||$('#ofround').value).trim();
@@ -160,13 +209,13 @@ function view(){
   if((($('#ofmax').value||'').trim()&&max==null)||(($('#oftens').value||'').trim()&&tens==null)||(($('#ofxs').value||'').trim()&&xs==null)){say('Maximum, 10s and Xs need a whole number, or leave them blank.');return}
   if(ends.length&&endsTotal(ends)!==score){say(`Those ends add up to ${endsTotal(ends)}, not ${score}. Fix them, or clear the ends.`);return}
   if(taken(date,round,score)){say('That round is already scored on this phone. It was left as it is.');return}
-  const id='off-'+Date.now(),file=shotFile,hold=!!($('#ofkeep')&&$('#ofkeep').checked&&file);
+  const id='off-'+Date.now();
   const row={id,date,event,round,score,max,tens,xs,ends,official:true,finished:true};
-  if(hold){const ok=await keepPhoto(id,file);row.photoKept=!!ok}
   const keep=officials();keep.push(row);
   localStorage.setItem(OKEY(),JSON.stringify(keep));
-  dropShot();if($('#ofkeep'))$('#ofkeep').checked=false;
-  say('Saved on this phone as an official result.'+(file?(hold&&row.photoKept?' The photo is kept on this phone.':' The photo was not kept.'):''));
+  dropShot();
+  say('Saved on this phone as an official result. The picture was not kept.');
+  pbLine();
  };
  const sy=$('#rssync');if(sy)sy.onclick=()=>{const n=$('#rssyncnote');if(n)n.textContent=syncOn()?'No organisation has approved a pull, so nothing is fetched.':'Coming once your national body approves.'};
  const sp=$('#rssyncpaste');if(sp)sp.onclick=()=>{const box=$('#rsimport');if(box)box.scrollIntoView({block:'start'})};

@@ -4,6 +4,11 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### D4 — a photo fills in an official result (v2026-11-09-d4)
+- A photo of a paper scorecard, or a screenshot of a results page, is read into Add an official result (the C4 form, on top of C5). The score, date, round, event, maximum, 10s and Xs are filled in when the picture says them clearly.
+- Nothing is saved, counted, or treated as a personal best until the archer presses Save. The form says how many points the score is above or below the personal best. After a confirmed save, a new best is on the Personal bests list and can be chosen as a Ghost match opponent (a total with no ends is a pace line, not invented arrows).
+- The picture is deleted once it has been read. It is not kept on the phone and it is not sent. A picture with no readable score does not fill the form and does not save.
+
 ### D3 — a blank custom round names itself (v2026-11-09-d3)
 - Saving a custom round with no name names it from the type and the distance: Target 70m, Indoor 18m, Field 50m, Clout 180m, 3D 20 targets. Yards stay in the name. With no distance it uses the face and the number of ends. A name you type is kept. A repeat gets a number.
 
