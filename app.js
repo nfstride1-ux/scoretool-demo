@@ -546,17 +546,27 @@ function leaveScoring(after){if(!cur)return;fix=null;const go=()=>{cur=null;sv='
 addEventListener('popstate',()=>{if(cur&&view=='score'&&!document.getElementById('leaveov')){history.pushState({scoring:1},'');leaveScoring()}});
 
 
-function roundForm(){const c=crEdit.d||(crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):{name:'',ape:6,xs:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]});crEdit.d=c;
+/* a blank custom-round name is filled from the round type and distance: 'Target 70m'. No distance: the face and the ends. */
+function roundAutoName(c){const disc=c.kind=='3d'?'3d':(c.disc||'target'),label={target:'Target',indoor:'Indoor',field:'Field',clout:'Clout','3d':'3D'}[disc]||'Target';
+ if(disc=='3d')return '3D '+Math.max(2,Math.round(+c.targets||20))+' targets';
+ const blocks=c.blocks||[],dists=[...new Set(blocks.map(b=>{const n=+b.dist;return n>0?String(n)+(b.unit||'m'):''}).filter(Boolean))];
+ if(dists.length)return label+' '+dists.join('/');
+ const b=blocks[0]||{},ends=blocks.reduce((t,x)=>t+(+x.ends||0),0);
+ return [label,b.size?b.size+'cm':'',b.type&&b.type!='full'?b.type:'',ends?ends+(ends==1?' end':' ends'):''].filter(Boolean).join(' ')}
+function freeRoundName(n,old){let name=n||'Target',i=2;while(ROUNDS[name]&&name!==old){name=(n||'Target')+' '+i;i++}return name}
+const DISC_OPT=[['target','Target'],['indoor','Indoor'],['field','Field'],['clout','Clout'],['3d','3D']];
+function discDefaults(disc){if(disc=='indoor')return [{dist:18,unit:'m',size:40,type:'3-spot',ends:10}];if(disc=='field')return [{dist:50,unit:'m',size:80,type:'field',ends:12}];if(disc=='clout')return [{dist:180,unit:'m',size:122,type:'full',ends:6}];return [{dist:70,unit:'m',size:122,type:'full',ends:6}]}
+function roundForm(){const c=crEdit.d||(crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):{name:'',ape:6,xs:true,disc:'target',blocks:[{dist:70,unit:'m',size:122,type:'full',ends:6}]});crEdit.d=c;if(!c.disc)c.disc=c.kind=='3d'?'3d':'target';
  if(c.kind=='3d')return roundForm3D(c);
  const tot=()=>c.blocks.reduce((t,b)=>t+ +b.ends,0)*c.ape*10;
- app.innerHTML=`<div class="card"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="e.g. Tuesday 30m blast">
+ app.innerHTML=`<div class="card"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cdisc">Round type</label><select id="cdisc">${DISC_OPT.map(([v,l])=>`<option value="${v}" ${c.disc==v?'selected':''}>${l}</option>`).join('')}</select><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="Leave blank to name it from the type and distance">
  <label for="cape">Arrows per end</label><div style="display:flex;gap:6px"><select id="cape" style="flex:1">${[3,6].map(n=>`<option ${c.ape==n?'selected':''}>${n}</option>`).join('')}<option value="c" ${![3,6].includes(+c.ape)?'selected':''}>Custom</option></select><input id="capec" type="number" min="1" max="12" value="${c.ape}" style="flex:1" ${[3,6].includes(+c.ape)?'hidden':''} aria-label="Custom arrows per end"></div>
  <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="cxs" style="width:auto" ${c.xs!==false?'checked':''}> Count Xs</label>
  <h3 style="margin-top:10px">Distance blocks</h3>${c.blocks.map((b,i)=>`<div class="list-item" data-b="${i}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
   <label>Distance<div style="display:flex;gap:4px"><input data-f="dist" type="number" min="1" value="${b.dist}" style="min-width:0"><select data-f="unit" style="width:64px">${['m','yd'].map(u=>`<option ${b.unit==u?'selected':''}>${u}</option>`).join('')}</select></div></label>
   <label>Ends<input data-f="ends" type="number" min="1" max="60" value="${b.ends}"></label>
   <label>Face size<select data-f="size">${[122,80,60,40].map(z=>`<option value="${z}" ${b.size==z?'selected':''}>${z}cm</option>`).join('')}</select></label>
-  <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
+  <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['field','Field'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
   ${c.blocks.length>1?`<button class="btn ghost" data-rb="${i}" style="margin-top:6px;padding:4px 10px">Remove block</button>`:''}</div>`).join('')}
  <button class="btn ghost" id="addb" style="margin-top:6px">+ Add distance</button>
  <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${tot()}</span></b> <span class="small muted">· practice only, never counted for classification</span></p>
@@ -565,16 +575,17 @@ function roundForm(){const c=crEdit.d||(crEdit.i>=0?JSON.parse(JSON.stringify(S.
  app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{if(el.dataset.f=='type'&&el.value=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}const b=c.blocks[+el.closest('[data-b]').dataset.b];b[el.dataset.f]=['dist','ends','size'].includes(el.dataset.f)?+el.value:el.value;up()});
  $('#cape').onchange=e=>{if(e.target.value=='c'){$('#capec').hidden=false}else{$('#capec').hidden=true;c.ape=+e.target.value}up()};$('#capec').oninput=e=>{c.ape=Math.max(1,Math.min(12,+e.target.value||1));up()};
  $('#cn').oninput=e=>c.name=e.target.value;$('#cxs').onchange=e=>c.xs=e.target.checked;
+ $('#cdisc').onchange=e=>{c.disc=e.target.value;if(c.disc=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}delete c.kind;c.blocks=discDefaults(c.disc);if(c.disc=='indoor')c.ape=3;roundForm()};
  $('#addb').onclick=()=>{const l=c.blocks[c.blocks.length-1];c.blocks.push({...l});roundForm()};
  app.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{c.blocks.splice(+b.dataset.rb,1);roundForm()});
  $('#ccancel').onclick=()=>{crEdit=null;score()};
- $('#csave').onclick=()=>{const n=c.name.trim();if(!n)return alert('Give your round a name.');if(ROUNDS[n]&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
-  c.name=n;S.customRounds=S.customRounds||[];if(crEdit.i>=0){const old=S.customRounds[crEdit.i].name;if(old!=n){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=n})}S.customRounds[crEdit.i]=c}else S.customRounds.push(c);S.lastRound=n;crEdit=null;save();regCustom();score()}}
+ $('#csave').onclick=()=>{const old=crEdit.i>=0?S.customRounds[crEdit.i].name:'';let n=(c.name||'').trim();if(!n)n=freeRoundName(roundAutoName(c),old);if(ROUNDS[n]&&n!==old&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
+  c.name=n;if(!c.disc)c.disc='target';S.customRounds=S.customRounds||[];if(crEdit.i>=0){if(old!=n){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=n})}S.customRounds[crEdit.i]=c}else S.customRounds.push(c);S.lastRound=n;crEdit=null;save();regCustom();score()}}
 /* 3D practice round form: the only setting is the number of targets */
 /* the builder's split line: halves are intended (3-arrow half, then 1-arrow half; odd extra goes first) */
 function split3d(n){const a=Math.ceil(n/2),b=n-a;return`<b id="ctgsplith">Split into a 3-arrow half and a 1-arrow half (${a} + ${b})</b><br>First half (3-arrow): <b>${plN(a,'target','targets')}</b> · Second half (1-arrow): <b>${plN(b,'target','targets')}</b>${n%2?'<br><span class="muted" id="ctgodd">Odd number, so the extra target goes in the first half.</span>':''}`}
 function roundForm3D(c){const n=Math.max(2,Math.round(+c.targets||20)),h1=Math.ceil(n/2),h2=n-h1;
- app.innerHTML=`<div class="card" id="cform3d"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="e.g. Sunday 3D course">
+ app.innerHTML=`<div class="card" id="cform3d"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cdisc">Round type</label><select id="cdisc">${DISC_OPT.map(([v,l])=>`<option value="${v}" ${v=='3d'?'selected':''}>${l}</option>`).join('')}</select><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="Leave blank to name it from the type and distance">
  <label for="cface">Face type</label><select id="cface">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${v=='3d'?'selected':''}>${l}</option>`).join('')}</select>
  <label for="ctg">Number of targets</label><input id="ctg" type="number" inputmode="numeric" min="2" max="100" step="1" value="${n}">
  <p class="small" id="ctgsplit" style="margin:6px 0 0">${split3d(n)}</p>
@@ -582,12 +593,13 @@ function roundForm3D(c){const n=Math.max(2,Math.round(+c.targets||20)),h1=Math.c
  <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${20*n}</span></b> <span class="small muted">· 20 a target · practice only, never counted for classification</span></p>
  <div style="display:flex;gap:6px;margin-top:10px"><button class="btn" id="csave">Save round</button><button class="btn ghost" id="ccancel">Cancel</button></div></div>`;
  $('#cn').oninput=e=>c.name=e.target.value;
+ $('#cdisc').onchange=e=>{if(e.target.value=='3d')return;delete c.kind;c.disc=e.target.value;c.blocks=discDefaults(c.disc);c.ape=c.disc=='indoor'?3:(c.ape||6);roundForm()};
  /* update the split and max in place (no re-render, so typing and tapping Save never fight a redraw) */
  const sp=()=>{const v=Math.max(2,Math.min(100,Math.round(+$('#ctg').value||2))),a=Math.ceil(v/2),b2=v-a;c.targets=v;$('#ctgsplit').innerHTML=split3d(v);$('#cmax').textContent=20*v};
  $('#ctg').oninput=$('#ctg').onchange=sp;
  $('#cface').onchange=e=>{delete c.kind;c.blocks=c.blocks&&c.blocks.length?c.blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}];c.blocks.forEach(b=>b.type=e.target.value);c.ape=c.ape||6;roundForm()};
  $('#ccancel').onclick=()=>{crEdit=null;score()};
- $('#csave').onclick=()=>{const v=+$('#ctg').value;if(v!==Math.round(v)||v<2)return alert('Enter a whole number of targets, 2 or more.');c.targets=Math.min(100,v);const nm=c.name.trim();if(!nm)return alert('Give your round a name.');if(ROUNDS[nm]&&(!ROUNDS[nm].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=nm:true)))return alert('That name is already used. Pick another.');
+ $('#csave').onclick=()=>{const v=+$('#ctg').value;if(v!==Math.round(v)||v<2)return alert('Enter a whole number of targets, 2 or more.');c.targets=Math.min(100,v);const old=crEdit.i>=0?S.customRounds[crEdit.i].name:'';let nm=(c.name||'').trim();if(!nm)nm=freeRoundName(roundAutoName(c),old);if(ROUNDS[nm]&&nm!==old&&(!ROUNDS[nm].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=nm:true)))return alert('That name is already used. Pick another.');
   const o={name:nm,kind:'3d',targets:c.targets};S.customRounds=S.customRounds||[];if(crEdit.i>=0){const old=S.customRounds[crEdit.i].name;if(old!=nm){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=nm})}S.customRounds[crEdit.i]=o}else S.customRounds.push(o);S.lastRound=nm;crEdit=null;save();regCustom();score()}}
 function plottedCard(s){if(!s||!(s.pos||[]).some(e=>(e||[]).some(Boolean)))return'<p class="small muted" style="margin:0 4px 12px">No arrows were plotted in this session.</p>';const R0=ROUNDS[s.round]||{},S3=use3(s,R0,faceR(R0,0)),pts=s.pos.flat().filter(Boolean).map(p=>S3?to1spot(p,s.face3=='vegas'?TRIC:BUGC):p),g=groupStats(pts),R=S3?{face:'40cm 3-spot',xs:R0.xs}:R0;
  return`<div class="card"><h3>Group plot · ${s.date}</h3><p class="small muted">${pts.length} plotted arrows from ${s.round}. Keypad arrows have no position, so they aren't shown.</p><div style="max-width:300px;margin:0 auto">${faceSVG(pts,'gplot',isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08',R,pts.length>=3?faceHi(`<circle cx="${g.cx}" cy="${g.cy}" r="${g.r}" fill="none" stroke="#39ff14" stroke-width="0.012" stroke-dasharray="0.04 0.03"/><path d="M${g.cx-0.06} ${g.cy}h0.12M${g.cx} ${g.cy-0.06}v0.12" stroke="#39ff14" stroke-width="0.018"/>`):'')}</div>${pts.length>=3?`<p class="small">Centre of group: ${Math.abs(g.cy)<0.04?'level':g.cy<0?'high':'low'}, ${Math.abs(g.cx)<0.04?'centred':g.cx<0?'left':'right'}. Spread ${(g.r*10).toFixed(1)} rings.</p>`:''}</div>`}

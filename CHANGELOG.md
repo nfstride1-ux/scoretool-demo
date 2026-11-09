@@ -4,6 +4,9 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### D3 — a blank custom round names itself (v2026-11-09-d3)
+- Saving a custom round with no name names it from the type and the distance: Target 70m, Indoor 18m, Field 50m, Clout 180m, 3D 20 targets. Yards stay in the name. With no distance it uses the face and the number of ends. A name you type is kept. A repeat gets a number.
+
 ### D2 — plotting moves to the next target (v2026-11-09-d2)
 - Reproduced on a phone-sized screen, Just me, Vegas 300, target showing: open Spot 3, enter X and 10, then tap 1px inside the bottom edge of the picture. That point sits in the gap around the face and was saved as M, the end locked, and Undo was the way back. Hiding the target left the score keys, which is why the last arrow only worked after hiding the target. A tap in that gap is no longer saved as a miss.
 - After the arrows on a target face are plotted, the next target opens. On a 3-spot that is the next spot. After Spot 3, and after the last end of a single face or field round, the screen stays until Next.
