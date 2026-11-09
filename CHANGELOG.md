@@ -4,6 +4,12 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### D1 — edit a finished score sheet (v2026-11-09-d1)
+- A finished or past score sheet is edited in place. Deleting an arrow leaves a hole in that end, and the next score fills the hole. It no longer tries to open an end past the end of the round, which is what stopped an X being put back on a finished Vegas 300 (the sheet sat on 287/290 from 29 arrows).
+- When the hole is filled and the round is whole again, the total, X count, 10s count and personal-best line are worked out again from the arrows. No second copy of the sheet is kept.
+
+
+
 ### C6 — Sync now, flag off (v2026-11-06-1959-c6)
 - Plus and Pro see Sync now on My results source. The flag `scoretool.flag.waSync` defaults off.
 - Off: "Coming once your national body approves" and a way to paste or CSV. Nothing is fetched. Switching the flag on still does not call an organisation.
