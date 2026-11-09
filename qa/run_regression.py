@@ -13,7 +13,7 @@ Run it BEFORE every deploy and again on the live URL after. Record the result in
 import subprocess,sys,os,re,time,tempfile,shutil,urllib.request,json
 HERE=os.path.dirname(os.path.abspath(__file__));ROOT=os.path.dirname(HERE)
 AREAS=[
- ('Solo scoring (Just me, rounds, faces, scorer, PBs)',['redesign_test.py','ausindoor_test.py','singleface_test.py','nav_test.py','real_test.py','pickers_test.py','halfsplit_test.py','shotview_test.py','sidehill_test.py','grouppattern_test.py','todayarrows_test.py','photos_test.py','names_test.py','colourblind_test.py','field_faces_test.py','vegas_test.py','h2h_test.py','undozoom_test.py','zoompersist_test.py','plot3spot_test.py','spotgroups_test.py','arrowsize_test.py','linecut_test.py','endview_test.py','d1_test.py']),
+ ('Solo scoring (Just me, rounds, faces, scorer, PBs)',['redesign_test.py','ausindoor_test.py','singleface_test.py','nav_test.py','real_test.py','pickers_test.py','halfsplit_test.py','shotview_test.py','sidehill_test.py','grouppattern_test.py','todayarrows_test.py','photos_test.py','names_test.py','colourblind_test.py','field_faces_test.py','vegas_test.py','h2h_test.py','undozoom_test.py','zoompersist_test.py','plot3spot_test.py','spotgroups_test.py','arrowsize_test.py','linecut_test.py','endview_test.py','d1_test.py','d2_test.py']),
  ('Full round (every round type: ends, totals, saved record)',['fullround_test.py']),
  ('Personal best note (same scores as your PB on the card)',['pbnote_test.py']),
  ("Personal bests (practice and official, every round type)",["pbbest_test.py"]),

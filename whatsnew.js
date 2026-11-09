@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-09-d2',d:'2026-11-09',items:[
+   ['target',"The next target opens itself","Once the arrows for a target face are plotted, the next target opens. On a 3-spot that is Spot 1, then Spot 2, then Spot 3. After the last target, nothing moves on until you press Next. A tap in the gap around the picture is no longer saved as a miss."]]},
   {v:'v2026-11-09-d1',d:'2026-11-09',items:[
    ['target',"Fix a finished score sheet","On a finished round, including one in Past sessions, you can delete an arrow and put it back on the same sheet. The total, the X count, the 10s and your personal best all update. The original sheet is the one that changes."]]},
   {v:'v2026-11-06-1959-c6',d:'2026-11-06',items:[

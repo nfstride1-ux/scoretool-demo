@@ -409,7 +409,12 @@ function putArrow(k,xy){const R=ROUNDS[cur.round];cur.pos=cur.pos||[];
  if(i<0){if(cur.ends.length>=R.ends)return;cur.ends.push([]);cur.pos.push([]);i=cur.ends.length-1}
  const e=cur.ends[i];e.push(k);if(xy)xy.sn=e.length;/* shot number in the end, kept with the arrow when the end is sorted (end by end viewer) */(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
  if(e.length==R.ape){const pe=[...e],pq=[...(cur.pos[i]||[])];sortEnd(i);stOrd.set(cur.id,i,pe,pq,cur.ends[i],cur.pos[i]);if(i==cur.ends.length-1)justDone=true;
-  if(later&&isFull(cur)){justDone=false;sv='sheet';fix=null;fixRet=false}}save();score()}
+  if(later&&isFull(cur)){justDone=false;sv='sheet';fix=null;fixRet=false}
+  /* one target face (single face, field, outdoor): once its arrows are plotted, open the next target. The last target stays until Next. A 3-spot end stays too: its targets are the spots, and the last spot waits for Next. */
+  else if(xy&&justDone&&i==cur.ends.length-1&&cur.ends.length<R.ends&&!use3(cur,R,faceR(R,i)))justDone=false}
+ /* a numbered spot is one target. After its arrow is plotted, show the next spot. Spot 3 is the last target on this face, so it stays. */
+ if(xy&&!later&&R.ape==3&&cur.spot>=1&&cur.spot<3&&use3(cur,R,faceR(R,Math.max(0,i))))cur.spot++;
+ save();score()}
 const SIDEHILL=`<details class="tipcard" id="sidehill"><summary>Tip: side hill shots</summary><b>Side hill shots: keep the bow level</b><ol><li>If the bubble is off at full draw, let down and start again. Twisting the bow level at full draw sets the shot up to miss the other way.</li><li>Before you draw, tip the top of the bow a little into the hill, slightly more than feels right.</li><li>Draw with the bow still tipped, then let it relax back to level by itself.</li><li>Pause just short of anchor and check the bubble is level and still.</li><li>Then come to anchor and shoot. You don't need to watch the bubble for the rest of the shot.</li></ol></details>`;
 let crEdit=null,sv='sheet',justDone=false,fixRet=false;
 function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom&&!ROUNDS[r].legacy);
@@ -461,7 +466,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
   /* Gestures: a real tap (moved <10px, under 300ms, one finger) plots. Holding still 300ms opens the loupe to aim; lifting then plots.
      A drag before that scrolls the page (or pans when zoomed); a pinch zooms. Drags and pinches never plot. */
   const TAP_PX=10,TAP_MS=300;let hold=null;const clrHold=()=>{if(hold){clearTimeout(hold);hold=null}};
-  const plotAt=ev=>{L.hidden=true;const q=pt(ev);{const t=tapScore(q,FR,R,arrowLC(FR,cur,FF&&FF.f));putArrow(t.k,t.xy)}};
+  const plotAt=ev=>{L.hidden=true;const q=pt(ev);const t=tapScore(q,FR,R,arrowLC(FR,cur,FF&&FF.f));const outside=q.x<B[0]||q.y<B[1]||q.x>B[0]+B[2]||q.y>B[1]+B[3];if(outside&&t.k=='M')return;/* the gap around the picture is not a miss */putArrow(t.k,t.xy)};
   f.onpointerdown=ev=>{try{f.setPointerCapture(ev.pointerId)}catch(e){}P.set(ev.pointerId,ev);if(P.size>=2){clrHold();L.hidden=true;if(pan)pan.multi=true;if(P.size==2)pinchStart();return}
    pan={x0:ev.clientX,y0:ev.clientY,x:ev.clientX,y:ev.clientY,t:performance.now(),mode:null,multi:false,last:ev};
    clrHold();if(!locked)hold=setTimeout(()=>{hold=null;if(pan&&!pan.mode&&!pan.multi&&P.size==1){pan.mode='aim';show(pan.last)}},TAP_MS)};

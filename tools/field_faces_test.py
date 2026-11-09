@@ -65,7 +65,7 @@ with sync_playwright() as p:
     # reload persistence
     pg.reload(); pg.wait_for_timeout(1200)
     sess=E('JSON.stringify(S.sessions.slice(-1)[0].ff)'); print(sess)
-    chk('saved per end after reload',sess=='[{"p":"blue","f":60,"d":35},{"p":"blue","f":20,"d":15}]')
+    chk('saved per end after reload',sess=='[{"p":"blue","f":60,"d":35},{"p":"blue","f":20,"d":15},{"p":"blue","f":20,"d":15}]')
     # old score: inject old field session without ff
     E('S.sessions.push({id:"sold",date:"2026-01-01",round:"WA Field 24 Marked",ends:[["6","5","4"]],pos:[[]],note:"",finished:true});localStorage.setItem(KEY,JSON.stringify(S))')
     pg.reload(); pg.wait_for_timeout(1200); E('cur=null;sv="sheet"'); pg.click('nav [data-v=score]'); pg.wait_for_timeout(300)

@@ -58,7 +58,11 @@ try:
     t=pg.evaluate(TAB);n=int(t[-1]) if t.startswith('Spot') else 2
     return pg.evaluate("n=>{const F=face3R(faceR(ROUNDS[cur.round],0),cur);return spots3(F)[n-1]}",n) if pg.evaluate("typeof cur!='undefined'&&!!cur&&!cur.cs")else [0,[-0.62,0,0.62][n-1]]
   def jm_plot(i):xy=spy();click_face(pg,'pface',xy[0],xy[1]);pg.evaluate("document.querySelectorAll('#fpm,.modal').forEach(e=>e.remove())")
-  def jm_next():pg.click('#enext');pg.wait_for_timeout(300);pg.click('#addsc');pg.wait_for_timeout(400)
+  def jm_next():
+    # a single face moves itself to the next end once its arrows are plotted; a 3-spot end still waits for Next
+    if pg.locator('#enext').count() and pg.locator('#enext').is_enabled():
+      pg.click('#enext');pg.wait_for_timeout(300)
+    if pg.locator('#addsc').count():pg.click('#addsc');pg.wait_for_timeout(400)
   pg.evaluate("S.sessions.push({id:'sghost1',date:'2026-10-01',round:'Australian Indoor 18m',ends:Array.from({length:10},()=>['10','9','9']),pos:Array.from({length:10},()=>[]),note:'',face3:'single',finished:true});save()")
   jm_start();run(pg,'Just me','pface','#zcycle','data-spot',jm_plot,jm_next)
   pg.evaluate("zkSet(1)")
