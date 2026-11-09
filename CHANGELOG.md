@@ -4,6 +4,12 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### C9 — IFAA rules tab (v2026-11-09-c9)
+- Tools > Rules has an IFAA tab beside WA, AA, ABA, IBO and ASA.
+- Text is the Schedule summary from the 4 April 2021 Book of Rules and the 1 June 2026 clarifications. Citations and source links are kept.
+- The page says the Field Captain may set an outdoor time limit, that junior and cub distances are a summary, that course layout is left out, and that a Western Australian ABA variant is not confirmed.
+- IFAA's Book of Rules page, read 9 November 2026, calls 4 April 2021 the current revision. The words "18th edition" were not re-read from the PDF cover, so they are not stated as fact.
+
 ### D4 — a photo fills in an official result (v2026-11-09-d4)
 - A photo of a paper scorecard, or a screenshot of a results page, is read into Add an official result (the C4 form, on top of C5). The score, date, round, event, maximum, 10s and Xs are filled in when the picture says them clearly.
 - Nothing is saved, counted, or treated as a personal best until the archer presses Save. The form says how many points the score is above or below the personal best. After a confirmed save, a new best is on the Personal bests list and can be chosen as a Ghost match opponent (a total with no ends is a pace line, not invented arrows).
