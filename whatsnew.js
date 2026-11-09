@@ -6,13 +6,13 @@ window.WHATSNEW=[
   {v:'v2026-11-09-d4',d:'2026-11-09',items:[
    ['camera',"A photo fills in an official result","Photograph a paper scorecard, or a screenshot of a results page, and Add an official result fills in from it. Check the score, and how far it is above or below your personal best, then save. Nothing counts until you save. The picture is deleted once it has been read. A picture that cannot be read does not save a score."]]},
   {v:'v2026-11-09-d3',d:'2026-11-09',items:[
-   ['target',"A blank round names itself","Save a practice round with the name left blank and it is named from the type and the distance, such as Target 70m, Indoor 18m, Field 50m, Clout 180m or 3D 20 targets. A name you type is kept."]]},
+   ['target',"A blank round names itself","Save a practice round with the name left blank and it is named from the type and the distance, such as Target 70m, Indoor 18m, Field 50m, Clout 180m or 3D 20 targets. A name you type is kept.",'a4339cd']]},
   {v:'v2026-11-09-d2',d:'2026-11-09',items:[
-   ['target',"The next target opens itself","Once the arrows for a target face are plotted, the next target opens. On a 3-spot that is Spot 1, then Spot 2, then Spot 3. After the last target, nothing moves on until you press Next. A tap in the gap around the picture is no longer saved as a miss."]]},
+   ['target',"The next target opens itself","Once the arrows for a target face are plotted, the next target opens. On a 3-spot that is Spot 1, then Spot 2, then Spot 3. After the last target, nothing moves on until you press Next. A tap in the gap around the picture is no longer saved as a miss.",'1fa1659']]},
   {v:'v2026-11-09-d1',d:'2026-11-09',items:[
-   ['target',"Fix a finished score sheet","On a finished round, including one in Past sessions, you can delete an arrow and put it back on the same sheet. The total, the X count, the 10s and your personal best all update. The original sheet is the one that changes."]]},
+   ['target',"Fix a finished score sheet","On a finished round, including one in Past sessions, you can delete an arrow and put it back on the same sheet. The total, the X count, the 10s and your personal best all update. The original sheet is the one that changes.",'9fe49ff']]},
   {v:'v2026-11-06-1959-c6',d:'2026-11-06',items:[
-   ['calendar',"Sync now waits for approval","Sync now is there for Plus and Pro. It stays off until a national body approves a pull. Nothing is fetched. Paste a table or a CSV is the way to bring scores in."]]},
+   ['calendar',"Sync now waits for approval","Sync now is there for Plus and Pro. It stays off until a national body approves a pull. Nothing is fetched. Paste a table or a CSV is the way to bring scores in.",'e414d4e']]},
   {v:'v2026-11-06-1959-c5',d:'2026-11-06',items:[
    ['camera',"Attach a score screenshot","On Add an official result you can attach a screenshot to look at while you type. The picture is not read. After you save, it is deleted unless you tick Keep the photo.",'56ce6ad']]},
   {v:'v2026-11-06-1959-c4',d:'2026-11-06',items:[
