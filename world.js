@@ -1,7 +1,7 @@
 /* C15: practice Category + searchable body-grouped Round picker, and confirmed world rounds.
    Official / event-tied flows are not changed. Catalogue is WORLD_ROUNDS (221 confirmed). */
 (function(){
-window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,4);
+window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,5);
 
 const CATS=['Indoor','Outdoor Target','Field','3D','Clout'];
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -191,7 +191,7 @@ function worldBindPicker(){
     }
     if(R.note)html+=`<p class="small muted" style="margin:8px 0 0">${h(R.note)}</p>`;
     box.innerHTML=html;
-    const t=$('#wrdtgt');if(t)t.onchange=t.oninput=()=>{window._wrdTargets=Math.max(+(R.minTargets||2),Math.min(200,Math.round(+t.value||20)))};
+    const t=$('#wrdtgt');if(t)t.onchange=t.oninput=()=>{const v=Math.round(+t.value);if(!Number.isFinite(v)||v<=0)return;window._wrdTargets=Math.max(+(R.minTargets||1),Math.min(200,v))};
     box.querySelectorAll('[data-port]').forEach(b=>b.onclick=()=>{window._wrdPort=b.dataset.port;cfgBox()});
     box.querySelectorAll('[data-bonus]').forEach(b=>b.onclick=()=>{window._wrdBonus=b.dataset.bonus==='1';cfgBox()});
   }
@@ -283,7 +283,7 @@ function applyWave(n){
     const rec={ends:r.ends||0,ape:r.ape||1,max:r.max,face:r.face,scheme:r.scheme,worldNew:true,worldCat:r.cat,worldBody:r.body};
     if(r.blocks)rec.blocks=r.blocks;
     if(r.apes)rec.apes=r.apes;
-    if(r.config){rec.config=true;rec.minTargets=r.minTargets||20;rec.hint=r.hint;rec.ends=rec.ends||20;rec.max=null}
+    if(r.config){rec.config=true;rec.minTargets=r.minTargets||1;rec.hint=r.hint;rec.ends=rec.ends||20;rec.max=null}
     if(r.stop)rec.stopOnHit=true;
     if(r.bonus)rec.bonus=true;
     if(r.portsmouth)rec.scheme='portsmouth';
@@ -319,8 +319,10 @@ function worldAfterStart(s){
   const R=ROUNDS[s.round];if(!R)return;
   if(R.scheme==='portsmouth'){s.portZone=window._wrdPort||'10';s.max=s.portZone==='5'?540:600}
   if(R.scheme==='nfaa-animal'){s.bonus=window._wrdBonus!=null?!!window._wrdBonus:true;s.max=s.bonus?588:560}
-  if((R.config||R.scheme==='config3d')&&window._wrdTargets){
-    const n=Math.max(R.minTargets||2,Math.min(200,+window._wrdTargets||20));
+  if(R.config||R.scheme==='config3d'){
+    const box=typeof document!=='undefined'&&document.querySelector('#wrdtgt');
+    const raw=(box&&box.value!==''&&box.value!=null)?+box.value:window._wrdTargets;
+    const n=Math.max(R.minTargets||1,Math.min(200,Math.round(+raw||R.ends||20)));
     s.targets=n;const per=maxPer(R);s.max=per?per*n*(R.ape||1):undefined;
   }
 }

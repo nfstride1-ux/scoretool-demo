@@ -282,14 +282,14 @@ for r in rows:
     blocks=parse_blocks(r, rec['ape'])
     if blocks: rec['blocks']=blocks
     if rec['config']:
-        rec['minTargets']=30 if 'sectional' in r['name'].lower() or 'unmarked' in r['name'].lower() and 'NFAA' in r['body'] else 10
+        rec['minTargets']=1
+        rec['ends']=rec['ends'] or 20
         if 'National Unmarked minimum 60' in (r['ends_or_targets'] or ''):
-            rec['minTargets']=30  # default a practical course; National min 60 is a note, default 30 for sectional/state? Spec: configurable, no invented official max. Default 20 like casual? Use 20 as a starting fill-in, user sets count.
-            rec['minTargets']=20
-            rec['hint']='Organiser-set target count. National Unmarked minimum 60; sectional/state minimum 30. There is no single official maximum.'
+            rec['hint']='Organiser-set target count. National Unmarked minimum 60; sectional/state minimum 30. There is no single official maximum. The box starts at 20 so you can set the course you are shooting.'
         elif 'IBO' in r['body']:
-            rec['minTargets']=20
-            rec['hint']='Organiser-set target count. There is no single official maximum.'
+            rec['hint']='Organiser-set target count. There is no single official maximum. The box starts at 20 so you can set the course you are shooting.'
+        else:
+            rec['hint']=rec.get('hint') or 'Organiser-set target count. There is no single official maximum.'
     conf.append(rec)
 
 assert len(conf)==221, len(conf)

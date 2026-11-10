@@ -306,6 +306,61 @@ try:
   apes=pg.evaluate("()=>({len:endLen(ROUNDS[cur.round],0),sum:total(cur)})")
   chk('Foresters keys are 15, 10, 5 and M, and the first target has 4 shots', kf==['15','10','5','M'] and apes['len']==4, (kf,apes))
 
+  # Wave 5: NFAA, ASA, IBO, Archery Canada unique, WA 3D
+  w5=pg.evaluate("""()=>{
+    const want=['NFAA Indoor 300','NFAA Field','NFAA Hunter','NFAA Animal','ASA 20-target round','IBO 3-D (1 arrow)','NFAA Unmarked / Sectional / State 3-D','NFAA National Marked 3-D','WA 3D Round','Canadian 900','Canadian 300','T2S 900'];
+    const out={};
+    want.forEach(k=>{const R=ROUNDS[k];out[k]=R?{ends:R.ends,ape:R.ape,max:R.max,scheme:R.scheme,config:!!R.config,bonus:!!R.bonus,hint:R.hint||'',worldNew:!!R.worldNew}:null});
+    out.nfaa810=!!ROUNDS['NFAA 810'];
+    out.can3d=!!ROUNDS['Canadian Indoor 3D'];
+    out.vegas=ROUNDS['Vegas 300']?{ends:ROUNDS['Vegas 300'].ends,max:ROUNDS['Vegas 300'].max,worldNew:!!ROUNDS['Vegas 300'].worldNew}:null;
+    return out;
+  }""")
+  chk('NFAA Indoor 300 is a new 12-end 5-arrow 300, and did not rewrite Vegas 300',
+      w5['NFAA Indoor 300'] and w5['NFAA Indoor 300']['ends']==12 and w5['NFAA Indoor 300']['ape']==5 and w5['NFAA Indoor 300']['max']==300 and w5['vegas']=={'ends':10,'max':300,'worldNew':False}, (w5.get('NFAA Indoor 300'), w5.get('vegas')))
+  chk('IBO 3-D and NFAA unmarked 3-D are configurable, with no invented official max',
+      w5['IBO 3-D (1 arrow)'] and w5['IBO 3-D (1 arrow)']['config'] and w5['IBO 3-D (1 arrow)']['max'] is None and 'no single official maximum' in (w5['IBO 3-D (1 arrow)']['hint'] or '') and w5['NFAA Unmarked / Sectional / State 3-D'] and w5['NFAA Unmarked / Sectional / State 3-D']['config'] and w5['NFAA Unmarked / Sectional / State 3-D']['max'] is None,
+      (w5.get('IBO 3-D (1 arrow)'), w5.get('NFAA Unmarked / Sectional / State 3-D')))
+  chk('Unconfirmed NFAA 810 and Canadian Indoor 3D are still not built', not w5['nfaa810'] and not w5['can3d'], w5)
+  chk('WA 3D Round is 24 targets of 2 arrows, max 528', w5['WA 3D Round'] and w5['WA 3D Round']['ends']==24 and w5['WA 3D Round']['ape']==2 and w5['WA 3D Round']['max']==528, w5.get('WA 3D Round'))
+  chk('Archery Canada unique rounds Canadian 900 and T2S 900 are registered', w5['Canadian 900'] and w5['T2S 900'] and w5['Canadian 900']['max']==900, (w5.get('Canadian 900'), w5.get('T2S 900')))
+
+  start('NFAA Indoor 300')
+  kn=keys()
+  chk('NFAA Indoor keys are X, 5, 4, 3, 2, 1 and M', kn==['X','5','4','3','2','1','M'] or ('X' in kn and '5' in kn and '10' not in kn), kn)
+
+  start('ASA 20-target round')
+  ka=keys()
+  chk('ASA keys are 12, 10, 8, 5 and M', ka==['12','10','8','5','M'], ka)
+
+  start('WA 3D Round')
+  kw=keys()
+  chk('WA 3D keys are 11, 10, 8, 5 and M', kw==['11','10','8','5','M'], kw)
+
+  # NFAA Animal bonus default on (max 588), can be turned off (max 560)
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+  pg.select_option('#rd','NFAA Animal');pg.wait_for_timeout(300)
+  chk('NFAA Animal start form offers bonus on (588) and bonus off (560)',
+      pg.locator('[data-bonus="1"]').count()==1 and pg.locator('[data-bonus="0"]').count()==1)
+  pg.click('#st');pg.wait_for_timeout(600)
+  kb=keys();mb=pg.evaluate("()=>cur.max!=null?cur.max:ROUNDS[cur.round].max");bb=pg.evaluate("()=>cur.bonus!==false")
+  chk('NFAA Animal defaults to bonus on, keys include 21, and max 588', '21' in kb and mb==588 and bb, (kb,mb,bb))
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+  pg.select_option('#rd','NFAA Animal');pg.wait_for_timeout(300)
+  pg.click('[data-bonus="0"]');pg.wait_for_timeout(200)
+  pg.click('#st');pg.wait_for_timeout(600)
+  koff=keys();moff=pg.evaluate("()=>cur.max!=null?cur.max:ROUNDS[cur.round].max")
+  chk('NFAA Animal with bonus off uses max 560 and drops the 21 key', moff==560 and '21' not in koff and '20' in koff, (koff,moff))
+
+  # IBO configurable target count: set 15, max is 11*15*1=165
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+  pg.select_option('#rd','IBO 3-D (1 arrow)');pg.wait_for_timeout(300)
+  chk('IBO start form asks for the organiser-set target count', pg.locator('#wrdtgt').count()==1)
+  pg.fill('#wrdtgt','15');pg.wait_for_timeout(200)
+  pg.click('#st');pg.wait_for_timeout(600)
+  ibo=pg.evaluate("()=>({t:cur.targets,max:cur.max,ends:roundEnds(ROUNDS[cur.round],cur),keys:true})")
+  chk('IBO with 15 targets has no official max invented; session max is 11 × 15', ibo['t']==15 and ibo['ends']==15 and ibo['max']==165, ibo)
+
   # Official IFAA event deep link still starts the official flow, not the practice picker
   pg.goto(f'http://127.0.0.1:{PORT}/?tester=steven#score?event=peel-ifaa-2026-12-05&date=2026-12-05&round=IFAA%20Field%20Round')
   pg.wait_for_timeout(900)
