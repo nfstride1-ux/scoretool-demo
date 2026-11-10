@@ -10,6 +10,8 @@ Newest first. Each entry names the version tag shown in Settings.
 - The page says the Field Captain may set an outdoor time limit, that junior and cub distances are a summary, that course layout is left out, and that a Western Australian ABA variant is not confirmed.
 - IFAA's Book of Rules page, read 9 November 2026, calls 4 April 2021 the current revision. The words "18th edition" were not re-read from the PDF cover, so they are not stated as fact.
 
+D1–D4 tree `bfd09ab` (before C9), full `qa/run_regression.py`: **96 passed, 0 failed, 7755s**. `endview` still prints two screenshot comparisons and exits 0, the same as before.
+
 ### D4 — a photo fills in an official result (v2026-11-09-d4)
 - A photo of a paper scorecard, or a screenshot of a results page, is read into Add an official result (the C4 form, on top of C5). The score, date, round, event, maximum, 10s and Xs are filled in when the picture says them clearly.
 - Nothing is saved, counted, or treated as a personal best until the archer presses Save. The form says how many points the score is above or below the personal best. After a confirmed save, a new best is on the Personal bests list and can be chosen as a Ghost match opponent (a total with no ends is a pace line, not invented arrows).
