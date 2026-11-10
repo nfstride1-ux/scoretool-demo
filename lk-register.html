@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lingkana Indoor League — Register</title>
+<meta name="robots" content="noindex">
+<!-- Public register entry. The service worker serves index.html for navigations, so this page just forwards to the hash route. Swap the base by changing LK_PUBLIC_BASE in lingkana.js and regenerating the QR. -->
+<script>
+(function(){
+  var q=location.search||'';
+  location.replace('./'+q+'#lk-register');
+})();
+</script>
+<p><a href="./#lk-register">Register for the Lingkana Indoor League</a></p>
+</html>

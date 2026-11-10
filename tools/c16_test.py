@@ -254,6 +254,114 @@ try:
       onion_join['block'] is None, onion_join)
 
   chk('No page errors on invite-only join', not errs, errs)
+
+  # Register page + per-night sign-up (Nathe, 11 Nov 7:48am)
+  # Open the public hash route
+  pg.evaluate("()=>{try{location.hash='lk-register'}catch(e){}}")
+  # render hook may need a nudge
+  pg.evaluate("()=>{if(typeof lkRegisterView==='function')lkRegisterView()}")
+  pg.wait_for_selector('#lkregpage', timeout=8000)
+  txt=(pg.inner_text('#lkregpage') if pg.locator('#lkregpage').count() else '')
+  chk('The public register page opens from #lk-register',
+      pg.locator('#lkregform').count()==1 and 'register for a shoot night' in txt.lower(),
+      txt[:200] or 'missing')
+  url=pg.evaluate("()=>lkRegisterUrl()")
+  chk('The register URL uses the swappable preview base and the hash route',
+      url=='https://nfstride1-ux.github.io/scoretool-demo/#lk-register', url)
+  # Wrong poster code
+  pg.fill('#lkregcode','WRONG')
+  pg.fill('#lkregname','Alex Archer')
+  pg.select_option('#lkregnight','2026-11-18')
+  pg.click('#lkreggo');pg.wait_for_timeout(300)
+  refusemsg=pg.inner_text('#lkregmsg')
+  chk('A wrong poster invite code is refused in plain English and adds no one',
+      'not right' in refusemsg.lower() or 'invite code' in refusemsg.lower(), refusemsg)
+  nobody=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const hit=(lg.order||[]).some(id=>{
+      const n=(typeof lgName==='function'?lgName(id):(lg.gn[id]||{}).n||id);
+      return String(n).toLowerCase()==='alex archer';
+    });
+    return {hit, nights:((lg.reg||{})['2026-11-18']||[]).length};
+  }""")
+  chk('The refused registration is not on the league list or the night list',
+      not nobody['hit'] and nobody['nights']==0, nobody)
+
+  # First registration
+  pg.fill('#lkregcode','LK-PREVIEW')
+  pg.fill('#lkregname','Alex Archer')
+  pg.select_option('#lkregnight','2026-11-18')
+  pg.click('#lkreggo');pg.wait_for_timeout(400)
+  okmsg=pg.inner_text('#lkregmsg')
+  first=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const id=(lg.order||[]).filter(x=>{
+      const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
+      return String(n).toLowerCase()==='alex archer';
+    }).pop();
+    const n1=((lg.reg||{})['2026-11-18']||[]).some(r=>r.id===id);
+    const n2=((lg.reg||{})['2026-12-02']||[]).some(r=>r.id===id);
+    const onList=(lg.order||[]).includes(id);
+    return {id, onList, n1, n2, count:(lg.order||[]).filter(x=>{
+      const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
+      return String(n).toLowerCase()==='alex archer';
+    }).length};
+  }""")
+  chk('A first registration adds the archer to the season league list and that night',
+      first['onList'] and first['n1'] and not first['n2'] and first['count']==1 and first['id'] and 'registered' in okmsg.lower(),
+      {**first,'msg':okmsg})
+
+  # Second night: new registration, still one list entry
+  pg.fill('#lkregcode','LK-PREVIEW')
+  pg.fill('#lkregname','Alex Archer')
+  pg.select_option('#lkregnight','2026-12-02')
+  pg.click('#lkreggo');pg.wait_for_timeout(400)
+  second=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const ids=(lg.order||[]).filter(x=>{
+      const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
+      return String(n).toLowerCase()==='alex archer';
+    });
+    const id=ids[0];
+    return {count:ids.length, n1:((lg.reg||{})['2026-11-18']||[]).some(r=>r.id===id),
+            n2:((lg.reg||{})['2026-12-02']||[]).some(r=>r.id===id),
+            pick:lkPickerOrder(lg,2)};
+  }""")
+  chk('A second-night registration keeps them on the list once and adds the new night',
+      second['count']==1 and second['n1'] and second['n2'], second)
+  chk("The scorer picker lists that night's sign-ups first, then the rest of the league list",
+      second['pick'] and second['pick'][0]==first['id'], second)
+
+  # Registering on the day (no deadline), including a later listed night if today is that date
+  onday=pg.evaluate("""()=>{
+    window._lgToday='2026-12-16';
+    const def=lkDefaultNight();
+    const msg=lkRegister({posterCode:'LK-PREVIEW',name:'Alex Archer',night:'2026-12-16'});
+    const lg=lkEnsure();
+    const id=(lg.order||[]).filter(x=>{
+      const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
+      return String(n).toLowerCase()==='alex archer';
+    })[0];
+    const n3=((lg.reg||{})['2026-12-16']||[]).some(r=>r.id===id);
+    const still= (lg.order||[]).filter(x=>{
+      const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
+      return String(n).toLowerCase()==='alex archer';
+    }).length;
+    return {msg, def, n3, still};
+  }""")
+  chk('Registering on the day works, with no deadline, and they stay on the league list',
+      onday['msg']=='' and onday['def']=='2026-12-16' and onday['n3'] and onday['still']==1, onday)
+
+  # Onion Shed is not given this register list
+  onion=pg.evaluate("""()=>{
+    const onion=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||(l.name||'').toLowerCase().includes('onion'));
+    if(!onion)return {ok:true, missing:true};
+    const names=(onion.order||[]).map(id=>((onion.gn||{})[id]||{}).n||id).map(n=>String(n).toLowerCase());
+    return {ok:!names.includes('alex archer'), names:names.slice(0,8)};
+  }""")
+  chk('Lingkana registrations are not written onto the Onion Shed league', onion['ok'], onion)
+
+  chk('No page errors on the register page', not errs, errs)
   b.close()
 finally:
   srv.kill()
