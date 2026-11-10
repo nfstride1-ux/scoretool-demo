@@ -361,6 +361,44 @@ try:
   ibo=pg.evaluate("()=>({t:cur.targets,max:cur.max,ends:roundEnds(ROUNDS[cur.round],cur),keys:true})")
   chk('IBO with 15 targets has no official max invented; session max is 11 × 15', ibo['t']==15 and ibo['ends']==15 and ibo['max']==165, ibo)
 
+  # Wave 6: labelled Historical group (Schedule 9B and other confirmed historical rows)
+  hist=pg.evaluate("""()=>{
+    const L=(WORLD_ROUNDS||[]).filter(r=>r.hist);
+    const missing=L.filter(r=>!ROUNDS[r.key]).map(r=>r.name);
+    const groups=()=>[...document.querySelectorAll('#wrdlist .wrd-gh')].map(e=>e.textContent.trim());
+    return {
+      n:L.length,
+      missing,
+      sample:L.slice(0,3).map(r=>({name:r.name,key:r.key,hist:!!ROUNDS[r.key]&&!!ROUNDS[r.key].hist,ends:ROUNDS[r.key]&&ROUNDS[r.key].ends,max:ROUNDS[r.key]&&ROUNDS[r.key].max})),
+      registered:L.filter(r=>!!ROUNDS[r.key]).length,
+      unconf:['United Bowmen (AA historical indoor)','Short Jersey','NFAA 810','Canadian Indoor 3D','AGB Clout','WA Clout'].filter(n=>!!ROUNDS[n]||L.some(r=>r.name===n))
+    };
+  }""")
+  chk('All 44 confirmed historical rounds are registered', hist['n']==44 and hist['registered']==44 and not hist['missing'], hist)
+  chk('Unconfirmed historical or clout rows stay out of the Historical group', hist['unconf']==[], hist['unconf'])
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(400)
+  pg.select_option('#rdcat','Outdoor Target');pg.wait_for_timeout(200)
+  pg.fill('#rdq','');pg.wait_for_timeout(200)
+  # clear search via evaluate to be sure
+  pg.evaluate("()=>{window._rdQ='';const q=document.querySelector('#rdq');if(q){q.value='';q.dispatchEvent(new Event('input',{bubbles:true}))}}")
+  pg.wait_for_timeout(200)
+  groups=pg.evaluate("()=>[...document.querySelectorAll('#wrdlist .wrd-gh')].map(e=>e.textContent.trim())")
+  chk('Outdoor Target lists confirmed historical rounds in a labelled Historical group, after current bodies',
+      any(g.startswith('Historical') for g in groups) and groups.index(next(g for g in groups if g.startswith('Historical')))>0, groups)
+  # A historical name appears under that group, not mixed without a label
+  names=pg.evaluate("""()=>{
+    const out={};
+    [...document.querySelectorAll('#wrdlist .wrd-g')].forEach(g=>{
+      const h=g.querySelector('.wrd-gh');
+      out[h?h.textContent.trim():'?']=[...g.querySelectorAll('[data-wrd] b')].map(b=>b.textContent);
+    });
+    return out;
+  }""")
+  hist_names=[n for g,ns in names.items() if g.startswith('Historical') for n in ns]
+  current_aa=names.get('Archery Australia') or []
+  chk('Historical names sit in the Historical group, not in the current Archery Australia group',
+      len(hist_names)>=1 and not any(n in current_aa for n in hist_names), (hist_names[:8], current_aa[:8]))
+
   # Official IFAA event deep link still starts the official flow, not the practice picker
   pg.goto(f'http://127.0.0.1:{PORT}/?tester=steven#score?event=peel-ifaa-2026-12-05&date=2026-12-05&round=IFAA%20Field%20Round')
   pg.wait_for_timeout(900)

@@ -1,7 +1,7 @@
 /* C15: practice Category + searchable body-grouped Round picker, and confirmed world rounds.
    Official / event-tied flows are not changed. Catalogue is WORLD_ROUNDS (221 confirmed). */
 (function(){
-window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,5);
+window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,6);
 
 const CATS=['Indoor','Outdoor Target','Field','3D','Clout'];
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
