@@ -133,7 +133,7 @@ try:
   st();chk('B12 live unfinished session flagged Incomplete',E("statShoots().filter(s=>s.id=='t_live'||s.id=='t_early').every(s=>s.inc)") and not E("isDone(S.sessions.find(s=>s.id=='t_live'))"))
   chk('B12 left out by default',not any('WA Field 24 Marked' in o for o in pg.eval_on_selector_all('#srd option','o=>o.map(x=>x.textContent)')) and E("statPool().every(s=>s.id!='t_early')"))
   pg.check('#incinc');pg.wait_for_timeout(300);chk('B12 shown when Include incomplete ticked',any(o.startswith('WA Field 24 Marked') for o in pg.eval_on_selector_all('#srd option','o=>o.map(x=>x.textContent)')))
-  pg.uncheck('#incinc');T('score');chk('B12 tagged Incomplete in past sessions',pg.locator('.inc-tag').count()>=2)
+  pg.uncheck('#incinc');E("()=>{window._pastTab='practice';window._pastType='All';nav('lab_past')}");pg.wait_for_timeout(400);chk('B12 tagged Incomplete in past sessions',pg.locator('.inc-tag').count()>=2);T('score')
   chk('no horizontal overflow',E('document.querySelector("#scroller").scrollWidth<=390'))
   chk('no purple colours in new Stats',not re.search(r'#(7c3aed|8b5cf6|a855f7|9333ea|6d28d9|4c1d95|c084fc)',open(os.path.join(ROOT,'stats2.js')).read(),re.I))
   E("S.sessions=S.sessions.filter(s=>!/^t_/.test(s.id));save()")
