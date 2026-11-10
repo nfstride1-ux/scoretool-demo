@@ -68,7 +68,7 @@ home=function(){addMe();let last='';try{const L=latestShoot();if(L)last=`Last sh
 /* ---------- Score: just the scoring ---------- */
 const _score=score;
 score=function(){_score();if((typeof cur!=='undefined'&&cur)||view!='score')return;
- (window._csMode=='league'?['#h2hcard','#pgcard']:['#h2hcard','#lgcard','#pgcard']).forEach(s=>{const e=app.querySelector(s);if(e)e.remove()});
+ (window._csMode=='league'?['#h2hcard','#pgcard','#ifaacard','#ifaagencard']:['#h2hcard','#lgcard','#pgcard','#ifaacard','#ifaagencard']).forEach(s=>{const e=app.querySelector(s);if(e)e.remove()});
  const b=typeof curBow=='function'&&curBow();const first=app.firstElementChild;
  const note=`<p class="small muted" style="margin:6px 0 0">Setup: <b>${b?h(b.name):'none yet'}</b> · <a href="#" data-go="lab_gear">change</a> &nbsp;·&nbsp; Leagues, match play and group cards are in <a href="#" data-go="clubs">Clubs</a></p>`;
  if(first)first.insertAdjacentHTML('beforeend',note);app.querySelectorAll('a[data-go]').forEach(a=>a.onclick=e=>{e.preventDefault();nav(a.dataset.go)})};
@@ -107,7 +107,7 @@ E.clubs=()=>menu('Clubs & leagues',[
  row('follow','👣','Following','Archers you follow and your feed')]);
 sub('lab_leagues','clubs','Leagues','clubs','Clubs',SC,e=>e.id=='lgcard');
 sub('lab_match','clubs','Match play','clubs','Clubs',SC,e=>e.id=='h2hcard');
-sub('lab_group','clubs','Group score card','clubs','Clubs',SC,e=>e.id=='pgcard');
+sub('lab_group','clubs','Group score card','clubs','Clubs',SC,e=>e.id=='pgcard'||e.id=='ifaacard'||e.id=='ifaagencard');
 LABSEC.lab_squad='clubs';
 const SQT=[['board','Board',t=>/WEEKLY LEAGUE|MORE BOARDS/.test(t)],['activity','Activity',t=>/ACTIVITY/.test(t)],['people','People',t=>/COACHES & PARENTS|ME IN THIS SQUAD|ADMIN ONLY/.test(t)],['manage','Create / join',t=>/CREATE ANOTHER SQUAD|SAFE SQUADS/.test(t)]];
 E.lab_squad=function(){squad();const n=app.children.length,tab=S._labsq||'board',T=SQT.find(x=>x[0]==tab)||SQT[0];
@@ -325,7 +325,7 @@ const RULES={
  IFAA:{t:'IFAA field, animal, 3D and indoor rounds',rows:[['Field','5 spot, 4 inner, 3 outer'],['Hunter','5, 4 and 3'],['Expert Field','5, 4, 3, 2, 1. X is for tie-breaks only'],['International','5, 4 and 3'],['Animal, marked or unmarked','1st arrow 20 kill or 18 wound, 2nd 16 or 14, 3rd 12 or 10'],['3D Hunting, 1 arrow','Kill 20, vital 16, wound 10'],['3D Standard, each arrow','Kill 10, vital 8, wound 5'],['Indoor','5, 4, 3, 2, 1. X is for tie-breaks only. A 5-spot, if used, is white 5 and blue 4']],head:['Round','Score'],
   cap:'Outdoor rounds have no fixed time limit in the Book of Rules. The Field Captain may set one. Indoor ends do: 4 minutes for the IFAA Indoor Round, 3 minutes for the Flint Indoor Round.',
   cases:[['Hunter, Animal, Expert and 3D line','The line is the lower zone. The arrow must cut through it to score higher'],['Field face (no painted line)','The arrow must cut into the higher zone'],['Bounce-out or pass-through on paper or indoor','Shoot another, specially marked arrow'],['3D hit near the hairline that does not stay in','No score, and no re-shoot'],['Arrow embedded in another arrow','Same score as that arrow'],['Arrow deflected by another','Scores where it lands'],['Skid off the ground into the target','No score'],['Wrong marker or wrong face','That arrow is lost, with no re-shoot'],['Two arrows in one spot that cannot be told apart','Lose the higher one (2026 clarification)'],['Drawn four times and not shot','A miss, except for safety'],['Outdoor arrow you can reach with your bow from the marker','You may shoot another'],['Stand, base, horns or antlers','No score. An arrow in the legs does count'],['Two arrows in one indoor 5-spot','Only the lower scores']],
-  notes:['Junior and cub distances on this page are a summary. The full tables are in Art. V A-J.','Course layout, championship rounds and mail matches are not on this page.','Whether a Western Australian field tournament uses these IFAA rules or an ABA variant is not confirmed.'],
+  notes:['Score IFAA Field and Hunter under Score. Marked rounds (Field, Hunter, Expert) are groups of 3–4, unmarked 3–6, at IFAA sanctioned tournaments (Art. IV H 4 a).','Junior and cub distances on this page are a summary. The full tables are in Art. V A-J.','Course layout, championship rounds and mail matches are not on this page.','Whether a Western Australian field tournament uses these IFAA rules or an ABA variant is not confirmed.'],
   src:[['IFAA Book of Rules, revision 4 April 2021 (PDF)','https://www.ifaa-archery.org/download/247/rules/6711/2021-book-of-rules.pdf'],['IFAA Book of Rules page','https://www.ifaa-archery.org/documents/rule-book/book-of-rules/'],['IFAA Executive Clarifications FINAL.01, 1 June 2026 (PDF)','https://www.ifaa-archery.org/download/247/rules/14449/ifaa-executive-clarifications_final-01_20260601.pdf']]}};
 /* Rules tabs: WA and AA (rules_wa_aa.js) + the 3D books. The chosen tab and discipline live in memory only, nothing is saved. */
 let RTAB=null,RDISC='target';const RORGS=['WA','AA','ABA','IBO','ASA','IFAA'];
