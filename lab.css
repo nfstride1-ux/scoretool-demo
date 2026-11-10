@@ -25,6 +25,11 @@
 .labseg button[aria-pressed=true]{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
 .labgrid2{display:grid;grid-template-columns:1fr;gap:12px}
 .labtbl{width:100%;border-collapse:collapse;font-size:15px}.labtbl th,.labtbl td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.aarow{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 8px;cursor:pointer;font:inherit;color:var(--ink);min-height:48px}
+.aarow b{font-size:17px;line-height:1.3}.aarow small{color:var(--muted);font-size:14px;line-height:1.3}
+.aarow[aria-expanded=true]{border-color:#1d4ed8}
+.aadetail{border:1px solid var(--line);border-radius:14px;padding:4px 12px 12px;margin:-2px 0 10px;background:var(--surf)}
+.aadetail p{margin:8px 0 0}
 .labout{font:800 26px var(--disp)}.labsrc{font-size:13px;color:var(--muted)}.labsrc a{color:var(--blue)}
 .tface{width:100%;max-width:420px;display:block;margin:0 auto;touch-action:manipulation;cursor:crosshair}
 .lab-note{background:var(--blue-bg);border-radius:12px;padding:10px 12px;font-size:14px}

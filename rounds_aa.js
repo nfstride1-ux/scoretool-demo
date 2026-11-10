@@ -61,3 +61,13 @@ window.aaApply=function(R){window.AA_CHANGED=[];const fresh=[];
  if(!fresh.length)return;const snap=Object.keys(R).map(k=>[k,R[k]]);Object.keys(R).forEach(k=>delete R[k]);let placed=false;
  snap.forEach(([k,v])=>{R[k]=v;if(k==='Junior Canberra (40/30/20m)'){fresh.forEach(([n,d])=>{R[n]=d});placed=true}});
  if(!placed)fresh.forEach(([n,d])=>{R[n]=d})};
+/* Tools > Rounds. The list is rebuilt on each search without replacing the search box, so the cursor stays put. */
+const aaEsc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+window.aaRoundsList=function(){const words=String(window._aaQ||'').trim().toLowerCase().split(/\s+/).filter(Boolean),open=window._aaOpen||'';
+ const rows=AA_TARGET.filter(r=>{const blob=[r.id,...(r.aka||[]),r.note||'',r.key||'',...r.dist.flatMap(d=>[d[0]+' m',d[0]+'m',d[1]+' arrows',d[2]+' cm',d[2]+'cm']),r.arrows+' arrows','max '+r.max].join(' ').toLowerCase();
+  return words.every(w=>blob.includes(w))});
+ const one=r=>{const on=open===r.id,aka=(r.aka||[]).length?`<small>Also ${aaEsc(r.aka.join(' · '))}</small>`:'';
+  const detail=!on?'':(()=>{const key=r.key||r.app||r.id;
+   return `<div class="aadetail" id="aadetail"><table class="labtbl"><thead><tr><th>Distance</th><th>Arrows</th><th>Face</th></tr></thead><tbody>${r.dist.map(([m,n,cm])=>`<tr data-aa-d="${m}" data-aa-n="${n}" data-aa-f="${cm}"><td>${m} m</td><td>${n}</td><td>${cm} cm</td></tr>`).join('')}</tbody></table><p id="aatotal"><b>${r.arrows}</b> arrows</p><p id="aamax">Possible score <b>${r.max}</b></p>${(r.aka||[]).length?`<p id="aaaka">Also known as ${aaEsc(r.aka.join(' and '))}.</p>`:''}${key!==r.id?`<p class="small muted">Scored in ScoreTool as ${aaEsc(key)}.</p>`:''}${r.note?`<p class="small muted">${aaEsc(r.note)}</p>`:''}</div>`})();
+  return `<button type="button" class="aarow" data-aa="${aaEsc(r.id)}" aria-expanded="${on}"><b>${aaEsc(r.id)}</b><small>${r.arrows} arrows · max ${r.max}</small>${aka}</button>${detail}`};
+ return `<p class="small muted" id="aacount">${rows.length} of ${AA_TARGET.length}</p>${rows.length?rows.map(one).join(''):'<p class="small muted" id="aaempty">No round matches that search.</p>'}`};

@@ -4,6 +4,10 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### Rounds page — distances and faces (v2026-11-10-rounds)
+- Tools has Rounds next to Rules. It is a searchable list of the Schedule 9A target rounds. Tapping a name shows the distances, arrows at each distance, face size, total arrows, maximum, and the other names (FITA 900, Canberra Round, Fremantle Round).
+- The page cites Archery Australia Target Rounds, Schedule 9A, effective January 2017. Nothing on the page is saved.
+
 ### Schedule 9A — target rounds can be scored (v2026-11-10-aa9a)
 - Every round in Archery Australia Target Rounds, Schedule 9A, effective January 2017, can be scored. Ends are 6 arrows, the same as the outdoor rounds already in the app. + is the 122 cm face and * is the 80 cm face. The maximum is the arrow count times 10.
 - Rounds already in the app were checked against the table and kept under their existing names: WA 90/1440, WA 70/1440, WA 60/1440 (also the Fremantle Round), AA 50/1440 (the table's 50/1440), WA 60/900 (also FITA 900 and the Canberra Round), WA 720 (70m) and WA 720 (60m). Their distances, faces and arrow counts already matched.

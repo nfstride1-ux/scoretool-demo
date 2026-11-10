@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-10-rounds',d:'2026-11-10',items:[
+   ['book',"Round distances and faces","Tools, Rounds, sits next to Rules. It lists the Archery Australia target rounds. Tap a name for the distances, the arrows at each one, the face size, the total arrows and the maximum. Search finds a round by its other name too: Canberra Round, or Fremantle Round."]]},
   {v:'v2026-11-10-aa9a',d:'2026-11-10',items:[
-   ['target',"Archery Australia target rounds","Score now includes the target rounds from Archery Australia Schedule 9A (January 2017): the city rounds and the 720s, with the distances, faces and arrow counts from that table. WA 60/900 is also the Canberra Round. WA 60/1440 is also the Fremantle Round."]]},
+   ['target',"Archery Australia target rounds","Score now includes the target rounds from Archery Australia Schedule 9A (January 2017): the city rounds and the 720s, with the distances, faces and arrow counts from that table. WA 60/900 is also the Canberra Round. WA 60/1440 is also the Fremantle Round.",'65c88c1']]},
   {v:'v2026-11-09-c9',d:'2026-11-09',items:[
    ['book',"IFAA rules","Tools, Rules, has an IFAA tab with the field, hunter, animal, 3D and indoor rounds, and the scoring that goes with them. Sources are linked. Outdoor time is not a fixed limit.",'aa65cbf']]},
   {v:'v2026-11-09-d4',d:'2026-11-09',items:[
