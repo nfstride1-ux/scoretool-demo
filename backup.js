@@ -10,7 +10,7 @@ const tname=()=>(typeof TESTER!='undefined'&&TESTER&&(TESTER.short||TESTER.name)
 const LASTK=()=>'scoretool.lastbackup.'+tid(),PREK=()=>'scoretool.prerestore.'+tid();
 /* this archer's keys: the main record plus any scoretool.* key carrying this archer's id as one of its parts */
 function myKeys(){const id=tid(),out=[KEY];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||k==KEY||!/^scoretool\./.test(k))continue;
- if(k==PREK()||k==LASTK())continue;const p=k.split('.');if(id!='nathe'?p.includes(id):p.includes('nathe'))out.push(k)}return out}
+ if(k==PREK()||k==LASTK()||/^scoretool\.acct(\.|$)/.test(k))continue;const p=k.split('.');if(id!='nathe'?p.includes(id):p.includes('nathe'))out.push(k)}return out}
 function shoots(o){return o&&Array.isArray(o.sessions)?o.sessions.length:0}
 function makeBackup(){const keys={};myKeys().forEach(k=>{const v=localStorage.getItem(k);if(v!=null)keys[k]=v});
  return{app:'ScoreTool',kind:'backup',format:1,tester:tid(),name:tname(),made:new Date().toISOString(),main:KEY,keys}}
@@ -50,7 +50,7 @@ function card(){const last=localStorage.getItem(LASTK());
 <input type="file" id="bkfile" accept=".json,application/json" hidden>
 <p class="small" id="bkmsg" role="status" hidden></p>
 <h2 style="margin-top:14px">Privacy</h2>
-<p class="small" id="privacy">Your scores, sight marks and settings are kept on this phone. There is no account, no login and no payment details. Something leaves the phone only in these cases: league, match and group scores (with your display name) are shared with the other archers through a relay (ntfy.sh); if you link Archery Calendar, the rounds you send and their photos go to your Archery Calendar account; and anonymous usage (taps and scrolling, with anything you type hidden) is recorded by Microsoft Clarity so the app can be improved. A backup file is saved only where you choose.</p></div>`}
+<p class="small" id="privacy">Your scores, sight marks and settings are kept on this phone. There is no account, no login and no payment details. Something leaves the phone only in these cases: league, match and group scores (with your display name) are shared with the other archers through a relay (ntfy.sh); if you link Archery Calendar, the rounds you send and their photos go to your Archery Calendar account; and anonymous usage (taps and scrolling, with anything you type hidden) is recorded by Microsoft Clarity so the app can be improved. A backup file is saved only where you choose. If you sign in, account backups are described under Restore my data, and this file backup still works.</p></div>`}
 function draw(){const el=document.getElementById('datacard');if(!el)return;el.outerHTML=card();bind()}
 function bind(){const d=document.getElementById('bkdl'),r=document.getElementById('bkrs'),f=document.getElementById('bkfile');if(!d)return;
  d.onclick=()=>stBackupDownload();r.onclick=()=>f.click();
