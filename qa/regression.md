@@ -38,7 +38,7 @@ Each suite uses a fresh browser profile and test data only. Nothing is sent anyw
 | ABA | aba | ABA Interclub first half 3-arrow, second half 1-arrow, sheet view |
 | Peel group card | peel, peel_data, peel_next, peel_scroll, peel_share, peel_comp | Day 1/Day 2, Next hold, Save, Competition complete, share names, saved data untouched |
 | Ghost match | ghost, ghost_pick | Unlock on any past score of the round (any face, part-shot, competition result), Race who? list, PB/average, records pace line and Record not available, different-face note, top-ranked ghosts, stored data unchanged |
-| Sight marks | sightest, sightseed, sightimport, arrowsets | Typed marks stay, estimates are italic, import CSV/PDF exact, per-setup sets |
+| Sight marks | sightest, b1_estmarks, sightseed, sightimport, arrowsets | Typed marks stay, estimates are italic, import CSV/PDF exact, per-setup sets. Typing three marks in the table (not pre-loaded) enables Estimate other marks and fills the other distances. |
 | Sight card | sightcard | Print card PDF, 2 per A4, no purple |
 | My arrows / My bows | myarrows, mybows, arrowpick, todayarrows | Add/edit lists, dropdowns fill calculators |
 | Calculators | arrowcheck, arrowchooser, arrowuse | FOC, speed, spine verdicts, chart look-ups |
