@@ -198,6 +198,62 @@ try:
         'Six 300' in rules or 'six 300' in rules.lower() and '10 Feb' not in rules, rules[:400])
 
   chk('No page errors after opening the Lingkana format', not errs, errs)
+
+  # L4 — invite-only membership
+  uninv=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const me=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    lg.inv=(lg.inv||[]).filter(x=>x!==me);
+    lg.order=(lg.order||[]).filter(x=>x!==me);
+    return lkJoinGuard('LINGKN26', me);
+  }""")
+  chk('A tester who only has the code, and was not invited, cannot join',
+      uninv and 'invite only' in uninv.lower(), uninv)
+  # The on-page Join box also refuses
+  pg.evaluate("nav('lab_leagues')");pg.wait_for_timeout(400)
+  if pg.locator('#lgjc').count():
+    pg.fill('#lgjc','LINGKN26');pg.click('#lgjgo');pg.wait_for_timeout(400)
+    msg=pg.inner_text('#lgjmsg') if pg.locator('#lgjmsg').count() else ''
+    chk('The leagues Join box refuses an uninvited Lingkana code with a plain-English reason',
+        'invite only' in msg.lower(), msg)
+  else:
+    chk('The leagues Join box refuses an uninvited Lingkana code with a plain-English reason', False, 'no #lgjc')
+
+  invited=pg.evaluate("""()=>{
+    const lg=lkEnsure(), me=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    lg.inv=lg.inv||[];
+    if(!lg.inv.includes(me))lg.inv.push(me);
+    save();
+    const before=lkJoinGuard('LINGKN26', me);
+    const acc=lkAccept();
+    const lg2=lkGet();
+    return {before, acc, inOrder:(lg2.order||[]).includes(me), stillInv:(lg2.inv||[]).includes(me)};
+  }""")
+  chk('An invited archer can accept and is in the table',
+      invited['before'] is None and invited['acc']=='' and invited['inOrder'] and not invited['stillInv'], invited)
+
+  guest=pg.evaluate("""()=>{
+    /* Host-only add: run as the host check by calling lgAddGuest after temporarily treating the tester as able to edit via host id on the record would change data; instead call the API as nathe on this already-saved league by setting host to current tester only inside a copy? Use lkAddGuest after setting lg.host to me for the add, then restore — no, that mutates host. Direct lgAddGuest after lgCanEd: make the current tester the acting host for this preview call by using the function's path. */
+    const lg=lkEnsure(), me=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    const host=lg.host;
+    lg.host=me; /* preview: this phone performs the host add, then we put the real host back */
+    const msg=lkAddGuest('Sam Guest', false);
+    const id=(lg.order||[]).filter(x=>x!==me&&x!=='nathe'&&/^g/.test(x)).pop();
+    const name=id&&typeof lgName==='function'?lgName(id):null;
+    lg.host=host;save();
+    return {msg, id, name, inOrder:!!(id&&(lg.order||[]).includes(id))};
+  }""")
+  chk('Name-only guests the host adds appear in the table',
+      guest['msg'] in ('', None) and guest['name']=='Sam Guest' and guest['inOrder'], guest)
+
+  onion_join=pg.evaluate("""()=>{
+    /* Onion Shed code-join path is unchanged: the guard must not block ONIONSH2 */
+    return {block:lkJoinGuard('ONIONSH2','steven'), onion:typeof lgIsPresetCode==='function'?lgIsPresetCode('ONIONSH2'):null};
+  }""")
+  chk('Onion Shed and ordinary code-join are not blocked by the Lingkana invite guard',
+      onion_join['block'] is None, onion_join)
+
+  chk('No page errors on invite-only join', not errs, errs)
   b.close()
 finally:
   srv.kill()

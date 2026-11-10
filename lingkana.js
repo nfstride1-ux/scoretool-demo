@@ -45,6 +45,48 @@ function lkDecorateCard(){
 
 function lkGet(){return (typeof lgGet==='function'&&lgGet(LK_CODE))||((typeof S!=='undefined'&&S.leagues)||[]).find(lkIs)||null}
 
+
+function lkIsMember(lg,id){return!!(lg&&id&&((lg.order||[]).includes(id)||(lg.inv||[]).includes(id)))}
+function lkJoinGuard(code,me){
+  const c=String(code||'').toUpperCase();
+  const lg=(typeof lgGet==='function'&&lgGet(c))||(c===LK_CODE?lkGet():null);
+  const isLk=c===LK_CODE||(lg&&lkIs(lg))||(lg&&lg.inviteOnly);
+  if(!isLk)return null;
+  if(lkIsMember(lg,me))return null; /* already invited or in; existing join flow may open the view */
+  return 'This league is invite only. Ask the host to invite you, or use the register page with the invite code printed on the poster.';
+}
+function lkCanHost(lg){
+  const me=typeof h2hMe==='function'?h2hMe():'';
+  return!!(lg&&(lg.host===me||me==='nathe'||(typeof lgCanEd==='function'&&lgCanEd(lg))));
+}
+function lkInvite(id){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(!lkCanHost(lg))return 'Only the host can invite archers.';
+  const who=String(id||'').trim();if(!who)return 'Pick someone to invite.';
+  if((lg.order||[]).includes(who))return lgName?lgName(who)+' is already in this league.': 'Already in this league.';
+  lg.inv=lg.inv||[];
+  if(!lg.inv.includes(who))lg.inv.push(who);
+  if(typeof save==='function')save();
+  if(typeof h2hPost==='function'&&typeof h2hInbox==='function'&&typeof h2hNm==='function'){
+    try{h2hPost(h2hInbox(who),{k:'lginv',code:lg.code,name:lg.name,from:h2hMe(),to:who,...h2hNm(),t:Date.now(),inviteOnly:1})}catch(e){}
+  }
+  return '';
+}
+function lkAccept(){
+  const lg=lkEnsure(),me=typeof h2hMe==='function'?h2hMe():'';if(!lg||!me)return 'No league on this phone.';
+  if(!((lg.inv||[]).includes(me)))return 'You have not been invited to this league.';
+  lg.order=lg.order||[];
+  if(!lg.order.includes(me))lg.order.push(me);
+  lg.inv=(lg.inv||[]).filter(x=>x!==me);
+  if(typeof save==='function')save();
+  return '';
+}
+function lkAddGuest(name,jr){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(typeof lgAddGuest==='function')return lgAddGuest(lg.code,name,jr);
+  return 'Cannot add a guest on this phone.';
+}
+
 function lkView(code){
   const lg=(typeof lgGet==='function'&&lgGet(code))||lkGet();
   if(!lg||!lkIs(lg))return;
@@ -61,6 +103,22 @@ function lkView(code){
     <p>The sixth Lancaster 660 was on ${h(lkFmtD(LK_DATES[5]))}. This night is the 150 warm-up and then the shoot-up for the top 12. Those formats are still waiting on Nathe, so scoring for them is not open yet.</p></div>`:'';
   const score660=!closed660?`<p class="small muted">Night ${w} is a Lancaster 660 (20 ends of 3, X = 11, max 660). Group scoring for this card is on the same shared-phone flow as other leagues.</p>
     <p class="small muted">${h(LK_HOURS)}.</p>`:`<p class="small muted">The 660 nights are finished. Night 7 does not open a 660 card.</p>`;
+  const inList=(lg.order||[]).includes(me), invited=(lg.inv||[]).includes(me);
+  const acceptUI=(!inList&&invited)?`<div class="card" id="lkaccept"><p>You have been invited to this league.</p><button class="btn alt" id="lkacc">Join this league</button><p class="small" id="lkaccmsg" role="alert"></p></div>`:'';
+  const testers=(typeof TESTERS!=='undefined'?TESTERS:[]).filter(t=>t.id!==me&&t.id!==lg.host&&!(lg.order||[]).includes(t.id));
+  const hostUI=lkCanHost(lg)?`<div class="card" id="lkhost"><span class="kicker">Host</span><h3>Invite or add a shooter</h3>
+    <p class="small muted">Invite someone who uses ScoreTool, or add a name-only shooter you will score on this phone. Nobody can join with the league code alone.</p>
+    <label for="lkivid">Invite a tester</label>
+    <div class="row" style="gap:6px"><select id="lkivid" style="flex:1">${testers.map(t=>`<option value="${h(t.id)}">${h(t.name||t.id)}</option>`).join('')||'<option value="">No one left to invite</option>'}</select>
+    <button class="btn alt" id="lkivgo">Invite</button></div>
+    <p class="small" id="lkivmsg" role="alert"></p>
+    <label for="lkgname" style="margin-top:8px">Add a name-only shooter</label>
+    <input id="lkgname" maxlength="24" autocomplete="off" placeholder="Name">
+    <label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lkgjr"> Under 16 (nickname only)</label>
+    <button class="btn alt" id="lkgadd" style="margin-top:6px">Add</button>
+    <p class="small" id="lkgmsg" role="alert"></p>
+    <p class="small muted">In the league: ${(lg.order||[]).map(id=>h((typeof lgName==='function'&&lgName(id))||id)).join(', ')||'no one yet'}.</p>
+    </div>`:'';
   app.innerHTML=`<div class="card" id="lgview" data-lk="1"><span class="kicker">Invite-only league</span>
     <h1>${h(lg.name)}</h1>
     <p class="small" style="margin:0">${h(LK_VENUE)}</p>
@@ -68,9 +126,13 @@ function lkView(code){
     <p class="small muted" style="margin:4px 0 0">Cap ${lg.cap||LK_CAP} archers · off-bow scores, no age or bow-type divisions in this first pot.</p>
     <ol class="lk-dates" style="padding-left:1.2em;margin:10px 0 0">${days}</ol>
     ${score660}</div>${n7}
-    <p class="small muted" style="margin:8px 4px">This is a preview of the Lingkana format. Onion Shed Challenge stays a separate six-300 league.</p>
+    ${hostUI}${acceptUI}
+    <p class="small muted" style="margin:8px 4px">This league is invite only. The eight-character code does not let someone join unless they have already been invited. Onion Shed Challenge stays a separate six-300 league, and its code-join is unchanged.</p>
     <p><button class="btn ghost" id="lgback">Back to leagues</button></p>`;
   if($('#lgback'))$('#lgback').onclick=()=>{window._lgv=null;nav(view==='lab_leagues'?'lab_leagues':'score')};
+  if($('#lkacc'))$('#lkacc').onclick=()=>{const m=lkAccept();if(m){const e=$('#lkaccmsg');if(e)e.textContent=m;return}lkView(lg.code)};
+  if($('#lkivgo'))$('#lkivgo').onclick=()=>{const m=lkInvite(($('#lkivid')||{}).value);const e=$('#lkivmsg');if(e)e.textContent=m||'Invited.';if(!m)lkView(lg.code)};
+  if($('#lkgadd'))$('#lkgadd').onclick=()=>{const m=lkAddGuest(($('#lkgname')||{}).value,!!(($('#lkgjr')||{}).checked));const e=$('#lkgmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
 }
 
 const _lkH2H=window.h2hCard;
@@ -78,6 +140,6 @@ if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);set
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard
+  lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost
 });
 })();
