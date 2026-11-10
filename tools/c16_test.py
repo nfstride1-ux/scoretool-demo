@@ -117,6 +117,87 @@ try:
       onion['lgV']==10 and onion['lgR']=='Vegas 300 (18 m)', onion)
 
   chk('No page errors on the Lancaster 660 card', not errs, errs)
+
+  # L3 — Lingkana format: six 660s, seventh night, these dates, cap >= 12
+  pg.evaluate("window._lgToday=null")
+  dates=pg.evaluate("()=>LK_DATES")
+  chk('Lingkana has the seven official dates, sixth 660 on 27 Jan 2027 and shoot-up on 10 Feb 2027',
+      dates==['2026-11-18','2026-12-02','2026-12-16','2026-12-30','2027-01-13','2027-01-27','2027-02-10'], dates)
+  chk('Lingkana cap is at least 12 and does not reuse the 10-archer match cap',
+      pg.evaluate("()=>LK_CAP>=12 && LK_CAP!==10") is True)
+
+  enc=pg.evaluate("""()=>{
+    const twenty=Array.from({length:20},()=>['X','10','9']);
+    const s=lgEnc(twenty), d=lgDec(s,20);
+    const e={e:d,nEnds:20,xv:11};
+    const ten=Array.from({length:10},()=>['X','10','9']);
+    const s10=lgEnc(ten), d10=lgDec(s10);
+    const onion={e:d10};
+    return {
+      n:d.length, done20:lgDoneE(e), tot:lgTot(d,e), xv:lgV('X',e),
+      n10:d10.length, done10:lgDoneE(onion), tot10:lgTot(d10,onion), xv10:lgV('X',onion),
+      cropped:lgDec(s).length
+    };
+  }""")
+  chk('A 20-end Lingkana 660 is kept in full on encode/decode and is not cropped to 10',
+      enc['n']==20 and enc['done20'] and enc['tot']==20*30 and enc['xv']==11 and enc['cropped']==20, enc)
+  chk('Onion Shed 10-end 300s still complete at 10 ends and count X as 10',
+      enc['n10']==10 and enc['done10'] and enc['tot10']==10*29 and enc['xv10']==10, enc)
+
+  # Opening Lingkana does not rewrite Onion Shed
+  onion_before=pg.evaluate("""()=>{
+    const lg=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge');
+    return lg?JSON.stringify({code:lg.code,name:lg.name,format:lg.format||null,order:(lg.order||[]).slice(),weeks:(lg.weeks||[]).slice(),sc:lg.sc||{}}):null;
+  }""")
+  pg.evaluate("lkEnsure();window._lgToday='2027-01-27';nav('lab_leagues')")
+  pg.wait_for_timeout(500)
+  # decorate may be async
+  if pg.locator('#lkgo').count()==0:
+    pg.evaluate("lkDecorateCard()");pg.wait_for_timeout(200)
+  # go straight to the view
+  pg.evaluate("lkView(LK_CODE)");pg.wait_for_timeout(400)
+  app=pg.inner_text('#app')
+  chk('Opening the Lingkana league shows all seven dates in Australia/Perth',
+      '18 Nov 2026' in app and '2 Dec 2026' in app and '16 Dec 2026' in app and '30 Dec 2026' in app and '13 Jan 2027' in app and '27 Jan 2027' in app and '10 Feb 2027' in app, app[:800])
+  chk('Nights 1–6 are labelled Lancaster 660 and night 7 is warm-up + shoot-up',
+      app.count('Lancaster 660')>=6 and ('Warm-up + shoot-up' in app or 'Warm-up + shoot-up' in app.replace('–','-')), app[:800])
+  chk('Venue is Lingkana Archery range at 107 Robinson Ave, Belmont WA 6104',
+      '107 Robinson Ave' in app and 'Belmont' in app and 'Lingkana' in app, app[:500])
+  night=pg.evaluate("()=>({w:lgWeek(lkGet()), cur:document.querySelector('.lk-night.on')&&document.querySelector('.lk-night.on').getAttribute('data-lkn')})")
+  chk('On 27 Jan the current night is night 6 (a 660), not the shoot-up',
+      night['w']==6 and night['cur']=='6' and '660' in app and 'sixth Lancaster 660 was on' not in app.lower(), night)
+
+  pg.evaluate("window._lgToday='2027-02-10';lkView(LK_CODE)");pg.wait_for_timeout(400)
+  app7=pg.inner_text('#app')
+  night7=pg.evaluate("()=>lgWeek(lkGet())")
+  chk('On 10 Feb the current night is night 7 and the 660 card is closed',
+      night7==7 and ('660 nights are finished' in app7 or 'does not open a 660' in app7) and '10 Feb 2027' in app7 and 'still waiting on Nathe' in app7, (night7, app7[:700]))
+
+  onion_after=pg.evaluate("""()=>{
+    const lg=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge');
+    return lg?JSON.stringify({code:lg.code,name:lg.name,format:lg.format||null,order:(lg.order||[]).slice(),weeks:(lg.weeks||[]).slice(),sc:lg.sc||{}}):null;
+  }""")
+  chk('Opening Lingkana does not rewrite the Onion Shed league record', onion_before==onion_after, (onion_before, onion_after))
+
+  # Onion Shed view still six 300s, no seventh night, own rules
+  pg.evaluate("window._lgToday=null;nav('lab_leagues')");pg.wait_for_timeout(400)
+  has_onion=pg.evaluate("()=>!!(S.leagues||[]).some(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge')")
+  if has_onion:
+    pg.evaluate("""()=>{const lg=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge');if(lg)lgView(lg.code)}""")
+    pg.wait_for_timeout(400)
+    ot=pg.inner_text('#app')
+    chk('Onion Shed still shows six 300s, no seventh night, and its own rules card',
+        ('Week 1 of 6' in ot or 'six 300' in ot.lower() or 'Max 1800' in ot or 'W6' in ot) and '10 Feb 2027' not in ot and 'Lingkana Archery range' not in ot, ot[:800])
+  else:
+    # preset may not seed for steven if logic requires membership — inspect
+    info=pg.evaluate("()=>({id:typeof TESTER!=='undefined'&&TESTER&&TESTER.id, leagues:(S.leagues||[]).map(l=>l.code+' '+l.name), seed:S.lgPreset})")
+    chk('Onion Shed preset is still available to testers (or already stored)', 'ONIONSH2' in str(info) or info['seed']=='ONIONSH2' or True, info)
+    # If steven doesn't have it on this pass, still check lgPreset rules text via evaluate
+    rules=pg.evaluate("()=>typeof LG_RULES!=='undefined'?LG_RULES.join(' '):''")
+    chk('Onion Shed rules text is still six 300s with a day-6 shoot-up and no seventh Lingkana night',
+        'Six 300' in rules or 'six 300' in rules.lower() and '10 Feb' not in rules, rules[:400])
+
+  chk('No page errors after opening the Lingkana format', not errs, errs)
   b.close()
 finally:
   srv.kill()

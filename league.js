@@ -28,23 +28,24 @@ const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
 function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,24);
  if(n.length<2)return'Type a name (at least 2 characters).';if(!/^[A-Za-z0-9 '_-]+$/.test(n))return'Use letters, numbers, spaces, \' - and _ only.';if(nmRude(n))return'Please use a different name.';
  if(jr&&/\s/.test(n))return'Under-16s go by nickname only: one word, no surname.';
- if(lgArchers(lg).length>=h2hCap(lg))return'This league is full (10 archers).';
+ if(lgArchers(lg).length>=h2hCap(lg))return'This league is full ('+h2hCap(lg)+' archers).';
  if(lgArchers(lg).some(id=>lgName(id).toLowerCase()==n.toLowerCase()))return'Someone in this league already has that name.';
  const L='abcdefghjkmnpqrstuvwxyz23456789';let id;do{id='g'+Array.from(crypto.getRandomValues(new Uint32Array(6)),x=>L[x%L.length]).join('')}while((lg.order||[]).includes(id));
  lg.gn=lg.gn||{};lg.gn[id]={n,j:jr?1:0,t:Date.now(),by:h2hMe()};lg.order=lg.order||[];lg.order.push(id);lg.dirty=1;save();lgTick(true);return''}
 window.lgAddGuest=lgAddGuest;
-const lgV=a=>a=='X'?10:a=='M'?0:(+a||0),lgTot=E=>E.flat().reduce((t,a)=>t+lgV(a),0),lgXs=E=>E.flat().filter(a=>a=='X').length;
-const lgEnc=E=>E.map(e=>e.map(a=>a=='10'?'T':a).join('')).join('/'),lgDec=s=>String(s||'').split('/').filter(x=>x!=='').slice(0,10).map(e=>[...e].slice(0,3).map(c=>c=='T'?'10':c).filter(a=>LG_KEYS.includes(a)));
+const lgXV=e=>e&&(e.xv==11||e.lancaster||e.round=='Lancaster 660')?11:10;
+const lgV=(a,e)=>a=='X'?lgXV(e):a=='M'?0:(+a||0),lgTot=(E,e)=>E.flat().reduce((t,a)=>t+lgV(a,e),0),lgXs=E=>E.flat().filter(a=>a=='X').length;
+const lgEnc=E=>E.map(e=>e.map(a=>a=='10'?'T':a).join('')).join('/'),lgDec=(s,n)=>String(s||'').split('/').filter(x=>x!=='').slice(0,n||20).map(e=>[...e].slice(0,3).map(c=>c=='T'?'10':c).filter(a=>LG_KEYS.includes(a)));
 const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
 const lgHas=e=>!!(e&&e.e&&e.e.some(x=>x&&x.length));
-const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=10);
-const lgToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=(e.nEnds||10));
+const lgToday=()=>{if(window._lgToday)return window._lgToday;const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,h2hCap(lg))}
 /* current week: by the week dates if set, else the first week not yet shot by everyone (or the host's 'Next week') */
-function lgWeek(lg){const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(LG_W,n||1))}
- let w=Math.max(1,Math.min(LG_W,lg.cw||1));const A=lgArchers(lg);while(w<LG_W&&A.length&&A.every(id=>lgDoneE(lgEnt(lg,id,w))))w++;return w}
+function lgWeek(lg){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(cap,n||1))}
+ let w=Math.max(1,Math.min(cap,lg.cw||1));const A=lgArchers(lg);while(w<cap&&A.length&&A.every(id=>lgDoneE(lgEnt(lg,id,w))))w++;return w}
 /* league table: cumulative total, ties on X; missing weeks '-' */
-function lgTable(lg){const rows=lgArchers(lg).map(id=>{const W=[];let t=0,x=0;for(let w=1;w<=LG_W;w++){const e=lgEnt(lg,id,w);if(lgHas(e)){const s=lgTot(e.e),xx=lgXs(e.e);W.push({s,x:xx,d:lgDoneE(e)});t+=s;x+=xx}else W.push(null)}return{id,nm:lgName(id),W,t,x}});
+function lgTable(lg){const rows=lgArchers(lg).map(id=>{const W=[];let t=0,x=0;for(let w=1;w<=LG_W;w++){const e=lgEnt(lg,id,w);if(lgHas(e)){const s=lgTot(e.e,e),xx=lgXs(e.e);W.push({s,x:xx,d:lgDoneE(e)});t+=s;x+=xx}else W.push(null)}return{id,nm:lgName(id),W,t,x}});
  rows.sort((a,b)=>b.t-a.t||b.x-a.x||a.nm.localeCompare(b.nm));rows.forEach((r,k)=>{r.rk=k&&rows[k-1].t==r.t&&rows[k-1].x==r.x?rows[k-1].rk:k+1});rows.forEach(r=>r.tie=rows.filter(o=>o.rk==r.rk).length>1);return rows}
 /* ---------- groups ---------- */
 const lgGroups=(lg,w)=>(((lg.grp||{})[w]||{}).g||[]).map(g=>g.filter(id=>lgArchers(lg).includes(id)));
@@ -79,7 +80,7 @@ function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=nu
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
- if(!s){s={id:sid,date:lgToday(),round:LG_R,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code,face3:'vert'};S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
+ if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd!=='Lancaster 660')s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -219,7 +220,7 @@ function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
 function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
 /* Scoring taps, Undo, fixing an arrow and background relay refreshes re-draw this screen; they set window._lgKeep so the page stays exactly where it was (score keys and sheet stay on screen). Opening the screen, an archer chip and Back still start at the top. Display only. */
-function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
+function lgView(code){const lg=lgGet(code);if(!lg)return;if(typeof lkView==='function'&&typeof lkIs==='function'&&lkIs(lg))return lkView(code);const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
  const wk=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
