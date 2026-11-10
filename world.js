@@ -1,7 +1,7 @@
 /* C15: practice Category + searchable body-grouped Round picker, and confirmed world rounds.
    Official / event-tied flows are not changed. Catalogue is WORLD_ROUNDS (221 confirmed). */
 (function(){
-window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,3);
+window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,4);
 
 const CATS=['Indoor','Outdoor Target','Field','3D','Clout'];
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -317,8 +317,8 @@ function maxPer(R){
 
 function worldAfterStart(s){
   const R=ROUNDS[s.round];if(!R)return;
-  if(R.scheme==='portsmouth')s.portZone=window._wrdPort||'10';
-  if(R.scheme==='nfaa-animal'){s.bonus=window._wrdBonus!=null?!!window._wrdBonus:true;R.max=s.bonus?588:560}
+  if(R.scheme==='portsmouth'){s.portZone=window._wrdPort||'10';s.max=s.portZone==='5'?540:600}
+  if(R.scheme==='nfaa-animal'){s.bonus=window._wrdBonus!=null?!!window._wrdBonus:true;s.max=s.bonus?588:560}
   if((R.config||R.scheme==='config3d')&&window._wrdTargets){
     const n=Math.max(R.minTargets||2,Math.min(200,+window._wrdTargets||20));
     s.targets=n;const per=maxPer(R);s.max=per?per*n*(R.ape||1):undefined;

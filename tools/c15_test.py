@@ -263,6 +263,49 @@ try:
   ki=keys()
   chk('IFAA Indoor keys are 5 through 1 and M, with no X (X is tie-break only)', '5' in ki and '1' in ki and 'M' in ki and 'X' not in ki, ki)
 
+  # Wave 4: confirmed Archery GB rounds
+  agb=pg.evaluate("""()=>{
+    const want=['York','Hereford','National','Windsor','Portsmouth','Worcester','Foresters','Big Game','Western','Metric 122-30'];
+    const out={};
+    want.forEach(k=>{const R=ROUNDS[k];out[k]=R?{ends:R.ends,ape:R.ape,max:R.max,scheme:R.scheme,apes:R.apes||null,worldNew:!!R.worldNew}:null});
+    out.jersey=!!ROUNDS['Short Jersey'];
+    out.agbClout=!!ROUNDS['AGB Clout'];
+    const ev=ROUNDS['York']&&ROUNDS['WA 720 (70m)'];
+    out._wa70=ROUNDS['WA 720 (70m)']?{ends:ROUNDS['WA 720 (70m)'].ends,max:ROUNDS['WA 720 (70m)'].max,worldNew:!!ROUNDS['WA 720 (70m)'].worldNew}:null;
+    return out;
+  }""")
+  chk('York is the 24-end imperial 1296-point round', agb['York'] and agb['York']['ends']==24 and agb['York']['ape']==6 and agb['York']['max']==1296 and agb['York']['scheme']=='imperial5', agb.get('York'))
+  chk('Foresters uses the unit layout in the CSV (70 arrows over 28 targets, max 1050)',
+      agb['Foresters'] and agb['Foresters']['ends']==28 and agb['Foresters']['max']==1050 and agb['Foresters']['apes'] and len(agb['Foresters']['apes'])==28 and sum(agb['Foresters']['apes'])==70, agb.get('Foresters') and {k:agb['Foresters'][k] for k in ('ends','max','apes') if agb['Foresters']})
+  chk('Unconfirmed Short Jersey and AGB Clout are still not built', not agb['jersey'] and not agb['agbClout'], agb)
+  chk('Adding AGB rounds did not rewrite WA 720 (70m)', agb['_wa70']=={'ends':12,'max':720,'worldNew':False}, agb.get('_wa70'))
+
+  start('York')
+  ky=keys()
+  chk('York keys are the 5-zone imperial 9, 7, 5, 3, 1 and M', ky==['9','7','5','3','1','M'], ky)
+
+  # Portsmouth: default 10-zone max 600, optional 5-zone max 540
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+  pg.select_option('#rd','Portsmouth');pg.wait_for_timeout(300)
+  chk('Portsmouth start form offers 10-zone (max 600) and 5-zone (max 540)',
+      pg.locator('[data-port="10"]').count()==1 and pg.locator('[data-port="5"]').count()==1)
+  pg.click('#st');pg.wait_for_timeout(600)
+  kp=keys()
+  mx=pg.evaluate("()=>cur.max!=null?cur.max:ROUNDS[cur.round].max")
+  z=pg.evaluate("()=>cur.portZone||'10'")
+  chk('Portsmouth defaults to 10-zone keys and max 600', 'X' in kp and '10' in kp and mx==600 and z=='10', (kp,mx,z))
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+  pg.select_option('#rd','Portsmouth');pg.wait_for_timeout(300)
+  pg.click('[data-port="5"]');pg.wait_for_timeout(200)
+  pg.click('#st');pg.wait_for_timeout(600)
+  k5=keys();m5=pg.evaluate("()=>cur.max!=null?cur.max:ROUNDS[cur.round].max");z5=pg.evaluate("()=>cur.portZone")
+  chk('Portsmouth 5-zone uses 9-7-5-3-1 and max 540', k5==['9','7','5','3','1','M'] and m5==540 and z5=='5', (k5,m5,z5))
+
+  start('Foresters')
+  kf=keys()
+  apes=pg.evaluate("()=>({len:endLen(ROUNDS[cur.round],0),sum:total(cur)})")
+  chk('Foresters keys are 15, 10, 5 and M, and the first target has 4 shots', kf==['15','10','5','M'] and apes['len']==4, (kf,apes))
+
   # Official IFAA event deep link still starts the official flow, not the practice picker
   pg.goto(f'http://127.0.0.1:{PORT}/?tester=steven#score?event=peel-ifaa-2026-12-05&date=2026-12-05&round=IFAA%20Field%20Round')
   pg.wait_for_timeout(900)
