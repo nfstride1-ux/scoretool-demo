@@ -16,6 +16,10 @@ Newest first. Each entry names the version tag shown in Settings.
 - WA 50/720 in the table is 72 arrows at 50 m on the full 80 cm face. It is scored as WA 50/720 (80 cm). WA 720 (50m Compound) is left as the 80 cm 6-ring round. Official results already use the name WA 50/720 for that compound round, so the two are not the same list entry.
 - The note about other Short and Junior rounds is a way to make a round by cutting distances 10 m and 20 m. Those are not added as extra named rounds.
 
+Full `qa/run_regression.py` after `65c88c1`: **98 passed, 0 failed, 4183s**. `fullround` scored every new round: 777 passed, 0 failed. `endview` still prints two screenshot comparisons and exits 0.
+
+Full `qa/run_regression.py` after `66d08e5` (the Rounds page): **99 passed, 0 failed, 5333s**. `aa9a_test` and `rounds_page_test` passed. Same `endview` screenshot note.
+
 ### C9 — IFAA rules tab (v2026-11-09-c9)
 - Tools > Rules has an IFAA tab beside WA, AA, ABA, IBO and ASA.
 - Text is the Schedule summary from the 4 April 2021 Book of Rules and the 1 June 2026 clarifications. Citations and source links are kept.
