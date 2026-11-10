@@ -163,6 +163,72 @@ try:
   }""", UNCONF)
   chk('Unconfirmed rounds do not appear in the picker or catalogue', found_u==[], found_u)
 
+  # Wave 2: missing AA current official rounds
+  aa=pg.evaluate("""()=>{
+    const want=['Mini Canberra','AA20/720','OzBow 30','Australian Indoor 2','National Field (Red pegs)','Hunters Field','AA Special 1 Arrow Field','AA Clout 180 m','AA Double Clout 180 m','VI Outdoor'];
+    const out={};
+    want.forEach(k=>{const R=ROUNDS[k];out[k]=R?{ends:R.ends,ape:R.ape,max:R.max,scheme:R.scheme,note:R.note||'',worldNew:!!R.worldNew}:null});
+    const still=ROUNDS['WA 720 (70m)'];
+    out._wa70=still?{ends:still.ends,ape:still.ape,max:still.max,worldNew:!!still.worldNew}:null;
+    return out;
+  }""")
+  chk('Mini Canberra is the AA 30/20/10 m 900-point round', aa['Mini Canberra']=={'ends':15,'ape':6,'max':900,'scheme':'wa10','note':'','worldNew':True}, aa.get('Mini Canberra'))
+  chk('OzBow 30 uses five 6-arrow ends (end length is not printed in Schedule 9A) and keeps a note',
+      aa['OzBow 30'] and aa['OzBow 30']['ends']==5 and aa['OzBow 30']['ape']==6 and aa['OzBow 30']['max']==300 and 'Schedule 9A' in (aa['OzBow 30']['note'] or ''), aa.get('OzBow 30'))
+  chk('New AA official cards did not rewrite WA 720 (70m)', aa['_wa70']=={'ends':12,'ape':6,'max':720,'worldNew':False}, aa.get('_wa70'))
+
+  def start(rd):
+    pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(300)
+    pg.select_option('#rd',rd);pg.wait_for_timeout(200)
+    pg.click('#st');pg.wait_for_timeout(600)
+  def keys():
+    return pg.evaluate("""()=>{
+      const ks=[];
+      document.querySelectorAll('button').forEach(b=>{const t=b.textContent.trim();if(/^(X|20|15|12|11|10|9|8|7|6|5|4|3|2|1|M|-5)$/.test(t))ks.push(t)});
+      const seen=new Set(),out=[];
+      ks.forEach(k=>{if(!seen.has(k)){seen.add(k);out.push(k)}});
+      return out;
+    }""")
+  def tap(k):
+    loc=pg.locator('button', has_text=k)
+    # exact match preferred
+    n=pg.evaluate("""(k)=>{
+      const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()===k);
+      if(b){b.click();return true}return false;
+    }""",k)
+    pg.wait_for_timeout(200)
+    return n
+
+  start('National Field (Red pegs)')
+  kf=keys()
+  chk('AA National Field keys are X, 5, 4, 3, 2, 1 and M (not WA field 6-1)', kf==['X','5','4','3','2','1','M'] or (kf[:7]==['X','5','4','3','2','1','M'] and '6' not in kf), kf)
+  tap('X')
+  got=pg.evaluate("()=>endSum(cur.ends[0],cur)")
+  chk('AA National Field X scores 5, not 10', got==5, got)
+
+  start('AA Special 1 Arrow Field')
+  ks=keys()
+  chk('AA Special 1 Arrow keys are +20, +10 and −5', '20' in ks and '10' in ks and '-5' in ks and 'M' not in ks and 'X' not in ks, ks)
+  tap('20')
+  tot=pg.evaluate("()=>total(cur)")
+  chk('Special 1 Arrow gold scores +20', tot==20, tot)
+  # 12 golds would be 240 — checked via max
+  mx=pg.evaluate("()=>ROUNDS[cur.round].max")
+  chk('Special 1 Arrow official max is 240 (12 golds)', mx==240, mx)
+  start('AA Special 1 Arrow Field')
+  tap('-5')
+  miss=pg.evaluate("()=>total(cur)")
+  chk('Special 1 Arrow miss scores −5', miss==-5, miss)
+
+
+  start('AA Clout 180 m')
+  kc=keys()
+  chk('AA Clout keys are 10 through 1 and M, with no X', kc==['10','9','8','7','6','5','4','3','2','1','M'], kc)
+
+  start('Mini Canberra')
+  km=keys()
+  chk('Mini Canberra keeps standard 10-zone keys including X', 'X' in km and '10' in km and '1' in km and 'M' in km, km)
+
   # Official IFAA event deep link still starts the official flow, not the practice picker
   pg.goto(f'http://127.0.0.1:{PORT}/?tester=steven#score?event=peel-ifaa-2026-12-05&date=2026-12-05&round=IFAA%20Field%20Round')
   pg.wait_for_timeout(900)

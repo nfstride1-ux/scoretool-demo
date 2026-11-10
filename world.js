@@ -1,7 +1,7 @@
 /* C15: practice Category + searchable body-grouped Round picker, and confirmed world rounds.
    Official / event-tied flows are not changed. Catalogue is WORLD_ROUNDS (221 confirmed). */
 (function(){
-window.WORLD_APPLY_UP_TO=window.WORLD_APPLY_UP_TO||0;
+window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,2);
 
 const CATS=['Indoor','Outdoor Target','Field','3D','Clout'];
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -296,15 +296,18 @@ function applyWave(n){
 
 function applyAll(){for(let i=2;i<=6;i++)applyWave(i)}
 
-function worldPrepareStart(r){
-  const R=ROUNDS[r];if(!R)return;
-  if((R.config||R.scheme==='config3d')&&window._wrdTargets){
-    const n=Math.max(R.minTargets||2,Math.min(200,+window._wrdTargets||R.ends||20));
-    R.ends=n;
-    const per=maxPer(R);
-    R.max=per?per*n*(R.ape||1):null;
-  }
+function worldNoFace(R){
+  const sch=R&&R.scheme;
+  if(!sch||sch==='wa10'||sch==='portsmouth')return false;
+  return true;
 }
+function worldUsesTargets(R){
+  if(!R)return false;
+  if(R.ifaa||R.aba||R.config||R.scheme==='config3d')return true;
+  const sch=R.scheme||'';
+  return /field|3d|animal|foresters|special|clout|asa|ibo|natanimal|big-game/i.test(sch);
+}
+function worldPrepareStart(r){/* session fields are applied in worldAfterStart; do not mutate the shared ROUNDS card */}
 
 function maxPer(R){
   const k=worldKeys(R)||[];
@@ -341,7 +344,7 @@ Object.assign(window,{
   worldPickerHTML,worldBindPicker,worldRows,worldKeys,worldAccept,apeOf,worldScheme,
   worldApplyWave:applyWave,worldApplyAll:applyAll,worldPrepareStart,worldAfterStart,
   worldFullroundKeys,worldConfirmedCount,worldHasUnconfirmed,worldAlreadyUnchanged,
-  worldValX,WORLD_CATS:CATS
+  worldValX,worldNoFace,worldUsesTargets,WORLD_CATS:CATS
 });
 
 function worldBoot(){
