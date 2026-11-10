@@ -65,7 +65,7 @@ def scheme(r):
     if 'aiming spot 15' in s or 'same as foresters' in s: return 'foresters'
     if s.startswith('kill 10, wound 5'): return 'natanimal'
     if 'first arrow 21' in s: return 'nfaa-animal'
-    if '1st arrow 20 kill / 18' in s: return 'ifaa-animal'
+    if '1st arrow 20 kill / 18' in s or '20/18, 16/14, 12/10' in s or 'same as marked animal' in s: return 'ifaa-animal'
     if '1st arrow 20 kill / 16' in s: return 'big-game'
     if '11 / 10 / 8 / 5 (book 4)' in s: return 'wa3d'
     if '11 / 10 / 8 / 5 / 0' in s: return 'ibo'

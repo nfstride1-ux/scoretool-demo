@@ -184,7 +184,7 @@ try:
   def keys():
     return pg.evaluate("""()=>{
       const ks=[];
-      document.querySelectorAll('button').forEach(b=>{const t=b.textContent.trim();if(/^(X|20|15|12|11|10|9|8|7|6|5|4|3|2|1|M|-5)$/.test(t))ks.push(t)});
+      document.querySelectorAll('button').forEach(b=>{const t=b.textContent.trim();if(/^(X|21|20|18|17|16|15|14|13|12|11|10|9|8|7|6|5|4|3|2|1|M|-5)$/.test(t))ks.push(t)});
       const seen=new Set(),out=[];
       ks.forEach(k=>{if(!seen.has(k)){seen.add(k);out.push(k)}});
       return out;
@@ -228,6 +228,40 @@ try:
   start('Mini Canberra')
   km=keys()
   chk('Mini Canberra keeps standard 10-zone keys including X', 'X' in km and '10' in km and '1' in km and 'M' in km, km)
+
+  # Wave 3: remaining confirmed IFAA rounds
+  ifaa3=pg.evaluate("""()=>{
+    const want=['IFAA Flint Indoor','IFAA Indoor','IFAA Animal Marked','IFAA Animal Unmarked','IFAA Expert Field','IFAA International','IFAA 3-D Hunting (1 arrow)','IFAA 3-D Standard (2 arrows)'];
+    const out={};
+    want.forEach(k=>{const R=ROUNDS[k];out[k]=R?{ends:R.ends,ape:R.ape,max:R.max,scheme:R.scheme,stop:!!R.stopOnHit,ifaa:!!R.ifaa,worldNew:!!R.worldNew}:null});
+    const keep=ROUNDS['IFAA Field Round'];
+    out._field=keep?{ends:keep.ends,ape:keep.ape,max:keep.max,ifaa:!!keep.ifaa,worldNew:!!keep.worldNew}:null;
+    return out;
+  }""")
+  chk('Existing IFAA Field Round is not rewritten by the new catalogue row', ifaa3['_field']=={'ends':28,'ape':4,'max':560,'ifaa':True,'worldNew':False}, ifaa3.get('_field'))
+  chk('IFAA International is 20 targets of 3 arrows, max 300', ifaa3['IFAA International'] and ifaa3['IFAA International']['ends']==20 and ifaa3['IFAA International']['ape']==3 and ifaa3['IFAA International']['max']==300, ifaa3.get('IFAA International'))
+  chk('IFAA Expert Field uses 5-4-3-2-1 (not the Field 5-4-3 keypad)', ifaa3['IFAA Expert Field'] and ifaa3['IFAA Expert Field']['scheme']=='ifaa51' and not ifaa3['IFAA Expert Field']['ifaa'], ifaa3.get('IFAA Expert Field'))
+  chk('IFAA Animal Marked and Unmarked use 20/18/16/14/12/10 and stop on the first hit',
+      ifaa3['IFAA Animal Marked'] and ifaa3['IFAA Animal Unmarked'] and ifaa3['IFAA Animal Marked']['scheme']=='ifaa-animal' and ifaa3['IFAA Animal Unmarked']['scheme']=='ifaa-animal' and ifaa3['IFAA Animal Marked']['stop'] and ifaa3['IFAA Animal Unmarked']['stop'],
+      (ifaa3.get('IFAA Animal Marked'), ifaa3.get('IFAA Animal Unmarked')))
+
+  start('IFAA Expert Field')
+  ke=keys()
+  chk('IFAA Expert Field keys are 5, 4, 3, 2, 1 and M', ke==['5','4','3','2','1','M'] or ('5' in ke and '1' in ke and 'X' not in ke and '6' not in ke), ke)
+
+  start('IFAA Animal Marked')
+  ka=keys()
+  chk('IFAA Animal keys include 20, 18, 16, 14, 12, 10 and M', all(x in ka for x in ['20','18','16','14','12','10','M']), ka)
+  tap('M')
+  n1=pg.evaluate("()=>({n:(cur.ends[0]||[]).length,done:endComplete(ROUNDS[cur.round],cur.ends[0],0),t:total(cur)})")
+  chk('An Animal miss does not stop the target (up to 3 arrows)', n1['n']==1 and not n1['done'] and n1['t']==0, n1)
+  tap('16')
+  n2=pg.evaluate("()=>({n:(cur.ends[0]||[]).length,done:endComplete(ROUNDS[cur.round],cur.ends[0],0),t:total(cur)})")
+  chk('A scoring hit stops the Animal target', n2['n']==2 and n2['done'] and n2['t']==16, n2)
+
+  start('IFAA Indoor')
+  ki=keys()
+  chk('IFAA Indoor keys are 5 through 1 and M, with no X (X is tie-break only)', '5' in ki and '1' in ki and 'M' in ki and 'X' not in ki, ki)
 
   # Official IFAA event deep link still starts the official flow, not the practice picker
   pg.goto(f'http://127.0.0.1:{PORT}/?tester=steven#score?event=peel-ifaa-2026-12-05&date=2026-12-05&round=IFAA%20Field%20Round')

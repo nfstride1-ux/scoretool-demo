@@ -1,7 +1,7 @@
 /* C15: practice Category + searchable body-grouped Round picker, and confirmed world rounds.
    Official / event-tied flows are not changed. Catalogue is WORLD_ROUNDS (221 confirmed). */
 (function(){
-window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,2);
+window.WORLD_APPLY_UP_TO=Math.max(window.WORLD_APPLY_UP_TO||0,3);
 
 const CATS=['Indoor','Outdoor Target','Field','3D','Clout'];
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -288,7 +288,7 @@ function applyWave(n){
     if(r.bonus)rec.bonus=true;
     if(r.portsmouth)rec.scheme='portsmouth';
     if(r.note)rec.note=r.note;
-    if(r.scheme&&r.scheme.indexOf('ifaa')===0&&r.scheme.indexOf('3d')<0)rec.ifaa=true;
+    if(r.scheme==='ifaa53'&&(r.ape||0)===4)rec.ifaa=true;
     if(r.hist)rec.hist=true;
     ROUNDS[r.key]=rec;
   });
