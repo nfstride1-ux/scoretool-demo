@@ -58,6 +58,7 @@ home=function(){addMe();let last='';try{const L=latestShoot();if(L)last=`Last sh
  const nm=(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
  app.innerHTML=`<p class="muted" style="margin:0 0 10px">G'day${nm?' '+h(String(nm).split(' ')[0]):''}${last?' · '+last:''}</p>
  <button class="hub-score" data-go="score"><span aria-hidden="true">🎯</span><span>Score<small>Start or carry on a shoot</small></span></button>
+ <button class="hub-score hub-past" data-go="lab_past"><span aria-hidden="true">📋</span><span>Past Scores<small>Official and practice, with analysis</small></span></button>
  <div class="hub-grid">
   <button class="hub-tile" data-go="myarch"><span class="i" aria-hidden="true">📓</span><b>My archery</b><small>Stats, PBs, diary, setups, sight marks</small></button>
   <button class="hub-tile" data-go="clubs"><span class="i" aria-hidden="true">👥</span><b>Clubs &amp; leagues</b><small>Squads, leagues, match play, following</small></button>
@@ -77,6 +78,7 @@ const PAGE_T=Date.now(),isNew=x=>x&&+String(x.id||'').slice(1)>=PAGE_T;/* only r
 setInterval(()=>{try{if(typeof cur!=='undefined'&&cur&&isNew(cur)&&!cur.bow&&typeof curBow=='function'){const b=curBow();if(b)cur.bow=b.id}}catch(e){}},1000);
 
 /* ---------- My archery ---------- */
+LABSEC.lab_past='home';
 LABSEC.myarch='myarch';
 E.myarch=()=>menu('My archery',[
  row('lab_analysis','🔬','Analysis','Stats, personal bests, trends and the full read, in one place'),
