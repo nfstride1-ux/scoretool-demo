@@ -47,6 +47,7 @@ AREAS=[
  ("Account backups (C14)",["c14_test.py"]),
  ("Legal pages (C13)",["c13_test.py"]),
  ("World rounds catalogue (C15)",["c15_test.py"]),
+ ("Lingkana indoor league (C16)",["c16_test.py"]),
  ("Archery Australia target rounds (Schedule 9A)",["aa9a_test.py","rounds_page_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),

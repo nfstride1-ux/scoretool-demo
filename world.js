@@ -30,6 +30,20 @@ function worldRows(cat,q){
   });
 }
 
+/* Official rounds that are not in the 11 Nov 2026 world catalogue (for example Lancaster 660). */
+function officialExtras(cat,q){
+  if(typeof ROUNDS!=='object')return[];
+  const words=String(q||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return Object.keys(ROUNDS).filter(k=>{
+    const R=ROUNDS[k];if(!R||R.legacy||R.custom||R.worldNew)return false;
+    if(!R.lancaster)return false;
+    const c=R.worldCat||'Indoor';
+    if(cat&&c!==cat)return false;
+    if(!words.length)return true;
+    const b=[k,'Lancaster','Classic','660'].join(' ').toLowerCase();
+    return words.every(w=>b.includes(w));
+  });
+}
 /* Existing unofficial templates stay available, not part of the 221. */
 function templates(cat){
   const T=[['Practice 10 ends × 3','Indoor'],['Practice 6 ends × 6','Outdoor Target']];
@@ -99,6 +113,8 @@ function allRdOpts(selected){
     if(!unique.length)return;
     html+=`<optgroup label="${h(g)}">${unique.map(r=>`<option value="${h(r.key)}" ${r.key===selected?'selected':''}>${h(r.name)}</option>`).join('')}</optgroup>`;
   });
+  const extra=officialExtras(null,'');
+  if(extra.length)html+=`<optgroup label="Lancaster Archery">${extra.map(k=>`<option value="${h(k)}" ${k===selected?'selected':''}>${h(k)}</option>`).join('')}</optgroup>`;
   const tmpl=templates(null);
   if(tmpl.length)html+=`<optgroup label="Practice templates">${tmpl.map(k=>`<option value="${h(k)}" ${k===selected?'selected':''}>${h(k)}</option>`).join('')}</optgroup>`;
   const mine=(typeof S!=='undefined'&&S.customRounds||[]).map(c=>c.name);
@@ -110,6 +126,7 @@ function allRdOpts(selected){
 function catOfKey(key){
   const row=L().find(r=>r.key===key||r.name===key);
   if(row)return row.cat;
+  if(key==='Lancaster 660'||(typeof ROUNDS==='object'&&ROUNDS[key]&&ROUNDS[key].lancaster))return'Indoor';
   if(key==='Practice 10 ends × 3')return'Indoor';
   if(key==='Practice 6 ends × 6')return'Outdoor Target';
   if(key&&/indoor|vegas/i.test(key))return'Indoor';
@@ -130,9 +147,11 @@ function listHTML(cat,q,selected){
     }).join('');
     return`<div class="wrd-g"><div class="wrd-gh">${h(g)}</div>${items}</div>`;
   }).join('')||(q?`<p class="small muted" id="wrdempty">No confirmed rounds in this category match that search.</p>`:`<p class="small muted" id="wrdempty">No confirmed rounds in this category are available yet.</p>`);
+  const extra=officialExtras(cat,q);
+  const extraH=extra.length?`<div class="wrd-g"><div class="wrd-gh">Lancaster Archery</div>${extra.map(k=>`<button type="button" class="wrd-item${k===selected?' on':''}" data-wrd="${h(k)}"><b>${h(k)}</b><small>${h(labelFor(k,k).replace(k,'').replace(/^\s*/,''))}</small></button>`).join('')}</div>`:'';
   const tmpl=templates(cat).filter(k=>!q||k.toLowerCase().includes(String(q).toLowerCase()));
   const tmplH=tmpl.length?`<div class="wrd-g"><div class="wrd-gh">Practice templates</div>${tmpl.map(k=>`<button type="button" class="wrd-item${k===selected?' on':''}" data-wrd="${h(k)}"><b>${h(k)}</b></button>`).join('')}</div>`:'';
-  return list+tmplH+` <button type="button" class="wrd-item wrd-custom" data-wrd="__new"><b>+ Create my own practice round</b></button>`;
+  return list+extraH+tmplH+` <button type="button" class="wrd-item wrd-custom" data-wrd="__new"><b>+ Create my own practice round</b></button>`;
 }
 
 function worldPickerHTML(){
@@ -197,8 +216,8 @@ function worldBindPicker(){
   }
   catEl.onchange=()=>{
     window._rdCat=catEl.value;window._rdQ='';if(qEl)qEl.value='';
-    const rows=worldRows(window._rdCat,''),tmpl=templates(window._rdCat);
-    const keep=rd.value, inCat=rows.some(r=>r.key===keep)||tmpl.includes(keep);
+    const rows=worldRows(window._rdCat,''),tmpl=templates(window._rdCat),extra=officialExtras(window._rdCat,'');
+    const keep=rd.value, inCat=rows.some(r=>r.key===keep)||tmpl.includes(keep)||extra.includes(keep);
     if(!inCat){rd.value=(rows[0]&&rows[0].key)||tmpl[0]||keep}
     paintList();
     if(prev)try{prev({target:rd})}catch(e){}
@@ -329,7 +348,7 @@ function worldAfterStart(s){
 
 /* Full-round regression keeps the pre-C15 set, so adding 171 cards does not multiply that run. */
 function worldFullroundKeys(){
-  return Object.keys(ROUNDS).filter(k=>{const R=ROUNDS[k];return R&&!R.legacy&&!R.custom&&!R.worldNew});
+  return Object.keys(ROUNDS).filter(k=>{const R=ROUNDS[k];return R&&!R.legacy&&!R.custom&&!R.worldNew&&!R.lancaster});
 }
 
 function worldConfirmedCount(){return L().length}
@@ -343,7 +362,7 @@ function worldAlreadyUnchanged(){
 }
 
 Object.assign(window,{
-  worldPickerHTML,worldBindPicker,worldRows,worldKeys,worldAccept,apeOf,worldScheme,
+  worldPickerHTML,worldBindPicker,worldRows,officialExtras,worldKeys,worldAccept,apeOf,worldScheme,
   worldApplyWave:applyWave,worldApplyAll:applyAll,worldPrepareStart,worldAfterStart,
   worldFullroundKeys,worldConfirmedCount,worldHasUnconfirmed,worldAlreadyUnchanged,
   worldValX,worldNoFace,worldUsesTargets,WORLD_CATS:CATS
