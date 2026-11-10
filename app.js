@@ -6,8 +6,8 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'WA 720 (70m)':{ends:12,ape:6,face:'122cm',max:720},
  'WA 720 (60m)':{ends:12,ape:6,face:'122cm',max:720},
  'WA 720 (50m Compound)':{ends:12,ape:6,face:'80cm 6-ring',max:720},
- 'Short Canberra (50/40/30m)':{ends:15,ape:6,face:'122cm',max:900},
- 'Junior Canberra (40/30/20m)':{ends:15,ape:6,face:'122cm',max:900},/* AA Schedule 9A: all Canberra rounds on 122cm (was wrongly 80cm) */
+ 'Short Canberra (50/40/30m)':{ends:15,ape:6,face:'122cm',max:900,blocks:[{dist:50,unit:'m',size:122,type:'full',ends:5},{dist:40,unit:'m',size:122,type:'full',ends:5},{dist:30,unit:'m',size:122,type:'full',ends:5}]},
+ 'Junior Canberra (40/30/20m)':{ends:15,ape:6,face:'122cm',max:900,blocks:[{dist:40,unit:'m',size:122,type:'full',ends:5},{dist:30,unit:'m',size:122,type:'full',ends:5},{dist:20,unit:'m',size:122,type:'full',ends:5}]},/* Schedule 9A: 30 arrows at each distance, all on the 122 cm face */
  'Indoor WA 18m':{ends:20,ape:3,face:'40cm',max:600},
  'Australian Indoor 18m':{ends:10,ape:3,face:'40cm',max:300,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]},/* AA 30-arrow indoor (23 Oct 2026, Nathe): single 40cm, triangular or vertical 3-spot ("traffic light") face, picked per session; one round for PBs and averages whichever face */
  /* Added 2026-10-16. Sources (real specs, not copied from any app):
@@ -35,6 +35,8 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  'Vegas 300 (18 m)':{ends:10,ape:3,face:'40cm',max:300,vegas:true,league:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]},
  'Practice 10 ends × 3':{ends:10,ape:3,face:'any',max:300},
  'Practice 6 ends × 6':{ends:6,ape:6,face:'any',max:360}};
+/* Schedule 9A rounds (rounds_aa.js): fill any round the table names that is not already here, and mark the ones that are. */
+if(window.aaApply)aaApply(ROUNDS);
 const KEY=TESTER&&TESTER.id!='nathe'?'scoretool.v1.'+TESTER.id:'scoretool.v1';
 let S=JSON.parse(localStorage.getItem(KEY)||'null')||{profile:null,unlocked:false,sessions:[],best:[],plots:[]};
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));

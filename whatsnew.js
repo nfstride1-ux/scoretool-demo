@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-10-aa9a',d:'2026-11-10',items:[
+   ['target',"Archery Australia target rounds","Score now includes the target rounds from Archery Australia Schedule 9A (January 2017): the city rounds and the 720s, with the distances, faces and arrow counts from that table. WA 60/900 is also the Canberra Round. WA 60/1440 is also the Fremantle Round."]]},
   {v:'v2026-11-09-c9',d:'2026-11-09',items:[
-   ['book',"IFAA rules","Tools, Rules, has an IFAA tab with the field, hunter, animal, 3D and indoor rounds, and the scoring that goes with them. Sources are linked. Outdoor time is not a fixed limit."]]},
+   ['book',"IFAA rules","Tools, Rules, has an IFAA tab with the field, hunter, animal, 3D and indoor rounds, and the scoring that goes with them. Sources are linked. Outdoor time is not a fixed limit.",'aa65cbf']]},
   {v:'v2026-11-09-d4',d:'2026-11-09',items:[
    ['camera',"A photo fills in an official result","Photograph a paper scorecard, or a screenshot of a results page, and Add an official result fills in from it. Check the score, and how far it is above or below your personal best, then save. Nothing counts until you save. The picture is deleted once it has been read. A picture that cannot be read does not save a score.",'98ab96a']]},
   {v:'v2026-11-09-d3',d:'2026-11-09',items:[

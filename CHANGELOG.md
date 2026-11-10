@@ -4,6 +4,14 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### Schedule 9A — target rounds can be scored (v2026-11-10-aa9a)
+- Every round in Archery Australia Target Rounds, Schedule 9A, effective January 2017, can be scored. Ends are 6 arrows, the same as the outdoor rounds already in the app. + is the 122 cm face and * is the 80 cm face. The maximum is the arrow count times 10.
+- Rounds already in the app were checked against the table and kept under their existing names: WA 90/1440, WA 70/1440, WA 60/1440 (also the Fremantle Round), AA 50/1440 (the table's 50/1440), WA 60/900 (also FITA 900 and the Canberra Round), WA 720 (70m) and WA 720 (60m). Their distances, faces and arrow counts already matched.
+- Short Canberra and Junior Canberra already had the right total, face and maximum, with the distances only in the name. Each distance is now its own block of 30 arrows on the 122 cm face, so the sheet shows 50 m, 40 m and 30 m (and 40 m, 30 m and 20 m).
+- 40/1440 is 36 arrows at 40 m on the 122 cm face, then 36 at 30 m on the 122 cm face and 36 at 30 m on the 80 cm face, then 36 at 20 m on the 80 cm face. Nothing in the table is shot at 55 m, 45 m, 35 m or 25 m.
+- WA 50/720 in the table is 72 arrows at 50 m on the full 80 cm face. It is scored as WA 50/720 (80 cm). WA 720 (50m Compound) is left as the 80 cm 6-ring round. Official results already use the name WA 50/720 for that compound round, so the two are not the same list entry.
+- The note about other Short and Junior rounds is a way to make a round by cutting distances 10 m and 20 m. Those are not added as extra named rounds.
+
 ### C9 — IFAA rules tab (v2026-11-09-c9)
 - Tools > Rules has an IFAA tab beside WA, AA, ABA, IBO and ASA.
 - Text is the Schedule summary from the 4 April 2021 Book of Rules and the 1 June 2026 clarifications. Citations and source links are kept.
