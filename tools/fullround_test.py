@@ -197,7 +197,7 @@ try:
   chk('WebKit, 390 px, touch, installed app (standalone) emulated',pg.evaluate("navigator.standalone===true&&innerWidth==390&&'ontouchstart' in window"))
   pg.evaluate("c=>{S.unlocked=true;if(!S.profile)S.profile='Steven';S.customRounds=[c,{kind:'3d',name:'FR test 3D (10 targets)',targets:10}];save()}",CUSTOM);pg.reload();pg.wait_for_timeout(1500)
   pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(500)
-  rds=pg.evaluate("[...document.querySelectorAll('#rd option')].map(o=>o.value).filter(v=>v!='__new')")
+  rds=pg.evaluate("typeof worldFullroundKeys==='function'?worldFullroundKeys():[...document.querySelectorAll('#rd option')].map(o=>o.value).filter(v=>v!='__new')")
   print('rounds offered',rds)
   for n,rd in enumerate(rds):
     if ONLY and ONLY.lower() not in rd.lower():continue

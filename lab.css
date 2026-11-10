@@ -182,3 +182,15 @@ details.hg .go{color:var(--muted);font-size:22px;transition:transform .15s}detai
 input[aria-invalid=true]{border-color:var(--gold,#c9a227);box-shadow:0 0 0 1px var(--gold,#c9a227)}
 /* R2: the session Arrow setup card, typed boxes in the table */
 .tarwtbl{table-layout:fixed;width:100%}.tarwtbl th:first-child{width:28%}.tarwtbl td{padding:3px 4px;vertical-align:top}.tarwtbl .ta_in{width:100%;min-width:0;box-sizing:border-box;min-height:40px;padding:6px 8px;font-size:16px}.tarwtbl .labbad{font-size:13px}
+
+/* C15 practice round picker: category + searchable body-grouped list. #rd stays in the DOM for existing tests. */
+.wrd-list{max-height:min(52vh,420px);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#d5dbe3);border-radius:10px;background:var(--card,#fff);margin:0 0 10px}
+.wrd-g{padding:4px 0 8px}
+.wrd-gh{position:sticky;top:0;z-index:1;background:var(--card,#fff);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted,#64748b);padding:8px 12px 4px}
+.wrd-item{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 12px;font:inherit;color:inherit;cursor:pointer}
+.wrd-item b{display:block;font-weight:700}
+.wrd-item small{display:block;color:var(--muted,#64748b);font-size:12px}
+.wrd-item.on{background:var(--blue-bg,#e8f0fe)}
+.wrd-item:active,.wrd-item:focus{background:var(--blue-bg,#e8f0fe);outline:none}
+.wrd-custom{border-top:1px solid var(--line,#d5dbe3);margin-top:4px;padding-top:12px}
+select#rd.wrd-select{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
