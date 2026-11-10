@@ -56,7 +56,9 @@ def target_round(pg,rd,seed):
     fp(pg)
     sh=pg.evaluate(SHEET);rows_ok(f'{tag} finished sheet',sh['rows'],exp)
     field='6' in keys and 'X' not in keys and '10' not in keys
-    if field:want=f"6's: {fl.count('6')} 5's: {fl.count('5')}"
+    ifaa='5' in keys and '4' in keys and '3' in keys and '6' not in keys and 'X' not in keys and '10' not in keys
+    if ifaa:want=f"5's: {fl.count('5')} 4's: {fl.count('4')} 3's: {fl.count('3')}"
+    elif field:want=f"6's: {fl.count('6')} 5's: {fl.count('5')}"
     else:want=f"X's: {fl.count('X')} 10's/X's: {fl.count('X')+fl.count('10')}"
     chk(f'{tag} finished: {want} and total {tot}',sh['sum'].startswith(want) and sh['big']==tot,sh['sum'])
     sc=pg.evaluate("(()=>{const r=[...document.querySelectorAll('.ad-kv tr')].find(t=>t.querySelector('th')?.textContent=='Score');return r?+r.querySelector('td').textContent:null})()")

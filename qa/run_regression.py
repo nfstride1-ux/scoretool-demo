@@ -41,6 +41,7 @@ AREAS=[
  ("Official result from a screenshot (C5)",["c5_test.py","d4_test.py"]),
  ("Sync now flag off (C6)",["c6_test.py"]),
  ("IFAA rules tab (C9)",["c9_test.py"]),
+ ("IFAA Field and Hunter scorers (C10)",["c10_test.py"]),
  ("Archery Australia target rounds (Schedule 9A)",["aa9a_test.py","rounds_page_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
  ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
