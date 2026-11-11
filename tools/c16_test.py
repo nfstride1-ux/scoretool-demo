@@ -363,6 +363,65 @@ try:
 
   chk('No page errors on the register page', not errs, errs)
 
+  # L5 — best 4 of 6 standings (max 2,640). Not used for Onion Shed.
+  stand=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const mk=(xs,rest)=>{const A=Array(60).fill(String(rest));for(let i=0;i<xs;i++)A[i]='X';
+      const e=[];for(let i=0;i<20;i++)e.push(A.slice(i*3,i*3+3));
+      return {e,nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()};}
+    const ev=(a,b,c)=>({e:Array(20).fill([a,b,c]),nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()});
+    /* Alex already on the list from register tests; add a second archer */
+    lg.gn=lg.gn||{};lg.order=lg.order||[];
+    if(!lg.order.includes('gbestof')){lg.order.push('gbestof');lg.gn.gbestof={n:'Blair Best',t:Date.now(),by:'register'}}
+    const alex=(lg.order||[]).find(id=>{const n=(typeof lgName==='function'?lgName(id):(lg.gn[id]||{}).n||id);return String(n).toLowerCase()==='alex archer'});
+    if(!alex)return {err:'no alex'};
+    lg.sc=lg.sc||{};
+    /* 600+xs when rest are 10s: 660,630,620,500,610,400 — best 4 = 660+630+620+610 = 2520, 30+20+10+0? wait 660=60X, 630=30X, 620=20X, 610=10X → 120 X in the best 4; 500 and 400 dropped */
+    lg.sc[alex]={
+      1:mk(60,'10'), /* 660 */
+      2:mk(30,'10'), /* 630 */
+      3:mk(20,'10'), /* 620 */
+      4:ev('9','8','8'), /* 500 */
+      5:mk(10,'10'), /* 610 */
+      6:ev('7','7','6') /* 400 */
+    };
+    /* Blair: only two nights plus an in-progress third; misses are — */
+    const part={e:Array(5).fill(['10','10','10']),nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()}; /* 150, not done */
+    lg.sc.gbestof={1:mk(50,'10'),2:mk(40,'10'),3:part};
+    save();
+    const rows=lkTable(lg);
+    const A=rows.find(r=>r.id===alex), B=rows.find(r=>r.id==='gbestof');
+    const onion=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||/onion/i.test(l.name||''));
+    const oTab=onion&&typeof lgTable==='function'?lgTable(onion):null;
+    const oBest=oTab&&oTab[0]&&oTab[0].count;
+    lkView(lg.code);
+    return {
+      a:{t:A&&A.t,x:A&&A.x,count:A&&A.count,miss:A&&A.W.map(c=>c?c.s:null),open:A&&A.open,rk:A&&A.rk},
+      b:{t:B&&B.t,x:B&&B.x,count:B&&B.count,miss:B&&B.W.map(c=>c?c.s:null),open:B&&B.open},
+      onionUsesBest4:!!oBest
+    };
+  }""")
+  chk('Best 4 of 6 totals 2,520 from 660, 630, 620 and 610, dropping 500 and 400 (max 2,640)',
+      stand['a'] and stand['a']['t']==2520 and stand['a']['x']==60+30+20+10 and sorted(stand['a']['count'])==[0,1,2,4],
+      stand.get('a'))
+  chk('A missed night is not a zero: two finished nights plus an in-progress third total just those scores',
+      stand['b'] and stand['b']['t']==600+50+600+40+150 and stand['b']['miss'][3] is None and stand['b']['miss'][4] is None and stand['b']['open'],
+      stand.get('b'))
+  pg.wait_for_selector('#lktab', timeout=8000)
+  html=pg.evaluate("()=>({txt:document.querySelector('#lkstand')?document.querySelector('#lkstand').innerText:'', marks:document.querySelectorAll('#lktab .lk-count').length, miss:(document.querySelector('#lktab .lk-miss')||{}).textContent, ital:!!document.querySelector('#lktab i')})")
+  chk('The standings card shows max 2,640 and all six night columns',
+      ('2,640' in html['txt'] or '2640' in html['txt'].replace(',','')) and 'N1' in html['txt'] and 'N6' in html['txt'],
+      html['txt'][:300])
+  chk('Counting scores are marked and missed nights show an em dash',
+      html['marks']>=4 and html['miss']=='—' and html['ital'], html)
+  onion_ok=pg.evaluate("""()=>{
+    const onion=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||/onion/i.test(l.name||''));
+    if(!onion)return true;
+    const rows=lgTable(onion);
+    return rows.every(r=>r.count==null);
+  }""")
+  chk('Onion Shed standings stay cumulative totals, not best 4 of 6', onion_ok)
+
   # No plotting on league scoring (Nathe 11 Nov 7:57am)
   pg.evaluate("""()=>{
     if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}

@@ -137,6 +137,7 @@ function lkView(code){
     <p class="small muted" style="margin:4px 0 0">Cap ${lg.cap||LK_CAP} archers · off-bow scores, no age or bow-type divisions in this first pot.</p>
     <ol class="lk-dates" style="padding-left:1.2em;margin:10px 0 0">${days}</ol>
     ${score660}</div>${n7}
+    ${lkTableHTML(lg)}
     <p><button class="btn alt" id="lkregopen">Register for a shoot night</button></p>
     ${hostUI}${acceptUI}
     <p class="small muted" style="margin:8px 4px">This league is invite only. The eight-character code does not let someone join unless they have already been invited. Onion Shed Challenge stays a separate six-300 league, and its code-join is unchanged.</p>
@@ -320,6 +321,59 @@ function lkRegisterView(){
   if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}if(typeof lkView==='function'&&lkGet())lkView(LK_CODE);else if(typeof nav==='function')nav('lab_leagues')};
 }
 
+
+function lkPickBest(W){
+  /* Best 4 of whatever nights they have (Q6 unanswered: a miss is —, not a zero). Rank by score, then Xs. */
+  const idx=[];(W||[]).forEach((c,i)=>{if(c)idx.push(i)});
+  idx.sort((a,b)=>(W[b].s-W[a].s)||(W[b].x-W[a].x)||a-b);
+  const count=idx.slice(0,4);
+  return{
+    count,
+    t:count.reduce((n,i)=>n+W[i].s,0),
+    x:count.reduce((n,i)=>n+W[i].x,0),
+    open:count.some(i=>!W[i].d)
+  };
+}
+function lkTable(lg){
+  const A=(typeof lgArchers==='function'?lgArchers(lg):(lg&&lg.order)||[]);
+  const rows=A.map(id=>{
+    const W=[];
+    for(let w=1;w<=6;w++){
+      const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||((lg.sc||{})[id]||{})[w]||null;
+      if(typeof lgHas==='function'?lgHas(e):(e&&e.e&&e.e.some(x=>x&&x.length))){
+        const ctx=Object.assign({xv:11,lancaster:true,round:LK_R,nEnds:20},e);
+        const s=(typeof lgTot==='function'?lgTot(e.e,ctx):0);
+        const x=(typeof lgXs==='function'?lgXs(e.e):0);
+        const d=typeof lgDoneE==='function'?lgDoneE(Object.assign({},e,{nEnds:e.nEnds||20})):!!(e.e&&e.e.filter(z=>z&&z.length==3).length>=20);
+        W.push({s,x,d});
+      }else W.push(null);
+    }
+    const b=lkPickBest(W);
+    const nm=(typeof lgName==='function'?lgName(id):id);
+    return{id,nm,W,t:b.t,x:b.x,count:b.count,open:b.open};
+  });
+  rows.sort((a,b)=>b.t-a.t||b.x-a.x||String(a.nm).localeCompare(String(b.nm)));
+  rows.forEach((r,k)=>{r.rk=k&&rows[k-1].t==r.t&&rows[k-1].x==r.x?rows[k-1].rk:k+1});
+  rows.forEach(r=>r.tie=rows.filter(o=>o.rk==r.rk).length>1);
+  return rows;
+}
+function lkTableHTML(lg){
+  const me=(typeof h2hMe==='function'&&h2hMe())||'';
+  const rows=lkTable(lg);
+  const cells=(r,c,i)=>{
+    if(!c)return'<td class="lk-miss">—</td>';
+    const on=r.count.includes(i);
+    const body=c.d?String(c.s):`<i class="muted">${c.s}</i>`;
+    return`<td class="${on?'lk-count':''}" title="${on?'Counts in the best 4':''}">${body}<span class="small muted"> · ${c.x}X</span></td>`;
+  };
+  const tot=r=>r.open?`<i class="muted">${r.t}</i>`:`<b>${r.t}</b>`;
+  return`<div class="card" id="lkstand"><h3>Standings · best 4 of 6</h3>
+    <div class="lg-wrap"><table class="ad-tab lg-tab" id="lktab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>X</th></tr></thead>
+    <tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}" data-lkrow="${h(r.id)}"><td>${r.tie?'=':''}${r.rk}</td><td>${k==0&&r.t>0&&!r.tie?'▲ ':''}${h(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map((c,i)=>cells(r,c,i)).join('')}<td>${tot(r)}</td><td>${r.x}</td></tr>`).join('')||'<tr><td colspan="10">No scores yet.</td></tr>'}</tbody></table></div>
+    <p class="small muted" style="margin:4px 0 0">Max 2,640. The four scores that count are marked. A missed night is — and does not count as a zero. Italics = still shooting. X = 11. Night 7 is not in this table.</p>
+    </div>`;
+}
+
 const _lkH2H=window.h2hCard;
 if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);setTimeout(lkDecorateCard,0);return html}}
 const _lkRender=window.render;
@@ -332,6 +386,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML
 });
 })();
