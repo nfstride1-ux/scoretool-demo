@@ -422,6 +422,42 @@ try:
   }""")
   chk('Onion Shed standings stay cumulative totals, not best 4 of 6', onion_ok)
 
+  # L6 — pot display only (entries × $10, 60/30/10, no payments)
+  pot=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    lg.host=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven'; /* preview: this phone ticks payments */
+    const ids=[];
+    for(let i=0;i<12;i++){
+      const id='gpot'+i;
+      if(!lg.order.includes(id)){lg.order.push(id);lg.gn=lg.gn||{};lg.gn[id]={n:'Pot '+i,t:Date.now(),by:'test'}}
+      ids.push(id);
+    }
+    const night=LK_DATES[0];
+    ids.forEach(id=>lkSetPaid(id,night,true));
+    const p1=lkPot(lg);
+    /* six nights, 12 paid each */
+    for(let w=1;w<=6;w++)ids.forEach(id=>lkSetPaid(id,LK_DATES[w-1],true));
+    const p6=lkPot(lg);
+    lkSetPaid(ids[0],LK_DATES[0],false);
+    const pUndone=lkPot(lg);
+    /* range fee must not be in the pot figure */
+    const noRange=p1.pot===120 && p6.pot===720;
+    lkView(lg.code);
+    lg.host='nathe';save();
+    return {p1,p6,pUndone,noRange};
+  }""")
+  chk('12 paid entries on night 1 show pot $120, split $72 / $36 / $12',
+      pot['p1']=={'entries':12,'pot':120,'first':72,'second':36,'third':12,'currency':'AUD','whole':True}, pot['p1'])
+  chk('After six nights, 12 archers all paid each night, pot is $720, split $432 / $216 / $72',
+      pot['p6']=={'entries':72,'pot':720,'first':432,'second':216,'third':72,'currency':'AUD','whole':True}, pot['p6'])
+  chk('Unticking a payment lowers the pot',
+      pot['pUndone']['entries']==71 and pot['pUndone']['pot']==710, pot['pUndone'])
+  pg.wait_for_selector('#lkpot', timeout=8000)
+  potui=pg.inner_text('#lkpot')
+  chk('The pot card is display only, notes the $25 range fee, and does not add it to the pot',
+      'display only' in potui.lower() and '$25' in potui and 'does not take' in potui.lower() and '710' in potui,
+      potui[:400])
+
   # No plotting on league scoring (Nathe 11 Nov 7:57am)
   pg.evaluate("""()=>{
     if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}

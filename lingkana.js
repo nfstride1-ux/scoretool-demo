@@ -137,7 +137,7 @@ function lkView(code){
     <p class="small muted" style="margin:4px 0 0">Cap ${lg.cap||LK_CAP} archers · off-bow scores, no age or bow-type divisions in this first pot.</p>
     <ol class="lk-dates" style="padding-left:1.2em;margin:10px 0 0">${days}</ol>
     ${score660}</div>${n7}
-    ${lkTableHTML(lg)}
+    ${lkTableHTML(lg)}${lkPotHTML(lg)}
     <p><button class="btn alt" id="lkregopen">Register for a shoot night</button></p>
     ${hostUI}${acceptUI}
     <p class="small muted" style="margin:8px 4px">This league is invite only. The eight-character code does not let someone join unless they have already been invited. Onion Shed Challenge stays a separate six-300 league, and its code-join is unchanged.</p>
@@ -147,6 +147,7 @@ function lkView(code){
   if($('#lkacc'))$('#lkacc').onclick=()=>{const m=lkAccept();if(m){const e=$('#lkaccmsg');if(e)e.textContent=m;return}lkView(lg.code)};
   if($('#lkivgo'))$('#lkivgo').onclick=()=>{const m=lkInvite(($('#lkivid')||{}).value);const e=$('#lkivmsg');if(e)e.textContent=m||'Invited.';if(!m)lkView(lg.code)};
   if($('#lkgadd'))$('#lkgadd').onclick=()=>{const m=lkAddGuest(($('#lkgname')||{}).value,!!(($('#lkgjr')||{}).checked));const e=$('#lkgmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
+  document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{const m=lkSetPaid(box.getAttribute('data-lkpaid'),lkNightKey(lg,Math.min(6,lgWeek(lg))),box.checked);if(m){box.checked=!box.checked;return}lkView(lg.code)});
 }
 
 
@@ -374,6 +375,56 @@ function lkTableHTML(lg){
     </div>`;
 }
 
+
+const LK_ENTRY_FEE=10, LK_RANGE_FEE=25, LK_SPLIT=[0.6,0.3,0.1];
+function lkPaidMap(lg){return (lg&&lg.paid)||{}}
+function lkPaidCount(lg){
+  /* Nights 1–6 only until Q10 is answered about night 7. */
+  let n=0;const P=lkPaidMap(lg);
+  for(let w=1;w<=6;w++){
+    const k=lkNightKey(lg,w), bag=P[k]||P[String(w)]||{};
+    n+=Object.keys(bag).filter(id=>bag[id]).length;
+  }
+  return n;
+}
+function lkPot(lg){
+  const entries=lkPaidCount(lg), pot=entries*LK_ENTRY_FEE;
+  /* $10 × n always splits into whole dollars at 60 / 30 / 10. */
+  return {entries,pot,first:Math.round(pot*LK_SPLIT[0]),second:Math.round(pot*LK_SPLIT[1]),third:Math.round(pot*LK_SPLIT[2]),currency:'AUD',whole:true};
+}
+function lkSetPaid(id,night,on){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(!lkCanHost(lg))return 'Only the host can tick who paid.';
+  const who=String(id||'');if(!who)return 'Pick an archer.';
+  const k=LK_DATES.includes(night)?night:lkNightKey(lg,night);
+  if(!k||!LK_DATES.slice(0,6).includes(k))return 'Pick a 660 night.';
+  lg.paid=lg.paid||{};lg.paid[k]=lg.paid[k]||{};
+  if(on)lg.paid[k][who]=1;else delete lg.paid[k][who];
+  lg.dirty=1;if(typeof save==='function')save();
+  return '';
+}
+function lkPotHTML(lg){
+  const p=lkPot(lg), host=lkCanHost(lg);
+  const w=(typeof lgWeek==='function'?Math.min(6,lgWeek(lg)):1);
+  const night=lkNightKey(lg,w);
+  const paid=(lg.paid&&lg.paid[night])||{};
+  const people=lkPickerOrder(lg,w);
+  const rows=people.map(id=>{
+    const nm=h((typeof lgName==='function'&&lgName(id))||id);
+    const on=!!paid[id];
+    const box=host?`<input type="checkbox" data-lkpaid="${h(id)}" ${on?'checked':''}>`:(on?'Paid':'—');
+    return`<label class="lk-paidrow" style="display:flex;gap:8px;align-items:center;margin:4px 0">${box}<span>${nm}</span></label>`;
+  }).join('')||'<p class="small muted">No one on the list yet.</p>';
+  return`<div class="card" id="lkpot"><span class="kicker">Club pot · display only</span>
+    <h3>$${p.pot} in the pot</h3>
+    <p class="small">${p.entries} paid ${p.entries==1?'entry':'entries'} × $${LK_ENTRY_FEE}. ScoreTool does not take this payment.</p>
+    <p>Split 60 / 30 / 10: <b>$${p.first}</b> / <b>$${p.second}</b> / <b>$${p.third}</b> (whole Australian dollars — these pots always divide evenly).</p>
+    <p class="small muted">The $${LK_RANGE_FEE} range fee is paid to the venue and is not in this pot.</p>
+    <p class="small muted" style="margin-top:8px">Night ${w} · ${h(lkFmtD(night))}. Tick who paid the $${LK_ENTRY_FEE} this night so a no-show is not charged. Night 7 is not in the pot until Nathe decides (Q10).</p>
+    <div id="lkpaidlist">${rows}</div>
+    </div>`;
+}
+
 const _lkH2H=window.h2hCard;
 if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);setTimeout(lkDecorateCard,0);return html}}
 const _lkRender=window.render;
@@ -386,6 +437,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkPot,lkPaidCount,lkSetPaid,lkPotHTML
 });
 })();
