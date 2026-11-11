@@ -40,6 +40,7 @@ const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
 const lgHas=e=>!!(e&&e.e&&e.e.some(x=>x&&x.length));
 const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=(e.nEnds||10));
 const lgToday=()=>{if(window._lgToday)return window._lgToday;const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function lgInfo(lg,w){if(typeof lkIs==='function'&&lkIs(lg)&&!(+w>=7))return{ends:20,keys:LG_KEYS,face:'40cm',dist:'18 m',done:'660 finished',title:'Lancaster 660',kicker:'Night'};return{ends:10,keys:LG_KEYS,face:LG_FACE,dist:'18 m',done:'300 finished',title:LG_RL,kicker:'Week'}}
 function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,h2hCap(lg))}
 /* current week: by the week dates if set, else the first week not yet shot by everyone (or the host's 'Next week') */
 function lgWeek(lg){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(cap,n||1))}
@@ -52,11 +53,13 @@ const lgGroups=(lg,w)=>(((lg.grp||{})[w]||{}).g||[]).map(g=>g.filter(id=>lgArche
 const lgGroupOf=(lg,w,id)=>{const G=lgGroups(lg,w);const k=G.findIndex(g=>g.includes(id));return k<0?null:k};
 /* host: set week w's groups. 26 Oct 2026: an archer who has already started can be moved too (ends already scored stay with them: scores are keyed by archer and week, never by group); only the host may change groups */
 function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=me)return false;const N=G.map(g=>g.filter(id=>lgArchers(lg).includes(id)));
+ if(typeof lkIs==='function'&&lkIs(lg)&&N.some(g=>g.length>4))return false;
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
+ if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
  /* Nathe 11 Nov 7:57am: league scoring is values only. Ignore any plot position; do not ask for or store arrow coordinates. Existing historical e.p on earlier ends is left untouched. */
  const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,null))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
  if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
@@ -204,23 +207,23 @@ const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
   open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
- const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
+ const I=lgInfo(lg,w),NE=I.ends,e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(NE,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
  /* Nathe 11 Nov 7:57am: league scoring is a number pad / buttons only — no target-face plotting UI, for one archer or a group. Personal and practice scoring outside leagues is unchanged. */
  const PL=false,NS='lg|'+lg.code+'|'+w+'|'+a,FX=null,LR=ROUNDS[LG_R],
   AD=null;
  window._lgPl=null;
- return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
-  return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
- ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>${lgLastLine(lg,w,ids)}
+ return`<div class="card" id="lgentry"><span class="kicker">Score card · ${I.kicker} ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
+  return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/'+NE}</span></button>`}).join('')}</div>
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?I.done:'End '+e.e.length+' of '+NE+' complete'):done?I.done:'End '+en+' of '+NE} · ${I.face} · ${I.dist}</p>${lgLastLine(lg,w,ids)}
  ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:hold?`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot on">${esc(last[j]||'')}</span>`).join('')}</div>
- <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?'300 finished.':'End '+e.e.length+' of 10 is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
+ <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?I.done+'.':'End '+e.e.length+' of '+NE+' is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>`}
  ${AD?'':lgNextPref(lg,ids)}
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
 function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
 /* Scoring taps, Undo, fixing an arrow and background relay refreshes re-draw this screen; they set window._lgKeep so the page stays exactly where it was (score keys and sheet stay on screen). Opening the screen, an archer chip and Back still start at the top. Display only. */
-function lgView(code){const lg=lgGet(code);if(!lg)return;if(typeof lkView==='function'&&typeof lkIs==='function'&&lkIs(lg))return lkView(code);const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
+function lgView(code){const lg=lgGet(code);if(!lg)return;const _lkScore=window._lgE&&window._lgE.code==code;if(typeof lkView==='function'&&typeof lkIs==='function'&&lkIs(lg)&&!_lkScore)return lkView(code);const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
  const wk=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
@@ -244,10 +247,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;if(typeof lkView==='fun
 const sp=!!(E&&!fm);
 if(sp){const SI=E.ids,rw=SI.map(id=>{const x=lgEnt(lg,id,w),EE=(x&&x.e||[]).filter(z=>z&&z.length);return{id,n:EE.filter(z=>z.length==3).length,t:lgTot(EE),x:lgXs(EE),EE}});
  app.innerHTML=`<div id="lgview" class="lgsp"><div class="card dark"><span class="kicker">League · week ${w} · ${SI.length>1?'shared phone':'scoring'}</span><h1>${esc(lg.name)}</h1>
-<p class="small" style="margin:0">${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE} · 18 m · ${w<6?'Week '+w+' of 6':'Day 6'}${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}</p><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="lgtoleague" data-lgtl="1">Back to league</button></div></div>
+<p class="small" style="margin:0">${esc((lgInfo(lg,w).title))} · ${esc(lgInfo(lg,w).face)} · ${esc(lgInfo(lg,w).dist)} · ${lgInfo(lg,w).kicker+' '+w}${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}</p><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="lgtoleague" data-lgtl="1">Back to league</button></div></div>
 ${lgEntryCard(lg,w,SI)}
-<div class="card" id="lgscores"><h3>Scores</h3><table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>Ends</th><th>Score</th><th>X</th></tr></thead><tbody>${rw.map(r=>`<tr data-lgsrow="${esc(r.id)}"><td>${esc(lgName(r.id))}${r.id==me?' (you)':''}</td><td>${r.n}/10</td><td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table>
-<p class="small muted" style="margin:4px 0 0">This week's 300 only. The league table is on the league screen.</p>
+<div class="card" id="lgscores"><h3>Scores</h3><table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>Ends</th><th>Score</th><th>X</th></tr></thead><tbody>${rw.map(r=>`<tr data-lgsrow="${esc(r.id)}"><td>${esc(lgName(r.id))}${r.id==me?' (you)':''}</td><td>${r.n}/${lgInfo(lg,w).ends}</td><td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table>
+<p class="small muted" style="margin:4px 0 0">This week's scores only. The league table is on the league screen.</p>
 <details id="lgsends"><summary class="small">Ends for each archer</summary>${rw.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(lgName(r.id))}</b>: ${r.EE.length?r.EE.map((e,i)=>`E${i+1} ${esc(e.join(' '))} (${lgTot([e])})`).join(' · '):'no ends yet'}</div>`).join('')}</details></div>
 ${lgAnCard(lg,w)}
 <div class="card">${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}<div class="row" style="gap:6px;justify-content:flex-start"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn alt" id="lgtoleague2" data-lgtl="1">Back to league</button></div></div></div>`}

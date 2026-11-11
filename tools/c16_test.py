@@ -458,6 +458,67 @@ try:
       'display only' in potui.lower() and '$25' in potui and 'does not take' in potui.lower() and '710' in potui,
       potui[:400])
 
+  # L9 — groups of up to 4, one scorer, 20-end 660, night sign-ups first, no plot face
+  grp=pg.evaluate("""()=>{
+    window._lgToday='2026-11-18';
+    const lg=lkEnsure();
+    const ids=[];
+    for(let i=0;i<5;i++){
+      const id='ggrp'+i;
+      if(!lg.order.includes(id)){lg.order.push(id);lg.gn=lg.gn||{};lg.gn[id]={n:'Grouper '+i,t:Date.now(),by:'test'}}
+      ids.push(id);
+    }
+    /* register the first four for tonight (night 1), leave the fifth on the season list only */
+    const night=LK_DATES[0];
+    lg.reg=lg.reg||{};lg.reg[night]=ids.slice(0,4).map(id=>({id,name:lg.gn[id].n,at:Date.now()}));
+    save();
+    const w=1;
+    lg.grp={};save();
+    const msgs=[];
+    for(let i=0;i<4;i++)msgs.push(lkAddToGroup(w,0,ids[i]));
+    const fifth=lkAddToGroup(w,0,ids[4]);
+    const pick=lkPickerOrder(lg,w);
+    const g=(((lg.grp||{})[w]||{}).g||[])[0]||[];
+    return {msgs,fifth,pickFirst:pick.slice(0,4),ids,g,inFifth:g.includes(ids[4])};
+  }""")
+  chk('A scorer can add 4 archers to a group',
+      grp['msgs']==['','','',''] and grp['g']==grp['ids'][:4], grp)
+  chk('A fifth archer is refused (max of 4)',
+      'at most 4' in (grp['fifth'] or '').lower() and not grp['inFifth'], grp['fifth'])
+  chk("The add-to-group picker lists that night's sign-ups first",
+      grp['pickFirst']==grp['ids'][:4], grp['pickFirst'])
+
+  opened=pg.evaluate("()=>lkScoreGroup(1,0)")
+  chk('Score this group opens without an error', opened=='', opened)
+  pg.wait_for_selector('#lgentry', timeout=8000)
+  card=pg.evaluate("""()=>{
+    const t=document.querySelector('#lgentry')?document.querySelector('#lgentry').innerText:'';
+    const head=document.querySelector('#lgview .card')?document.querySelector('#lgview .card').innerText:'';
+    return {
+      face:!!document.querySelector('#cspface'),
+      wrap:!!document.querySelector('#csfwrap'),
+      hide:!!document.querySelector('#cshide'),
+      keys:[...document.querySelectorAll('#lgentry [data-lgk]')].map(b=>b.dataset.lgk),
+      chips:[...document.querySelectorAll('#lgentry [data-lgid]')].map(b=>b.getAttribute('data-lgid')),
+      of20:/End 1 of 20/.test(t)||/1 of 20/.test(t),
+      six60:/Lancaster 660/.test(head+t),
+      text:t.slice(0,240)
+    };
+  }""")
+  chk('The Lingkana group card is a 20-end Lancaster 660 with a number pad and no plot face',
+      not card['face'] and not card['wrap'] and not card['hide'] and card['keys']==['X','10','9','8','7','6','M'] and card['of20'] and card['six60'] and len(card['chips'])==4,
+      card)
+  # X on this card is 11
+  scored=pg.evaluate("""()=>{
+    const lg=lkGet(), ids=(((lg.grp||{})[1]||{}).g||[])[0]||[];
+    const id=ids[0];
+    lgKey(lg.code,1,id,'X');
+    const e=lgEnt(lg,id,1);
+    return {nEnds:e&&e.nEnds, xv:e&&e.xv, tot:lgTot(e.e,e), first:(e.e[0]||[])[0], arrows:(e.e[0]||[]).length};
+  }""")
+  chk('Tapping X on the Lingkana group card scores 11 and keeps a 20-end entry',
+      scored['nEnds']==20 and scored['xv']==11 and scored['tot']==11 and scored['first']=='X', scored)
+
   # No plotting on league scoring (Nathe 11 Nov 7:57am)
   pg.evaluate("""()=>{
     if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}

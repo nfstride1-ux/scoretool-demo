@@ -137,7 +137,7 @@ function lkView(code){
     <p class="small muted" style="margin:4px 0 0">Cap ${lg.cap||LK_CAP} archers · off-bow scores, no age or bow-type divisions in this first pot.</p>
     <ol class="lk-dates" style="padding-left:1.2em;margin:10px 0 0">${days}</ol>
     ${score660}</div>${n7}
-    ${lkTableHTML(lg)}${lkPotHTML(lg)}
+    ${lkTableHTML(lg)}${lkPotHTML(lg)}${lkGroupHTML(lg)}
     <p><button class="btn alt" id="lkregopen">Register for a shoot night</button></p>
     ${hostUI}${acceptUI}
     <p class="small muted" style="margin:8px 4px">This league is invite only. The eight-character code does not let someone join unless they have already been invited. Onion Shed Challenge stays a separate six-300 league, and its code-join is unchanged.</p>
@@ -148,6 +148,9 @@ function lkView(code){
   if($('#lkivgo'))$('#lkivgo').onclick=()=>{const m=lkInvite(($('#lkivid')||{}).value);const e=$('#lkivmsg');if(e)e.textContent=m||'Invited.';if(!m)lkView(lg.code)};
   if($('#lkgadd'))$('#lkgadd').onclick=()=>{const m=lkAddGuest(($('#lkgname')||{}).value,!!(($('#lkgjr')||{}).checked));const e=$('#lkgmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
   document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{const m=lkSetPaid(box.getAttribute('data-lkpaid'),lkNightKey(lg,Math.min(6,lgWeek(lg))),box.checked);if(m){box.checked=!box.checked;return}lkView(lg.code)});
+  if($('#lkaddg'))$('#lkaddg').onclick=()=>{const m=lkAddToGroup(Math.min(6,lgWeek(lg)),+(($('#lkpickg')||{}).value||0),(($('#lkpick')||{}).value||''));const e=$('#lkgrpmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
+  document.querySelectorAll('[data-lkscore]').forEach(b=>b.onclick=()=>{const m=lkScoreGroup(Math.min(6,lgWeek(lg)),+b.getAttribute('data-lkscore'));const e=$('#lkgrpmsg');if(e&&m)e.textContent=m});
+
 }
 
 
@@ -425,6 +428,63 @@ function lkPotHTML(lg){
     </div>`;
 }
 
+
+function lkSetGroups(w,G){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(+w>=7)return 'Night 7 scoring is not open yet.';
+  const N=(G||[]).map(g=>(g||[]).filter(Boolean));
+  if(N.some(g=>g.length>4))return 'A group can have at most 4 archers.';
+  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};
+  lg.dirty=1;if(typeof save==='function')save();
+  return '';
+}
+function lkAddToGroup(w,gi,id){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  const who=String(id||'');if(!who)return 'Pick an archer.';
+  const G=(((lg.grp||{})[w]||{}).g||[]).map(g=>g.slice());
+  while(G.length<=gi)G.push([]);
+  if(G[gi].includes(who))return '';
+  if(G[gi].length>=4)return 'A group can have at most 4 archers.';
+  G.forEach(g=>{const i=g.indexOf(who);if(i>=0)g.splice(i,1)});
+  G[gi].push(who);
+  return lkSetGroups(w,G);
+}
+function lkScoreGroup(w,gi){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(+w>=7)return 'Night 7 scoring is not open yet.';
+  const G=(((lg.grp||{})[w]||{}).g||[])[gi]||[];
+  if(!G.length)return 'Add archers to the group first.';
+  if(G.length>4)return 'A group can have at most 4 archers.';
+  window._lgE={code:lg.code,w:+w,ids:G.slice()};window._lgAct=null;window._lgHold=null;
+  if(typeof lgView==='function')lgView(lg.code);
+  return '';
+}
+function lkGroupHTML(lg){
+  const w=Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);
+  if((typeof lgWeek==='function'?lgWeek(lg):1)>=7)return '';
+  const pick=lkPickerOrder(lg,w);
+  const G=(((lg.grp||{})[w]||{}).g||[]).map(g=>g.slice());
+  const show=G.concat([[]]);
+  const names=id=>h((typeof lgName==='function'&&lgName(id))||id);
+  const gBlocks=show.map((g,i)=>`<div class="lk-gblock" data-lkgi="${i}" style="margin:8px 0;padding:8px 0;border-top:1px solid #0002">
+    <p style="margin:0 0 4px"><b>Group ${i+1}</b> · ${g.length}/4 · one scorer on this phone</p>
+    <p class="small" style="margin:0 0 6px">${g.length?g.map(names).join(', '):'No one in this group yet.'}</p>
+    ${g.length?`<button class="btn alt" data-lkscore="${i}">Score this group</button>`:''}
+    </div>`).join('');
+  const opts=pick.map(id=>`<option value="${h(id)}">${names(id)}</option>`).join('')||'<option value="">No one on the list</option>';
+  const gopts=show.map((g,i)=>`<option value="${i}">Group ${i+1}${g.length?' ('+g.length+'/4)':''}</option>`).join('');
+  return`<div class="card" id="lkgrp"><span class="kicker">Night ${w} · groups</span>
+    <h3>Up to 4 archers, one scorer</h3>
+    <p class="small muted">The scorer picks from tonight's sign-ups first, then the rest of the league list. Scoring is on this phone, with a number pad (no plot face).</p>
+    <label for="lkpick">Add an archer</label>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><select id="lkpick" style="flex:1">${opts}</select>
+    <select id="lkpickg">${gopts}</select>
+    <button class="btn alt" id="lkaddg">Add to group</button></div>
+    <p class="small" id="lkgrpmsg" role="alert"></p>
+    ${gBlocks}
+    </div>`;
+}
+
 const _lkH2H=window.h2hCard;
 if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);setTimeout(lkDecorateCard,0);return html}}
 const _lkRender=window.render;
@@ -437,6 +497,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkPot,lkPaidCount,lkSetPaid,lkPotHTML
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML
 });
 })();
