@@ -142,18 +142,13 @@ def league_round(pg):
     tag='League 300 (Onion Shed league night, Vegas 300 18 m)';rng=random.Random(77)
     pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
     pg.locator('[data-lgme]').tap();pg.wait_for_timeout(500)
-    keys=pg.evaluate("[...document.querySelectorAll('#csad [data-lgk]')].map(b=>b.dataset.lgk)");chk(f'{tag}: keys X 10 9 8 7 6 M',keys==['X','10','9','8','7','6','M'],keys)
+    keys=pg.evaluate("[...document.querySelectorAll('#lgentry [data-lgk]')].map(b=>b.dataset.lgk)");chk(f'{tag}: keys X 10 9 8 7 6 M',keys==['X','10','9','8','7','6','M'],keys);chk(f'{tag}: league scoring shows no plot face',pg.locator('#cspface').count()==0 and pg.locator('#csad').count()==0)
     exp=[]
     for i in range(10):
         e=[]
         for j in range(3):
-            k=rng.choice(keys[:3]) if rng.random()<0.6 else rng.choice(keys);pg.locator(f'#csad [data-lgk="{k}"]').tap(timeout=5000);e.append(k);pg.wait_for_timeout(120)
+            k=rng.choice(keys[:3]) if rng.random()<0.6 else rng.choice(keys);pg.locator(f'#lgentry [data-lgk="{k}"]').tap(timeout=5000);e.append(k);pg.wait_for_timeout(120)
         exp.append(e);pg.wait_for_timeout(200)
-        if i<3 or i==9:
-            sh=pg.evaluate(SHEET.replace('.ad-tab tbody tr','#csadtab tbody tr'));rows_ok(f'{tag} after end {i+1}',sh['rows'],exp)
-            nums=pg.evaluate("[...document.querySelectorAll('#csad .ad-num b')].map(b=>b.textContent)")
-            run=sum(VAL(a) for x in exp for a in x)
-            if i<9:chk(f'{tag} after end {i+1}: End box 0 (new end), Prog {run}',nums==['0',str(run)],nums)
     tot=sum(VAL(a) for x in exp for a in x);fl=[a for x in exp for a in x]
     rec=pg.evaluate("(()=>{const L=lgGet('ONIONSHD'),me=TESTER.id,w=Object.keys(L.sc[me]||{}).pop();return{w,e:(L.sc[me]||{})[w]&&L.sc[me][w].e}})()")
     chk(f'{tag}: league record has every end in order (total {tot})',rec['e']==[srt(x) for x in exp],(rec,))

@@ -362,6 +362,40 @@ try:
   chk('Lingkana registrations are not written onto the Onion Shed league', onion['ok'], onion)
 
   chk('No page errors on the register page', not errs, errs)
+
+  # No plotting on league scoring (Nathe 11 Nov 7:57am)
+  pg.evaluate("""()=>{
+    if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}
+    const lg=lgGet('ONIONSH2')||lgGet('ONIONSHD')||(S.leagues||[]).find(l=>/onion/i.test(l.name||l.code||''));
+    if(!lg)return;
+    const me=(typeof h2hMe==='function'&&h2hMe())||'steven';
+    window._lgE={code:lg.code,w:lgWeek(lg),ids:[me]};window._lgAct=me;lgView(lg.code);
+  }""")
+  pg.wait_for_selector('#lgentry', timeout=8000)
+  face=pg.evaluate("""()=>({
+    face:!!document.querySelector('#cspface'),
+    wrap:!!document.querySelector('#csfwrap'),
+    hide:!!document.querySelector('#cshide'),
+    csad:!!document.querySelector('#csad'),
+    keys:[...document.querySelectorAll('#lgentry [data-lgk]')].map(b=>b.dataset.lgk),
+    prompt:(document.querySelector('#lgentry')||{}).innerText||''
+  })""")
+  chk('League scoring shows no plot face',
+      not face['face'] and not face['wrap'] and not face['hide'] and not face['csad'], face)
+  chk('League scoring uses a number pad of X, 10, 9, 8, 7, 6 and M, and does not ask for arrow positions',
+      face['keys']==['X','10','9','8','7','6','M'] and 'tap the face' not in face['prompt'].lower() and 'hold to aim' not in face['prompt'].lower(),
+      face)
+
+  # Personal / practice scoring outside leagues still plots
+  pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(500)
+  if pg.locator('#rd').count():
+    pg.select_option('#rd','Vegas 300 (18 m)');pg.wait_for_timeout(200)
+    if pg.locator('#st').count():pg.click('#st');pg.wait_for_timeout(800)
+  practice=pg.evaluate("""()=>({face:!!(document.querySelector('#pface')||document.querySelector('#cspface')),keys:[...document.querySelectorAll('[data-k],[data-csk]')].length})""")
+  chk('Personal and practice scoring outside leagues still shows the plot face',
+      practice['face'], practice)
+
+  chk('No page errors after the no-plot league card', not errs, errs)
   b.close()
 finally:
   srv.kill()

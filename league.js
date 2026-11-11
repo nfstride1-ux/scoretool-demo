@@ -57,11 +57,11 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
- const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){/* fixing one arrow, as Just me: replaced in place, plot kept */window._csFx=null;if(!csFxPut(e,3,fxs,k,xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+ /* Nathe 11 Nov 7:57am: league scoring is values only. Ignore any plot position; do not ask for or store arrow coordinates. Existing historical e.p on earlier ends is left untouched. */
+ const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,null))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
  if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
- if(xy||e.p){/* plotted arrow (one archer on this phone): its position kept beside the end, same order as the scores; never sent on the relay */const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
- /* a complete end is put in order (highest first, X before 10) with its plots, exactly as Just me does */
- if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((e.p&&e.p[ix])||[])],[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}
+ /* a complete end is put in order (highest first, X before 10), values only */
+ if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],[E2]=csSorted(E);E.splice(0,3,...E2);if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,[],E,[])}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
  /* 31 Oct 2026 (queue): auto-advance is the default again. Only once the third arrow is saved (save() above) does the card move to the
     next archer, in the same order as before, keeping the page where it is. The 27 Oct Next button stays as an option (S.lgNextBtn):
@@ -76,7 +76,7 @@ function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg
 function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
-/* my own week is also kept with my other sessions (plots and the 3-spot tag, so groups, heatmaps and the analysis work like Just me). Only a week I score
+/* my own week is also kept with my other sessions (values only; league scoring no longer stores plots). Only a week I score
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
@@ -205,10 +205,10 @@ function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
   open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
  const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
- const PL=ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
-  AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:10,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> \u00b7 ${fin?'300 finished':'End '+(ei+1)+' of 10'}`}):null;
- /* one archer on this phone: the same score card as Just me (plotting on the face, chips to fix an arrow, table of ends). Several archers stay buttons. */
- window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
+ /* Nathe 11 Nov 7:57am: league scoring is a number pad / buttons only — no target-face plotting UI, for one archer or a group. Personal and practice scoring outside leagues is unchanged. */
+ const PL=false,NS='lg|'+lg.code+'|'+w+'|'+a,FX=null,LR=ROUNDS[LG_R],
+  AD=null;
+ window._lgPl=null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
  ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>${lgLastLine(lg,w,ids)}

@@ -104,12 +104,11 @@ try:
   def cs_plot(i):click_face(pg,'cspface',0,{'Spot 1':-0.62,'Spot 2':0,'Spot 3':0.62}[pg.evaluate(TAB)])
   run(pg,'Casual','cspface','#cszcycle','data-csspot',cs_plot,lambda:pg.wait_for_timeout(300))
   chk('page errors (Casual): none',not e2)
-  # ---- League ----
+  # ---- League: no plot face, so no zoom-on-spot to persist (Nathe 11 Nov 7:57am) ----
   c3,pg,e3=phone(b)
   pg.evaluate("zkSet(1);nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
   pg.click('[data-lgme]');pg.wait_for_timeout(500)
-  if pg.locator('#cspface').count()==0 and pg.locator('#cshide').count():pg.click('#cshide')
-  run(pg,'League','cspface','#cszcycle','data-csspot',cs_plot,lambda:pg.wait_for_timeout(300))
+  chk('League: scoring shows no plot face and no zoom control',pg.locator('#cspface').count()==0 and pg.locator('#cszcycle').count()==0 and pg.locator('#lgentry [data-lgk]').count()==7)
   chk('page errors (League): none',not e3)
   b.close()
 finally:srv.terminate()
