@@ -261,7 +261,38 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .evcard .ev-nw{white-space:nowrap}
 
 /* Lingkana League: 80+ standings, pot ticks, A4 print/share */
-.lk-standwrap{max-height:60vh;overflow:auto}
+.lk-standwrap{max-height:min(52vh,calc(100dvh - 280px));overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.lk-standwrap::-webkit-scrollbar{display:none}
+#lkstand > p.small{position:relative;z-index:2;background:#fff;padding-top:8px;margin-bottom:0}
+body.lk-flow .lk-standwrap{max-height:calc(100dvh - 390px)}
+body.lk-flow #lkreviewpage{padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+#lkstand table.lk-stand{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0}
+#lkstand table.lk-stand col.rk{width:40px}
+#lkstand table.lk-stand col.nm{width:140px}
+#lkstand table.lk-stand col.n{width:52px}
+#lkstand table.lk-stand col.best{width:56px}
+#lkstand table.lk-stand col.xs{width:44px}
+#lkstand table.lk-stand col.ts{width:42px}
+#lkstand table.lk-stand th,
+#lkstand table.lk-stand td{padding:8px;text-align:right;white-space:nowrap;vertical-align:middle;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;color:#0f172a;background:#fff;background-clip:border-box;font-weight:500}
+#lkstand table.lk-stand th{font-weight:600;font-size:11px;color:#475569;padding-top:0;padding-bottom:8px;border-bottom:1px solid #d1d5db;position:sticky;top:0;z-index:3;background:#fff}
+#lkstand table.lk-stand th:last-child,
+#lkstand table.lk-stand td:last-child{padding-right:10px}
+#lkstand table.lk-stand th:first-child,
+#lkstand table.lk-stand td.rk{text-align:left;padding-left:12px;padding-right:6px;color:#475569;font-weight:600;position:sticky;left:0;z-index:5;background:#fff}
+#lkstand table.lk-stand th:first-child{z-index:7;top:0}
+#lkstand table.lk-stand th.nm,
+#lkstand table.lk-stand td.nm{text-align:left;padding-left:10px;padding-right:10px;font-weight:500;color:#0f172a;position:sticky;left:40px;z-index:4;background:#fff;border-right:1px solid #cbd5e1;box-shadow:6px 0 8px -6px rgba(15,23,42,.18)}
+#lkstand table.lk-stand th.nm{z-index:6;top:0}
+#lkstand table.lk-stand td.lk-keep,
+#lkstand table.lk-stand td.lk-drop,
+#lkstand table.lk-stand td.lk-miss,
+#lkstand table.lk-stand td.best,
+#lkstand table.lk-stand td.xs,
+#lkstand table.lk-stand td.ts{color:#0f172a;font-weight:500}
+#lkstand table.lk-stand td.lk-keep{background:#edf2f7}
+#lkstand table.lk-stand td.best{font-weight:700}
+#lkstand table.lk-stand td i{font-style:italic;color:#0f172a;font-weight:inherit}
 #lkpaidlist{max-height:240px;overflow:auto}
 #lkgrptab{font-size:12px}
 #lkresults{max-width:210mm}

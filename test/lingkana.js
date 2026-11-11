@@ -357,9 +357,22 @@ function lkPickBest(W){
     open:count.some(i=>!W[i].d)
   };
 }
+function lkNormName(nm){return String(nm||'').trim().replace(/\s+/g,' ').toLowerCase()}
+function lkMergeNight(a,b){
+  if(!a)return b||null;
+  if(!b)return a;
+  if(a.d&&!b.d)return a;
+  if(b.d&&!a.d)return b;
+  if((b.s||0)!==(a.s||0))return (b.s||0)>(a.s||0)?b:a;
+  if((b.x||0)!==(a.x||0))return (b.x||0)>(a.x||0)?b:a;
+  return a;
+}
+function lkApplyBest(r){const b=lkPickBest(r.W);r.t=b.t;r.x=b.x;r.tens=b.tens;r.count=b.count;r.open=b.open;return r}
 function lkTable(lg){
   const A=(typeof lgArchers==='function'?lgArchers(lg):(lg&&lg.order)||[]);
-  const rows=A.map(id=>{
+  const seen=new Set(), ids=[];
+  for(const id of A){if(!id||seen.has(id))continue;seen.add(id);ids.push(id)}
+  const raw=ids.map(id=>{
     const W=[];
     for(let w=1;w<=6;w++){
       const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||((lg.sc||{})[id]||{})[w]||null;
@@ -372,10 +385,28 @@ function lkTable(lg){
         W.push({s,x,t10,d});
       }else W.push(null);
     }
-    const b=lkPickBest(W);
-    const nm=(typeof lgName==='function'?lgName(id):id);
-    return{id,nm,W,t:b.t,x:b.x,tens:b.tens,count:b.count,open:b.open};
+    const stored=lg&&lg.gn&&lg.gn[id]&&lg.gn[id].n;
+    const nm=stored||(typeof lgName==='function'?lgName(id):id);
+    return lkApplyBest({id,nm,W,named:!!stored});
+
   });
+  const byName=new Map(), rows=[];
+  for(const r of raw){
+    const key=lkNormName(r.nm);
+    const generic=!key||key==='archer'||key==='you'||key==='someone';
+    const prev=(!generic&&key)?byName.get(key):null;
+    if(prev){
+      prev.W=prev.W.map((c,i)=>lkMergeNight(c,r.W[i]));
+      const nights=row=>(row.W||[]).filter(Boolean).length;
+      const ga=/^g[a-z0-9]{6}$/.test(String(prev.id||'')), gb=/^g[a-z0-9]{6}$/.test(String(r.id||''));
+      if(nights(r)>nights(prev)||(nights(r)===nights(prev)&&ga&&!gb))prev.id=r.id;
+      if(r.named||!prev.named)prev.nm=r.nm;
+      lkApplyBest(prev);
+    }else{
+      if(!generic&&key)byName.set(key,r);
+      rows.push(r);
+    }
+  }
   rows.sort((a,b)=>b.t-a.t||b.x-a.x||(b.tens||0)-(a.tens||0)||String(a.nm).localeCompare(String(b.nm)));
   rows.forEach((r,k)=>{r.rk=k&&rows[k-1].t==r.t&&rows[k-1].x==r.x&&(rows[k-1].tens||0)==(r.tens||0)?rows[k-1].rk:k+1});
   rows.forEach(r=>r.tie=rows.filter(o=>o.rk==r.rk).length>1);
@@ -387,13 +418,14 @@ function lkTableHTML(lg){
   const cells=(r,c,i)=>{
     if(!c)return'<td class="lk-miss">—</td>';
     const on=r.count.includes(i);
-    const body=c.d?String(c.s):`<i class="muted">${c.s}</i>`;
-    return`<td class="${on?'lk-count':''}" title="${on?'Counts in the best 4':''}">${body}<span class="small muted"> · ${c.x}×11</span></td>`;
+    const body=c.d?String(c.s):`<i>${c.s}</i>`;
+    return`<td class="${on?'lk-keep':'lk-drop'}"${on?' title="Counts in the best 4"':''}>${body}</td>`;
   };
-  const tot=r=>r.open?`<i class="muted">${r.t}</i>`:`<b>${r.t}</b>`;
+  const tot=r=>r.open?`<i>${r.t}</i>`:String(r.t);
   return`<div class="card" id="lkstand"><h3>Standings · best 4 of 6</h3>
-    <div class="lg-wrap lk-standwrap"><table class="ad-tab lg-tab" id="lktab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
-    <tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}" data-lkrow="${h(r.id)}"><td>${r.tie?'=':''}${r.rk}</td><td>${k==0&&r.t>0&&!r.tie?'▲ ':''}${h(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map((c,i)=>cells(r,c,i)).join('')}<td>${tot(r)}</td><td>${r.x}</td><td>${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No scores yet.</td></tr>'}</tbody></table></div>
+    <div class="lk-standwrap"><table class="lk-stand" id="lktab"><colgroup><col class="rk"><col class="nm"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="best"><col class="xs"><col class="ts"></colgroup>
+    <thead><tr><th></th><th class="nm">Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr data-lkrow="${h(r.id)}"><td class="rk">${r.tie?'=':''}${r.rk}</td><td class="nm">${h(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map((c,i)=>cells(r,c,i)).join('')}<td class="best">${tot(r)}</td><td class="xs">${r.x}</td><td class="ts">${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No scores yet.</td></tr>'}</tbody></table></div>
     <p class="small muted" style="margin:4px 0 0">No minimum nights. The total is the best 4 scores from the nights they shot (or all of them if they have fewer than four). Max 2,640. The four that count are marked. A missed night is — and is not a zero. Italics = still shooting. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12. Night 7 is not in this table.</p>
     </div>`;
 }
@@ -703,6 +735,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();
