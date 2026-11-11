@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-11-2208-live (2026-11-11)
+### What changed
+- The Lingkana register page has a Get ScoreTool button below the form, still visible after someone saves their registration. It opens the live app at https://nfstride1-ux.github.io/scoretool-demo/. Under the button: "To keep it: tap Share or the ⋮ menu, then Add to Home Screen."
+- Registration logic, the live2 relay topic, LK_FRESH, league data, /test/, PR #1 and archerycalendars.com are unchanged. Nothing was posted.
+- Backup before this change: tag `live-backup-2026-11-11-2054-live` (commit 858c12b, version v2026-11-11-2054-live). Rollback: `git push --force-with-lease origin 858c12b:main`.
+- No full regression, by request.
+### Files
+lingkana.js, tools/lingkana_live_test.py, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- tools/lingkana_live_test.py: 34 passed, 0 failed (Get ScoreTool button and link, helper line, local form save with the live relay stubbed, previous register/standings/paid/fresh checks).
+- No full `qa/run_regression.py`, by request (low usage).
+- Live URL checks after Pages: RESULT_LIVE
+
 ## v2026-11-11-2054-live (2026-11-11)
 ### What changed
 - Live Lingkana registered list is cleared. Nathe is no longer auto-added as a registered archer; he stays HOST only (host tools, scoring password and so on still work). The test 'slime' sign-up is removed. The archer list starts empty so Nathe can register himself at https://nfstride1-ux.github.io/scoretool-demo/lk-register.html without being blocked as a duplicate.

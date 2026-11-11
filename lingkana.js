@@ -409,6 +409,10 @@ function lkRegisterView(){
       <p class="small" id="lkregmsg" role="alert"></p>
     </form>
     <p class="small muted">Scoring on the night is separate and password-protected. This page does not take payments.</p>
+    <div id="lkgetbox" style="margin:16px 0 8px">
+      <p><a class="btn" id="lkgetapp" href="${h(LK_PUBLIC_BASE)}">Get ScoreTool</a></p>
+      <p class="small muted">To keep it: tap Share or the ⋮ menu, then Add to Home Screen.</p>
+    </div>
     <p><button class="btn ghost" type="button" id="lkregback">Back</button></p>
     </div>`;
   const nightEl=appEl.querySelector('#lkregnight');if(nightEl)nightEl.value=def;

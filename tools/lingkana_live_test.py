@@ -160,6 +160,40 @@ try:
         rtxt = page.inner_text('body')
         chk('public register has no paid ticks and no host Registered archers tools',
             page.locator('#lkarchpage').count()==0 and page.locator('[data-lkpaid]').count()==0 and 'Tick who paid' not in rtxt and page.locator('#lkgadd').count()==0)
+        href_app = page.get_attribute('#lkgetapp', 'href') or ''
+        hint = page.inner_text('#lkgetbox') if page.locator('#lkgetbox').count() else ''
+        chk('Get ScoreTool button is on the register page and opens the live app',
+            page.locator('a#lkgetapp').count()==1 and href_app=='https://nfstride1-ux.github.io/scoretool-demo/' and (page.locator('a#lkgetapp').inner_text() or '').strip()=='Get ScoreTool')
+        chk('Get ScoreTool line explains Add to Home Screen',
+            'Add to Home Screen' in hint and 'Share' in hint and 'menu' in hint)
+
+        # local registration save only: h2hPost is replaced, and guard stubs any ntfy.sh call
+        page.evaluate("() => { window._lkPosts=[]; window.h2hPost=function(){window._lkPosts.push([].slice.call(arguments));return Promise.resolve()}; }")
+        page.fill('#lkregcode', 'LK-TEST26')
+        page.fill('#lkregname', 'Local Test Archer')
+        page.fill('#lkregbow', 'Recurve')
+        page.click('#lkreggo')
+        page.wait_for_timeout(400)
+        saved = page.evaluate("""() => {
+          const msg = (document.querySelector('#lkregmsg')||{}).textContent||'';
+          const lg = typeof lkEnsure==='function'?lkEnsure():null;
+          const names=[];
+          const reg=(lg&&lg.reg)||{};
+          for (const k of Object.keys(reg)) for (const r of (reg[k]||[])) names.push(r.name||'');
+          const orderNames=(lg&&lg.order||[]).map(id => (lg.gn&&lg.gn[id]&&lg.gn[id].n)||id);
+          const btn=document.querySelector('a#lkgetapp');
+          return {msg, names, orderNames, href:btn&&btn.getAttribute('href'), label:(btn&&btn.textContent||'').trim(), posts:window._lkPosts||[]};
+        }""")
+        chk('register form saves a local sign-up and shows the confirmation',
+            'You are registered' in saved['msg'] and ('Local Test Archer' in saved['names'] or 'Local Test Archer' in saved['orderNames']))
+        chk('Get ScoreTool button is still visible after saving, same live app link',
+            page.locator('a#lkgetapp').count()==1 and page.locator('a#lkgetapp').is_visible() and saved['href']=='https://nfstride1-ux.github.io/scoretool-demo/' and saved['label']=='Get ScoreTool')
+        # The app would post the sign-up to the live topic; our in-memory stub must catch it so it never reaches ntfy.
+        caught = any(isinstance(p, list) and len(p)>=2 and p[0]=='scoretool-h2h-q7m4-lg-lingkn26-live2'
+                     and (p[1] or {}).get('k')=='lkreg'
+                     and ((p[1] or {}).get('rec') or {}).get('name')=='Local Test Archer'
+                     for p in (saved.get('posts') or []))
+        chk('register post was captured in-memory, not sent to the live relay', caught)
 
         # non-host cannot open the paid page or see pot ticks
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844})

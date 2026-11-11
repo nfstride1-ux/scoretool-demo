@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-11-2208-live',d:'2026-11-11',items:[
+   ['people',"Get ScoreTool from the register page","The Lingkana register page now has a Get ScoreTool button that opens the app in your browser, with a short note on how to keep it on your phone."]]},
   {v:'v2026-11-11-2054-live',d:'2026-11-11',items:[
    ['people',"Lingkana League list cleared for a fresh sign-up","The registered archer list on the live Lingkana League is empty again. The test slime sign-up is gone, and Nathe is host only until he signs up on the register page. Host tools and the scoring password still work."]]},
   {v:'v2026-11-11-1908-live',d:'2026-11-11',items:[
