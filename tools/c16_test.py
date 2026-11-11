@@ -519,6 +519,35 @@ try:
   chk('Tapping X on the Lingkana group card scores 11 and keeps a 20-end entry',
       scored['nEnds']==20 and scored['xv']==11 and scored['tot']==11 and scored['first']=='X', scored)
 
+  # Password-protected league scoring (no real password in source; test value only here)
+  TEST_PW='c16-test-only'
+  pw=pg.evaluate("""async (pw)=>{
+    const lg=lkEnsure();
+    const host=lg.host;
+    lg.host=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    const set=await lkSetPassword(pw);
+    const stored={hash:lg.pwHash,salt:lg.pwSalt,plain:JSON.stringify(lg).includes(pw)};
+    window._lkAuthed=null;try{sessionStorage.removeItem('scoretool.lk.auth')}catch(e){}
+    const blocked=lkScoreGroup(1,0);
+    const onUnlock=!!document.querySelector('#lkpwpage');
+    const bad=await lkUnlock('wrong-password');
+    const still=!!document.querySelector('#lkpwpage') && !document.querySelector('#lgentry');
+    const ok=await lkUnlock(pw);
+    const after=lkScoreGroup(1,0);
+    lg.host=host;save();
+    return {set,stored,blocked,onUnlock,bad,still,ok,after,hasHash:!!stored.hash,hashLen:(stored.hash||'').length};
+  }""", TEST_PW)
+  chk('The host can set a scoring password, stored as a hash, never as the typed secret',
+      pw['set']=='' and pw['hasHash'] and pw['hashLen']==64 and not pw['stored']['plain'], pw)
+  chk('Scoring is blocked until the password is entered, and a wrong password is refused',
+      'password' in (pw['blocked'] or '').lower() and pw['onUnlock'] and 'not right' in (pw['bad'] or '').lower() and pw['still'],
+      pw)
+  chk('The right password unlocks the group score card',
+      pw['ok']=='' and pw['after']=='', pw)
+  pg.wait_for_selector('#lgentry', timeout=8000)
+  chk('After a correct password the Lingkana score card is on screen, still with no plot face',
+      pg.locator('#lgentry').count()==1 and pg.locator('#cspface').count()==0)
+
   # No plotting on league scoring (Nathe 11 Nov 7:57am)
   pg.evaluate("""()=>{
     if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}

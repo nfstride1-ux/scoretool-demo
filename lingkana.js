@@ -137,7 +137,7 @@ function lkView(code){
     <p class="small muted" style="margin:4px 0 0">Cap ${lg.cap||LK_CAP} archers · off-bow scores, no age or bow-type divisions in this first pot.</p>
     <ol class="lk-dates" style="padding-left:1.2em;margin:10px 0 0">${days}</ol>
     ${score660}</div>${n7}
-    ${lkTableHTML(lg)}${lkPotHTML(lg)}${lkGroupHTML(lg)}
+    ${lkTableHTML(lg)}${lkPotHTML(lg)}${lkPwHTML(lg)}${lkGroupHTML(lg)}
     <p><button class="btn alt" id="lkregopen">Register for a shoot night</button></p>
     ${hostUI}${acceptUI}
     <p class="small muted" style="margin:8px 4px">This league is invite only. The eight-character code does not let someone join unless they have already been invited. Onion Shed Challenge stays a separate six-300 league, and its code-join is unchanged.</p>
@@ -148,6 +148,7 @@ function lkView(code){
   if($('#lkivgo'))$('#lkivgo').onclick=()=>{const m=lkInvite(($('#lkivid')||{}).value);const e=$('#lkivmsg');if(e)e.textContent=m||'Invited.';if(!m)lkView(lg.code)};
   if($('#lkgadd'))$('#lkgadd').onclick=()=>{const m=lkAddGuest(($('#lkgname')||{}).value,!!(($('#lkgjr')||{}).checked));const e=$('#lkgmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
   document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{const m=lkSetPaid(box.getAttribute('data-lkpaid'),lkNightKey(lg,Math.min(6,lgWeek(lg))),box.checked);if(m){box.checked=!box.checked;return}lkView(lg.code)});
+  if($('#lkpwsave'))$('#lkpwsave').onclick=()=>{lkSetPassword(($('#lkpwnew')||{}).value).then(m=>{const e=$('#lkpwsetmsg');if(e)e.textContent=m||'Password saved.';if(!m){const i=$('#lkpwnew');if(i)i.value=''}})};
   if($('#lkaddg'))$('#lkaddg').onclick=()=>{const m=lkAddToGroup(Math.min(6,lgWeek(lg)),+(($('#lkpickg')||{}).value||0),(($('#lkpick')||{}).value||''));const e=$('#lkgrpmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
   document.querySelectorAll('[data-lkscore]').forEach(b=>b.onclick=()=>{const m=lkScoreGroup(Math.min(6,lgWeek(lg)),+b.getAttribute('data-lkscore'));const e=$('#lkgrpmsg');if(e&&m)e.textContent=m});
 
@@ -455,6 +456,7 @@ function lkScoreGroup(w,gi){
   const G=(((lg.grp||{})[w]||{}).g||[])[gi]||[];
   if(!G.length)return 'Add archers to the group first.';
   if(G.length>4)return 'A group can have at most 4 archers.';
+  if(lg.pwHash&&!lkAuthed(lg)){window._lkWantScore={w:+w,gi:+gi};lkUnlockView(lg);return 'Type the league scoring password.';}
   window._lgE={code:lg.code,w:+w,ids:G.slice()};window._lgAct=null;window._lgHold=null;
   if(typeof lgView==='function')lgView(lg.code);
   return '';
@@ -485,6 +487,70 @@ function lkGroupHTML(lg){
     </div>`;
 }
 
+
+const LK_PW_SESSION='scoretool.lk.auth';
+async function lkHashPw(pw,salt){
+  const enc=new TextEncoder();
+  const buf=await crypto.subtle.digest('SHA-256',enc.encode(String(salt||'')+'\0'+String(pw||'')));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function lkAuthed(lg){
+  if(!lg||!lg.pwHash)return true;
+  try{if(sessionStorage.getItem(LK_PW_SESSION)===lg.code)return true}catch(e){}
+  return window._lkAuthed===lg.code;
+}
+function lkMarkAuth(lg){
+  window._lkAuthed=lg.code;
+  try{sessionStorage.setItem(LK_PW_SESSION,lg.code)}catch(e){}
+}
+async function lkSetPassword(pw){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(!lkCanHost(lg))return 'Only the host can set the scoring password.';
+  const s=String(pw||'');if(s.length<6)return 'Use at least 6 characters.';
+  const salt=lg.pwSalt||[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
+  lg.pwSalt=salt;lg.pwHash=await lkHashPw(s,salt);lg.dirty=1;
+  if(typeof save==='function')save();
+  return '';
+}
+async function lkUnlock(pw){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(!lg.pwHash){lkMarkAuth(lg);return ''}
+  const h=await lkHashPw(String(pw||''),lg.pwSalt);
+  if(h!==lg.pwHash)return 'That scoring password is not right.';
+  lkMarkAuth(lg);return '';
+}
+function lkUnlockView(lg){
+  const appEl=typeof app!=='undefined'?app:null;if(!appEl)return;
+  appEl.innerHTML=`<div class="card" id="lkpwpage"><span class="kicker">Password-protected scoring</span>
+    <h1>${h(lg.name)}</h1>
+    <p>Type the league scoring password to score tonight. This is not the poster invite code.</p>
+    <label for="lkpw">Scoring password</label>
+    <input id="lkpw" type="password" autocomplete="current-password">
+    <button class="btn alt" id="lkpwgo" style="margin-top:8px">Unlock scoring</button>
+    <p class="small" id="lkpwmsg" role="alert"></p>
+    <p><button class="btn ghost" type="button" id="lkpwback">Back to league</button></p>
+    </div>`;
+  const go=()=>{lkUnlock((document.querySelector('#lkpw')||{}).value).then(m=>{
+    const e=document.querySelector('#lkpwmsg');
+    if(m){if(e)e.textContent=m;return}
+    const want=window._lkWantScore;window._lkWantScore=null;
+    if(want)lkScoreGroup(want.w,want.gi);else lkView(lg.code);
+  })};
+  if($('#lkpwgo'))$('#lkpwgo').onclick=go;
+  if($('#lkpw'))$('#lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+  if($('#lkpwback'))$('#lkpwback').onclick=()=>{window._lkWantScore=null;lkView(lg.code)};
+}
+function lkPwHTML(lg){
+  if(!lkCanHost(lg))return '';
+  return`<div class="card" id="lkpwset"><span class="kicker">Host</span><h3>Scoring password</h3>
+    <p class="small muted">Archers need this password to score on a group card. It is stored as a hash on this phone, never in the source. Do not reuse the poster invite code.</p>
+    <label for="lkpwnew">Set or change the password</label>
+    <input id="lkpwnew" type="password" autocomplete="new-password">
+    <button class="btn alt" id="lkpwsave" style="margin-top:8px">Save password</button>
+    <p class="small" id="lkpwsetmsg" role="alert">${lg.pwHash?'A scoring password is set.':''}</p>
+    </div>`;
+}
+
 const _lkH2H=window.h2hCard;
 if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);setTimeout(lkDecorateCard,0);return html}}
 const _lkRender=window.render;
@@ -497,6 +563,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkPickBest,lkTable,lkTableHTML,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML
 });
 })();
