@@ -1,5 +1,6 @@
-# Send past rounds to Archery Calendar (calsync.js): Past sessions button / status, event matching (one match = confirm, several = pick
-# with 'None of these', none or offline = sent untied via scoretool.cal.<tester>.force), not linked = link prompt, Settings bulk list.
+# Send past rounds to Archery Calendar (calsync.js). Not linked: the Send button opens the link prompt.
+# C2: once linked, every finished round is sent on its own, including ones finished before the link.
+# A round goes once. Samples and discarded rounds stay out. The RPC is stubbed.
 # Tester 'steven' on a fresh 390px phone, seeded TEST sessions only; archerycalendars.com events and the Supabase RPC are mocked.
 import subprocess,sys,time,os,json,re
 from playwright.sync_api import sync_playwright
@@ -35,7 +36,7 @@ with sync_playwright() as p:
    localStorage.setItem('scoretool.cal.steven.prompted','1')}""")
   OTHER=E("()=>JSON.stringify(Object.keys(localStorage).filter(k=>!k.startsWith('scoretool.cal.steven.')&&!/^scoretool\\.(v|state|steven|dname)/.test(k)).sort().map(k=>[k,localStorage.getItem(k)]))")
   pg.reload();pg.wait_for_timeout(2500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(400)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(400)
   SN="JSON.stringify(S.sessions)";s0=E(SN)
   base=E("JSON.parse(localStorage.getItem('scoretool.cal.steven.base')||'null')")
   chk('past rounds are in the baseline (never sent on their own)',isinstance(base,list) and 'sp1' in base)
@@ -49,56 +50,29 @@ with sync_playwright() as p:
   pg.click('[data-calsend="sp1"]');pg.wait_for_timeout(600)
   chk('not linked: shows the link prompt',pg.locator('#calPrompt').count()==1 and pg.locator('#calov').count()==0 and not SENT)
   pg.locator('#calPrompt').screenshot(path=os.path.join(SH,'01-not-linked-prompt.png')) if pg.locator('#calPrompt').count() else None
-  E("()=>{const d=document.getElementById('calPrompt');if(d)d.remove();localStorage.setItem('scoretool.cal.steven.link',JSON.stringify('ab'.repeat(24)))}")
+  E("()=>{const d=document.getElementById('calPrompt');if(d)d.remove()}")
   past();pg.locator('[data-calsend="sp1"]').scroll_into_view_if_needed();pg.screenshot(path=os.path.join(SH,'02-past-sessions.png'))
-  # one match: confirm, Back cancels
-  pg.click('[data-calsend="sp1"]');pg.wait_for_selector('#calov',timeout=5000);pg.wait_for_timeout(300)
-  t=pg.locator('#calov').inner_text()
-  chk('one match: asks Add to <event>?','add to test indoor - club a?' in t.lower())
-  chk('new screen has a Back button',pg.locator('#calov [data-calv=back]').count()==1)
-  pg.screenshot(path=os.path.join(SH,'03-one-match-confirm.png'))
-  pg.click('#calov [data-calv=back]');pg.wait_for_timeout(600)
-  chk('Back closes it and sends nothing',pg.locator('#calov').count()==0 and not SENT and pg.locator('[data-calsend="sp1"]').count()==1)
-  pg.click('[data-calsend="sp1"]');pg.wait_for_selector('#calov');pg.click('#calov [data-calv=yes]');pg.wait_for_timeout(2500)
-  ev=E("JSON.parse(localStorage.getItem('scoretool.cal.steven.events')||'{}')").get('sp1') or {}
-  chk('tied with calSetEv (official, send)',ev.get('id')=='t-one' and ev.get('official')==1 and ev.get('send')==1 and ev.get('date')=='2026-09-05')
-  s1=[x for x in SENT if x.get('p_source_id')=='steven:sp1']
-  chk('sent with the event name',bool(s1) and s1[-1]['p_round'].startswith('Test Indoor - Club A') and s1[-1]['p_score']==540 and s1[-1]['p_shot_date']=='2026-09-05')
+  # a sample and a discarded round must stay out once linking turns auto-send on
+  E("""()=>{const e=n=>[...Array(n)].map(()=>['10','9','8']);
+    S.sessions.push({id:'sp9',date:'2026-07-01',round:'Indoor WA 18m',ends:e(20),pos:[],src:'practice'});
+    S.sessions.push({id:'spsamp',date:'2026-07-02',round:'Indoor WA 18m',ends:e(20),pos:[],src:'practice',sample:true});
+    save();window.calDiscard('sp9');
+    localStorage.setItem('scoretool.cal.steven.link',JSON.stringify('ab'.repeat(24)))}""")
+  s0=E(SN)
+  pg.wait_for_timeout(7000)
+  def got(i):return [x for x in SENT if x.get('p_source_id')=='steven:'+i]
+  for i,d in [('sp1','2026-09-05'),('sp2','2026-09-12'),('sp3','2026-09-19'),('sp7','2026-08-01'),('sp8','2026-08-02')]:
+    rows=got(i)
+    chk(f'{i} sent once under its round',len(rows)==1 and rows[0]['p_score']==540 and rows[0]['p_shot_date']==d and rows[0]['p_round'].startswith('Indoor WA 18m') and rows[0]['p_token']=='ab'*24)
+  chk('unfinished, sample and discarded are not sent',not got('sp4') and not got('spsamp') and not got('sp9'))
+  n0=len(SENT);pg.wait_for_timeout(5000)
+  chk('a second pass does not send them again',len(SENT)==n0)
   past()
   chk('sent round shows On Archery Calendar (no button)',pg.locator('[data-calsend="sp1"]').count()==0 and 'On Archery Calendar' in pg.locator('[data-calst=sent]').first.inner_text())
-  # several matches: pick, 'None of these' sends untied
-  pg.click('[data-calsend="sp2"]');pg.wait_for_selector('#calov');pg.wait_for_timeout(300)
-  n=pg.locator('#calov .calevb').count();t=pg.locator('#calov').inner_text()
-  chk('several matches: lists both (date range covers the day)',n==2 and 'Test Target Shoot' in t and 'Test Club Day' in t and 'None of these' in t)
-  pg.screenshot(path=os.path.join(SH,'04-several-matches.png'))
-  pg.click('#calov [data-calv=none]');pg.wait_for_timeout(2500)
-  s2=[x for x in SENT if x.get('p_source_id')=='steven:sp2']
-  chk('None of these: sent untied under the round name',bool(s2) and s2[-1]['p_round']=='Indoor WA 18m')
-  chk('untied goes via the force list',E("(JSON.parse(localStorage.getItem('scoretool.cal.steven.force')||'[]')).includes('sp2')") and not E("!!(JSON.parse(localStorage.getItem('scoretool.cal.steven.events')||'{}')).sp2"))
-  # no match while offline: queued, then sent when back online
-  past();ctx.set_offline(True);pg.wait_for_timeout(300)
-  pg.click('[data-calsend="sp3"]');pg.wait_for_timeout(1500)
-  chk('offline: no picker, queued untied',pg.locator('#calov').count()==0 and E("(JSON.parse(localStorage.getItem('scoretool.cal.steven.force')||'[]')).includes('sp3')") and not [x for x in SENT if x.get('p_source_id')=='steven:sp3'])
-  past();chk('offline: shows Waiting to send',pg.locator('[data-calst=queued]').count()>=1 and pg.locator('[data-calsend="sp3"]').count()==0)
-  pg.locator('[data-calst=queued]').first.scroll_into_view_if_needed();pg.screenshot(path=os.path.join(SH,'05-offline-waiting.png'))
-  ctx.set_offline(False);pg.wait_for_timeout(6000)
-  chk('back online: queued round is sent',bool([x for x in SENT if x.get('p_source_id')=='steven:sp3']))
-  # Settings bulk list
+  pg.locator('[data-calst=sent]').first.scroll_into_view_if_needed();pg.screenshot(path=os.path.join(SH,'05-offline-waiting.png'))
   E("()=>{cur=null;nav('lab_settings')}");pg.wait_for_timeout(900)
-  chk('Settings has Send all past finished rounds',pg.locator('#calPast').count()==1 and '(2)' in pg.locator('#calPast').inner_text())
+  chk('Settings no longer lists those rounds as waiting','(' not in pg.locator('#calPast').inner_text())
   pg.locator('#calcard').scroll_into_view_if_needed();pg.screenshot(path=os.path.join(SH,'06-settings-card.png'))
-  pg.click('#calPast');pg.wait_for_selector('#calov');pg.wait_for_timeout(300)
-  ids=pg.eval_on_selector_all('#calov .callist input','a=>a.map(x=>x.value)')
-  chk('bulk lists only unsent finished rounds, with checkboxes',sorted(ids)==['sp7','sp8'])
-  chk('bulk screen has Back and no emoji',pg.locator('#calov [data-calv=back]').count()==1 and not EMO.search(pg.locator('#calov').inner_text()))
-  pg.click('#calAll');pg.wait_for_timeout(200);pg.screenshot(path=os.path.join(SH,'07-bulk-list.png'))
-  pg.click('#calGoSel');pg.wait_for_selector('#calov h2:has-text("Add to")',timeout=5000);pg.wait_for_timeout(300)
-  chk('bulk: sp8 (no match) goes untied, sp7 (one match) asks to confirm','add to test bulk shoot?' in pg.locator('#calov').inner_text().lower() and 'round 2 of 2' in pg.locator('#calov').inner_text().lower())
-  pg.click('#calov [data-calv=yes]');pg.wait_for_timeout(3000)
-  s7=[x for x in SENT if x.get('p_source_id')=='steven:sp7'];s8=[x for x in SENT if x.get('p_source_id')=='steven:sp8']
-  chk('bulk: both sent (sp7 tied, sp8 no match so untied)',bool(s7) and s7[-1]['p_round'].startswith('Test Bulk Shoot') and bool(s8) and s8[-1]['p_round']=='Indoor WA 18m')
-  E("()=>{nav('lab_settings')}");pg.wait_for_timeout(600)
-  chk('Settings count drops to none left','(' not in pg.locator('#calPast').inner_text())
   # nothing else changed
   chk('session records unchanged',E(SN)==s0)
   NOW=E("()=>JSON.stringify(Object.keys(localStorage).filter(k=>!k.startsWith('scoretool.cal.steven.')&&!/^scoretool\\.(v|state|steven|dname)/.test(k)).sort().map(k=>[k,localStorage.getItem(k)]))")

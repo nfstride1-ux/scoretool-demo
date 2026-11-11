@@ -34,7 +34,9 @@ try:
   # picker lists every tester, Nate Evans / Danie Oosthuizen left out
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();pg.goto('http://localhost:8774/');pg.wait_for_timeout(1200)
   names=pg.locator('[data-tester]').all_inner_texts()
-  chk('picker lists all 10 testers by real name, then Darnie',names==['Nathaniel Stride','Phill Arthur','Logan Wolfe','Steven Snook','Joseph Snook','Michael Choong','Dana Chapman-Bureny','Tahuri Burney','Estiaan Cronje','Nate Evans','Danie Oosthuizen'])
+  chk('picker lists adults by name and under-16s by nickname',names==['Nathaniel Stride','Phill Arthur','Logan','Steven Snook','Joe','Michael Choong','Dana Chapman-Bureny','Tahuri','Estiaan Cronje','Nate Evans','Danie Oosthuizen'])
+  chk('under-16 real names are not on the picker','Logan Wolfe' not in names and 'Joseph Snook' not in names and 'Tahuri Burney' not in names)
+  chk('a new archer can start without the list',pg.locator('#npc').count()==1 and 'Create my profile' in pg.inner_text('#newprofile'))
   chk('Nate Evans is a tester (confirmed 18 Oct); Darnie = Danie Oosthuizen, a guest archer, not Danie-Louis',"id:'nate',name:'Nate Evans'" in TJ and "{id:'darnie',name:'Danie Oosthuizen',short:'Danie',bow:'Compound',data:true,guest:true}" in TJ and 'Danie-Louis' not in json.dumps(json.load(open(os.path.join(ROOT,'data','sheets_darnie.json')))))
   CP=open(os.path.join(ROOT,'c-7q4m9x2k','index.html'),encoding='utf-8').read()
   chk('Phil coach group page unchanged: Nate still left out there','Choong' in CP and not re.search(r'nate evans|20536',CP,re.I))

@@ -13,7 +13,7 @@ LEG={'8m':{'v':'22.90'},'18m':{'v':'25.0'},'30m':{'v':'29.30'}}
 def start(b,dark=False):
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and errs.append(m.text))
   pg.goto('http://localhost:8810/');pg.wait_for_timeout(1000);nm_seed.pick(pg,'nathe');pg.wait_for_timeout(500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=home]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)

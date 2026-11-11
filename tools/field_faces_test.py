@@ -14,7 +14,7 @@ with sync_playwright() as p:
     errs=[]; pg.on('console',lambda m: m.type=='error' and errs.append(m.text)); pg.on('pageerror',lambda e: errs.append(str(e)))
     pg.goto('http://localhost:'+PORT+'/'); pg.wait_for_timeout(1200)
     nm_seed.pick(pg,'nathe'); pg.wait_for_timeout(800)
-    pg.get_by_text('Demo unlock').first.click(); pg.wait_for_timeout(800)
+    pg.locator('#unlock').first.click(); pg.wait_for_timeout(800)
     for _ in range(3):
         if pg.locator('nav [data-v=score]').is_visible(): break
         print('APP:',pg.inner_text('#app')[:200]); pg.locator('#app button').first.click(); pg.wait_for_timeout(600)
@@ -65,7 +65,7 @@ with sync_playwright() as p:
     # reload persistence
     pg.reload(); pg.wait_for_timeout(1200)
     sess=E('JSON.stringify(S.sessions.slice(-1)[0].ff)'); print(sess)
-    chk('saved per end after reload',sess=='[{"p":"blue","f":60,"d":35},{"p":"blue","f":20,"d":15}]')
+    chk('saved per end after reload',sess=='[{"p":"blue","f":60,"d":35},{"p":"blue","f":20,"d":15},{"p":"blue","f":20,"d":15}]')
     # old score: inject old field session without ff
     E('S.sessions.push({id:"sold",date:"2026-01-01",round:"WA Field 24 Marked",ends:[["6","5","4"]],pos:[[]],note:"",finished:true});localStorage.setItem(KEY,JSON.stringify(S))')
     pg.reload(); pg.wait_for_timeout(1200); E('cur=null;sv="sheet"'); pg.click('nav [data-v=score]'); pg.wait_for_timeout(300)

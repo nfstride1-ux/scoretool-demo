@@ -26,7 +26,7 @@ try:
     pg.wait_for_timeout(t)
     for _ in range(3):
       if pg.locator('nav [data-v=score]').is_visible():break
-      d=pg.get_by_text('Demo unlock')
+      d=pg.locator('#unlock')
       if d.count():d.first.click()
       elif pg.locator('#app button').count():pg.locator('#app button').first.click()
       pg.wait_for_timeout(500)

@@ -27,6 +27,8 @@ function allShoots(){const me=S.profile||'',out=[],O=offFor(me).slice(),used=new
  S.sessions.filter(s=>!s.sample&&ROUNDS[s.round]&&arrowsIn(s)>0).forEach(s=>{const R=ROUNDS[s.round],EN=s.ends.filter(e=>e&&e.length);
   out.push({id:s.id,date:s.date,round:canon(s.round),score:total(s),ends:EN,dists:EN.map((_,i)=>distOf(faceR(R,i),s.round)),flagged:0,src:s.src=='paper'?'paper':'practice',inc:!isDone(s),
    event:s.src=='paper'?'Paper score sheet (competition)':'Practice',rating:null,field:isFld(faceR(R,0))||!!R.aba,aba:!!R.aba,s})});
+ if(window.importedShoots)window.importedShoots().forEach(s=>out.push(Object.assign({},s,{round:canon(s.round),src:'imported',inc:false,rating:null,imported:true})));
+ if(window.officialAdded)window.officialAdded().forEach(s=>out.push({id:s.id,date:s.date,round:canon(s.round),score:s.score,ends:s.ends||[],dists:[],flagged:0,src:'official',inc:false,event:s.event||'Official',club:'',rating:null,url:'',field:/field/i.test(s.round),official:true}));
  return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.id<b.id?-1:1))}
 window.statShoots=allShoots;
 /* ONE round list for Stats and Analytics: canonical names, rounds with a counted shoot (complete, or any when Include incomplete is ticked), newest first */
@@ -39,8 +41,8 @@ const ST=window._st2=window._st2||{r:null,id:null};
 const incOn=()=>!!S.incInc;
 const poolOf=(L,r)=>L.filter(x=>x.round==r&&(incOn()||!x.inc));
 window.statPool=()=>{const L=allShoots();return poolOf(L,ST.r)};
-const SRC={comp:'Competition',paper:'Competition · paper sheet',practice:'Practice'};
-const tag=x=>`<span class="real">${SRC[x.src]}</span>${x.inc?' <span class="sample inc-tag">Incomplete</span>':''}`;
+const SRC={comp:'Competition',paper:'Competition · paper sheet',practice:'Practice',imported:'Imported'};
+const tag=x=>`<span class="real">${SRC[x.src]||x.src}</span>${x.src==='imported'?' <span class="sample" data-imported="1">imported</span>':''}${x.inc?' <span class="sample inc-tag">Incomplete</span>':''}`;
 /* best score at each end over the last 3 complete shoots with matching ends: never below any of those scores */
 function bestEnds(P){const L=P.filter(x=>!x.inc&&x.ends.length);if(!L.length)return null;const n=L[L.length-1].ends.length,M=L.filter(x=>x.ends.length==n).slice(-3);if(M.length<2)return null;
  const v=[...Array(n)].reduce((t,_,i)=>t+Math.max(...M.map(x=>endSum(x.ends[i]))),0);return{v,n:M.length,from:M.map(x=>x.score)}}
@@ -98,9 +100,9 @@ function render(){if(window.abaSeed)abaSeed();const L=allShoots(),RL=roundList(L
  /* 3 PB */
  const best=full.slice().sort((a,b)=>b.score-a.score||(a.date<b.date?-1:1)),pb=best[0];
  const allPB={};L.filter(s=>!s.inc).forEach(s=>{if(!allPB[s.round]||s.score>allPB[s.round].score)allPB[s.round]=s});
- h+=card('c-pb','Personal best · '+E(ST.r),'',`${pb?`<div class="row" style="align-items:flex-end"><b style="font-size:34px;color:var(--gold)" id="pbscore">${pb.score}</b><span class="small muted" style="text-align:right">${fmt(pb.date)}<br>${E(pb.event)}</span></div>
-  <h3 style="margin:10px 0 4px">Your top ${Math.min(5,best.length)}</h3>${best.slice(0,5).map((s,i)=>`<div class="list-item row"><span>${i+1}. <b>${s.score}</b></span><span class="small muted">${fmt(s.date)} · ${SRC[s.src]}</span></div>`).join('')}`:'<p>No complete shoot of this round yet, so no PB.</p>'}
-  <details style="margin-top:8px" id="allpbs"><summary class="small"><b>All my PBs</b> · every round</summary>${Object.values(allPB).sort((a,b)=>a.round<b.round?-1:1).map(s=>`<div class="list-item row"><span>${E(s.round)}</span><span><b>${s.score}</b> <span class="small muted">${fmt(s.date)}</span></span></div>`).join('')}</details>
+ h+=card('c-pb','Personal best · '+E(ST.r),'',`${pb?`<div class="row" style="align-items:flex-end"><b style="font-size:34px;color:var(--gold)" id="pbscore">${pb.score}</b><span class="small muted" style="text-align:right">${fmt(pb.date)}${pb.src==='imported'?' <span class="sample" data-imported="1">imported</span>':''}<br>${E(pb.event)}</span></div>
+  <h3 style="margin:10px 0 4px">Your top ${Math.min(5,best.length)}</h3>${best.slice(0,5).map((s,i)=>`<div class="list-item row"><span>${i+1}. <b>${s.score}</b></span><span class="small muted">${fmt(s.date)} · ${SRC[s.src]||s.src}${s.src==='imported'?' <span class="sample" data-imported="1">imported</span>':''}</span></div>`).join('')}`:'<p>No complete shoot of this round yet, so no PB.</p>'}
+  <details style="margin-top:8px" id="allpbs"><summary class="small"><b>All my PBs</b> · every round</summary>${Object.values(allPB).sort((a,b)=>a.round<b.round?-1:1).map(s=>`<div class="list-item row"><span>${E(s.round)}</span><span><b>${s.score}</b> <span class="small muted">${fmt(s.date)}</span>${s.src==='imported'?' <span class="sample" data-imported="1">imported</span>':''}</span></div>`).join('')}</details>
   <p class="small muted" style="margin:6px 0 0" id="pbnote">Complete rounds only. Incomplete rounds never count as a PB${incOn()?', so ticking Include incomplete doesn\'t change this card':''}.</p>`,0,n);
  /* 4 Score history */
  const H=P,run=H.map((s,i)=>{const w=H.slice(Math.max(0,i-2),i+1).filter(y=>!y.inc).map(y=>y.score);return w.length?Math.round(avg(w)):null}),pbl=H.map((s,i)=>{const v=H.slice(0,i+1).filter(y=>!y.inc).map(y=>y.score);return v.length?Math.max(...v):null});

@@ -229,6 +229,11 @@ function gSources(round,excl){const R=ROUNDS[round],app=[],off=[];if(!R||!R.ape|
   app.push({id:'s:'+s.id,k:'app',date:s.date,sid:s.id,sc:ends.reduce((t,e)=>t+endSum(e),0),n:ends.length,full,cls,fl:faceLbl(cls,s),ends:ends.map(endSum),ar:ends.map(e=>e.slice()),pos:(s.pos||[]).slice(0,ends.length).map(e=>(e||[]).filter(Boolean))})});
  app.sort((a,b)=>(a.date+a.sid)<(b.date+b.sid)?1:-1);
  const O=window.offGhosts?window.offGhosts(round):{list:[]};O.list.forEach((x,i)=>{const cls=round==AUSI?(/3.?spot/i.test(x.face)?'3-spot':'single'):'';off.push({id:'o:'+x.d+'|'+x.sc+'|'+i,k:'off',date:x.d,sc:x.sc,n:x.E.length,full:true,cls,fl:cls?(cls=='single'?'Single face':'3-spot'):'',ev:x.ev,ends:x.sums,ar:x.E.map(e=>e.slice()),pos:null})});
+ /* a confirmed official result (photo or typed) of this round can be the ghost. Ends are used when they match the round; a total only is a pace line, never invented arrows. */
+ if(window.officialAdded)officialAdded().forEach(s=>{const mapped=(typeof GHOST_MAP!='undefined'&&GHOST_MAP[s.round])||(ROUNDS[s.round]?s.round:'');if(mapped!==round||!(s.score>0))return;
+  const have=Array.isArray(s.ends)&&s.ends.length==R.ends&&s.ends.every(e=>e&&e.length==R.ape);
+  const ends=have?s.ends.map(e=>e.reduce((t,a)=>t+(a=='X'?10:a=='M'?0:+a),0)):[...Array(R.ends)].map((_,i)=>Math.round(s.score*(i+1)/R.ends)-Math.round(s.score*i/R.ends));
+  off.push({id:'off:'+(s.id||s.date+'|'+s.score),k:'off',date:s.date,sc:+s.score,n:R.ends,full:true,cls:'',fl:'',ev:s.event||'Official',ends,ar:have?s.ends.map(e=>e.slice()):null,pos:null,pace:!have})});
  return{app,off}}
 const paceLine=(tot,n)=>[...Array(n)].map((_,i)=>Math.round(tot*(i+1)/n)-Math.round(tot*i/n));
 function recRows(round){const out=[];if(!RECD)return out;const bow=window.ghostBowNow?window.ghostBowNow():null,gc=myGC(),gl={Male:'men',Female:'women'};
@@ -242,7 +247,7 @@ function whoData(round,excl){const R=ROUNDS[round],{app,off}=gSources(round,excl
  if(pb)mine.push({id:'pb',text:`My PB · ${pb.sc} (${fmtD(pb.date)})`,it:pb,short:'My PB '+pb.sc});
  if(best&&(!pb||best.sc>pb.sc))mine.push({id:'best',text:`My best ever · ${best.sc} (${fmtD(best.date)}${best.k=='off'?', competition':''})`,it:best,short:'My best '+best.sc});
  if(fullAll.length>1){const n=R.ends,ends=[...Array(n)].map((_,i)=>Math.round(mean(fullAll.map(x=>x.ends[i]||0))));mine.push({id:'avg',text:`My average · ${Math.round(mean(fullAll.map(x=>x.sc)))} (${fullAll.length} scores)`,it:{ends,ar:null,pos:null,date:'',cls:'',sc:ends.reduce((a,b)=>a+b,0),n},short:'My average'})}
- all.slice(0,80).forEach(x=>mine.push({id:x.id,text:`${fmtD(x.date)} · ${x.sc}${x.full?'':' after '+x.n+' of '+R.ends+' ends'}${x===pb?' · PB':''}${x===best?' · Best':''}${x.fl?' · '+x.fl:''}${x.k=='off'?' · competition'+(x.ev?' ('+x.ev+')':''):''}`,it:x,short:fmtD(x.date)+' '+x.sc}));
+ all.slice(0,80).forEach(x=>mine.push({id:x.id,text:`${fmtD(x.date)} · ${x.sc}${x.full?'':' after '+x.n+' of '+R.ends+' ends'}${x===pb?' · PB':''}${x===best?' · Best':''}${x.fl?' · '+x.fl:''}${x.k=='off'?' · competition'+(x.ev?' ('+x.ev+')':''):''}${x.pace?' · pace line':''}`,it:x,short:fmtD(x.date)+' '+x.sc}));
  mine.forEach(m=>byId[m.id]=m);
  if(mine.length)groups.push({label:'My scores',opts:mine});
  const rr=recRows(round);rr.forEach(r=>byId[r.id]=r);if(rr.length)groups.push({label:'Records (pace line)',opts:rr});

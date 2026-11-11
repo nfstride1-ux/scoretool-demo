@@ -4,12 +4,14 @@
 import re
 from playwright.sync_api import Browser
 RELAY=re.compile(r'^https?://([^/]*\.)?ntfy\.sh(/|$)')
+# ScoreTool tests must not write into the live Archery Calendar. A later route in the test still wins.
+CALRPC=re.compile(r'^https://sllsqpfqwckwtljzjxli\.supabase\.co/')
 STUBBED=[]
 def _stub(route):
     STUBBED.append(route.request.url)
     route.fulfill(status=200,body='',headers={'access-control-allow-origin':'*','content-type':'application/json'})
 def _arm(ctx):
-    ctx.route(RELAY,_stub);return ctx
+    ctx.route(RELAY,_stub);ctx.route(CALRPC,_stub);return ctx
 if not getattr(Browser,'_st_guard',False):
     _nc=Browser.new_context;_np=Browser.new_page
     def _new_context(self,*a,**k):

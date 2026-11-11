@@ -3,6 +3,7 @@
 @font-face{font-family:"Barlow Condensed";src:url(fonts/BarlowCondensed-ExtraBold.woff2) format("woff2");font-weight:800}
 :root{color-scheme:dark;--ink:#eef2f8;--ink2:#cbd5e1;--muted:#9aa7ba;--line:#243042;--bg:#0b0f17;--card:#131a26;--night:#070a10;--night2:#1b2433;--gold:#ffc629;--blue:#5ab0ff;--blue-bg:#1a2a44;--amber:#ffcf7a;--amber-bg:#3a2a10;--green:#6ee7a0;--green-bg:#0f3324;--cyan:#38e1ff;--purple:#5ab0ff;--r-common:#9aa7ba;--r-rare:#3b9bff;--r-epic:#5ab0ff;--r-leg:#ffc629;--r-myth:#ff4d5e;--r:16px;--disp:"Barlow Condensed","Arial Narrow",sans-serif;--body:Inter,system-ui,sans-serif}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--body)}
+details:not([open]) > :not(summary){display:none}
 h1,h2,h3{font-family:var(--disp);text-transform:uppercase;line-height:1.05;margin:0 0 8px}h1{font-size:34px}h2{font-size:24px}h3{font-size:19px}
 .top{background:var(--night);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;position:sticky;top:0;z-index:5}
 .logo{font-family:var(--disp);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.04em}.logo span{color:var(--gold)}
@@ -258,3 +259,26 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .evcard .ev-list{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;padding:0;margin:6px 0 4px}
 .evcard .ev-b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0b1f4d;color:#fff;border:2px solid #ffc629;font-size:12px;font-weight:700}
 .evcard .ev-nw{white-space:nowrap}
+
+/* Lingkana League: 80+ standings, pot ticks, A4 print/share */
+.lk-standwrap{max-height:60vh;overflow:auto}
+#lkpaidlist{max-height:240px;overflow:auto}
+#lkgrptab{font-size:12px}
+#lkresults{max-width:210mm}
+#lkresults table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+#lkresults th,#lkresults td{padding:3px 5px;border-bottom:1px solid var(--line);text-align:right}
+#lkresults th:nth-child(2),#lkresults td:nth-child(2){text-align:left}
+#lkresults thead{position:sticky;top:0;background:var(--card,#fff)}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  #tabs,header,nav,.btn,.lk-printbar,#lksharemsg{display:none!important}
+  #app,#lkresults{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;background:#fff!important;color:#000!important}
+  .lk-standwrap,#lkpaidlist,#lkgrptab{max-height:none!important;overflow:visible!important}
+  #lkresults table{font-size:8.5pt;width:100%}
+  #lkresults th,#lkresults td{padding:2px 4px;border-bottom:0.3pt solid #ccc}
+  #lkresults thead{display:table-header-group;position:static;background:#fff}
+  #lkresults tfoot{display:table-footer-group}
+  #lkresults tr{break-inside:avoid;page-break-inside:avoid}
+  #lkresults h1,#lkresults h2,#lkresults h3{break-after:avoid;page-break-after:avoid}
+  #lkresults .card{break-inside:auto;box-shadow:none;border:0;padding:0;margin:0 0 8mm}
+}

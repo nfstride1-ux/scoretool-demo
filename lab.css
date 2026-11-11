@@ -25,6 +25,11 @@
 .labseg button[aria-pressed=true]{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
 .labgrid2{display:grid;grid-template-columns:1fr;gap:12px}
 .labtbl{width:100%;border-collapse:collapse;font-size:15px}.labtbl th,.labtbl td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.aarow{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 8px;cursor:pointer;font:inherit;color:var(--ink);min-height:48px}
+.aarow b{font-size:17px;line-height:1.3}.aarow small{color:var(--muted);font-size:14px;line-height:1.3}
+.aarow[aria-expanded=true]{border-color:#1d4ed8}
+.aadetail{border:1px solid var(--line);border-radius:14px;padding:4px 12px 12px;margin:-2px 0 10px;background:var(--surf)}
+.aadetail p{margin:8px 0 0}
 .labout{font:800 26px var(--disp)}.labsrc{font-size:13px;color:var(--muted)}.labsrc a{color:var(--blue)}
 .tface{width:100%;max-width:420px;display:block;margin:0 auto;touch-action:manipulation;cursor:crosshair}
 .lab-note{background:var(--blue-bg);border-radius:12px;padding:10px 12px;font-size:14px}
@@ -89,7 +94,8 @@
 /* line icons (replace emoji): navy/ink stroke with a gold accent */
 .ic{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block}.ic .g{stroke:var(--gold)}.ic .gf{fill:var(--gold);stroke:none}[data-theme=light] .ic.icf .gf{fill:#b07a00}
 .labwho{background:var(--blue-bg);color:var(--blue);border:1px solid var(--chip-b);border-radius:99px;font:700 14px var(--body);padding:6px 12px;cursor:pointer;margin-right:8px;min-height:36px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tabs .ic{width:22px;height:22px;display:block;margin:0 auto 2px}.hub-tile .i .ic{width:30px;height:30px}.hub-score .ic{width:46px;height:46px}.labrow .i .ic{width:24px;height:24px}.logo .ic{width:26px;height:26px;vertical-align:-6px}.labtheme .ic{width:20px;height:20px;vertical-align:-4px}
+.tabs .ic{width:22px;height:22px;display:block;margin:0 auto 2px}.hub-tile .i .ic{width:30px;height:30px}.hub-score .ic{width:46px;height:46px}
+.hub-past{background:var(--night,#0b1220);color:#fff;margin:0 0 14px}.labrow .i .ic{width:24px;height:24px}.logo .ic{width:26px;height:26px;vertical-align:-6px}.labtheme .ic{width:20px;height:20px;vertical-align:-4px}
 @media (max-width:520px){.labwho,.labme{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.labtheme{min-width:36px;padding:0 6px;margin-right:6px}.logo .ic{width:22px;height:22px}}
 @media (max-width:400px){.top .demo-pill,.top .lab-pill{font-size:10px;padding:3px 6px}}
 @media (max-width:520px){.labme{flex-shrink:0;padding:6px 9px;font-size:13px;margin-right:6px}.top .logo{font-size:20px;min-width:0}.help-btn{flex-shrink:0}}
@@ -170,3 +176,21 @@ details.hg .go{color:var(--muted);font-size:22px;transition:transform .15s}detai
 [data-theme=light] .vg-slot.on{background:#e3ecff;border-color:#b7791f;color:#0f172a}
 [data-theme=light] .lc-chip{background:#e3ecff;color:#0f172a;border-color:#bcd0f5}
 [data-theme=light] .lc-chip.on{background:#1d4ed8;color:#fff;border:2px solid #ffc629}
+
+/* R1: a box whose figure is outside its usual range: plain note under the box, gold edge like the chooser's warnings (no red, no icon) */
+.labbad{border-left:4px solid var(--gold,#c9a227);background:var(--blue-bg);border-radius:8px;padding:6px 10px;font-size:14px;margin:4px 0 8px}
+input[aria-invalid=true]{border-color:var(--gold,#c9a227);box-shadow:0 0 0 1px var(--gold,#c9a227)}
+/* R2: the session Arrow setup card, typed boxes in the table */
+.tarwtbl{table-layout:fixed;width:100%}.tarwtbl th:first-child{width:28%}.tarwtbl td{padding:3px 4px;vertical-align:top}.tarwtbl .ta_in{width:100%;min-width:0;box-sizing:border-box;min-height:40px;padding:6px 8px;font-size:16px}.tarwtbl .labbad{font-size:13px}
+
+/* C15 practice round picker: category + searchable body-grouped list. #rd stays in the DOM for existing tests. */
+.wrd-list{max-height:min(52vh,420px);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#d5dbe3);border-radius:10px;background:var(--card,#fff);margin:0 0 10px}
+.wrd-g{padding:4px 0 8px}
+.wrd-gh{position:sticky;top:0;z-index:1;background:var(--card,#fff);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted,#64748b);padding:8px 12px 4px}
+.wrd-item{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 12px;font:inherit;color:inherit;cursor:pointer}
+.wrd-item b{display:block;font-weight:700}
+.wrd-item small{display:block;color:var(--muted,#64748b);font-size:12px}
+.wrd-item.on{background:var(--blue-bg,#e8f0fe)}
+.wrd-item:active,.wrd-item:focus{background:var(--blue-bg,#e8f0fe);outline:none}
+.wrd-custom{border-top:1px solid var(--line,#d5dbe3);margin-top:4px;padding-top:12px}
+select#rd.wrd-select{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

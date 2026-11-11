@@ -15,7 +15,7 @@ RECALC='''()=>{const P=statPool(),W=P.filter(s=>s.ends.length),A=W.flatMap(s=>s.
  const m=v=>v.reduce((a,b)=>a+b,0)/v.length;return{nP:P.length,nW:W.length,D,late:fl.length?[m(fl.map(f=>f[0])),m(fl.map(f=>f[1]))]:null,low:A.length?Math.round(100*A.filter(a=>(val(a)||0)<=(fld?4:8)).length/A.length):null}}'''
 def login(pg,who):
   pg.goto('http://localhost:8773/');pg.wait_for_timeout(1000);nm_seed.pick(pg,who);pg.wait_for_timeout(500)
-  if pg.get_by_text('Demo unlock').count():pg.get_by_text('Demo unlock').first.click();pg.wait_for_timeout(500)
+  if pg.locator('#unlock').count():pg.locator('#unlock').first.click();pg.wait_for_timeout(500)
   for _ in range(3):
     if pg.locator('nav [data-v=score]').is_visible():break
     pg.locator('#app button').first.click();pg.wait_for_timeout(400)
@@ -38,10 +38,7 @@ try:
   T('rewards');chk('1 Ranks shows AA classification progress',pg.locator('#c-class').count()==1 and 'AA classification progress' in pg.text_content('#c-class'))
   chk('1 only Ranks has it',[v for v,t in tabs.items() if 'AA classification progress' in t]==['rewards'])
   # 7 plain words
-  league=pg.locator('.card:has-text("This week\'s league")').inner_text()
-  chk('7 league: no Placement',not re.search('placement',league,re.I))
-  chk('7 league: no Elite Gold',('Elite Gold' not in league))
-  chk('7 league: no rank pills',pg.locator('.card:has-text("This week\'s league") .pill').count()==0)
+  chk('7 activity league is not on rankings',pg.locator('.card:has-text("This week\'s league")').count()==0)
   rk=tabs['rewards'];chk('7 Ranks: no Placement',not re.search(r'\bplacement\b',rk,re.I))
   chk('7 Ranks: Elite Gold only with AA context',all('AA' in c or 'Archery Australia' in c for c in pg.locator('#app .card').all_inner_texts() if 'Elite Gold' in c))
   for v,t in tabs.items():

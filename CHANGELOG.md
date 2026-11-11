@@ -1,9 +1,181 @@
 # ScoreTool changelog
 
 Newest first. Each entry names the version tag shown in Settings.
+
+## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
+
+### Lingkana League test URL (v2026-11-11-1305-c16)
+- The Lingkana League is served at a separate test URL, https://nfstride1-ux.github.io/scoretool-demo/test/ , so the live root app and its tester data stay untouched. PR #1 is not merged: C9 and the other on-hold work on this branch stay off the live root.
+- Storage on the test URL is isolated (`sttest.` prefix), so opening it on a phone that already has the live app does not read or write live tester data.
+- Poster invite code is LK-TEST26 (no longer the LK-PREVIEW placeholder). League record code is LINGKN26.
+- A default scoring password is set. The host can change it on the host screen; the new hash is sent to other scorers on the existing ntfy relay. The typed secret is never stored on the league record.
+- Sign-ups from the register page are posted to the same league relay topic and merged as a union, so every scorer's phone sees them. Paid ticks and the password hash travel in the league snapshot.
+- Night 7 copy now says a 150 warm-up (not scored) comes before the top-12 ladder shoot-up.
+- Nothing was posted or announced.
+
+
+### Rounds page — distances and faces (v2026-11-10-rounds)
+- Tools has Rounds next to Rules. It is a searchable list of the Schedule 9A target rounds. Tapping a name shows the distances, arrows at each distance, face size, total arrows, maximum, and the other names (FITA 900, Canberra Round, Fremantle Round).
+- The page cites Archery Australia Target Rounds, Schedule 9A, effective January 2017. Nothing on the page is saved.
+
+### Schedule 9A — target rounds can be scored (v2026-11-10-aa9a)
+- Every round in Archery Australia Target Rounds, Schedule 9A, effective January 2017, can be scored. Ends are 6 arrows, the same as the outdoor rounds already in the app. + is the 122 cm face and * is the 80 cm face. The maximum is the arrow count times 10.
+- Rounds already in the app were checked against the table and kept under their existing names: WA 90/1440, WA 70/1440, WA 60/1440 (also the Fremantle Round), AA 50/1440 (the table's 50/1440), WA 60/900 (also FITA 900 and the Canberra Round), WA 720 (70m) and WA 720 (60m). Their distances, faces and arrow counts already matched.
+- Short Canberra and Junior Canberra already had the right total, face and maximum, with the distances only in the name. Each distance is now its own block of 30 arrows on the 122 cm face, so the sheet shows 50 m, 40 m and 30 m (and 40 m, 30 m and 20 m).
+- 40/1440 is 36 arrows at 40 m on the 122 cm face, then 36 at 30 m on the 122 cm face and 36 at 30 m on the 80 cm face, then 36 at 20 m on the 80 cm face. Nothing in the table is shot at 55 m, 45 m, 35 m or 25 m.
+- WA 50/720 in the table is 72 arrows at 50 m on the full 80 cm face. It is scored as WA 50/720 (80 cm). WA 720 (50m Compound) is left as the 80 cm 6-ring round. Official results already use the name WA 50/720 for that compound round, so the two are not the same list entry.
+- The note about other Short and Junior rounds is a way to make a round by cutting distances 10 m and 20 m. Those are not added as extra named rounds.
+
+Full `qa/run_regression.py` after `65c88c1`: **98 passed, 0 failed, 4183s**. `fullround` scored every new round: 777 passed, 0 failed. `endview` still prints two screenshot comparisons and exits 0.
+
+Full `qa/run_regression.py` after `66d08e5` (the Rounds page): **99 passed, 0 failed, 5333s**. `aa9a_test` and `rounds_page_test` passed. Same `endview` screenshot note.
+
+### C9 — IFAA rules tab (v2026-11-09-c9)
+- Tools > Rules has an IFAA tab beside WA, AA, ABA, IBO and ASA.
+- Text is the Schedule summary from the 4 April 2021 Book of Rules and the 1 June 2026 clarifications. Citations and source links are kept.
+- The page says the Field Captain may set an outdoor time limit, that junior and cub distances are a summary, that course layout is left out, and that a Western Australian ABA variant is not confirmed.
+- IFAA's Book of Rules page, read 9 November 2026, calls 4 April 2021 the current revision. The words "18th edition" were not re-read from the PDF cover, so they are not stated as fact.
+
+D1–D4 tree `bfd09ab` (before C9), full `qa/run_regression.py`: **96 passed, 0 failed, 7755s**. `endview` still prints two screenshot comparisons and exits 0, the same as before.
+
+### D4 — a photo fills in an official result (v2026-11-09-d4)
+- A photo of a paper scorecard, or a screenshot of a results page, is read into Add an official result (the C4 form, on top of C5). The score, date, round, event, maximum, 10s and Xs are filled in when the picture says them clearly.
+- Nothing is saved, counted, or treated as a personal best until the archer presses Save. The form says how many points the score is above or below the personal best. After a confirmed save, a new best is on the Personal bests list and can be chosen as a Ghost match opponent (a total with no ends is a pace line, not invented arrows).
+- The picture is deleted once it has been read. It is not kept on the phone and it is not sent. A picture with no readable score does not fill the form and does not save.
+
+### D3 — a blank custom round names itself (v2026-11-09-d3)
+- Saving a custom round with no name names it from the type and the distance: Target 70m, Indoor 18m, Field 50m, Clout 180m, 3D 20 targets. Yards stay in the name. With no distance it uses the face and the number of ends. A name you type is kept. A repeat gets a number.
+
+### D2 — plotting moves to the next target (v2026-11-09-d2)
+- Reproduced on a phone-sized screen, Just me, Vegas 300, target showing: open Spot 3, enter X and 10, then tap 1px inside the bottom edge of the picture. That point sits in the gap around the face and was saved as M, the end locked, and Undo was the way back. Hiding the target left the score keys, which is why the last arrow only worked after hiding the target. A tap in that gap is no longer saved as a miss.
+- After the arrows on a target face are plotted, the next target opens. On a 3-spot that is the next spot. After Spot 3, and after the last end of a single face or field round, the screen stays until Next.
+
+### D1 — edit a finished score sheet (v2026-11-09-d1)
+- A finished or past score sheet is edited in place. Deleting an arrow leaves a hole in that end, and the next score fills the hole. It no longer tries to open an end past the end of the round, which is what stopped an X being put back on a finished Vegas 300 (the sheet sat on 287/290 from 29 arrows).
+- When the hole is filled and the round is whole again, the total, X count, 10s count and personal-best line are worked out again from the arrows. No second copy of the sheet is kept.
+
+
+
+### C6 — Sync now, flag off (v2026-11-06-1959-c6)
+- Plus and Pro see Sync now on My results source. The flag `scoretool.flag.waSync` defaults off.
+- Off: "Coming once your national body approves" and a way to paste or CSV. Nothing is fetched. Switching the flag on still does not call an organisation.
+
+### C5 — screenshot on the official result form (v2026-11-06-1959-c5)
+- Attach a screenshot to look at while you type. The picture is not read. After save it is deleted unless Keep the photo is ticked. A kept photo stays in IndexedDB on this phone and is not sent.
+- On-device reading of an iScoredToday or score-card picture is not reliable, so this is attach-and-type.
+
+### C4 — add an official result (v2026-11-06-1959-c4)
+- Tools, My results source: date, event, round, score, and optional maximum, 10s, Xs and ends.
+- Saved on this phone as a finished official result (`official`, `finished`). It counts for personal bests and is queued to the calendar with the C3 path (`off-`).
+- A round already scored, or the same official result again, is left as it is. Tests stub the RPC.
+
+### C3 — official and imported scores (v2026-11-06-1957-c3)
+- Official scoresheets (`sheet-`), competition results that are not a scoresheet (`diary-`) and My results imports (`imp-`) are queued to the same calendar call, once each.
+- A row that matches an already-sent score on date, round and total is skipped. The personal-best `(PB)` rule is the same one.
+- A diary note with no round or score is not sent. Tests stub the RPC and use a fake link token.
+
+### C2 — every finished round is sent (v2026-11-06-1957-c2)
+- Practice and club rounds that were already finished are sent as well. The first-run list no longer blocks them.
+- A round is sent once for its source id. It is sent again only when the payload changed. Sample rounds and discarded rounds stay out.
+- Tests stub the RPC and use a fake link token.
+
+### C1 — personal best on the calendar round name (v2026-11-06-1957-c1)
+- A finished full round that is the Personal bests card's best for that round is sent with ` (PB)` on the end of the round string. No new column. Scores stored on the phone are not changed.
+- The comparison is the card's own one (`bsCurrentPb`: highest full score, earlier date if the score is the same, practice and official and imported together).
+- Tests stub `scoretool_save_score`. They use a fake link token. Nothing is posted to the live calendar.
+Branch cursor/scoretool-test-build-2026-11-06-52a5 off a7ea130. Nothing here is on GitHub Pages. Saved data on https://nfstride1-ux.github.io/scoretool-demo/ is not touched.
+
+### R1, R2, R3
+Looked for existing R1/R2/R3 work to merge: origin has only main at a7ea130, no other branches, tags, pull requests or dangling commits. Those changes are not in this repository, so they were not invented.
+
+### IBO/ATA 327 for Hoyt Concept X 40
+- data/bow_specs.json: hoyt-cx40 speed stays 327; speedKind is IBO/ATA (was ATA).
+- My bows, the Arrow chooser and Calculators label the speed field IBO/ATA. Other bows keep IBO, ATA, not stated or measured.
+- Tests: mybows_test 62 passed, 0 failed (PORT 8791). ac1_test 23 passed, 0 failed (PORT 8792). arrowchooser_test "starting-point warning" also fails on main a7ea130 with this Playwright, so it is not from this change.
+
+
+### Badges, rewards and season removed
+- Season, badge collection, monthly recap and the badge card editor are no longer shown. Rankings and AA classification stay.
+- Names, diary, score photos and the score-sheet share image stay.
+- Tests: redesign_test 142 passed, 0 failed.
+
+
+### Rest of the test build (not live)
+- Badges, rewards, season, monthly recap and the badge card editor are removed. Rankings and classification stay. Names, diary, score photos and the score-sheet share image stay.
+- The shared tester squad starts blank off the live site. A squad you create is kept. The live host is not cleared.
+- Fair play shows once per round.
+- One Analysis screen. One Tune helper (paper, torque, draw weight/spine, cut length, bare shaft, node, creep, Dudley). Head-to-head and match night open from Casual.
+- A new archer can create a profile. Under-16s show nicknames only.
+- No tester or demo wording on screen.
+- Plan is a switch: Free (score card), Plus (your shooting), Pro (gear and tuning). Current archers are Founding member, free for life, until the switch is moved. No payment. Locked items say Available on Plus or Pro.
+- Photo to score was not built.
+- mybows_test 62/0 after the Tune helper. redesign_test 142/0 after badges were removed. ac1_test 23/0. Full regression is recorded when it finishes. Do not deploy.
+
+
+### My results source
+- Tools > My results source: country or body (Archery Australia, Archery WA, World Archery, Archery GB, USA Archery, Other) with that body's home page filled in. Other leaves the website blank for you to type.
+- Member / archer ID and the website stay in localStorage (`scoretool.resultsSource.<archer>`). They are not sent anywhere. Open my results only opens the saved address.
+- Paste a table or choose a CSV, map round, date, score and event, preview, then confirm. Nothing is saved before confirm. A round already scored is left as it is. Saved rows live in `scoretool.imported.<archer>`, tagged imported, left out of ratings, and shown on personal bests with an imported badge.
+- Plus. A Free plan sees Available on Plus. No fetch and no scrape.
+- Tests: results_test 20 passed, 0 failed. redesign_test 141 passed, 0 failed after the activity league was taken off rankings.
+
+
+### Regression on this test branch (not deployed)
+- Full run: 68 passed, 15 failed, 2304s. The 15 were: WebKit not installed yet (11 suites), Peel share/comp servers not started (2), pdftotext missing (sight card), and the activity-league check on rankings.
+- After WebKit, pdftotext and the Peel server helper were available, those suites passed, including fullround 409/0, results source 20/0, coach2 178/0, backup 24/0, names 105/0, redesign 141/0.
+- endview still prints 2 screenshot comparisons against commit 7b8b2ed. The runner treats the suite as passed (exit 0). The shell has changed since that baseline.
+- arrowchooser "starting-point warning" also fails on main a7ea130 with this Playwright.
+- Not run against the live URL. Do not deploy.
+
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-03-0640-r3 (2026-11-03)
+### What changed
+- R3 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): in a Fletched vs Bare session the "X% tighter / wider" line is replaced with a plain tuning verdict (bareVerdict in lab.js). Other change types keep the % line.
+- Side to side, using the same spread rule as the Bare shaft reading card (offset bigger than the fletched group's average spread): right-handed archer, bare shafts right = acting weak, left = acting stiff (Easton Bare Shaft Planing Test). Left-handed archer (session bow hand): mirrored, and the verdict says so. No bow hand on the session: it gives the offset and asks for the bow hand, no guess.
+- High or low: points to the nocking point (move up for high, down for low), then tiller on a recurve or barebow. Tiller is not mentioned on a compound session.
+- Usual next step, labelled general tuning guidance: weak = a lighter point, more plunger tension, slightly less draw weight, or a shorter arrow; stiff = a heavier point, less plunger tension, slightly more draw weight, or a weaker spine. This follows Easton's guide (weak: decrease bow weight), not "more draw weight" for weak.
+- Compound session (arrow setup bow = compound, or bow name says compound): note that Easton writes the test for finger release and paper tuning is the usual first step with a release aid.
+- Bare shaft reading card: left-handed archers now get the mirrored reading (it used to say right-handed only), and the high/low line mentions tiller on recurve or barebow as general guidance.
+- A Bow hand select on Fletched vs Bare sessions; changing it saves T.hand on that session only. Viewing a session writes nothing.
+### Files
+lab.js (bareVerdict, bareCard, #tvhand), tools/r3_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also R2 commit hash), CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): R1 branch full regression (see the R1 entry)
+- Single runs: r3_test 21 passed, 0 failed
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK, after R1 and R2).
+
+## v2026-11-03-0636-r2 (2026-11-03)
+### What changed
+- R2 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): the tuning session's Arrow setup card was read-only and copied whatever the Arrow chooser had, including impossible figures, which blocked bare shaft vs fletched testing.
+- Every Before and After box on the card (shaft, spine, length, point, FOC, total weight, speed) is now a box you can type in. "Just a group" sessions have one Arrow column. Sessions without a saved setup show empty boxes (and "Use my current arrow setup for Before" when the chooser has one).
+- Same range check as R1 (window.arrowLim, FOC 0-40% added). A figure outside its range, or not a number, is kept in the box as typed, flagged under it in plain English, and not saved. A figure saved before that is out of range (for example 12365 gr or -3643 fps copied from the chooser before R1) is flagged when shown and left as it is until it is typed over.
+- Edits save to that session only (t.arrow, t.arrowAfter). The Arrow chooser, My bows, My arrows and the Calculators are never written. The first edit to an After box starts After as a copy of Before. A typed speed is marked as your figure, not an estimate. Shaft and spine are free text (up to 30 characters), not range-checked.
+- Showing the card writes nothing; old sessions are not rewritten.
+### Files
+lab.js (arwCard, arwWire, TA_F, FOC range), lab.css (.tarwtbl), tools/r2_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also R1 commit hash), CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- Before (baseline): R1 branch full regression (see the R1 entry)
+- Single runs: r2_test 24 passed, 0 failed; arrowchooser_test tuning-session checks (setup in session, what changed point, snapshot fields, old sessions untouched) all pass. arrowchooser_test also reports "starting-point warning" at 390 and 1366px: it expects one "A starting point only" text and main (a7ea130) already shows two; the regression counts it as a pass because that test always exits 0. Not caused by this change.
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK, after R1).
+## v2026-11-03-0630-r1 (2026-11-03)
+### What changed
+- R1 (Nathe via Archery Coach, bot meeting 3 Nov 2026 6:25am AWST): input checks on the arrow and bow figures. 12365 gr was accepted and the Calculators speed estimate showed -3643 fps.
+- Usual ranges, one table in lab.js (ARROW_LIM, window.arrowLim): draw weight 5-90 lb, draw length 14-34 in, speed rating (IBO or ATA) 200-400 fps (379, the Concept X 40 prefill, is in range and left as it is), arrow weight 100-1000 gr, arrow length 14-36 in, point 10-400 gr, shaft 2-30 gr/in, insert/pin/collar 0-150 gr, nock 0-40 gr, vanes 0-100 gr, arrow speed 100-450 fps, string weight 0-100 gr, balance point 1-36 in.
+- A figure outside its range, or text that is not a number, is flagged under its own box in plain English (gold edge, no red, no icon; aria-invalid on the box), kept as typed and left out of every sum until it is fixed.
+- Speed estimate (window.arrowSpeedEst, used by the Calculators speed card, the Arrow chooser and Is this arrow right): worked out only when every figure is in range and the result is at least 100 fps; otherwise it shows - with the reason. It is never negative.
+- Arrow chooser: a worked-out total arrow weight over 1000 gr (or under 100) is flagged under the total and is not copied into a tuning session (arrowSetup) or sent by Use this arrow. Is this arrow right does not save a weight or speed from a flagged box.
+- No saved data is changed or rewritten: figures saved before stay as they were and are only flagged when shown.
+### Files
+lab.js (ranges, check, speed rule, Calculators boxes), arrowchooser.js (box notes, total weight note, speed, arrowSetup, Use this arrow), arrowcheck.js (speed and weight), lab.css (.labbad), tools/r1_test.py (new), qa/run_regression.py, qa/regression.md, whatsnew.js (also relayhold commit hash), CHANGELOG.md (also fills in the relayhold after and live lines), version.json, sw.js, index.html.
+### Tests
+- Before (baseline): full regression 81 passed, 0 failed (relayhold, a7ea130)
+- Single runs: r1_test 32 passed, 0 failed; whatsnew_test 33 passed, 0 failed.
+- After: RESULT_AFTER
+- Live: not deployed yet (waiting for Nathe's OK).
 ## v2026-11-01-1446-relayhold (2026-11-01)
 ### What changed
 - Relay fix for ntfy.sh 429 throttling (Level 1 report item N1: about one relay message per league arrow; parked since 1 Nov 03:20 as 329c66e + 76604ee, never pushed). The slow-start half of that work already shipped alone as squadfix (7d171df), so it is not repeated here.
@@ -17,8 +189,8 @@ h2h.js, league.js, casual.js, tools/relayhold_test.py (new), tools/whatsnew_test
 ### Tests
 - Before (baseline): full regression 81 passed, 0 failed (AC6 after-run, b58d178)
 - Single runs: relayhold_test 10 passed, 0 failed; peel_data_test 2/0 (unchanged); whatsnew_test 33 passed, 0 failed (with the unchanged test it fails only "testers' data unchanged", 32/1, which is the new key).
-- After: RESULT_AFTER
-- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1446-relayhold): relayhold_test and whatsnew_test are run on the live URL after the deploy; the result is added to this entry by the next release.
+- After: full regression 81 passed, 0 failed (recorded in /workspace/scoretool-queue-log.md at the relayhold release)
+- Live (https://nfstride1-ux.github.io/scoretool-demo/, version.json v2026-11-01-1446-relayhold): live since 1 Nov 2026, commit a7ea130.
 ## v2026-11-01-1349-ac6 (2026-11-01)
 ### What changed
 - AC6, new Help guide "Build an arrow" (after Tools), eight steps in order: bow details; spine from the chart; shortest safe cut; point weight and FOC (Easton 7-16% range, indoor target 7-15%, outdoor target 10-15%); bushings and nocks; fletching (sourced, not from Dr Park); cutting, gluing and squaring; bare-shaft or paper tune.

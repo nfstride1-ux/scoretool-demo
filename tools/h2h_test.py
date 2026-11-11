@@ -126,15 +126,13 @@ try:
   ff=set(re.findall(r'fill="(#[0-9a-f]+)"',J.inner_html('#pface')))
   chk('field Bugs Eyes is gold and black only '+str(ff),J.inner_text('#bugface')=='Face: Bugs Eyes' and ff<={'#ffd84d','#111','#fff'})
   J.evaluate("S.sessions=S.sessions.filter(s=>s!==cur);cur=null;save()")
-  # squad: all 10 testers (Darnie is not a tester)
+  # test build: the shared tester squad is not seeded (live host still seeds it; these tests run on localhost)
   J.evaluate("nav('squad')");J.wait_for_timeout(500)
-  chk('squad has all 10 testers',J.evaluate("S.squad.members.length")==10 and '10 members' in J.inner_text('.card.dark'))
-  chk('weekly league lists 10',J.evaluate("leagueTable().length")==10)
-  if SHOT:J.screenshot(path=OUT+'/9-squad-9-members.png')
-  J.evaluate("S.squad.members=S.squad.members.slice(0,3);delete S.presetTop;save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
-  chk('an old 3-member tester squad is topped up to 10 once',J.evaluate("S.squad.members.length")==10 and J.evaluate("S.squad.code")=='STRIDE-3T7')
-  J.evaluate("S.squad.members=S.squad.members.filter(m=>m.id!='m_estiaan'&&m.id!='m_steven');S.presetTop='all-testers';save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
-  mm=J.evaluate("S.squad.members.map(m=>m.id)");chk('a phone topped up before Estiaan joined gets him once; an admin removal still sticks','m_estiaan' in mm and 'm_steven' not in mm and len(mm)==9)
+  chk('tester squad starts blank',J.evaluate("!(S.squad&&(S.squad.code=='STRIDE-3T7'||S.squad.preset=='st-testers-1'))"))
+  J.evaluate("S.squad={name:'Tuesday juniors',code:'ABC-1234',admin:S.profile,rawRank:false,members:[{id:'m1',name:S.profile,status:'active'}],adults:[{id:'a1',name:S.profile,role:'Admin'}],cheers:{}};save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
+  chk('a squad you make is kept',J.evaluate("S.squad&&S.squad.code")=='ABC-1234' and J.evaluate("S.squad.members.length")==1)
+  J.evaluate("S.squad.preset='st-testers-1';S.squad.code='STRIDE-3T7';S.squad.name='ScoreTool Testers';save()");J.reload();J.wait_for_timeout(2200)
+  chk('the old tester squad is cleared on this test build',J.evaluate("!(S.squad&&S.squad.code=='STRIDE-3T7')"))
   # ---------- display names through the relay ----------
   REALN=['Nathaniel','Stride','Arthur','Wolfe','Snook','Choong','Chapman','Bureny','Burney','Engelen','Evans','Matete','George Philip']
   msgs=[json.loads(m['message']) for L_ in RELAY.values() for m in L_]
@@ -147,7 +145,7 @@ try:
   chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Snookie')
   J.evaluate("cur=null;nav('home')");J.wait_for_timeout(300);chk("personal: Joseph's home greets him by real name","G'day Joseph" in J.text_content('#app'))
   for nm_,pg_ in (('Joseph',J),('Logan',L)):
-    for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#leaguecard')):
+    for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#realrank')):
       pg_.evaluate(f"cur=null;nav('{v}')");pg_.wait_for_timeout(350)
       txt=pg_.evaluate("sel=>[...document.querySelectorAll(sel)].map(r=>r.innerText+' '+[...r.querySelectorAll('[value],[title],[aria-label],[placeholder]')].map(e=>[e.getAttribute('value'),e.title,e.getAttribute('aria-label'),e.placeholder].join(' ')).join(' ')).join(' ')",sel)
       bad_=[n for n in REALN if re.search(r'\b'+n+r'\b',txt)]
@@ -256,7 +254,7 @@ try:
     for x in [H]+[g_ for _,_,g_ in PH]:tick(x)
   gv(H,code);rk=ranks(H);print('   ranks10',rk)
   chk('group: 10 archers on the host leaderboard',len(rk)==10)
-  gr=[r[0] for r in rk if r[1].strip('▲ ')=='Tester'];chk('group: simulated archers with equal ends share a place',len(gr)==2 and gr[0]==gr[1] and gr[0].startswith('='))
+  gr=[r[0] for r in rk if r[1].strip('▲ ')=='Archer'];chk('group: simulated archers with equal ends share a place',len(gr)==2 and gr[0]==gr[1] and gr[0].startswith('='))
   chk('group: no real names on the 10-archer board',not any(n.lower() in H.inner_text('#h2hview').lower() for n in REALN))
   if SHOT:H.screenshot(path=OUT+'/14-group-10.png',full_page=True)
   H.click('#h2hclose');H.wait_for_timeout(400);gv(H,code);chk('group: host close shows final results','Final results' in H.text_content('#h2hview') and 'closed by the host' in H.inner_text('#h2hview'))

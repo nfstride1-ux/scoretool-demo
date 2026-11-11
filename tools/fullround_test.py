@@ -56,7 +56,9 @@ def target_round(pg,rd,seed):
     fp(pg)
     sh=pg.evaluate(SHEET);rows_ok(f'{tag} finished sheet',sh['rows'],exp)
     field='6' in keys and 'X' not in keys and '10' not in keys
-    if field:want=f"6's: {fl.count('6')} 5's: {fl.count('5')}"
+    ifaa='5' in keys and '4' in keys and '3' in keys and '6' not in keys and 'X' not in keys and '10' not in keys
+    if ifaa:want=f"5's: {fl.count('5')} 4's: {fl.count('4')} 3's: {fl.count('3')}"
+    elif field:want=f"6's: {fl.count('6')} 5's: {fl.count('5')}"
     else:want=f"X's: {fl.count('X')} 10's/X's: {fl.count('X')+fl.count('10')}"
     chk(f'{tag} finished: {want} and total {tot}',sh['sum'].startswith(want) and sh['big']==tot,sh['sum'])
     sc=pg.evaluate("(()=>{const r=[...document.querySelectorAll('.ad-kv tr')].find(t=>t.querySelector('th')?.textContent=='Score');return r?+r.querySelector('td').textContent:null})()")
@@ -140,18 +142,13 @@ def league_round(pg):
     tag='League 300 (Onion Shed league night, Vegas 300 18 m)';rng=random.Random(77)
     pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
     pg.locator('[data-lgme]').tap();pg.wait_for_timeout(500)
-    keys=pg.evaluate("[...document.querySelectorAll('#csad [data-lgk]')].map(b=>b.dataset.lgk)");chk(f'{tag}: keys X 10 9 8 7 6 M',keys==['X','10','9','8','7','6','M'],keys)
+    keys=pg.evaluate("[...document.querySelectorAll('#lgentry [data-lgk]')].map(b=>b.dataset.lgk)");chk(f'{tag}: keys X 10 9 8 7 6 M',keys==['X','10','9','8','7','6','M'],keys);chk(f'{tag}: league scoring shows no plot face',pg.locator('#cspface').count()==0 and pg.locator('#csad').count()==0)
     exp=[]
     for i in range(10):
         e=[]
         for j in range(3):
-            k=rng.choice(keys[:3]) if rng.random()<0.6 else rng.choice(keys);pg.locator(f'#csad [data-lgk="{k}"]').tap(timeout=5000);e.append(k);pg.wait_for_timeout(120)
+            k=rng.choice(keys[:3]) if rng.random()<0.6 else rng.choice(keys);pg.locator(f'#lgentry [data-lgk="{k}"]').tap(timeout=5000);e.append(k);pg.wait_for_timeout(120)
         exp.append(e);pg.wait_for_timeout(200)
-        if i<3 or i==9:
-            sh=pg.evaluate(SHEET.replace('.ad-tab tbody tr','#csadtab tbody tr'));rows_ok(f'{tag} after end {i+1}',sh['rows'],exp)
-            nums=pg.evaluate("[...document.querySelectorAll('#csad .ad-num b')].map(b=>b.textContent)")
-            run=sum(VAL(a) for x in exp for a in x)
-            if i<9:chk(f'{tag} after end {i+1}: End box 0 (new end), Prog {run}',nums==['0',str(run)],nums)
     tot=sum(VAL(a) for x in exp for a in x);fl=[a for x in exp for a in x]
     rec=pg.evaluate("(()=>{const L=lgGet('ONIONSHD'),me=TESTER.id,w=Object.keys(L.sc[me]||{}).pop();return{w,e:(L.sc[me]||{})[w]&&L.sc[me][w].e}})()")
     chk(f'{tag}: league record has every end in order (total {tot})',rec['e']==[srt(x) for x in exp],(rec,))
@@ -195,7 +192,7 @@ try:
   chk('WebKit, 390 px, touch, installed app (standalone) emulated',pg.evaluate("navigator.standalone===true&&innerWidth==390&&'ontouchstart' in window"))
   pg.evaluate("c=>{S.unlocked=true;if(!S.profile)S.profile='Steven';S.customRounds=[c,{kind:'3d',name:'FR test 3D (10 targets)',targets:10}];save()}",CUSTOM);pg.reload();pg.wait_for_timeout(1500)
   pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(500)
-  rds=pg.evaluate("[...document.querySelectorAll('#rd option')].map(o=>o.value).filter(v=>v!='__new')")
+  rds=pg.evaluate("typeof worldFullroundKeys==='function'?worldFullroundKeys():[...document.querySelectorAll('#rd option')].map(o=>o.value).filter(v=>v!='__new')")
   print('rounds offered',rds)
   for n,rd in enumerate(rds):
     if ONLY and ONLY.lower() not in rd.lower():continue

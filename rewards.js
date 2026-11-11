@@ -64,7 +64,8 @@ function badgeCard(b){return`<div class="bcard rc-${b.rarity} ${b.on?'':'off'}" 
 /* Keep the old helpers working with the new set: [iconHTML, name, earned] */
 badges=function(){return earnedBadges(S.profile).map(b=>[hexIcon(b,1),b.name,b.on])};
 shelf=function(){const B=earnedBadges(S.profile),n=B.filter(b=>b.on).length;return`<div class="card"><div class="row"><span class="kicker">Badges · ${n}/${B.length}</span><button class="btn ghost" style="padding:6px 12px;min-height:36px" onclick="nav('badges')">View all</button></div>${iconRow(badges(),26)}</div>`};
-function badgesView(){const B=earnedBadges(S.profile),f=badgeFacts(S.profile),order=['mythic','legendary','epic','rare','common'];
+function badgesView(){app.innerHTML=`<div class="card"><span class="kicker">Badges</span><h2>Badges are no longer in ScoreTool</h2><p>Your scores, names and diary are unchanged. Rankings and classification stay under My archery.</p></div>`;return;
+ const B=earnedBadges(S.profile),f=badgeFacts(S.profile),order=['mythic','legendary','epic','rare','common'];
  app.innerHTML=`<div class="card dark"><span class="kicker">Badges</span><h1>The Collection</h1><p class="small muted" style="margin:0">${B.filter(b=>b.on).length} of ${B.length} unlocked. Earned only from your real logged arrows and official results.</p></div>
  <div class="card"><div class="grid3">${B.map(badgeCard).join('')}</div>
  <p class="small muted" style="margin-top:10px">Rarity: <b style="color:var(--r-common)">Common</b> · <b style="color:var(--r-rare)">Rare</b> · <b style="color:var(--r-epic)">Epic</b> · <b style="color:var(--r-leg)">Legendary</b> · <b style="color:var(--r-myth)">Mythic</b>. "% of archers who have this" appears once ScoreTool is live and there are enough archers to count.</p></div>
@@ -120,7 +121,7 @@ function rankCard(name){const rk=rankFor(name),yr=today().slice(0,4);let body;
  <p class="small muted">I–III inside Bronze to Diamond splits each AA band into thirds by rating. That split is ScoreTool's, not Archery Australia's. Barebow and Longbow tables aren't loaded yet, so those show as provisional.${rk.unrated?` ${rk.unrated} of your rounds this year use a round ScoreTool can't rate yet.`:''}</p></details></div>`}
 function rankFeed(m,n){const rk=rankFor(m.name);return rk.state=='ranked'?[{id:m.id+'r'+rk.lvl,date:rk.date,who:m,html:`<b>${esc(n)}</b>: Archery Australia <b style="color:var(--cyan)">${esc(aaLabel(rk))}</b>`,sub:'Archery Australia '+rk.aa+' · verified',ver:'official'}]:[]}
 function rewardsView(){const p=S.profile;
- app.innerHTML=`${rankCard(p)}${typeof estRating=='function'?`<div class="card" id="c-class">${estRating(findReal(p||'')).replace('<div class="card">','<div>')}</div>`:''}${window.leagueCard?leagueCard():''}${window.seasonCard?seasonCard():''}${window.recapTeaser?recapTeaser():''}`;
+ app.innerHTML=`${rankCard(p)}${typeof estRating=='function'?`<div class="card" id="c-class">${estRating(findReal(p||'')).replace('<div class="card">','<div>')}</div>`:''}`;
  if(window.bindRewards)bindRewards()}
 window.EXTRA_VIEWS.rewards=rewardsView;
 /* ---------- Profile cards (replace animal avatars) ---------- */
@@ -136,19 +137,9 @@ function cardData(name){const mine=name==S.profile,B=earnedBadges(name).filter(b
 function profileCard(name,link){const d=cardData(name),Bn=colourFor(name),nm=name==S.profile?name:shortName(name);
  return`<div class="pcard card" style="padding:0"><div class="ban" style="background:linear-gradient(120deg,${Bn[1]} 0 60%,${Bn[2]} 60% 64%,${Bn[1]} 64%)"></div><div class="body"><div class="row" style="align-items:flex-end">${initDisc({name},60)}</div>
  <h2 style="margin:8px 0 2px">${esc(shortName(name))}</h2>
- <div class="small muted">${[d.title?`<b style="color:var(--gold)">"${esc(d.title)}"</b>`:'',d.bow,name==S.profile&&d.club?esc(d.club):''].filter(Boolean).join(' · ')}</div>
- <div style="display:flex;gap:10px;margin-top:10px;align-items:center">${d.feat.length?d.feat.map(b=>`<span style="text-align:center;font-size:11px;font-weight:700;width:64px">${hexIcon(b,0)}<br>${b.name}</span>`).join(''):'<span class="small muted">Featured badges show here once you unlock some.</span>'}</div>
- ${link?`<button class="btn ghost" style="margin-top:10px;padding:6px 12px;min-height:36px" onclick="nav('profile')">Edit card</button>`:''}</div></div>`}
-function profileView(){const c=card(),d=cardData(S.profile);
- app.innerHTML=`${profileCard(S.profile)}<div class="card"><span class="kicker">Customise</span>
- <label>Banner (pick your club colours)</label><div style="display:flex;flex-wrap:wrap;gap:8px">${BANNERS.map((b,i)=>`<button class="btn ghost" data-ban="${i}" aria-pressed="${i==(c.banner||0)}" style="padding:6px 10px;min-height:36px;${i==(c.banner||0)?'outline:2px solid var(--cyan)':''}"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,${b[1]} 50%,${b[2]} 50%);vertical-align:-2px"></span> ${b[0]}</button>`).join('')}</div>
- <label for="ttl">Title (earned badges and season rewards only)</label><select id="ttl"><option value="">No title</option>${[...d.B.map(b=>b.name),...seasonTitles()].map(n=>`<option ${n==c.title?'selected':''}>${n}</option>`).join('')}</select>
- <label>Featured badges (pick up to 3)</label><div style="display:flex;flex-wrap:wrap;gap:6px">${d.B.length?d.B.map(b=>`<label style="font-weight:600;margin:0;display:flex;gap:6px;align-items:center;background:var(--night2);padding:6px 10px;border-radius:10px"><input type="checkbox" data-ft="${b.id}" style="width:auto" ${c.featured.includes(b.id)?'checked':''}> ${b.name}</label>`).join(''):'<span class="small muted">No badges unlocked yet.</span>'}</div>
- <p class="small muted" style="margin-top:10px">Squad mates only see your initials, first name and last initial, AA classification, title and badges. No photo, club, age or contact details.</p>
- <button class="btn ghost" onclick="nav('rewards')">Done</button></div>`;
- app.querySelectorAll('[data-ban]').forEach(b=>b.onclick=()=>{c.banner=+b.dataset.ban;save();profileView()});
- $('#ttl').onchange=e=>{c.title=e.target.value;save();profileView()};
- app.querySelectorAll('[data-ft]').forEach(b=>b.onchange=()=>{const id=b.dataset.ft;c.featured=c.featured.filter(x=>x!=id);if(b.checked){c.featured.push(id);if(c.featured.length>3)c.featured.shift()}save();profileView()})}
+ <div class="small muted">${[d.bow,name==S.profile&&d.club?esc(d.club):''].filter(Boolean).join(' · ')}</div>
+ </div></div>`}
+function profileView(){app.innerHTML=`${profileCard(S.profile)}<div class="card"><span class="kicker">Profile</span><p>Badge titles, season rewards and the badge card editor are no longer in ScoreTool. Your name is under Names. Rankings stay under My archery.</p></div>`}
 window.EXTRA_VIEWS.profile=profileView;
 function meTop(){return profileCard(S.profile,true)}
 /* ---------- Arrow XP, weekly squad league, seasons ----------
@@ -201,7 +192,7 @@ function monthStats(name,ym){const inM=d=>normDate(d).slice(0,7)==ym,dm=dayMap(n
 function recapMonths(){const set=new Set();Object.keys(dayMap(S.profile)).forEach(d=>set.add(d.slice(0,7)));realFor(S.profile).forEach(r=>set.add(normDate(r.date).slice(0,7)));return[...set].sort().reverse()}
 const monthName=ym=>new Date(ym+'-15').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
 function recapTeaser(){const M=recapMonths();return`<div class="card"><span class="kicker">Recap</span><div class="row"><span><b>Your month, wrapped</b><br><span class="small muted">${M.length?monthName(M[0])+' is ready':'Log some arrows to unlock your first recap'}</span></span><button class="btn" onclick="nav('recap')" ${M.length?'':'disabled'}>Open</button></div></div>`}
-function recapView(){const M=recapMonths();if(!M.length){app.innerHTML=`<div class="card dark"><span class="kicker">Recap</span><h1>Nothing to wrap yet</h1><p>Your monthly recap builds itself from your real arrows and official results. Log a session to get started.</p></div>`;return}
+function recapView(){app.innerHTML=`<div class="card"><span class="kicker">Recap</span><h2>The monthly recap is no longer in ScoreTool</h2><p>Your scores are unchanged. Use Analysis for your shooting history.</p></div>`;return;const M=recapMonths();if(!M.length){app.innerHTML=`<div class="card dark"><span class="kicker">Recap</span><h1>Nothing to wrap yet</h1><p>Your monthly recap builds itself from your real arrows and official results. Log a session to get started.</p></div>`;return}
  if(!M.includes(recapMonth))recapMonth=M[0];const st=monthStats(S.profile,recapMonth),mn=monthName(recapMonth);
  const slides=[[`Your ${mn.split(' ')[0]}`,`<div class="big">${st.arrowsN.toLocaleString()}</div><p>arrows across ${st.days} day${st.days==1?'':'s'}</p>`],
   ['Rounds',`<div class="big" id="recaprounds">${st.rounds}</div><p>${st.top?`Most shot: <b>${esc(st.top[0])}</b> (${st.top[1]}×)`:'No rounds logged this month'}${st.incN?`<br><span class="small" id="recapinc">Plus ${plN(st.incN,'incomplete round','incomplete rounds')}, not counted (same as Stats; tick Include incomplete on Stats to count ${st.incN==1?'it':'them'}).</span>`:''}</p>`],

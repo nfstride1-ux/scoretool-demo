@@ -3,8 +3,42 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-11-1305-c16',d:'2026-11-11',items:[
+   ['target',"Lingkana League test page","The Lingkana League is on a test page of the app, separate from the usual testers' app. Sign-ups and the scoring password are shared across scorers' phones. The host can change the password on the host screen.",'67437d1']]},
+  {v:'v2026-11-10-rounds',d:'2026-11-10',items:[
+   ['book',"Round distances and faces","Tools, Rounds, sits next to Rules. It lists the Archery Australia target rounds. Tap a name for the distances, the arrows at each one, the face size, the total arrows and the maximum. Search finds a round by its other name too: Canberra Round, or Fremantle Round."]]},
+  {v:'v2026-11-10-aa9a',d:'2026-11-10',items:[
+   ['target',"Archery Australia target rounds","Score now includes the target rounds from Archery Australia Schedule 9A (January 2017): the city rounds and the 720s, with the distances, faces and arrow counts from that table. WA 60/900 is also the Canberra Round. WA 60/1440 is also the Fremantle Round.",'65c88c1']]},
+  {v:'v2026-11-09-c9',d:'2026-11-09',items:[
+   ['book',"IFAA rules","Tools, Rules, has an IFAA tab with the field, hunter, animal, 3D and indoor rounds, and the scoring that goes with them. Sources are linked. Outdoor time is not a fixed limit.",'aa65cbf']]},
+  {v:'v2026-11-09-d4',d:'2026-11-09',items:[
+   ['camera',"A photo fills in an official result","Photograph a paper scorecard, or a screenshot of a results page, and Add an official result fills in from it. Check the score, and how far it is above or below your personal best, then save. Nothing counts until you save. The picture is deleted once it has been read. A picture that cannot be read does not save a score.",'98ab96a']]},
+  {v:'v2026-11-09-d3',d:'2026-11-09',items:[
+   ['target',"A blank round names itself","Save a practice round with the name left blank and it is named from the type and the distance, such as Target 70m, Indoor 18m, Field 50m, Clout 180m or 3D 20 targets. A name you type is kept.",'a4339cd']]},
+  {v:'v2026-11-09-d2',d:'2026-11-09',items:[
+   ['target',"The next target opens itself","Once the arrows for a target face are plotted, the next target opens. On a 3-spot that is Spot 1, then Spot 2, then Spot 3. After the last target, nothing moves on until you press Next. A tap in the gap around the picture is no longer saved as a miss.",'1fa1659']]},
+  {v:'v2026-11-09-d1',d:'2026-11-09',items:[
+   ['target',"Fix a finished score sheet","On a finished round, including one in Past sessions, you can delete an arrow and put it back on the same sheet. The total, the X count, the 10s and your personal best all update. The original sheet is the one that changes.",'9fe49ff']]},
+  {v:'v2026-11-06-1959-c6',d:'2026-11-06',items:[
+   ['calendar',"Sync now waits for approval","Sync now is there for Plus and Pro. It stays off until a national body approves a pull. Nothing is fetched. Paste a table or a CSV is the way to bring scores in.",'e414d4e']]},
+  {v:'v2026-11-06-1959-c5',d:'2026-11-06',items:[
+   ['camera',"Attach a score screenshot","On Add an official result you can attach a screenshot to look at while you type. The picture is not read. After you save, it is deleted unless you tick Keep the photo.",'56ce6ad']]},
+  {v:'v2026-11-06-1959-c4',d:'2026-11-06',items:[
+   ['trophy',"Add an official result","Tools, My results source, has a form for a finished official round: date, event, round, score, and maximum, 10s, Xs or ends if you know them. It counts for personal bests. A round you already scored is left as it is.",'1c5e6f8']]},
+  {v:'v2026-11-06-1957-c3',d:'2026-11-06',items:[
+   ['calendar',"Official and imported scores go to your calendar","Official scoresheets, competition results and scores you imported are added to My events as well, once each. A score you already sent for that day, round and total is not sent again. A personal best still has (PB) on the round name.",'3cbd431']]},
+  {v:'v2026-11-06-1957-c2',d:'2026-11-06',items:[
+   ['calendar',"Finished rounds go to your calendar","Every finished round is added to My events, practice and club alike, including rounds you finished before you linked. A round is sent once. Sample rounds and rounds you discarded are left out.",'eec2d6b']]},
+  {v:'v2026-11-06-1957-c1',d:'2026-11-06',items:[
+   ['trophy',"A personal best is marked on your calendar","When a finished round is your personal best for that round, the same best the Personal bests card shows, Archery Calendar gets the round name with (PB) on the end. Your scores on this phone are not changed.",'98a3729']]},
+  {v:'v2026-11-03-0640-r3',d:'2026-11-03',items:[
+   ['arrow',"Bare shaft test gives a plain verdict","In a Fletched vs Bare tuning session, the comparison line now tells you what the bare shafts mean instead of how much tighter the group is: for a right-handed archer, bare shafts right of the fletched group usually mean the arrow is acting weak and left means stiff, and it is mirrored for a left-handed archer. High or low points you to the nocking point, or tiller on a recurve or barebow. The usual next step is shown as general tuning guidance. You can set the bow hand on the session if it was not set.",'60c2e83']]},
+  {v:'v2026-11-03-0636-r2',d:'2026-11-03',items:[
+   ['arrow',"Type in the tuning session's arrow setup card","In a tuning session, every box on the Arrow setup card, Before and After, can now be typed in: shaft, spine, length, point, FOC, total weight and speed. What you type is kept with that session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved, so you can fix a wrong figure and carry on with a bare shaft test.",'e47d0e0']]},
+  {v:'v2026-11-03-0630-r1',d:'2026-11-03',items:[
+   ['arrow',"Arrow and bow figures are checked","In the Arrow chooser and the Calculators, a figure outside the usual range for that box, like a 12365 gr arrow or a 200 lb draw weight, is now pointed out under the box in plain words and left out until you fix it. The speed estimate shows a dash and the reason instead of a figure that cannot be right, and it is never below zero. Nothing you saved before is changed.",'bc5ffcd']]},
   {v:'v2026-11-01-1446-relayhold',d:'2026-11-01',items:[
-   ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back."]]},
+   ['check',"Fewer sends to the score relay","The app re-sends your whole league or group card when it opens at most once every half hour, and if the relay is busy it waits 15 seconds before trying that again. Your scores still send as you shoot, and anything waiting sends as soon as the relay or your signal is back.",'a7ea130']]},
   {v:'v2026-11-01-1349-ac6',d:'2026-11-01',items:[
    ['arrow',"Build an arrow: a new Help guide","Help has a new guide, Build an arrow: eight steps from your bow details and the spine chart to cutting, gluing and a bare-shaft or paper tune. Each step shows where it comes from (Easton's guides and Bow International) and has a link that opens the right box in the Arrow chooser.",'b58d178']]},
   {v:'v2026-11-01-1343-ac5',d:'2026-11-01',items:[

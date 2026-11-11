@@ -70,6 +70,7 @@ try:
       cs=[C[1]] if spot==0 and zoom else [C[spot-1]] if spot else C
       allok=True
       for i in range(3):
+        if spot:pg.click(f'[data-spot="{spot}"]');pg.wait_for_timeout(120)  # a plotted arrow moves on to the next spot; stay here to plot another on this one
         c=cs[i%len(cs)];plot(c[0]+0.004*i,c[1]+0.003*i);clean();allok&=agree('p')
       posok=pg.evaluate("(()=>{const e=cur.ends[0],p=cur.pos[0];return e.length==3&&p.filter(Boolean).length==3})()")
       for i in range(3):un();allok&=agree('u')
@@ -89,6 +90,7 @@ try:
   chk('End 2: left box says End 2 of 10, End box 0 (nothing shot yet), Prog 30',pg.evaluate("document.querySelector('.ad-line').textContent").startswith('End 2 of 10') and pg.evaluate(BOX)==['0','30'])
   st[:]=[[]]
   plot(0,-0.62);clean();chk('partly filled end: End box is the running total of this end (10), Prog 40',pg.evaluate(BOX)==['10','40'])
+  pg.click('[data-spot="1"]');pg.wait_for_timeout(150)  # the first plot moved on to Spot 2; come back to put another arrow on Spot 1
   plot(0.005,-0.62);clean();chk('two arrows: End 20, Prog 50',pg.evaluate(BOX)==['20','50'])
   un();chk('Undo: End 10, Prog 40 again',pg.evaluate(BOX)==['10','40'] and agree('x'))
   # zoom reset when a different end is shown (Undo from an empty end back to the finished one) and when the sheet is visited
@@ -122,24 +124,18 @@ try:
   pg.click('[data-csspot="3"]');zset(pg,'#cszcycle',2);pg.click('[data-csspot="2"]');pg.wait_for_timeout(300)
   chk('Casual: Spot 2 keeps the zoom',abs(pg.evaluate(VWC,'cspface')-0.62/pg.evaluate('window._zk'))<0.01)
   chk('page errors (Casual): none',not e2)
-  # ================= League =================
+  # ================= League (values only, no plot face; Nathe 11 Nov 7:57am) =================
   c3,pg,e3=phone(b)
   pg.evaluate("nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
   pg.click('[data-lgme]');pg.wait_for_timeout(500)
-  st,mk,plot,un,agree=kit(pg,'cspface','#lgundo','#csad .ad-chips .adb:not(.adb-empty)')
-  if pg.locator('#cspface').count()==0:pg.click('#cshide') if pg.locator('#cshide').count() else None
-  v1=pg.evaluate("plotScore(0,-0.45,face3R(faceR(ROUNDS[Object.keys(ROUNDS).find(r=>/Vegas 300/.test(r))],0),{face3:'vert'}))")
-  chk('League: spot 1 test arrow is not an X',v1!='X')
-  plot(0,-0.45);plot(0,0)
-  pg.click('[data-csspot="3"]');pg.wait_for_timeout(250);zset(pg,'#cszcycle',3);pg.wait_for_timeout(200)
-  chk('League: zoomed on spot 3 (3x)',abs(pg.evaluate(VW,'cspface')-0.62/3)<0.01)
-  plot(0,0.62)
-  chk('League: end complete, the next end keeps the zoom (3x)',abs(pg.evaluate(VW,'cspface')-0.62/3)<0.01)
-  b2=pg.evaluate(BOXC)
-  chk('League: End 2, End box 0 on the empty end, Prog = end 1 total',b2[0]=='0' and int(b2[1])>=27)
-  plot(0,-0.62);chk('League: partly filled end: End 10, Prog = total + 10',pg.evaluate(BOXC)==['10',str(int(b2[1])+10)])
-  un();pg.click('#lgundo');pg.wait_for_timeout(300)
-  m=pg.evaluate(MK,'cspface');chk('League: Undo into the finished end removes the spot 3 arrow and plot',len(m)==2 and all(y<0.3 for x,y in m))
+  chk('League: scoring shows no plot face',pg.locator('#cspface').count()==0 and pg.locator('#csfwrap').count()==0 and pg.locator('#cshide').count()==0)
+  for k in ('X','10','9'):
+    pg.click(f'#lgentry [data-lgk="{k}"]');pg.wait_for_timeout(150)
+  rec=pg.evaluate("(()=>{const e=lgGet('ONIONSHD').sc[h2hMe()][lgWeek(lgGet('ONIONSHD'))];return {n:e.e[0].length,hasP:!!(e.p&&e.p[0]&&e.p[0].length)}})()")
+  chk('League: three pad taps complete an end, with no arrow positions stored',rec['n']==3 and not rec['hasP'])
+  pg.click('#lgundo');pg.wait_for_timeout(200)
+  rec2=pg.evaluate("(()=>{const e=lgGet('ONIONSHD').sc[h2hMe()][lgWeek(lgGet('ONIONSHD'))];return e.e[0].length})()")
+  chk('League: Undo removes the last arrow on the pad card',rec2==2)
   chk('page errors (League): none',not e3)
   b.close()
 finally:srv.terminate()

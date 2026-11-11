@@ -34,6 +34,19 @@ function estimate(b,a){const M=peekMarks(b,a),R=real(M);if(R.length<MIN)return{e
   const v=f(x);if(!isFinite(v))return;out[d]=v.toFixed(dp);if(x>hi)far.push(d)});
  return{marks:out,n:R.length,far,hi:R.find(r=>r[1]==hi)[0],at:new Date().toLocaleDateString('en-CA')}}
 window.sightEstimate=estimate;
+/* B1 (11 Nov 2026): typing a mark saves it and flashes green, but the estimate bar was only built when the
+   screen last drew, so the button stayed disabled and the count stayed at 0. Re-count from saved marks and
+   the live boxes (without redrawing the table, so the keyboard stays put), and flush the boxes before a tap. */
+function liveMarks(b,a){const M={};const src=peekMarks(b,a)||{};for(const d of Object.keys(src))M[d]={...src[d]};
+ const el=document.getElementById('gearcard');if(el)el.querySelectorAll('.smk[data-k=v]').forEach(i=>{const d=i.dataset.d,nv=i.value.trim();if(!d)return;M[d]=Object.assign({},M[d],{v:nv})});
+ return M}
+function flushMarkInputs(b,a){const el=document.getElementById('gearcard');if(!el||!b||typeof marksOf!='function')return;
+ let ch=false;el.querySelectorAll('.smk').forEach(i=>{const d=i.dataset.d,k=i.dataset.k;if(!d||!k)return;const nv=i.value.trim(),MM=marksOf(b,a),cur=(MM[d]&&MM[d][k])||'';if(cur===nv)return;if(!nv&&!MM[d])return;const m=MM[d]=MM[d]||{};m[k]=nv;ch=true});
+ if(ch)save()}
+function syncEstBar(b,a){const se=document.getElementById('smest'),msg=document.getElementById('smestmsg');if(!se||!msg)return;
+ const n=real(liveMarks(b,a)).length,E=estOf(b,a);se.disabled=n<MIN;
+ if(n<MIN)msg.textContent=`Add at least ${MIN} real marks to estimate the others (you have ${n}).`;
+ else if(!E)msg.textContent='Fills only the empty distances, shown as est. Your own marks are never changed. Estimates are only as good as the marks you shot: confirm each one on the range.'}
 let MSG='';
 if(!document.getElementById('smeststyle'))document.head.insertAdjacentHTML('beforeend','<style id="smeststyle">.smk.smest::placeholder{font-style:italic;color:var(--muted);opacity:.85}.smk.smest{font-style:italic;font-size:15px!important;padding-left:4px;padding-right:4px}.smestl{display:block;font:italic 600 12px var(--body,inherit);color:var(--muted)}</style>');
 const _rg=window.renderGear;if(typeof _rg!='function')return;
@@ -48,7 +61,9 @@ window.renderGear=renderGear=function(){_rg();const el=document.getElementById('
  row.insertAdjacentHTML('beforebegin',`<div id="smestw" style="margin-top:8px"><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn ghost" id="smest" type="button"${R.length<MIN?' disabled':''}>${E?'Estimate again':'Estimate other marks'}</button>${E?'<button class="btn ghost" id="smclr" type="button">Clear estimates</button>':''}</div>
   <p class="small muted" id="smestmsg" aria-live="polite" style="margin:6px 0 0">${MSG?esc(MSG)+' ':''}${R.length<MIN?`Add at least ${MIN} real marks to estimate the others (you have ${R.length}).`:E?`${shown} estimate${shown==1?'':'s'} (shown as est.) from ${E.n} real marks on ${esc(E.at)}. Tap Estimate again after adding marks.${(E.far||[]).length?` Past your longest mark (${esc(E.hi)}) they are less sure.`:''}`:'Fills only the empty distances, shown as est. Your own marks are never changed.'}
   ${R.length>=MIN||E?' Estimates are only as good as the marks you shot: confirm each one on the range.':''}</p></div>`);MSG='';
- const se=el.querySelector('#smest');if(se)se.onclick=()=>{const r=estimate(b,a);if(r.err){MSG=r.err;gearRedraw();return}
+ el.querySelectorAll('.smk').forEach(i=>{i.addEventListener('input',()=>syncEstBar(b,a));i.addEventListener('change',()=>syncEstBar(b,a))});
+ syncEstBar(b,a);
+ const se=el.querySelector('#smest');if(se)se.onclick=()=>{flushMarkInputs(b,a);const r=estimate(b,a);if(r.err){MSG=r.err;gearRedraw();return}
   clearEst(b,a);if(Object.keys(r.marks).length){const B=store(b,a,1);B[a.id]={marks:r.marks,n:r.n,far:r.far,hi:r.hi,at:r.at}}else MSG='Every distance in range already has a real mark.';save();gearRedraw()};
  const sc=el.querySelector('#smclr');if(sc)sc.onclick=()=>{clearEst(b,a);MSG='Estimates cleared. Your own marks are unchanged.';save();gearRedraw()}};
 })();

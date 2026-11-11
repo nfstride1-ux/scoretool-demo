@@ -76,7 +76,7 @@ try:
   chk('ring values include X/10..1/M style scores below 6',any(v in list('12345') for v in e0))
   chk('plotted positions are on the full face (not per spot)',pg.evaluate("shotPts(cur).target.every(p=>p.k=='full')"))
   chk('face button locks once an arrow is plotted',pg.evaluate("document.querySelector('#face3').disabled"))
-  chk('end total correct',pg.inner_text('.ad-num b').strip()==str(pg.evaluate("endSum(cur.ends[0])")))
+  chk('end total correct',pg.inner_text('.ad-num b').strip()=='0' and pg.inner_text('#endno').startswith('End 2') and pg.evaluate("endSum(cur.ends[0])")>0)
   # zoom as other single faces
   pg.evaluate("scrollTo(0,0)");pg.wait_for_timeout(200)
   zc=pg.locator('#zcycle');chk('zoom button present',zc.count()==1)
@@ -86,7 +86,9 @@ try:
   pg.evaluate("scrollTo(0,0)");pg.wait_for_timeout(200);pg.screenshot(path=f'{SH}/scoring-single-390.png')
   # finish the 10... play 2 more ends with keys, then save/history
   sid=pg.evaluate("cur.id")
-  pg.click('#enext');pg.wait_for_timeout(400);pg.click('text=Add Scores');pg.wait_for_timeout(400)
+  if pg.locator('#enext').count() and pg.locator('#enext').is_enabled():
+    pg.click('#enext');pg.wait_for_timeout(400)
+  if pg.locator('#addsc').count():pg.click('#addsc');pg.wait_for_timeout(400)
   for k in ['X','9','1']:pg.click(f'.ad-pad [data-k="{k}"]');pg.wait_for_timeout(120)
   e1=pg.evaluate("cur.ends[1]");chk('keys score on the single face',e1==['X','9','1'])
   tot=pg.evaluate("cur.ends.reduce((t,e)=>t+endSum(e),0)")

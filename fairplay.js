@@ -31,12 +31,12 @@ const _put=putArrow;
 putArrow=function(k,xy){const editing=!!fix,s=cur,before=s?s.ends.length+':'+(s.ends[s.ends.length-1]||[]).length:'';_put(k,xy);
  if(editing||!s||s.sample)return;const R=ROUNDS[s.round],i=s.ends.length-1,e=s.ends[i];if(!R||e.length!=R.ape||before==s.ends.length+':'+e.length)return;
  s.et=s.et||[];s.et[i]=Date.now();const p=s.et[i-1];
- if(i>0&&p&&s.et[i]-p<R.ape*FP_END_SEC_PER_ARROW*1000&&!fpHeldEnd(s.id,i)){const h={kind:'end',sid:s.id,ei:i,date:s.date,n:e.length,t:Date.now()};fpHolds().push(h);save();fpModal(h)}};
+ if(i>0&&p&&s.et[i]-p<R.ape*FP_END_SEC_PER_ARROW*1000&&!fpHeldEnd(s.id,i)){const h={kind:'end',sid:s.id,ei:i,date:s.date,n:e.length,t:Date.now()};fpHolds().push(h);const show=!s.fpShown;if(show)s.fpShown=1;save();if(show)fpModal(h)}};
 /* Added arrows */
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-vol],#vsave');if(!b)return;const t=today(),before=(S.vol||{})[t]||0;
  setTimeout(()=>{const add=((S.vol||{})[t]||0)-before;if(add<=0)return;S.volLog=(S.volLog||[]).filter(x=>Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4);S.volLog.push({t:Date.now(),n:add});
   const sum=S.volLog.reduce((a,x)=>a+x.n,0);if(sum>FP_VOL_MAX){const h={kind:'vol',date:t,n:sum,t:Date.now()};
-   S.fpHold=fpHolds().filter(x=>!(x.kind=='vol'&&!x.ok&&Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4));fpHolds().push(h);S.volLog=[];save();fpModal(h)}else save()},0)},true);
+   S.fpHold=fpHolds().filter(x=>!(x.kind=='vol'&&!x.ok&&Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4));fpHolds().push(h);S.volLog=[];save();if(!S.fpVolShown){S.fpVolShown=today();fpModal(h)}}else save()},0)},true);
 document.addEventListener('click',ev=>{if(ev.target.id=='fpall'){fpOpen().forEach(h=>h.ok=true);save();render()}});
 /* Rewards read only counted arrows */
 const _dayMap=dayMap;dayMap=function(name){return name==S.profile?rewardDayArrows():_dayMap(name)};

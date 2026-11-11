@@ -51,7 +51,7 @@ try:
   bx=pg.locator('#pface').bounding_box();cx=bx['x']+bx['width']/2;cy=bx['y']+bx['height']/2;u=bx['height']/2.08
   for dx,dy in [(0.03,0),(0.33,-0.1),(-0.55,0.25),(0.1,0.75),(-0.2,-0.42),(0.05,0.15)]:
     pg.mouse.click(cx+dx*u,cy+dy*u);pg.wait_for_timeout(250)
-  E("sv='entry';score()");pg.wait_for_timeout(400)
+  E("justDone=true;sv='entry';score()");pg.wait_for_timeout(400)  # the face's arrows are plotted, so the next end is open; look back at the finished end
   t=[x.text_content() for x in pg.locator('#pface text').all()];chips=[x.strip() for x in pg.locator('.ad-chips .adb').all_inner_texts()]
   chk('Nate scorer: each plotted arrow shows its score, matching the chips '+str(t)+str(chips),len(t)==6 and sorted(t)==sorted(chips))
   chk('Nate scorer: no green on the face',('#22c55e' not in pg.inner_html('#fwrap')) and ('#39ff14' not in pg.inner_html('#fwrap')))
