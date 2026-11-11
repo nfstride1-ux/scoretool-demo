@@ -153,25 +153,80 @@
   }
   function setNight(w){window._lkFlowNight=+w||1}
 
-  function home(){
-    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+
+  function evCode(code){
+    const onion=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+    const lk=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
+    const c=String(code||window._lkEvent||'').toUpperCase();
+    if(c===onion||c==='ONIONSHD'||c==='ONION SHED CHALLENGE')return onion;
+    return lk;
+  }
+  function isOnion(code){
+    const onion=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+    return evCode(code)===onion;
+  }
+  function setEv(code){window._lkEvent=evCode(code);return window._lkEvent}
+  function evName(code){
+    if(isOnion(code))return (typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge';
+    return (typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League';
+  }
+  function backToList(){
+    window._lkEvent=null;
+    if(shouldBoot()){list();return}
+    hideChrome(false);
+    window._lkFlow=false;
+    if(typeof nav==='function')nav((typeof view!=='undefined'&&view==='lab_leagues')?'lab_leagues':'score');
+    else if(typeof score==='function')score();
+  }
+
+  function list(){
+    hideChrome(true);
+    window._lkEvent=null;
+    const el=appEl();if(!el)return;
+    el.innerHTML=`<div class="lkf" id="lkevlist">
+      <h1>Leagues</h1>
+      <p class="small muted">Open a league to log in, register, review scores or read the rules.</p>
+      ${typeof lgEventCardsHTML==='function'?lgEventCardsHTML():''}
+    </div>`;
+    el.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>home(b.getAttribute('data-evopen')));
+  }
+
+  function home(code){
+    setEv(code);
+    if(isOnion()){if(typeof lgSeed==='function')lgSeed()}
+    else if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
     const el=appEl();if(!el)return;
-    el.innerHTML=`<div class="lkf" id="lkhome">
-      <div class="lk-home">
-        ${btn('lklogin','Login to Event','green')}
-        ${btn('lkqr','Login with QR Code','green')}
-        ${btn('lkereg','Event Registration','grey')}
-        ${btn('lkreview','Review Scoresheet','grey')}
+    const onion=isOnion();
+    const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
+    const alt=onion?'Onion Shed Championships':'Lingkana Indoor Archery';
+    el.innerHTML=`<div class="lkf" id="lkhome" data-ev="${esc(evCode())}">
+      <div class="lk-evhome">
+        <div class="lk-evbrand ${onion?'onion':'lingkana'}">
+          <img src="${logo}" alt="${esc(alt)}">
+          <p class="lk-evname">${esc(evName())}</p>
+        </div>
+        <div class="lk-home">
+          ${btn('lklogin','Login to Event','green')}
+          ${btn('lkqr','Login with QR Code','green')}
+          ${btn('lkereg','Event Registration','grey')}
+          ${btn('lkreview','Review Scoresheet','grey')}
+          ${btn('lkrules','Rules','grey')}
+        </div>
+        ${bar(btn('lkhomeback','Back to leagues','grey'),'')}
       </div>
     </div>`;
     $id('lklogin').onclick=()=>login();
     $id('lkqr').onclick=()=>qrLogin();
-    $id('lkereg').onclick=()=>regSearch();
+    $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
+    $id('lkrules').onclick=()=>rules();
+    $id('lkhomeback').onclick=()=>backToList();
   }
 
+
   function login(){
+    if(isOnion())return osLogin();
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const el=appEl();if(!el)return;
@@ -187,8 +242,9 @@
       <input id="lkpw" type="password" autocomplete="current-password">
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       ${typeof lkCanHost==='function'&&lg&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
-      ${bar('',btn('lkpwgo','Login','green'))}
+      ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
     </div>`;
+    if($id('lkloginback'))$id('lkloginback').onclick=()=>home(evCode());
     const go=()=>{
       const n=($id('lkscorer').value||'').trim();
       const pw=$id('lkpw').value||'';
@@ -218,12 +274,13 @@
       <p class="lk-msg" id="lkqrmsg" role="alert"></p>
       ${bar(btn('lkqrback','Back','grey'),btn('lkqrgo','Continue','green'))}
     </div>`;
-    $id('lkqrback').onclick=()=>home();
+    $id('lkqrback').onclick=()=>home(evCode());
     $id('lkqrgo').onclick=()=>login();
     const msg=$id('lkqrmsg');
     const accept=text=>{
       const s=String(text||'');
-      if(/scoretool-demo\/test|LK-TEST26|LINGKN26|lk-register|lk-login/i.test(s)){login();return true}
+      if(/ONIONSH2|onion.?shed/i.test(s)){setEv((typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2');login();return true}
+      if(/scoretool-demo\/test|LK-TEST26|LINGKN26|lk-register|lk-login/i.test(s)){setEv((typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26');login();return true}
       if(msg)msg.textContent='That code is not for this event.';
       return false;
     };
@@ -696,19 +753,26 @@
   }
 
   function review(){
+    if(isOnion())return osReview();
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
+    const w=nightOf(lg||{});
+    if(typeof lkResultsView==='function'){
+      try{history.replaceState(null,'',location.pathname+location.search+'#lk-results&n='+w)}catch(e){}
+      lkResultsView(w);
+      const back=$id('lkresback');
+      if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
+      return;
+    }
     const el=appEl();if(!el)return;
     const stand=typeof lkTableHTML==='function'&&lg?lkTableHTML(lg):'<p>No scores yet.</p>';
     const pot=(typeof lkPotHTML==='function'&&lg)?lkPotHTML(lg):'';
-    const w=nightOf(lg||{});
-    const scores=typeof lkNightScores==='function'&&lg?lkNightScores(lg,w):null;
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
       <h1>Review Scoresheet</h1>
       ${stand}${pot}
       ${bar(btn('lkrevback','Back','grey'),'')}
     </div>`;
-    $id('lkrevback').onclick=()=>home();
+    $id('lkrevback').onclick=()=>home(evCode());
     if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
     document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
       const nw=+(window._lkPotNight||w);
@@ -717,6 +781,146 @@
     });
     if(typeof lkBindStandUI==='function')lkBindStandUI(lg);
   }
+
+  function regEntry(){
+    if(isOnion())return osRegister();
+    hideChrome(true);
+    try{history.replaceState(null,'',location.pathname+location.search+((typeof LK_REGISTER_HASH==='string'&&LK_REGISTER_HASH)||'#lk-register'))}catch(e){}
+    if(typeof lkRegisterView==='function')lkRegisterView();
+    const back=document.getElementById('lkregback');
+    if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
+  }
+
+  function rules(){
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    const onion=isOnion();
+    const title=onion?'Onion Shed Challenge rules':'Lingkana League rules';
+    let body='';
+    if(onion){
+      const R=(typeof LG_RULES!=='undefined'&&LG_RULES)||[];
+      body=`<ul>${R.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+    }else{
+      body=typeof lkRulesHTML==='function'?lkRulesHTML():'';
+    }
+    el.innerHTML=`<div class="lkf lk-rules" id="lkrulespage">
+      <h1>${esc(title)}</h1>
+      ${body}
+      ${bar(btn('lkruleback','Back','grey'),'')}
+    </div>`;
+    $id('lkruleback').onclick=()=>home(evCode());
+  }
+
+  function osLogin(){
+    if(typeof lgSeed==='function')lgSeed();
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    const name=myName()||(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
+    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+    const ev=evName();
+    el.innerHTML=`<div class="lkf" id="lkloginpage" data-ev="${esc(code)}">
+      <h1>Login</h1>
+      <label for="lkevent">Select Event</label>
+      <select id="lkevent"><option value="${esc(code)}" selected>${esc(ev)}</option></select>
+      <label for="lkscorer">Scorer Full Name</label>
+      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(name)}">
+      <label for="lkcode">League code</label>
+      <input id="lkcode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" value="${esc(code)}">
+      <p class="small muted">This league has no scoring password. Members open it with the league code.</p>
+      <p class="lk-msg" id="lkpwmsg" role="alert"></p>
+      ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
+    </div>`;
+    const go=()=>{
+      const n=($id('lkscorer').value||'').trim();
+      const msg=$id('lkpwmsg');
+      if(n.length<2){if(msg)msg.textContent='Type the scorer\'s full name.';return}
+      setMyName(n);
+      const raw=($id('lkcode').value||code);
+      const openExisting=()=>{
+        hideChrome(false);
+        window._lkFlow=false;
+        if(typeof lgView==='function')lgView(code);
+      };
+      const lg=typeof lgGet==='function'?lgGet(code):null;
+      const who=me();
+      if(lg&&(!who||(lg.order||[]).includes(who)||(typeof lgIsG==='function'&&lgIsG(who))||(lg.gn&&lg.gn[who]))){openExisting();return}
+      if(typeof lgJoin==='function'){
+        Promise.resolve(lgJoin(raw)).then(m=>{
+          if(m){if(msg)msg.textContent=m;return}
+        });
+        return;
+      }
+      if(msg)msg.textContent='Could not open that league on this phone.';
+    };
+    $id('lkpwgo').onclick=go;
+    $id('lkloginback').onclick=()=>home(code);
+    $id('lkcode').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+  }
+
+  function osRegister(){
+    if(typeof lgSeed==='function')lgSeed();
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+    const lg=typeof lgGet==='function'?lgGet(code):null;
+    const can=!!(lg&&typeof lgCanEd==='function'&&lgCanEd(lg));
+    const member=!!(lg&&me()&&(lg.order||[]).includes(me()));
+    const weeks=[1,2,3,4,5,6].map(w=>{
+      const d=(lg&&lg.weeks&&lg.weeks[w-1])||'';
+      const lab=w<6?('Week '+w):'Day 6 (together)';
+      return`<option value="${w}">${esc(lab)}${d?' · '+esc(d):''}</option>`;
+    }).join('');
+    el.innerHTML=`<div class="lkf" id="lkregpage" data-ev="${esc(code)}">
+      <h1>Event Registration</h1>
+      <p class="small muted">${esc(evName())}. Weeks 1 to 5 are a 300, in person or over FaceTime. Day 6 is a 300 together in the Onion Shed, then the shoot-up.</p>
+      ${member?'<p>You are already in this league. You do not need to register again.</p>':''}
+      ${can?`<p class="small muted">The host can add a name-only shooter here. You enter their 300s each week.</p>
+        <label for="lkgname">Name</label>
+        <input id="lkgname" maxlength="24" autocomplete="name" placeholder="Name">
+        <label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lkgjr"> Under 16 (nickname only)</label>
+        <label for="lkregweek">Week</label>
+        <select id="lkregweek">${weeks}</select>
+        <p class="lk-msg" id="lkregmsg" role="alert"></p>
+        ${bar(btn('lkregback','Back','grey'),btn('lkreggo','Add','green'))}`
+        :`${member?'': '<p>Ask the host to add you to this league. There is no public register page for this event.</p>'}
+        ${bar(btn('lkregback','Back','grey'),'')}`}
+    </div>`;
+    $id('lkregback').onclick=()=>home(code);
+    if($id('lkreggo'))$id('lkreggo').onclick=()=>{
+      const nm=($id('lkgname').value||'').trim();
+      const jr=!!($id('lkgjr')&&$id('lkgjr').checked);
+      const msg=$id('lkregmsg');
+      if(nm.length<2){if(msg)msg.textContent='Type a name.';return}
+      const out=typeof lgAddGuest==='function'?lgAddGuest(code,nm,jr):'Cannot add a shooter on this phone.';
+      if(out){if(msg)msg.textContent=out;return}
+      if(msg)msg.textContent='Added. You can score them from Login to Event.';
+      if($id('lkgname'))$id('lkgname').value='';
+    };
+  }
+
+  function osReview(){
+    if(typeof lgSeed==='function')lgSeed();
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+    const lg=typeof lgGet==='function'?lgGet(code):null;
+    if(!lg||typeof lgTable!=='function'){
+      el.innerHTML=`<div class="lkf" id="lkreviewpage"><h1>Review Scoresheet</h1><p>This league is not on this phone yet.</p>${bar(btn('lkrevback','Back','grey'),'')}</div>`;
+      $id('lkrevback').onclick=()=>home(code);
+      return;
+    }
+    const rows=lgTable(lg);
+    const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab" id="ostab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}"><td>${r.tie?'=':''}${r.rk}</td><td>${esc(r.nm)}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')||'<tr><td colspan="9">No scores yet.</td></tr>'}</tbody></table></div>
+      <p class="small muted">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting.</p>`;
+    el.innerHTML=`<div class="lkf" id="lkreviewpage">
+      <h1>Review Scoresheet</h1>
+      <p class="small muted">${esc(evName())}. Running total of all six 300s.</p>
+      <div class="card">${tab}</div>
+      ${bar(btn('lkrevback','Back','grey'),'')}
+    </div>`;
+    $id('lkrevback').onclick=()=>home(code);
+  }
+
 
   function enter(code){
     if(typeof lkEnsure==='function')lkEnsure();
@@ -750,12 +954,14 @@
 
   /* Expose for tests and relay refresh */
   window.lkFlowHome=home;
+  window.lkFlowList=list;
   window.lkFlowLogin=login;
   window.lkFlowSelect=selectArchers;
   window.lkFlowReview=review;
   window.lkFlowScore=scoreScreen;
   window.lkFlowEnter=enter;
   window.lkFlowHost=hostPw;
+  window.lkFlowRules=rules;
   window.lkApplyClaim=applyClaim;
   window.lkMergeClaims=mergeClaimBag;
   window.lkSetClaim=setClaim;
@@ -766,8 +972,8 @@
   const origView=window.lkView;
   window.lkView=function(code){
     hideChrome(true);
-    if(typeof lkEnsure==='function')lkEnsure();
-    enter(code);
+    if(typeof lkEnsure==='function'&&!isOnion(code))lkEnsure();
+    home(code);
   };
   if(typeof origView==='function')window._lkViewOld=origView;
 
@@ -776,9 +982,8 @@
     if(!shouldBoot())return;
     if(window._lkFlowStarted)return;
     window._lkFlowStarted=1;
-    if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
-    home();
+    list();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0));
   else setTimeout(boot,0);

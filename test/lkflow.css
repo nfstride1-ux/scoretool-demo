@@ -79,3 +79,29 @@ body.lk-flow #lksheet .ad-foot{
 body.lk-flow #lksheet .ad-discard{margin-bottom:8px}
 
 body.lk-flow #sbar{display:none!important}
+
+/* Event list cards and event home (12 Nov 2026). Flyer is the card background only, never the event-home page. */
+.st-evlist{display:flex;flex-direction:column;gap:14px;margin:8px 0 16px}
+.st-evcard{position:relative;display:block;width:100%;min-height:186px;border:0;padding:0;border-radius:16px;overflow:hidden;background-color:#111;background-size:cover;background-position:top center;background-repeat:no-repeat;text-align:left;color:#fff;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.st-evcard-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15) 20%,rgba(0,0,0,.78) 100%)}
+.st-evcard-body{position:absolute;left:0;right:0;bottom:0;padding:16px 16px 14px;z-index:1}
+.st-evcard-body b{display:block;font:800 20px/1.2 var(--body,system-ui,sans-serif);letter-spacing:.01em}
+.st-evcard-body .st-evsub{display:block;margin-top:4px;font:600 13px/1.35 var(--body,system-ui,sans-serif);color:rgba(255,255,255,.9)}
+.st-evcard:focus{outline:2px solid #fff;outline-offset:2px}
+#lgcard .st-evlist{margin:10px 0 4px}
+#lgcard h3.st-evh{margin:0 0 2px}
+
+.lk-evhome{padding-top:8px}
+.lk-evbrand{text-align:center;margin:0 0 22px}
+.lk-evbrand img{display:block;margin:0 auto 10px;max-width:min(280px,86%);height:auto;object-fit:contain}
+.lk-evbrand.lingkana{background:#000;border-radius:14px;padding:18px 16px 16px;margin:0 0 22px}
+.lk-evbrand.onion{background:#140f0a;border-radius:14px;padding:14px 10px 12px;margin:0 0 22px}
+.lk-evbrand .lk-evname{margin:0;font-size:15px;font-weight:700;color:#eee}
+.lk-home{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.lk-rules{padding-top:8px}
+.lk-rules h1{margin-bottom:8px}
+.lk-rules ul{margin:0;padding-left:1.15em;line-height:1.45}
+.lk-rules li{margin:0 0 10px}
+.lkf #lkevlist h1{margin-bottom:6px}
+#lkhome .lk-bar, .lk-rules .lk-bar, #lkevlist .lk-bar{margin-top:18px}
+#lkhome .lk-bar .lk-btn, .lk-rules .lk-bar .lk-btn{flex:1 1 100%}
