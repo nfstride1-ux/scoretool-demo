@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-11-1305-c16',d:'2026-11-11',items:[
+   ['target',"Lingkana League test page","The Lingkana League is on a test page of the app, separate from the usual testers' app. Sign-ups and the scoring password are shared across scorers' phones. The host can change the password on the host screen.",'67437d1']]},
   {v:'v2026-11-10-rounds',d:'2026-11-10',items:[
    ['book',"Round distances and faces","Tools, Rounds, sits next to Rules. It lists the Archery Australia target rounds. Tap a name for the distances, the arrows at each one, the face size, the total arrows and the maximum. Search finds a round by its other name too: Canberra Round, or Fremantle Round."]]},
   {v:'v2026-11-10-aa9a',d:'2026-11-10',items:[
