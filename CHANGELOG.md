@@ -4,6 +4,23 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-11-1908-live (2026-11-11)
+### What changed
+- Live Lingkana host screen: the poster register link is the clickable live page https://nfstride1-ux.github.io/scoretool-demo/lk-register.html, with a Share button (uses the phone Share sheet, or copies the link). The "swap LK_PUBLIC_BASE before printing" note is gone. LK_PUBLIC_BASE already points at the live root.
+- Host-only Registered archers page (not the public register page): each name expands on tap with Paid tick boxes for the six 660 nights (18 Nov, 2 Dec, 16 Dec, 30 Dec, 13 Jan, 27 Jan). Ticks save on the league record and sync like other host data. They are a record only; ScoreTool does not take payment. The public register link and non-hosts cannot see the ticks.
+- Invite a tester and the tester-invite dropdown are removed from the live league. Official tester score data (testers.js and the sheets/ad files) is unchanged, so testers can still open their own scores. Testers were not added to the live Lingkana list.
+- A small Beta label is on the league screen (and the main Lingkana flow screens).
+- Standings, Share and Print show each archer's full name (the name they registered under, or the official full name for a known archer). Email and phone are never shown there. New sign-ups no longer send email or phone to the public score relay.
+- After backing up tester PBs and the live relay to the box only, live Lingkana test data was cleared so all 660 nights start empty for 18 Nov. The live topic is now `scoretool-h2h-q7m4-lg-lingkn26-live2` (the previous live topic `...-lingkn26-live` is left in place and was backed up). Phones on this version also clear local test sign-ups from before 19:05 Australia/Perth. Nathe stays host only. Codes and the default scoring password are unchanged: LK-TEST26 / LINGKN26.
+- Backup before this change: tag `live-backup-2026-11-11-1824-live` (commit 0555f4f, version v2026-11-11-1824-live). Rollback: `git push --force-with-lease origin 0555f4f:main`. Box-only data backup (not in the repo): `/workspace/scoretool/tester-backup-2026-11-11/`.
+- Hidden features, /test/, archerycalendars.com, Lemon Squeezy and PR #1 are unchanged. Nothing was posted.
+### Files
+lingkana.js, lkflow.js, league.js, style.css, lkflow.css, tools/lingkana_live_test.py, qa/run_regression.py, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- tools/lingkana_live_test.py: 28 passed, 0 failed (660 with X=11, best 4 of 6, full names and no contact on standings, live register link and Share, no Invite a tester, host-only paid ticks for the six 660 nights, fresh wipe, non-host cannot see paid ticks).
+- Relevant before the full run: league_test 60/0; lgpage_test 40/0; nav_test 99/0; testers_test 189/0; whatsnew_test 33/0 (older 1824 notes now name commit 0555f4f).
+- Full `qa/run_regression.py` (local checkout, 4102s): 59 passed, 24 failed. League area 7/7 including lingkana_live_test. Offline, backup, what's new, testers, Onion Shed league, ABA, ghost, sight and calculators passed. Failures look pre-existing or unrelated to this host-tools change, and are listed as known: many Solo suites time out looking for Past sessions / `[data-open=…]` (Past Scores is still hidden on live); fullround_test treats Lancaster 660 X as 10 so its 660 totals disagree with the app (X=11) and its Past sessions rows; casual_test / custom3d_test; peel_share_test and peel_comp_test (both quit in 2s, likely a busy port); mybows_test; coach2_test; sendpast_test.
+- Live URL checks after Pages: RESULT_LIVE
 ## v2026-11-11-1824-live (2026-11-11)
 ### What changed
 - The Lingkana League from the /test/ app is now on the live root app at https://nfstride1-ux.github.io/scoretool-demo/ . Existing tester scores stay under the same live storage keys (scoretool.v1 / scoretool.v1.<id>). The /test/ copy is unchanged.

@@ -159,6 +159,7 @@
     const el=appEl();if(!el)return;
     el.innerHTML=`<div class="lkf" id="lkhome">
       <div class="lk-home">
+        <p class="lk-hometitle">Lingkana League ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'}</p>
         ${btn('lklogin','Login to Event','green')}
         ${btn('lkqr','Login with QR Code','green')}
         ${btn('lkereg','Event Registration','grey')}
@@ -178,7 +179,7 @@
     const name=myName()||(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
     const ev=lg?lg.name:LK_NAME;
     el.innerHTML=`<div class="lkf" id="lkloginpage">
-      <h1>Login</h1>
+      <h1>Login ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'}</h1>
       <label for="lkevent">Select Event</label>
       <select id="lkevent"><option value="${esc(LK_CODE)}" selected>${esc(ev)}</option></select>
       <label for="lkscorer">Scorer Full Name</label>
@@ -186,7 +187,12 @@
       <label for="lkpw">Enter the Passcode</label>
       <input id="lkpw" type="password" autocomplete="current-password">
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
-      ${typeof lkCanHost==='function'&&lg&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
+      ${typeof lkCanHost==='function'&&lg&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostarch">Registered archers</button><button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>
+      <p class="small muted" style="margin-top:10px">Poster register link</p>
+      <p class="lk-sharerow"><a id="lkregurl" href="${esc(typeof lkRegisterUrl==='function'?lkRegisterUrl():'')}" target="_blank" rel="noopener">${esc(typeof lkRegisterUrl==='function'?lkRegisterUrl():'')}</a>
+      <button class="btn alt" type="button" id="lkregshare">Share</button></p>
+      <p class="small" id="lksharemsg" role="status"></p>
+      <p class="small muted">Invite code to print on the poster: <b>${esc(typeof LK_POSTER_CODE!=='undefined'?LK_POSTER_CODE:'LK-TEST26')}</b>. This is not the scoring password.</p>`:''}
       ${bar('',btn('lkpwgo','Login','green'))}
     </div>`;
     const go=()=>{
@@ -203,6 +209,8 @@
     $id('lkpwgo').onclick=go;
     $id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
+    if($id('lkhostarch'))$id('lkhostarch').onclick=()=>{if(typeof lkHostArchersView==='function')lkHostArchersView()};
+    if($id('lkregshare'))$id('lkregshare').onclick=()=>{if(typeof lkShareRegister==='function')lkShareRegister()};
   }
 
   function qrLogin(){
@@ -283,9 +291,10 @@
     hideChrome(true);
     const w=nightOf(lg);
     const list=signups(lg,w);
-    const season=(lg.order||[]).map(id=>({id,name:(typeof lgName==='function'&&lgName(id))||id}));
+    const nm=id=> (typeof lkStandName==='function'?lkStandName(id,lg):((typeof lgName==='function'&&lgName(id))||id));
+    const season=(lg.order||[]).map(id=>({id,name:nm(id)}));
     /* Show tonight's sign-ups; if none yet, show the season list so a scorer can still pick */
-    const rows=list.length?list.map(r=>({id:r.id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||r.id),target:r.target,round:r.round||LK_R})):season;
+    const rows=list.length?list.map(r=>({id:r.id,name:r.name||nm(r.id),target:r.target,round:r.round||LK_R})):season;
     const selected=(window._lkPicked||[]).filter(id=>rows.some(r=>r.id===id)&&!claimedByOther(lg,w,id));
     window._lkPicked=selected.slice();
     const groups=grouped(rows.map(r=>({...r,target:r.target})));
@@ -305,13 +314,13 @@
       return `<div class="lk-tgt">Target ${esc(g.t)}</div>${items}`;
     }).join('')||'<p>No archers registered for this night yet.</p>';
     el.innerHTML=`<div class="lkf" id="lkselect">
-      <h1>${esc(lg.name)} <span class="lk-count" id="lkcount">${rows.length} / ${Math.max(rows.length,(lg.order||[]).length)}</span></h1>
+      <h1>${esc(lg.name)} ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'} <span class="lk-count" id="lkcount">${rows.length} / ${Math.max(rows.length,(lg.order||[]).length)}</span></h1>
       <label for="lknight">Night</label>
       <select id="lknight">${LK_DATES.map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('')}</select>
       ${selHtml}
       <div id="lkarchlist">${body}</div>
       ${btn('lkregarch','Register Archer','grey')}
-      ${typeof lkCanHost==='function'&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
+      ${typeof lkCanHost==='function'&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostarch">Registered archers</button><button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
       ${bar(btn('lkbacklogin','Back / Login','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
     </div>`;
@@ -319,6 +328,7 @@
     $id('lkregarch').onclick=()=>regSearch();
     $id('lkbacklogin').onclick=()=>{window._lkPicked=[];login()};
     if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
+    if($id('lkhostarch'))$id('lkhostarch').onclick=()=>{if(typeof lkHostArchersView==='function')lkHostArchersView()};
     const toggle=id=>{
       const msg=$id('lkselmsg');
       const other=claimedByOther(lg,w,id);
@@ -456,7 +466,7 @@
     const el=appEl();if(!el)return;
     const w=nightOf(lg||{});
     const list=signups(lg,w);
-    const rows=list.map((r,i)=>`<tr><td>${esc(targetOf(r,i))}</td><td>${esc(r.name||((typeof lgName==='function'&&lgName(r.id))||''))}</td><td>${esc(r.round||LK_R)}</td></tr>`).join('')||'<tr><td colspan="3">No archers registered for this night.</td></tr>';
+    const rows=list.map((r,i)=>`<tr><td>${esc(targetOf(r,i))}</td><td>${esc(r.name||((typeof lkStandName==='function'&&lkStandName(r.id,lg))||(typeof lgName==='function'&&lgName(r.id))||''))}</td><td>${esc(r.round||LK_R)}</td></tr>`).join('')||'<tr><td colspan="3">No archers registered for this night.</td></tr>';
     el.innerHTML=`<div class="lkf" id="lkreglist">
       <h1>Registered archers</h1>
       <p>${esc(lg?lg.name:LK_NAME)} · Night ${w}</p>
@@ -507,7 +517,7 @@
       run+=es;
       return `<tr><td>${i+1}</td><td>${end.map((a,j)=>`<span class="adb ${typeof col==='function'?col(a):''}" role="button" tabindex="0" data-lkfix="${esc(id)},${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
     }).join('');
-    return `<div class="ad-sheet" data-lksid="${esc(id)}"><div class="ad-name">${esc((typeof lgName==='function'&&lgName(id))||id)}</div><div class="ad-band">${esc(info.title||'Lancaster 660')}</div>
+    return `<div class="ad-sheet" data-lksid="${esc(id)}"><div class="ad-name">${esc((typeof lkStandName==='function'&&lkStandName(id,lg))||(typeof lgName==='function'&&lgName(id))||id)}</div><div class="ad-band">${esc(info.title||'Lancaster 660')}</div>
       <table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(faceSub(s,info))}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>${rows}</tbody></table>
       <div class="ad-sum">${stats}&nbsp; <b class="big">${tot}</b><span class="small muted">&nbsp;/ ${early?shot*per+' <span class="small">('+shot+' arrows shot)</span>':fullMax}</span></div></div>`;
   }
@@ -704,17 +714,11 @@
     const w=nightOf(lg||{});
     const scores=typeof lkNightScores==='function'&&lg?lkNightScores(lg,w):null;
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
-      <h1>Review Scoresheet</h1>
+      <h1>Review Scoresheet ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'}</h1>
       ${stand}${pot}
       ${bar(btn('lkrevback','Back','grey'),'')}
     </div>`;
     $id('lkrevback').onclick=()=>home();
-    if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
-    document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
-      const nw=+(window._lkPotNight||w);
-      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),typeof lkNightKey==='function'?lkNightKey(lg,nw):'',box.checked);
-      review();
-    });
     if(typeof lkBindStandUI==='function')lkBindStandUI(lg);
   }
 
@@ -764,12 +768,15 @@
   window.lkFlowHideChrome=hideChrome;
 
   const origView=window.lkView;
-  window.lkView=function(code){
-    hideChrome(true);
-    if(typeof lkEnsure==='function')lkEnsure();
-    enter(code);
-  };
   if(typeof origView==='function')window._lkViewOld=origView;
+  /* Only take over Open on the /test/ public URL. Live root keeps the classic league + host screen. */
+  if(/\/test(\/|$)/.test(String(location.pathname||''))){
+    window.lkView=function(code){
+      hideChrome(true);
+      if(typeof lkEnsure==='function')lkEnsure();
+      enter(code);
+    };
+  }
 
   /* After the app first paints, take over when this is the public test URL. */
   function boot(){

@@ -32,7 +32,7 @@ AREAS=[
     ("Help: Build an arrow guide",["ac6_test.py"]),
  ("Relay hold (no resend storm on the relay)",["relayhold_test.py"]),
  ('Casual shoot',['casual_test.py','mixedface_test.py','casual3d_test.py','custom3d_test.py','mel3d_test.py','chipcolors_test.py']),
- ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py']),
+ ('League',['league_test.py','nopreset_test.py','onionrestore_test.py','leslie_test.py','lgscroll_test.py','lgpage_test.py','lingkana_live_test.py']),
  ('ABA',['aba_test.py']),
  ('Peel group card',['peel_test.py','peel_data_test.py','peel_next_test.py','peel_scroll_test.py','peel_share_test.py','peel_comp_test.py']),
  ('Ghost match (unlock, Race who?, records, top-ranked)',['ghost_test.py','ghost_pick_test.py','ghosttie_test.py']),

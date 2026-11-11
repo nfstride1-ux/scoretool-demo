@@ -291,7 +291,7 @@ label.lk-paidrow input[type=checkbox]{
 }
 #lkstand table.lk-stand{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0}
 #lkstand table.lk-stand col.rk{width:40px}
-#lkstand table.lk-stand col.nm{width:140px}
+#lkstand table.lk-stand col.nm{width:180px}
 #lkstand table.lk-stand col.n{width:52px}
 #lkstand table.lk-stand col.best{width:56px}
 #lkstand table.lk-stand col.xs{width:44px}
@@ -364,3 +364,15 @@ label.lk-paidrow input[type=checkbox]{
   body.lk-print-stand #lkstand table.lk-stand tfoot{display:table-footer-group}
   body.lk-print-stand #lkstand table.lk-stand tr{break-inside:avoid;page-break-inside:avoid}
 }
+
+.lk-beta{display:inline-block;margin-left:8px;padding:1px 7px;font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1.4;text-transform:uppercase;border:1px solid #94a3b8;border-radius:4px;color:#475569;vertical-align:middle;background:#fff}
+.lk-hometitle{margin:0 0 12px;font-size:20px;font-weight:700;color:#0f172a;text-align:center}
+.lk-sharerow{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0}
+.lk-sharerow a{color:#1d4ed8;word-break:break-all;overflow-wrap:anywhere;max-width:100%}
+#lkarchpage .lk-archrow{border-bottom:1px solid #e5e7eb}
+#lkarchpage .lk-archname{display:block;width:100%;text-align:left;background:transparent;border:0;box-shadow:none;padding:12px 2px;margin:0;font-size:16px;font-weight:600;color:#0f172a;cursor:pointer}
+#lkarchpage .lk-archname[aria-expanded="true"]{color:#1d4ed8}
+#lkarchpage .lk-archpaid{padding:0 2px 12px}
+#lkarchpage .lk-paidticks{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:6px}
+#lkarchpage .lk-paidtick{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:500;color:#0f172a;cursor:pointer}
+#lkarchpage .lk-paidtick input[type=checkbox]{width:18px;height:18px;min-width:18px;min-height:18px;margin:0;padding:0;border:0;border-radius:3px;accent-color:#2e7d32;background:transparent;box-shadow:none}
