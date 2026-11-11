@@ -110,6 +110,7 @@ function lgSnapParts(lg){
   meta.format='lingkana';meta.inviteOnly=!!lg.inviteOnly;
   if(lg.pwHash){meta.pwHash=lg.pwHash;meta.pwSalt=lg.pwSalt||'';meta.pwt=lg.pwt||0}
   if(lg.paidt)meta.paidt=lg.paidt;
+  if(lg.claimt)meta.claimt=lg.claimt;
  }
  const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
  const fat={...meta,...roster};
@@ -152,7 +153,8 @@ function lgSnapParts(lg){
     }else take(k,v);
    }
    flush()}
-  pack('reg',lg.reg||{});pack('paid',lg.paid||{});
+  pack('reg',lg.reg||{});pack('paid',lg.paid||{});pack('claim',lg.claim||{});
+  if(lg.claimt)meta.claimt=lg.claimt;
  }
  const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
 }
@@ -176,7 +178,8 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  if((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26'){
   if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
    for(const rec of list){if(!rec||!(rec.id||rec.name))continue;const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(!rec.id&&r.name===rec.name)));
-    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}}
+    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}
+  if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
@@ -187,7 +190,7 @@ function lgRelayReady(lg){
   if(typeof lkIs!=='function'||!lkIs(lg))return true;
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
-  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}}save()}
+  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'){if(lkApplyClaim(d,lg))ch=true}}save()}
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */
@@ -195,7 +198,7 @@ async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league
   if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){if(!lgRelayReady(lg)){if(window._lgRelayNote)window._lgRelayNote('hold',lg.code);continue}if(window._lgRelayNote)window._lgRelayNote('post',lg.code);let ok=true;for(const o of lgSnapParts(lg))if(!await window.h2hPost(lgTopic(lg.code),o)){ok=false;break}
    /* a re-send on open only stamps its own key and leaves the saved record untouched */
    if(ok&&reo&&!dty&&!lg.qfail){lgOpSet(lg.code);lgOpened[lg.code]=1}else{if(ok){if(reo&&!dty)lgOpSet(lg.code);lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}}
- finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
+ finally{lgBusy=false}if(ch){if($('#lkselect')&&typeof lkFlowSelect==='function'){lkFlowSelect()}else if($('#lgentry')&&typeof lkFlowScore==='function'&&window._lkScoreIds){lkFlowScore()}else if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
 setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true),2500);addEventListener('online',()=>lgTick(true));
 /* invites + join */
 window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||lgIsPresetCode(d.code)||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);

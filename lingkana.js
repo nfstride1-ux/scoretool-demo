@@ -485,7 +485,9 @@ function lkScoreGroup(w,gi){
   if(!G.length)return 'Add archers to the group first.';
   if(G.length>4)return 'A group can have at most 4 archers.';
   if(lg.pwHash&&!lkAuthed(lg)){window._lkWantScore={w:+w,gi:+gi};lkUnlockView(lg);return 'Type the league scoring password.';}
-  window._lgE={code:lg.code,w:+w,ids:G.slice()};window._lgAct=null;window._lgHold=null;
+  window._lgE={code:lg.code,w:+w,ids:G.slice()};window._lgAct=G[0]||null;window._lgHold=null;
+  window._lkScoreIds=G.slice();window._lkScoreI=0;window._lkFlowNight=+w;
+  if(typeof lkFlowScore==='function'){lkFlowScore();return ''}
   if(typeof lgView==='function')lgView(lg.code);
   return '';
 }
@@ -561,7 +563,7 @@ function lkUnlockView(lg){
     const e=document.querySelector('#lkpwmsg');
     if(m){if(e)e.textContent=m;return}
     const want=window._lkWantScore;window._lkWantScore=null;
-    if(want)lkScoreGroup(want.w,want.gi);else lkView(lg.code);
+    if(want)lkScoreGroup(want.w,want.gi);else if(typeof lkFlowSelect==='function')lkFlowSelect();else lkView(lg.code);
   })};
   if($('#lkpwgo'))$('#lkpwgo').onclick=go;
   if($('#lkpw'))$('#lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};

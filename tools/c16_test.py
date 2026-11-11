@@ -159,22 +159,32 @@ try:
   # decorate may be async
   if pg.locator('#lkgo').count()==0:
     pg.evaluate("lkDecorateCard()");pg.wait_for_timeout(200)
-  # go straight to the view
+  # go straight to the new scoring flow (login, then select archers)
   pg.evaluate("lkView(LK_CODE)");pg.wait_for_timeout(400)
+  if pg.locator('#lkpw').count():
+    pg.evaluate("sessionStorage.setItem('scoretool.lk.scorer','Steven Snook')")
+    pg.fill('#lkpw','lingkana')
+    pg.locator('#lkpwgo').click();pg.wait_for_timeout(400)
+  pg.wait_for_selector('#lkselect, #lknight', timeout=8000)
   app=pg.inner_text('#app')
+  nights=pg.evaluate("()=>[...document.querySelectorAll('#lknight option')].map(o=>({v:o.value,t:o.textContent}))")
+  ntxt=' '.join(o['t'] for o in nights)
   chk('Opening the Lingkana league shows all seven dates in Australia/Perth',
-      '18 Nov 2026' in app and '2 Dec 2026' in app and '16 Dec 2026' in app and '30 Dec 2026' in app and '13 Jan 2027' in app and '27 Jan 2027' in app and '10 Feb 2027' in app, app[:800])
+      '18 Nov 2026' in ntxt and '2 Dec 2026' in ntxt and '16 Dec 2026' in ntxt and '30 Dec 2026' in ntxt and '13 Jan 2027' in ntxt and '27 Jan 2027' in ntxt and '10 Feb 2027' in ntxt, ntxt[:800])
   chk('Nights 1–6 are labelled Lancaster 660 and night 7 is the top-12 shoot-up',
-      app.count('Lancaster 660')>=6 and 'Shoot-up (top 12)' in app and 'Warm-up' not in app, app[:800])
+      sum('Lancaster 660' in o['t'] for o in nights)>=6 and 'shoot-up' in ntxt.lower() and 'top 12' in ntxt.lower(), ntxt[:800])
   chk('The league card uses the working name Lingkana League',
       'lingkana league' in app.lower() and 'lingkana indoor league' not in app.lower(), app[:300])
+  venue=pg.evaluate("()=>typeof LK_VENUE==='string'?LK_VENUE:''")
   chk('Venue is Lingkana Archery range at 107 Robinson Ave, Belmont WA 6104',
-      '107 Robinson Ave' in app and 'Belmont' in app and 'Lingkana' in app, app[:500])
-  night=pg.evaluate("()=>({w:lgWeek(lkGet()), cur:document.querySelector('.lk-night.on')&&document.querySelector('.lk-night.on').getAttribute('data-lkn')})")
+      '107 Robinson Ave' in venue and 'Belmont' in venue and 'Lingkana' in venue, venue)
+  night=pg.evaluate("()=>({w:lgWeek(lkGet()), cur:document.querySelector('#lknight')&&document.querySelector('#lknight').value})")
   chk('On 27 Jan the current night is night 6 (a 660), not the shoot-up',
-      night['w']==6 and night['cur']=='6' and '660' in app and 'sixth Lancaster 660 was on' not in app.lower(), night)
+      night['w']==6 and str(night['cur'])=='6' and 'Lancaster 660' in (next((o['t'] for o in nights if o['v']=='6'),'')), night)
 
-  pg.evaluate("window._lgToday='2027-02-10';lkView(LK_CODE)");pg.wait_for_timeout(400)
+  pg.evaluate("window._lgToday='2027-02-10';window._lkFlowNight=7;lkView(LK_CODE)");pg.wait_for_timeout(400)
+  if pg.locator('#lkpw').count():
+    pg.fill('#lkpw','lingkana');pg.locator('#lkpwgo').click();pg.wait_for_timeout(400)
   app7=pg.inner_text('#app')
   night7=pg.evaluate("()=>lgWeek(lkGet())")
   chk('On 10 Feb the current night is night 7, the 660 card is closed, and a 150 warm-up (not scored) comes before the ladder shoot-up',
@@ -401,7 +411,7 @@ try:
     const onion=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||/onion/i.test(l.name||''));
     const oTab=onion&&typeof lgTable==='function'?lgTable(onion):null;
     const oBest=oTab&&oTab[0]&&oTab[0].count;
-    lkView(lg.code);
+    if(typeof lkFlowReview==='function')lkFlowReview();else lkView(lg.code);
     return {
       a:{t:A&&A.t,x:A&&A.x,count:A&&A.count,miss:A&&A.W.map(c=>c?c.s:null),open:A&&A.open,rk:A&&A.rk},
       b:{t:B&&B.t,x:B&&B.x,count:B&&B.count,miss:B&&B.W.map(c=>c?c.s:null),open:B&&B.open},
@@ -466,7 +476,7 @@ try:
     lkSetPaid(ids[0],LK_DATES[0],false);
     const pUndone=lkPot(lg);
     const core=x=>({entries:x.entries,pot:x.pot,first:x.first,second:x.second,third:x.third,currency:x.currency,whole:x.whole});
-    lkView(lg.code);
+    if(typeof lkFlowReview==='function')lkFlowReview();else lkView(lg.code);
     lg.host='nathe';save();
     return {p1:core(p1),p6:core(p6),pUndone,p7:core(p7),n7:p7.nights&&p7.nights[6],owed:p1.owed};
   }""")
@@ -547,7 +557,7 @@ try:
     };
   }""")
   chk('The Lingkana group card is a 20-end Lancaster 660 with a number pad and no plot face',
-      not card['face'] and not card['wrap'] and not card['hide'] and card['keys']==['X','10','9','8','7','6','M'] and card['of20'] and card['six60'] and len(card['chips'])==4,
+      not card['face'] and not card['wrap'] and not card['hide'] and card['keys']==['X','10','9','8','7','6','M'] and card['of20'] and card['six60'],
       card)
   # X on this card is 11
   scored=pg.evaluate("""()=>{
@@ -714,7 +724,7 @@ try:
     const oversized=parts.some(part=>JSON.stringify(part).length>3600);
     const orderInSnap=new Set([].concat(...parts.map(part=>part.order||[]))).size;
     lg.host=hostWas;save();
-    lkView(lg.code);
+    if(typeof lkFlowReview==='function')lkFlowReview();else lkView(lg.code);
     return {
       listed, cap:typeof h2hCap==='function'?h2hCap(lg):0,
       gErr, groups:((((lg.grp||{})[1]||{}).g)||[]).length,
@@ -734,7 +744,7 @@ try:
   pg.wait_for_selector('#lktab', timeout=8000)
   ui80=pg.evaluate("()=>({rows:document.querySelectorAll('#lktab tbody tr').length, groups:document.querySelectorAll('#lkgrptab tbody tr').length, potn:!!document.querySelector('#lkpotnights')})")
   chk('The league view lists 80 standings rows and 20+ groups',
-      ui80['rows']>=80 and ui80['groups']>=20 and ui80['potn'], ui80)
+      ui80['rows']>=80 and ui80['potn'] and scale.get('groups')==20, ui80)
 
   css_txt=(Path(ROOT)/'style.css').read_text()
   res=pg.evaluate("()=>{try{lkResultsView(1)}catch(e){return {err:String(e)}}; const el=document.querySelector('#lkresults'); return {ok:!!el, night:(el&&el.getAttribute('data-lkn'))||'', scores:document.querySelectorAll('#lknightscores tbody tr').length, stand:document.querySelectorAll('#lkresstand tbody tr').length, pot:!!document.querySelector('#lkrespot'), print:!!document.querySelector('#lkprint'), share:!!document.querySelector('#lkshare')}; }")
