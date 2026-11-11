@@ -106,6 +106,11 @@ function lgSnapParts(lg){
  const me=h2hMe(),LIM=3400,size=o=>JSON.stringify(o).length;
  const order=typeof lgArchers==='function'?lgArchers(lg):(lg.order||[]).slice();
  const meta={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,cw:lg.cw||1,cwt:lg.cwt||0,fin:lg.fin||null,fint:lg.fint||0,...h2hNm()};
+ if(typeof lkIs==='function'&&lkIs(lg)){
+  meta.format='lingkana';meta.inviteOnly=!!lg.inviteOnly;
+  if(lg.pwHash){meta.pwHash=lg.pwHash;meta.pwSalt=lg.pwSalt||'';meta.pwt=lg.pwt||0}
+  if(lg.paidt)meta.paidt=lg.paidt;
+ }
  const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
  const fat={...meta,...roster};
  const items=[];for(const id in lg.sc||{})for(const w in lg.sc[id]){const e=lg.sc[id][w];if(e&&e.e)items.push([id,w,{e:lgEnc(e.e),u:e.u||0,by:e.by||'',f:e.f||'vert'}])}
@@ -127,20 +132,51 @@ function lgSnapParts(lg){
  for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size(stamp({...head,sc:c2}))>LIM){parts.push({...head,sc:cur});cur={};(cur[id]={})[w]=v}else cur=c2}
  if(Object.keys(cur).length||!useSlim&&!parts.length)parts.push(useSlim?{...head,sc:cur}:{...head,sc:cur});
  if(!parts.length)parts.push({...fat,sc:{}});
+ if(typeof lkIs==='function'&&lkIs(lg)){
+  const emit=(key,obj)=>{if(obj&&Object.keys(obj).length)parts.push({...meta,[key]:obj})}
+  const pack=(key,obj)=>{if(!obj||!Object.keys(obj).length)return;
+   if(size(stamp({...meta,[key]:obj}))<=LIM){emit(key,obj);return}
+   let bag={};
+   const flush=()=>{if(Object.keys(bag).length){emit(key,bag);bag={}}};
+   const take=(k,v)=>{const c2=Object.assign({},bag);c2[k]=v;if(Object.keys(bag).length&&size(stamp({...meta,[key]:c2}))>LIM){flush();bag[k]=v}else bag=c2};
+   for(const k of Object.keys(obj)){
+    const v=obj[k];
+    if(Array.isArray(v)&&size(stamp({...meta,[key]:{[k]:v}}))>LIM){
+     let chunk=[];
+     for(const rec of v){const next=chunk.concat([rec]);if(chunk.length&&size(stamp({...meta,[key]:{[k]:next}}))>LIM){take(k,chunk);flush();chunk=[rec]}else chunk=next}
+     if(chunk.length)take(k,chunk);
+    }else if(v&&typeof v==='object'&&!Array.isArray(v)&&size(stamp({...meta,[key]:{[k]:v}}))>LIM){
+     let sub={};const keys=Object.keys(v);
+     for(const id of keys){const s2=Object.assign({},sub);s2[id]=v[id];if(Object.keys(sub).length&&size(stamp({...meta,[key]:{[k]:s2}}))>LIM){take(k,sub);flush();sub={[id]:v[id]}}else sub=s2}
+     if(Object.keys(sub).length)take(k,sub);
+    }else take(k,v);
+   }
+   flush()}
+  pack('reg',lg.reg||{});pack('paid',lg.paid||{});
+ }
  const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
 }
 function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;if(LG_SINCE[lg.code]&&(d.t||0)<LG_SINCE[lg.code])return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
   if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){const cap=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d))||d.code==='LINGKN26'||lg.code==='LINGKN26')?7:LG_W;lg.weeks=d.weeks.slice(0,cap).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
-  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=LG_W&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
+  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
-  if((d.cwt||0)>(lg.cwt||0)){lg.cw=Math.max(1,Math.min(LG_W,+d.cw||1));lg.cwt=d.cwt;ch=true}}
+  if((d.cwt||0)>(lg.cwt||0)){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);lg.cw=Math.max(1,Math.min(cap,+d.cw||1));lg.cwt=d.cwt;ch=true}
+  if(d.format==='lingkana'&&lg.format!=='lingkana'){lg.format='lingkana';ch=true}
+  if(d.inviteOnly!=null&&!!d.inviteOnly!==!!lg.inviteOnly){lg.inviteOnly=!!d.inviteOnly;ch=true}
+  if(d.pwHash&&(d.pwt||0)>=(lg.pwt||0)&&(d.pwHash!==lg.pwHash||d.pwSalt!==lg.pwSalt)){lg.pwHash=d.pwHash;lg.pwSalt=d.pwSalt||'';lg.pwt=d.pwt||0;ch=true}
+  if(d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
  if((fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
   if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
  lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}
- lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=LG_W))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
+ lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
+ /* Lingkana sign-ups: union by night and archer, so a register on another phone is not dropped. */
+ if((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26'){
+  if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
+   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(!rec.id&&r.name===rec.name)));
+    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
@@ -151,7 +187,7 @@ function lgRelayReady(lg){
   if(typeof lkIs!=='function'||!lkIs(lg))return true;
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
-  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true}save()}
+  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}}save()}
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */

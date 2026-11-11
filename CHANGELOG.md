@@ -4,6 +4,16 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ## Test build 2026-11-06 (NOT LIVE — do not deploy, do not merge until Nathe says so)
 
+### Lingkana League test URL (v2026-11-11-1305-c16)
+- The Lingkana League is served at a separate test URL, https://nfstride1-ux.github.io/scoretool-demo/test/ , so the live root app and its tester data stay untouched. PR #1 is not merged: C9 and the other on-hold work on this branch stay off the live root.
+- Storage on the test URL is isolated (`sttest.` prefix), so opening it on a phone that already has the live app does not read or write live tester data.
+- Poster invite code is LK-TEST26 (no longer the LK-PREVIEW placeholder). League record code is LINGKN26.
+- A default scoring password is set. The host can change it on the host screen; the new hash is sent to other scorers on the existing ntfy relay. The typed secret is never stored on the league record.
+- Sign-ups from the register page are posted to the same league relay topic and merged as a union, so every scorer's phone sees them. Paid ticks and the password hash travel in the league snapshot.
+- Night 7 copy now says a 150 warm-up (not scored) comes before the top-12 ladder shoot-up.
+- Nothing was posted or announced.
+
+
 ### Rounds page — distances and faces (v2026-11-10-rounds)
 - Tools has Rounds next to Rules. It is a searchable list of the Schedule 9A target rounds. Tapping a name shows the distances, arrows at each distance, face size, total arrows, maximum, and the other names (FITA 900, Canberra Round, Fremantle Round).
 - The page cites Archery Australia Target Rounds, Schedule 9A, effective January 2017. Nothing on the page is saved.

@@ -11,11 +11,14 @@ const LK_DATES=['2026-11-18','2026-12-02','2026-12-16','2026-12-30','2027-01-13'
 const LK_NIGHTS=7;
 const LK_CAP=0; /* no hard cap; shoot-up stays the top 12 */
 const LK_HOST='nathe';
-/* Swap LK_PUBLIC_BASE for the live site before printing posters. This branch is preview-only and is not on GitHub Pages yet. */
-const LK_PUBLIC_BASE='https://nfstride1-ux.github.io/scoretool-demo/';
+/* Test URL on GitHub Pages. The live root app at /scoretool-demo/ is unchanged. */
+const LK_PUBLIC_BASE='https://nfstride1-ux.github.io/scoretool-demo/test/';
 const LK_REGISTER_HASH='#lk-register';
-/* Printed on the poster; gates the public register page. Not a scoring password. Easy to swap before go-live. */
-const LK_POSTER_CODE='LK-PREVIEW';
+/* Printed on the poster; gates the public register page. Not a scoring password. */
+const LK_POSTER_CODE='LK-TEST26';
+/* Default scoring password hash (SHA-256 of salt + NUL + the default). The plaintext is not stored on the league record. Host can change it. */
+const LK_PW_SALT='c16go1a2';
+const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aacee1';
 const LK_REG_KEY='scoretool.lk.reg';
 const LK_FEE=10; /* entry fee used later by the pot display; the $25 range fee is separate and excluded */
 
@@ -32,7 +35,8 @@ const lkFmtD=d=>{if(!d)return'';const x=new Date(d+'T00:00:00');return x.toLocal
 function lkRecord(){
   return{code:LK_CODE,name:LK_NAME,format:'lingkana',host:LK_HOST,venue:LK_VENUE,hours:LK_HOURS,
     order:[LK_HOST],weeks:LK_DATES.slice(),wt:Date.now(),cw:1,cwt:0,grp:{},gn:{},sc:{},reg:{},status:'active',
-    created:Date.now(),preset:1,inviteOnly:true};
+    created:Date.now(),preset:1,inviteOnly:true,
+    pwSalt:LK_PW_SALT,pwHash:LK_PW_HASH,pwt:1};
 }
 
 function lkEnsure(){
@@ -42,6 +46,7 @@ function lkEnsure(){
   if(!lg){lg=lkRecord();L.push(lg);if(typeof save==='function')save()}
   if(lg.name==='Lingkana Indoor League')lg.name=LK_NAME;
   if('cap' in lg)delete lg.cap;
+  if(!lg.pwHash){lg.pwSalt=LK_PW_SALT;lg.pwHash=LK_PW_HASH;lg.pwt=lg.pwt||1}
   if(typeof lkPullReg==='function')lkPullReg(lg);
   return lg;
 }
@@ -111,7 +116,7 @@ function lkView(code){
   }).join('');
   const closed660=w>=7;
   const n7=w===7?`<div class="card" id="lkn7"><span class="kicker">Night 7 · ${h(lkFmtD(LK_DATES[6]))}</span><h3>Shoot-up · top 12</h3>
-    <p>The sixth Lancaster 660 was on ${h(lkFmtD(LK_DATES[5]))}. Night 7 goes straight into match play for the top 12. There is no scored 150 warm-up. The ladder (#12 v #11, the winner v #10, and so on to #1) will open closer to 10 Feb and is not built yet.</p></div>`:'';
+    <p>The sixth Lancaster 660 was on ${h(lkFmtD(LK_DATES[5]))}. Night 7 starts with a 150 warm-up (not scored), then the ladder shoot-up for the top 12 (#12 v #11, the winner v #10, and so on to #1). The ladder will open closer to 10 Feb and is not built yet.</p></div>`:'';
   const score660=!closed660?`<p class="small muted">Night ${w} is a Lancaster 660 (20 ends of 3, X = 11, max 660) on a triangular 40 cm 3-spot. Values only: no plot face.</p>
     <p class="small muted">${h(LK_HOURS)}.</p>`:`<p class="small muted">The 660 nights are finished. Night 7 is the top-12 shoot-up (ladder not open yet).</p>`;
   const inList=(lg.order||[]).includes(me), invited=(lg.inv||[]).includes(me);
@@ -248,7 +253,13 @@ function lkRegister(opts){
     if(!r.ok)return r.msg||'Could not add that registration.';
     rec.id=r.id;rec._applied=1;
     try{const box=lkRegInbox();const last=box[box.length-1];if(last&&last.at===rec.at){last.id=r.id;last._applied=1;localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}}catch(e){}
+    rec.id=rec.id||r.id;
   }
+  try{
+    if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
+      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:{name:rec.name,night:rec.night,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,poster:1},t:rec.at,by:(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+    }
+  }catch(e){}
   return '';
 }
 function lkNightKey(lg,w){return lkDate(lg,w)||LK_DATES[(+w||1)-1]||''}
@@ -415,7 +426,7 @@ function lkSetPaid(id,night,on){
   if(!k||!LK_DATES.includes(k))return 'Pick a shoot night.';
   lg.paid=lg.paid||{};lg.paid[k]=lg.paid[k]||{};
   if(on)lg.paid[k][who]=1;else delete lg.paid[k][who];
-  lg.dirty=1;if(typeof save==='function')save();
+  lg.paidt=Date.now();lg.dirty=1;if(typeof save==='function')save();
   return '';
 }
 function lkPotHTML(lg){
@@ -524,7 +535,7 @@ async function lkSetPassword(pw){
   if(!lkCanHost(lg))return 'Only the host can set the scoring password.';
   const s=String(pw||'');if(s.length<6)return 'Use at least 6 characters.';
   const salt=lg.pwSalt||[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
-  lg.pwSalt=salt;lg.pwHash=await lkHashPw(s,salt);lg.dirty=1;
+  lg.pwSalt=salt;lg.pwHash=await lkHashPw(s,salt);lg.pwt=Date.now();lg.dirty=1;
   if(typeof save==='function')save();
   return '';
 }
@@ -559,7 +570,7 @@ function lkUnlockView(lg){
 function lkPwHTML(lg){
   if(!lkCanHost(lg))return '';
   return`<div class="card" id="lkpwset"><span class="kicker">Host</span><h3>Scoring password</h3>
-    <p class="small muted">Archers need this password to score on a group card. It is stored as a hash on this phone, never in the source. Do not reuse the poster invite code.</p>
+    <p class="small muted">Archers need this password to score on a group card. A default password is already set. Change it here and it is sent to the other scorers' phones. It is stored as a hash, never as the typed secret. Do not reuse the poster invite code.</p>
     <label for="lkpwnew">Set or change the password</label>
     <input id="lkpwnew" type="password" autocomplete="new-password">
     <button class="btn alt" id="lkpwsave" style="margin-top:8px">Save password</button>

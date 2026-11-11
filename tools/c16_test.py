@@ -177,8 +177,8 @@ try:
   pg.evaluate("window._lgToday='2027-02-10';lkView(LK_CODE)");pg.wait_for_timeout(400)
   app7=pg.inner_text('#app')
   night7=pg.evaluate("()=>lgWeek(lkGet())")
-  chk('On 10 Feb the current night is night 7, the 660 card is closed, and it goes straight into match play',
-      night7==7 and '10 Feb 2027' in app7 and 'straight into match play' in app7 and 'no scored 150' in app7.lower() and 'warm-up + shoot-up' not in app7.lower(), (night7, app7[:900]))
+  chk('On 10 Feb the current night is night 7, the 660 card is closed, and a 150 warm-up (not scored) comes before the ladder shoot-up',
+      night7==7 and '10 Feb 2027' in app7 and '150 warm-up' in app7.lower() and 'not scored' in app7.lower() and 'top 12' in app7.lower() and 'straight into match play' not in app7, (night7, app7[:900]))
 
   onion_after=pg.evaluate("""()=>{
     const lg=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge');
@@ -274,7 +274,7 @@ try:
       txt[:200] or 'missing')
   url=pg.evaluate("()=>lkRegisterUrl()")
   chk('The register URL uses the swappable preview base and the hash route',
-      url=='https://nfstride1-ux.github.io/scoretool-demo/#lk-register', url)
+      url=='https://nfstride1-ux.github.io/scoretool-demo/test/#lk-register', url)
   # Wrong poster code
   pg.fill('#lkregcode','WRONG')
   pg.fill('#lkregname','Alex Archer')
@@ -295,7 +295,7 @@ try:
       not nobody['hit'] and nobody['nights']==0, nobody)
 
   # First registration
-  pg.fill('#lkregcode','LK-PREVIEW')
+  pg.fill('#lkregcode','LK-TEST26')
   pg.fill('#lkregname','Alex Archer')
   pg.select_option('#lkregnight','2026-11-18')
   pg.click('#lkreggo');pg.wait_for_timeout(400)
@@ -319,7 +319,7 @@ try:
       {**first,'msg':okmsg})
 
   # Second night: new registration, still one list entry
-  pg.fill('#lkregcode','LK-PREVIEW')
+  pg.fill('#lkregcode','LK-TEST26')
   pg.fill('#lkregname','Alex Archer')
   pg.select_option('#lkregnight','2026-12-02')
   pg.click('#lkreggo');pg.wait_for_timeout(400)
@@ -343,7 +343,7 @@ try:
   onday=pg.evaluate("""()=>{
     window._lgToday='2026-12-16';
     const def=lkDefaultNight();
-    const msg=lkRegister({posterCode:'LK-PREVIEW',name:'Alex Archer',night:'2026-12-16'});
+    const msg=lkRegister({posterCode:'LK-TEST26',name:'Alex Archer',night:'2026-12-16'});
     const lg=lkEnsure();
     const id=(lg.order||[]).filter(x=>{
       const n=(typeof lgName==='function'?lgName(x):(lg.gn[x]||{}).n||x);
@@ -516,8 +516,21 @@ try:
   chk("The add-to-group picker lists that night's sign-ups first",
       grp['pickFirst']==grp['ids'][:4], grp['pickFirst'])
 
-  opened=pg.evaluate("()=>lkScoreGroup(1,0)")
-  chk('Score this group opens without an error', opened=='', opened)
+  unlocked=pg.evaluate("""async ()=>{
+    window._lkAuthed=null;try{sessionStorage.removeItem('scoretool.lk.auth')}catch(e){}
+    const blocked=lkScoreGroup(1,0);
+    const ok=await lkUnlock('lingkana');
+    const opened=lkScoreGroup(1,0);
+    const hashed=!!(lkGet()&&lkGet().pwHash);
+    const rec=lkGet()||{};const plain=Object.keys(rec).some(k=>/pass/i.test(k)&&String(rec[k]).toLowerCase()==='lingkana')||JSON.stringify({pw:rec.pw,password:rec.password}).toLowerCase().includes('lingkana');
+    return {blocked,ok,opened,hashed,plain};
+  }""")
+  chk('A default scoring password is already set, stored as a hash',
+      unlocked['hashed'] and not unlocked['plain'], unlocked)
+  chk('Group scoring is locked until the default password is entered',
+      'password' in (unlocked['blocked'] or '').lower(), unlocked)
+  chk('The default scoring password unlocks group scoring',
+      unlocked['ok']=='' and unlocked['opened']=='', unlocked)
   pg.wait_for_selector('#lgentry', timeout=8000)
   card=pg.evaluate("""()=>{
     const t=document.querySelector('#lgentry')?document.querySelector('#lgentry').innerText:'';
@@ -547,7 +560,7 @@ try:
   chk('Tapping X on the Lingkana group card scores 11 and keeps a 20-end entry',
       scored['nEnds']==20 and scored['xv']==11 and scored['tot']==11 and scored['first']=='X', scored)
 
-  # Password-protected league scoring (no real password in source; test value only here)
+  # Host can change the default scoring password (test value only here, not the default)
   TEST_PW='c16-test-only'
   pw=pg.evaluate("""async (pw)=>{
     const lg=lkEnsure();
@@ -575,6 +588,32 @@ try:
   pg.wait_for_selector('#lgentry', timeout=8000)
   chk('After a correct password the Lingkana score card is on screen, still with no plot face',
       pg.locator('#lgentry').count()==1 and pg.locator('#cspface').count()==0)
+
+  snap=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const parts=typeof lgSnapParts==='function'?lgSnapParts(lg):[];
+    return {
+      hasReg:parts.some(p=>p.reg&&Object.keys(p.reg).length),
+      hasPw:parts.some(p=>p.pwHash),
+      format:parts.some(p=>p.format==='lingkana'),
+      n:parts.length
+    };
+  }""")
+  chk('The league snapshot sent on the relay includes sign-ups and the scoring password hash',
+      snap['hasReg'] and snap['hasPw'] and snap['format'], snap)
+
+  merged=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const night=LK_DATES[0];
+    const before=((lg.reg&&lg.reg[night])||[]).length;
+    const d={k:'ls',code:lg.code,by:lg.host,name:lg.name,host:lg.host,format:'lingkana',inviteOnly:true,
+      t:Date.now(),reg:{[night]:[{id:'gmergex',name:'Relay Signup',at:Date.now()}]}};
+    const ch=lgMerge(lg,d);
+    const after=(lg.reg&&lg.reg[night])||[];
+    return {ch,got:after.some(r=>r.id==='gmergex'),before,after:after.length};
+  }""")
+  chk('A relay snapshot from another phone adds that phone\'s sign-ups without dropping existing ones',
+      merged['got'] and merged['after']>merged['before'], merged)
 
   # L11 — relay posts per end, not per arrow
   relay=pg.evaluate("""async ()=>{
