@@ -22,7 +22,7 @@ const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aace
 const LK_REG_KEY='scoretool.lk.reg';
 const LK_FEE=10; /* entry fee used later by the pot display; the $25 range fee is separate and excluded */
 /* One-time live wipe: drop test sign-ups and claims from before this moment so all 660 nights start empty for 18 Nov. */
-const LK_FRESH=1794395100000; /* 2026-11-11 19:05 Australia/Perth */
+const LK_FRESH=1794401520000; /* 2026-11-11 20:52 Australia/Perth: wipe slime and drop the host from the registered list */
 
 
 const h=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -36,7 +36,7 @@ const lkFmtD=d=>{if(!d)return'';const x=new Date(d+'T00:00:00');return x.toLocal
 
 function lkRecord(){
   return{code:LK_CODE,name:LK_NAME,format:'lingkana',host:LK_HOST,venue:LK_VENUE,hours:LK_HOURS,
-    order:[LK_HOST],weeks:LK_DATES.slice(),wt:Date.now(),cw:1,cwt:0,grp:{},gn:{},sc:{},reg:{},status:'active',
+    order:[],weeks:LK_DATES.slice(),wt:Date.now(),cw:1,cwt:0,grp:{},gn:{},sc:{},reg:{},status:'active',
     created:Date.now(),preset:1,inviteOnly:true,
     pwSalt:LK_PW_SALT,pwHash:LK_PW_HASH,pwt:1};
 }
@@ -51,15 +51,32 @@ function lkEnsure(){
   if(!lg.pwHash){lg.pwSalt=LK_PW_SALT;lg.pwHash=LK_PW_HASH;lg.pwt=lg.pwt||1}
   lkFresh(lg);
   if(typeof lkPullReg==='function')lkPullReg(lg);
+  lkDropHostIfUnregistered(lg);
   return lg;
 }
 function lkFresh(lg){
   if(!lg||!lkIs(lg))return lg;
-  if((lg.fresh||0)>=LK_FRESH)return lg;
-  lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
-  lg.order=[lg.host||LK_HOST];
-  lg.fresh=LK_FRESH;lg.dirty=1;lg.since=null;lg.posted=0;
-  if(typeof save==='function')save();
+  if((lg.fresh||0)<LK_FRESH){
+    lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
+    lg.order=[];
+    lg.fresh=LK_FRESH;lg.dirty=1;lg.since=null;lg.posted=0;
+    if(typeof save==='function')save();
+  }
+  lkDropHostIfUnregistered(lg);
+  return lg;
+}
+/* The host stays host (password, host tools) even when not on the registered list. Drop them from order unless they have a sign-up or a score. */
+function lkDropHostIfUnregistered(lg){
+  if(!lg||!lkIs(lg))return lg;
+  const host=lg.host||LK_HOST;
+  const hasReg=Object.values(lg.reg||{}).some(list=>Array.isArray(list)&&list.some(r=>r&&r.id===host));
+  const hasSc=!!(lg.sc&&lg.sc[host]&&Object.keys(lg.sc[host]).length);
+  if(hasReg||hasSc)return lg;
+  const next=(lg.order||[]).filter(id=>id!==host);
+  if(next.length!==(lg.order||[]).length){
+    lg.order=next;lg.dirty=1;
+    if(typeof save==='function')save();
+  }
   return lg;
 }
 function lkSeed(){/* do not auto-insert a league record into existing tester lists; the card offers Open */return}
@@ -240,11 +257,26 @@ function lkCleanName(raw){
   if(typeof nmClean==='function')n=nmClean(n);
   return n.slice(0,40);
 }
+function lkNameList(id,lg){
+  const out=[];
+  const add=v=>{const t=String(v||'').trim().toLowerCase();if(t&&!out.includes(t))out.push(t)};
+  if(!id)return out;
+  if(typeof lkStandName==='function')add(lkStandName(id,lg));
+  if(typeof lgName==='function')add(lgName(id));
+  const t=(typeof TESTERS!=='undefined'&&TESTERS||[]).find(x=>x&&x.id===id);
+  if(t){add(t.name);add(t.short)}
+  const g=lg&&lg.gn&&lg.gn[id];if(g)add(g.n);
+  add(id);
+  return out;
+}
+function lkNameMatches(id,name,lg){
+  const n=lkCleanName(name).toLowerCase();
+  return!!(n&&lkNameList(id,lg).includes(n));
+}
 function lkFindArcher(lg,name){
   const n=lkCleanName(name).toLowerCase();if(!n||!lg)return null;
   for(const id of (lg.order||[])){
-    const nm=(typeof lgName==='function'?lgName(id):((lg.gn||{})[id]&&(lg.gn||{})[id].n)||id);
-    if(String(nm||'').toLowerCase()===n)return id;
+    if(lkNameList(id,lg).includes(n))return id;
   }
   return null;
 }
@@ -262,7 +294,7 @@ function lkApplyReg(rec,lg){
   lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];
   const me=(typeof h2hMe==='function'&&h2hMe())||'';
   let id=rec.id||null;
-  if(!id&&me&&(typeof lgName==='function'?lgName(me):me).toLowerCase()===name.toLowerCase())id=me;
+  if(!id&&me&&lkNameMatches(me,name,lg))id=me;
   if(!id)id=lkFindArcher(lg,name);
   const first=!id||!(lg.order||[]).includes(id);
   if(!id){
@@ -287,6 +319,7 @@ function lkPullReg(lg){
   lg=lg||lkGet();if(!lg)return 0;
   let n=0;for(const rec of lkRegInbox()){
     if(!rec||rec._applied)continue;
+    if(lg.fresh&&(rec.at||0)&&((rec.at||0)<lg.fresh)){rec._applied=1;continue}
     const r=lkApplyReg(rec,lg);
     if(r&&r.ok){rec._applied=1;n++}
   }
@@ -982,7 +1015,7 @@ else setTimeout(()=>{lkBootReg()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,lkStandName,lkStripContact,lkBeta,lkHostArchersView,lkShareRegister,lkPublicReg,lkPaidNights,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,lkDropHostIfUnregistered,lkStandName,lkStripContact,lkBeta,lkHostArchersView,lkShareRegister,lkPublicReg,lkPaidNights,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
   lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });

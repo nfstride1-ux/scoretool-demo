@@ -166,12 +166,13 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  const incFresh=lkFreshCut?+(d.fresh||0):0, locFresh=lkFreshCut?+(lg.fresh||0):0;
  if(lkFreshCut&&fromHost&&incFresh>locFresh){
   lg.fresh=incFresh;ch=true;
+  lg.order=[];lg.gn={};lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.paid={};lg.paidt=0;
   if(Array.isArray(d.order))lg.order=d.order.filter(id=>typeof id=='string'&&!LG_EXCL.includes(id)).slice(0,h2hCap(lg));
   if(d.gn&&typeof d.gn=='object'){lg.gn={};for(const id in d.gn){const g=d.gn[id];if(lgIsG(id)&&g&&typeof g.n=='string')lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''}}}
   if(d.sc&&typeof d.sc=='object'){lg.sc={};for(const id in d.sc){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w];if(!v)continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:'vert'}}}}
-  if(d.reg&&typeof d.reg=='object')lg.reg=d.reg;
-  if(d.claim&&typeof d.claim=='object')lg.claim=d.claim;
-  if(d.paid&&typeof d.paid=='object'){lg.paid=d.paid;lg.paidt=d.paidt||0}
+  if(d.reg&&typeof d.reg==='object')lg.reg=d.reg;
+  if(d.claim&&typeof d.claim==='object')lg.claim=d.claim;
+  if(d.paid&&typeof d.paid==='object'){lg.paid=d.paid;lg.paidt=d.paidt||0}
  }
  const staleFresh=lkFreshCut&&locFresh&&incFresh<locFresh;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
@@ -186,7 +187,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(!staleFresh&&d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
  if(!staleFresh&&(fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
   if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
- if(!staleFresh){lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}
+ if(!staleFresh){lg.order=lg.order||[];const alsoBy=lkFreshCut?[]:[d.by];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),...alsoBy])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}
  if(!staleFresh){lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}}
  /* Lingkana sign-ups: union by night and archer, so a register on another phone is not dropped. */
@@ -205,7 +206,9 @@ function lgRelayReady(lg){
   if(typeof lkIs!=='function'||!lkIs(lg))return true;
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
+  if(typeof lkFresh==='function'&&typeof lkIs==='function'&&lkIs(lg))lkFresh(lg);
   const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'&&(!(lg.fresh)||+(d.t||d.at||0)>=lg.fresh)){if(lkApplyClaim(d,lg))ch=true}}save()}
+  if(typeof lkDropHostIfUnregistered==='function'&&typeof lkIs==='function'&&lkIs(lg))lkDropHostIfUnregistered(lg);
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */

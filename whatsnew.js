@@ -3,8 +3,10 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-11-2054-live',d:'2026-11-11',items:[
+   ['people',"Lingkana League list cleared for a fresh sign-up","The registered archer list on the live Lingkana League is empty again. The test slime sign-up is gone, and Nathe is host only until he signs up on the register page. Host tools and the scoring password still work."]]},
   {v:'v2026-11-11-1908-live',d:'2026-11-11',items:[
-   ['people',"Lingkana League, ready for 18 Nov","The poster register link is now the live register page, with a Share button. The host has a Registered archers page to tick who has paid for each 660 night (a record only — the app does not take payment). Invite a tester is gone from the live league. Standings, Share and Print show each archer's full name, with no email or phone. A small Beta label sits on the league screen. Test scores have been cleared so the nights start empty."]]},
+   ['people',"Lingkana League, ready for 18 Nov","The poster register link is now the live register page, with a Share button. The host has a Registered archers page to tick who has paid for each 660 night (a record only — the app does not take payment). Invite a tester is gone from the live league. Standings, Share and Print show each archer's full name, with no email or phone. A small Beta label sits on the league screen. Test scores have been cleared so the nights start empty.",'d330bf1']]},
   {v:'v2026-11-11-1824-live',d:'2026-11-11',items:[
    ['target',"Lingkana League","The Lingkana League is now in the app. After each end the Score Sheet shows everyone in the group, the same as a solo round. Standings list every archer, slide sideways for the nights, and have Share and Print.",'0555f4f'],
    ['book',"Archery Australia target rounds","Score now includes the target rounds from Archery Australia Schedule 9A. Tools, Rounds, lists the distances and faces when a club names the round.",'0555f4f']]},

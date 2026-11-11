@@ -101,9 +101,23 @@ try:
           return {order: lg.order.slice(), gn: Object.keys(lg.gn||{}), sc: Object.keys(lg.sc||{}), reg: Object.keys(lg.reg||{}), fresh: lg.fresh, n: (lg.order||[]).length};
         }""")
         chk('fresh wipe removes test sign-up slime and any test scores',
-            wiped['order']==['nathe'] and wiped['gn']==[] and wiped['sc']==[] and wiped['reg']==[] and wiped['fresh']>=1794395100000)
+            wiped['order']==[] and wiped['gn']==[] and wiped['sc']==[] and wiped['reg']==[] and wiped['fresh']>=1794401520000)
+
+        # Host can still use the app; registering Nathaniel Stride is not blocked as a duplicate.
+        added = page.evaluate("""() => {
+          const lg = lkEnsure();
+          lg.order = []; lg.gn = {}; lg.reg = {};
+          const r = lkApplyReg({name:'Nathaniel Stride',night:'2026-11-18',at:Date.now(),bow:'Compound'}, lg);
+          const host = lkCanHost(lg);
+          /* reset so the on-screen empty-list checks stay valid */
+          lg.order = []; lg.gn = {}; lg.reg = {}; lg.dirty = 1;
+          return {ok:!!(r&&r.ok), id:r&&r.id, first:!!(r&&r.first), host:!!host};
+        }""")
+        chk('Nathaniel Stride can register on an empty list and the host can still use the app',
+            added.get('ok') and added.get('host') and added.get('id') and added.get('first'))
 
         # classic host screen
+
         page.evaluate("() => { lkEnsure(); lkView('LINGKN26'); }")
         page.wait_for_selector('#lgview h1 .lk-beta', timeout=5000)
         text = page.inner_text('#lgview') + page.inner_text('#lkhost')
@@ -115,10 +129,9 @@ try:
         chk('Share button sits with the register link; no swap-LK_PUBLIC_BASE note',
             page.locator('#lkregshare').count()==1 and 'swap LK_PUBLIC' not in text and 'LK_PUBLIC_BASE' not in text)
         chk('host has a Registered archers button', page.locator('#lkarchgo').count()==1)
-        chk('fresh league lists only the host and empty nights',
+        chk('fresh league lists no registered archers and empty nights',
             'No scores yet' in text or page.locator('#lktab tbody tr').count()<=1)
-        # "In the league: 1 archer"
-        chk('in the league count is the host only', 'In the league: 1 archer' in text)
+        chk('in the league count is zero archers', 'In the league: 0 archers' in text)
 
         page.click('#lkarchgo')
         page.wait_for_selector('#lkarchpage', timeout=5000)

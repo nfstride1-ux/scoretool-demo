@@ -4,6 +4,19 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-11-2054-live (2026-11-11)
+### What changed
+- Live Lingkana registered list is cleared. Nathe is no longer auto-added as a registered archer; he stays HOST only (host tools, scoring password and so on still work). The test 'slime' sign-up is removed. The archer list starts empty so Nathe can register himself at https://nfstride1-ux.github.io/scoretool-demo/lk-register.html without being blocked as a duplicate.
+- Phones on this version wipe local Lingkana sign-ups, guests, scores, claims and paid ticks from before 20:52 Australia/Perth, and do not put the host back on the list when a snapshot is sent or merged. Old sign-ups on the live2 relay are ignored because they are older than this fresh cut. The live topic is unchanged: `scoretool-h2h-q7m4-lg-lingkn26-live2`. Codes stay LK-TEST26 / LINGKN26.
+- Backup before this change: tag `live-backup-2026-11-11-1908-live` (commit d330bf1, version v2026-11-11-1908-live). Rollback: `git push --force-with-lease origin d330bf1:main`.
+- Hidden features, /test/, archerycalendars.com, Lemon Squeezy and PR #1 are unchanged. Nothing was posted. No full regression, by request.
+### Files
+lingkana.js, league.js, tools/lingkana_live_test.py, whatsnew.js, CHANGELOG.md, version.json, sw.js, index.html.
+### Tests
+- tools/lingkana_live_test.py: 29 passed, 0 failed (empty registered list, host stays host, Nathaniel Stride can register, slime wipe, 660 maths, full names, host-only paid ticks, live register link).
+- No full `qa/run_regression.py`, by request (low usage).
+- Live URL checks after Pages: RESULT_LIVE
+
 ## v2026-11-11-1908-live (2026-11-11)
 ### What changed
 - Live Lingkana host screen: the poster register link is the clickable live page https://nfstride1-ux.github.io/scoretool-demo/lk-register.html, with a Share button (uses the phone Share sheet, or copies the link). The "swap LK_PUBLIC_BASE before printing" note is gone. LK_PUBLIC_BASE already points at the live root.
