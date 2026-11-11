@@ -535,6 +535,37 @@ try:
   chk('The pot card lists each night, the running pot, outstanding amounts and the live 60/30/10 split',
       'Outstanding' in potui and 'Live split' in potui and 'N7' in potui, potui[:500])
 
+  tick=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const hostWas=lg.host;
+    lg.host=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    save();
+    if(typeof lkFlowReview==='function')lkFlowReview();else lkView(lg.code);
+    lg.host=hostWas;save();
+    const row=document.querySelector('#lkpaidlist .lk-paidrow')||document.querySelector('.lk-paidrow');
+    if(!row)return {err:'no tick row'};
+    const kids=[...row.children];
+    const nm=row.querySelector('.nm');
+    const inp=row.querySelector('input[type=checkbox]');
+    if(!nm||!inp)return {err:'missing name or box', html:row.innerHTML};
+    const nameFirst=kids[0]===nm && kids.indexOf(inp)===kids.indexOf(nm)+1;
+    const ics=getComputedStyle(inp), ncs=getComputedStyle(nm), rcs=getComputedStyle(row);
+    const nr=nm.getBoundingClientRect(), ir=inp.getBoundingClientRect();
+    const gap=ir.left-nr.right;
+    const w=parseFloat(ics.width)||0;
+    const weight=parseInt(ncs.fontWeight||rcs.fontWeight||'0',10)||0;
+    return {
+      nameFirst, tag:row.tagName, display:rcs.display,
+      inputW:w, gap, whiteSpace:ncs.whiteSpace, ellipsis:ncs.textOverflow,
+      weight, border:rcs.borderBottomWidth, oneLine:nm.scrollHeight<=Math.ceil(nr.height)+1
+    };
+  }""")
+  chk('Night attendance lists the name first, on one line, with a small tick box right beside it',
+      isinstance(tick,dict) and tick.get('nameFirst') and tick.get('tag')=='LABEL' and tick.get('display')=='flex'
+      and tick.get('whiteSpace')=='nowrap' and tick.get('ellipsis')=='ellipsis'
+      and (tick.get('inputW') or 99)<=22 and 0<=(tick.get('gap') or 99)<=16
+      and (tick.get('weight') or 800)<=500, tick)
+
   # L9 — groups of up to 4, one scorer, 20-end 660, night sign-ups first, no plot face
   grp=pg.evaluate("""()=>{
     window._lgToday='2026-11-18';
@@ -824,11 +855,51 @@ try:
   ui80=pg.evaluate("()=>({rows:document.querySelectorAll('#lktab tbody tr').length, groups:document.querySelectorAll('#lkgrptab tbody tr').length, potn:!!document.querySelector('#lkpotnights')})")
   chk('The league view lists 80 standings rows and 20+ groups',
       ui80['rows']>=80 and ui80['potn'] and scale.get('groups')==20, ui80)
+  standui=pg.evaluate("""()=>{
+    const wrap=document.querySelector('.lk-standwrap');
+    const cs=wrap?getComputedStyle(wrap):{};
+    const mh=cs.maxHeight||'';
+    const noCap=!mh || mh==='none' || mh==='0px';
+    return {
+      rows:document.querySelectorAll('#lktab tbody tr').length,
+      mh, noCap, ox:cs.overflowX, oy:cs.overflowY,
+      share:!!document.querySelector('#lkstandshare'),
+      print:!!document.querySelector('#lkstandprint'),
+      title:(document.querySelector('.lk-printhead h2')||{}).textContent||''
+    };
+  }""")
+  chk('Standings list every archer with no height cap, and the page can scroll them',
+      standui.get('rows')>=80 and standui.get('noCap') and standui.get('ox') in ('auto','scroll'), standui)
+  chk('Share and Print buttons sit under the standings',
+      standui.get('share') and standui.get('print') and 'Lingkana Indoor League' in standui.get('title',''), standui)
+  png=pg.evaluate("""async ()=>{
+    const f=await lkStandingsPng(lkEnsure());
+    if(!f)return {ok:false};
+    const buf=await f.arrayBuffer();
+    const u=new Uint8Array(buf);
+    const isPng=u.length>8&&u[0]===137&&u[1]===80&&u[2]===78&&u[3]===71;
+    return {ok:true, type:f.type, name:f.name, size:f.size, isPng};
+  }""")
+  chk('Share builds a PNG of the full standings, with no external service',
+      png.get('ok') and png.get('isPng') and png.get('type')=='image/png' and png.get('size')>4000 and 'standings' in (png.get('name') or ''), png)
+  sh=pg.evaluate("""()=>{
+    let posted=null;
+    const orig=navigator.share, can=navigator.canShare;
+    navigator.canShare=d=>!!(d&&d.files&&d.files.length);
+    navigator.share=async (d)=>{posted=d;return true};
+    return Promise.resolve(lkShareStandings(lkEnsure())).then(()=>({
+      title:posted&&posted.title, files:posted&&posted.files&&posted.files.length, type:posted&&posted.files&&posted.files[0]&&posted.files[0].type
+    })).finally(()=>{if(orig)navigator.share=orig;else delete navigator.share; if(can)navigator.canShare=can;else delete navigator.canShare});
+  }""")
+  chk('Standings Share uses the device share sheet with the picture file',
+      sh.get('title')=='Lingkana Indoor League · Standings' and sh.get('files')==1 and sh.get('type')=='image/png', sh)
 
   css_txt=(Path(ROOT)/'style.css').read_text()
   res=pg.evaluate("()=>{try{lkResultsView(1)}catch(e){return {err:String(e)}}; const el=document.querySelector('#lkresults'); return {ok:!!el, night:(el&&el.getAttribute('data-lkn'))||'', scores:document.querySelectorAll('#lknightscores tbody tr').length, stand:document.querySelectorAll('#lkresstand tbody tr').length, pot:!!document.querySelector('#lkrespot'), print:!!document.querySelector('#lkprint'), share:!!document.querySelector('#lkshare')}; }")
   chk('Print and share results show that night, best-4 standings and the pot at 80 rows, with A4 print CSS',
       isinstance(res,dict) and res.get('ok') and res.get('night')=='1' and res.get('scores')>=80 and res.get('stand')>=80 and res.get('pot') and res.get('print') and res.get('share') and '@page' in css_txt and 'A4' in css_txt and '@media print' in css_txt, res)
+  chk('Standings print is A4 portrait, hides app chrome, and repeats the header on page breaks',
+      'lk-print-stand' in css_txt and 'table-header-group' in css_txt and 'A4 portrait' in css_txt, 'missing print rules')
   share=pg.evaluate("""()=>{
     let posted=false;
     const orig=navigator.share;

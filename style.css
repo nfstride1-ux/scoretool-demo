@@ -261,11 +261,34 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .evcard .ev-nw{white-space:nowrap}
 
 /* Lingkana League: 80+ standings, pot ticks, A4 print/share */
-.lk-standwrap{max-height:min(52vh,calc(100dvh - 280px));overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.lk-standwrap::-webkit-scrollbar{display:none}
+.lk-standwrap{overflow-x:auto;overflow-y:visible;max-height:none;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.lk-standwrap::-webkit-scrollbar{height:0}
 #lkstand > p.small{position:relative;z-index:2;background:#fff;padding-top:8px;margin-bottom:0}
-body.lk-flow .lk-standwrap{max-height:calc(100dvh - 390px)}
+body.lk-flow .lk-standwrap{max-height:none}
 body.lk-flow #lkreviewpage{padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+.lk-standbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 4px;position:relative;z-index:2}
+.lk-standbar .btn{margin:0}
+.lk-standbar #lkstandsharemsg{margin:0;flex:1 1 100%}
+.lk-printhead{display:none}
+#lkpaidlist{max-height:none;overflow:visible}
+#lkpaidlist .lk-paidrow,
+label.lk-paidrow,
+.lkf label.lk-paidrow{
+  display:flex;align-items:center;gap:8px;margin:0;padding:10px 2px;
+  border-bottom:1px solid #e5e7eb;font-weight:500;font-size:15px;color:#0f172a;cursor:pointer;line-height:1.3
+}
+#lkpaidlist .lk-paidrow:last-child,
+label.lk-paidrow:last-child{border-bottom:0}
+#lkpaidlist .lk-paidrow .nm,
+.lkf label.lk-paidrow .nm{
+  flex:0 1 auto;max-width:calc(100% - 32px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:#0f172a
+}
+#lkpaidlist .lk-paidrow input[type=checkbox],
+.lkf label.lk-paidrow input[type=checkbox],
+label.lk-paidrow input[type=checkbox]{
+  width:18px;height:18px;min-width:18px;min-height:18px;padding:0;margin:0;border:0;border-radius:3px;flex:0 0 auto;
+  background:transparent;box-shadow:none;accent-color:#2e7d32
+}
 #lkstand table.lk-stand{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0}
 #lkstand table.lk-stand col.rk{width:40px}
 #lkstand table.lk-stand col.nm{width:140px}
@@ -293,7 +316,6 @@ body.lk-flow #lkreviewpage{padding-bottom:calc(80px + env(safe-area-inset-bottom
 #lkstand table.lk-stand td.lk-keep{background:#edf2f7}
 #lkstand table.lk-stand td.best{font-weight:700}
 #lkstand table.lk-stand td i{font-style:italic;color:#0f172a;font-weight:inherit}
-#lkpaidlist{max-height:240px;overflow:auto}
 #lkgrptab{font-size:12px}
 #lkresults{max-width:210mm}
 #lkresults table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
@@ -302,7 +324,7 @@ body.lk-flow #lkreviewpage{padding-bottom:calc(80px + env(safe-area-inset-bottom
 #lkresults thead{position:sticky;top:0;background:var(--card,#fff)}
 @media print{
   @page{size:A4 portrait;margin:10mm}
-  #tabs,header,nav,.btn,.lk-printbar,#lksharemsg{display:none!important}
+  #tabs,header,nav,.btn,.lk-printbar,.lk-standbar,#lksharemsg,#lkstandsharemsg{display:none!important}
   #app,#lkresults{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;background:#fff!important;color:#000!important}
   .lk-standwrap,#lkpaidlist,#lkgrptab{max-height:none!important;overflow:visible!important}
   #lkresults table{font-size:8.5pt;width:100%}
@@ -312,4 +334,33 @@ body.lk-flow #lkreviewpage{padding-bottom:calc(80px + env(safe-area-inset-bottom
   #lkresults tr{break-inside:avoid;page-break-inside:avoid}
   #lkresults h1,#lkresults h2,#lkresults h3{break-after:avoid;page-break-after:avoid}
   #lkresults .card{break-inside:auto;box-shadow:none;border:0;padding:0;margin:0 0 8mm}
+  body.lk-print-stand #shell > header,
+  body.lk-print-stand #tabs,
+  body.lk-print-stand nav,
+  body.lk-print-stand .lk-bar,
+  body.lk-print-stand .demo-pill,
+  body.lk-print-stand #avtoast,
+  body.lk-print-stand #sbar,
+  body.lk-print-stand #scroller > p.small.muted,
+  body.lk-print-stand #app > *:not(#lkstand):not(#lkreviewpage),
+  body.lk-print-stand #lkreviewpage > *:not(#lkstand),
+  body.lk-print-stand #lkstand > h3,
+  body.lk-print-stand #lkstand > p.small{display:none!important}
+  body.lk-print-stand #shell,
+  body.lk-print-stand #scroller,
+  body.lk-print-stand #app,
+  body.lk-print-stand #lkreviewpage,
+  body.lk-print-stand #lkstand{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;background:#fff!important;color:#000!important;border:0!important}
+  body.lk-print-stand .lk-printhead{display:block;margin:0 0 6mm}
+  body.lk-print-stand .lk-printhead .lk-printbrand{font-weight:600;font-size:11pt;margin:0 0 2mm;color:#0f172a}
+  body.lk-print-stand .lk-printhead h2{font-size:14pt;margin:0 0 1mm;color:#0f172a}
+  body.lk-print-stand .lk-printhead p{margin:0;font-size:10pt;color:#475569}
+  body.lk-print-stand .lk-standwrap{overflow:visible!important;max-height:none!important;width:100%}
+  body.lk-print-stand #lkstand table.lk-stand{width:100%!important;max-width:100%;table-layout:auto;font-size:8.5pt}
+  body.lk-print-stand #lkstand table.lk-stand col{width:auto}
+  body.lk-print-stand #lkstand table.lk-stand th,
+  body.lk-print-stand #lkstand table.lk-stand td{position:static!important;box-shadow:none!important;top:auto!important;left:auto!important;padding:2px 4px;border-right:0.3pt solid #ccc;border-bottom:0.3pt solid #ccc}
+  body.lk-print-stand #lkstand table.lk-stand thead{display:table-header-group;position:static;background:#fff}
+  body.lk-print-stand #lkstand table.lk-stand tfoot{display:table-footer-group}
+  body.lk-print-stand #lkstand table.lk-stand tr{break-inside:avoid;page-break-inside:avoid}
 }
