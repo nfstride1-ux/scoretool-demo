@@ -259,3 +259,26 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .evcard .ev-list{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;padding:0;margin:6px 0 4px}
 .evcard .ev-b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0b1f4d;color:#fff;border:2px solid #ffc629;font-size:12px;font-weight:700}
 .evcard .ev-nw{white-space:nowrap}
+
+/* Lingkana League: 80+ standings, pot ticks, A4 print/share */
+.lk-standwrap{max-height:60vh;overflow:auto}
+#lkpaidlist{max-height:240px;overflow:auto}
+#lkgrptab{font-size:12px}
+#lkresults{max-width:210mm}
+#lkresults table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+#lkresults th,#lkresults td{padding:3px 5px;border-bottom:1px solid var(--line);text-align:right}
+#lkresults th:nth-child(2),#lkresults td:nth-child(2){text-align:left}
+#lkresults thead{position:sticky;top:0;background:var(--card,#fff)}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  #tabs,header,nav,.btn,.lk-printbar,#lksharemsg{display:none!important}
+  #app,#lkresults{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;background:#fff!important;color:#000!important}
+  .lk-standwrap,#lkpaidlist,#lkgrptab{max-height:none!important;overflow:visible!important}
+  #lkresults table{font-size:8.5pt;width:100%}
+  #lkresults th,#lkresults td{padding:2px 4px;border-bottom:0.3pt solid #ccc}
+  #lkresults thead{display:table-header-group;position:static;background:#fff}
+  #lkresults tfoot{display:table-footer-group}
+  #lkresults tr{break-inside:avoid;page-break-inside:avoid}
+  #lkresults h1,#lkresults h2,#lkresults h3{break-after:avoid;page-break-after:avoid}
+  #lkresults .card{break-inside:auto;box-shadow:none;border:0;padding:0;margin:0 0 8mm}
+}

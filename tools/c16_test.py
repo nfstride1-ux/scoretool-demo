@@ -1,6 +1,7 @@
 # C16 (11 Nov 2026): Lingkana indoor league, preview only.
 # L1: official Lancaster 660, X = 11 on this round only. Onion Shed / Vegas / Indoor WA unchanged.
 import os,sys,time,json,subprocess
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 import guard
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
@@ -31,11 +32,14 @@ try:
     };
   }""")
   chk('Lancaster 660 is 20 ends of 3 at 18 m, max 660, xv 11',
-      card['R']=={'ends':20,'ape':3,'max':660,'xv':11,'lancaster':True,'face':'40cm','dist':18,'unit':'m'}, card.get('R'))
+      card['R']=={'ends':20,'ape':3,'max':660,'xv':11,'lancaster':True,'face':'40cm 3-spot','dist':18,'unit':'m'}, card.get('R'))
   chk('Indoor WA 18m still has 20 ends and max 600', card['wa']=={'ends':20,'max':600}, card.get('wa'))
   chk('Vegas 300 (18 m) still has 10 ends, max 300, and remains the Onion Shed league round',
       card['vg']=={'ends':10,'max':300,'league':True,'vegas':True}, card.get('vg'))
   chk('Vegas 300 still has max 300', card['vgs']=={'ends':10,'max':300}, card.get('vgs'))
+  face=pg.evaluate("()=>{const R=ROUNDS['Lancaster 660'];return {face3:R&&R.face3,note:R&&R.note||'',btn:typeof f3Can==='function'}}")
+  chk('Lancaster 660 is locked to the triangular 40 cm 3-spot',
+      face['face3']=='vegas' and 'triangular' in (face['note'] or '').lower(), face)
 
   scores=pg.evaluate("""()=>{
     const mk=(rd,fill)=>{
@@ -118,13 +122,14 @@ try:
 
   chk('No page errors on the Lancaster 660 card', not errs, errs)
 
-  # L3 — Lingkana format: six 660s, seventh night, these dates, cap >= 12
+  # L3 — Lingkana format: six 660s, seventh-night shoot-up, these dates, no field cap
   pg.evaluate("window._lgToday=null")
   dates=pg.evaluate("()=>LK_DATES")
   chk('Lingkana has the seven official dates, sixth 660 on 27 Jan 2027 and shoot-up on 10 Feb 2027',
       dates==['2026-11-18','2026-12-02','2026-12-16','2026-12-30','2027-01-13','2027-01-27','2027-02-10'], dates)
-  chk('Lingkana cap is at least 12 and does not reuse the 10-archer match cap',
-      pg.evaluate("()=>LK_CAP>=12 && LK_CAP!==10") is True)
+  cap=pg.evaluate("()=>{const lg=lkEnsure();return {name:LK_NAME,cap:LK_CAP,h2h:typeof h2hCap==='function'?h2hCap(lg):0,hasCap:'cap' in (lg||{})}}")
+  chk('Lingkana is named Lingkana League and has no hard field cap',
+      cap['name']=='Lingkana League' and cap['cap']==0 and cap['h2h']>=80 and not cap['hasCap'], cap)
 
   enc=pg.evaluate("""()=>{
     const twenty=Array.from({length:20},()=>['X','10','9']);
@@ -159,8 +164,10 @@ try:
   app=pg.inner_text('#app')
   chk('Opening the Lingkana league shows all seven dates in Australia/Perth',
       '18 Nov 2026' in app and '2 Dec 2026' in app and '16 Dec 2026' in app and '30 Dec 2026' in app and '13 Jan 2027' in app and '27 Jan 2027' in app and '10 Feb 2027' in app, app[:800])
-  chk('Nights 1–6 are labelled Lancaster 660 and night 7 is warm-up + shoot-up',
-      app.count('Lancaster 660')>=6 and ('Warm-up + shoot-up' in app or 'Warm-up + shoot-up' in app.replace('–','-')), app[:800])
+  chk('Nights 1–6 are labelled Lancaster 660 and night 7 is the top-12 shoot-up',
+      app.count('Lancaster 660')>=6 and 'Shoot-up (top 12)' in app and 'Warm-up' not in app, app[:800])
+  chk('The league card uses the working name Lingkana League',
+      'lingkana league' in app.lower() and 'lingkana indoor league' not in app.lower(), app[:300])
   chk('Venue is Lingkana Archery range at 107 Robinson Ave, Belmont WA 6104',
       '107 Robinson Ave' in app and 'Belmont' in app and 'Lingkana' in app, app[:500])
   night=pg.evaluate("()=>({w:lgWeek(lkGet()), cur:document.querySelector('.lk-night.on')&&document.querySelector('.lk-night.on').getAttribute('data-lkn')})")
@@ -170,8 +177,8 @@ try:
   pg.evaluate("window._lgToday='2027-02-10';lkView(LK_CODE)");pg.wait_for_timeout(400)
   app7=pg.inner_text('#app')
   night7=pg.evaluate("()=>lgWeek(lkGet())")
-  chk('On 10 Feb the current night is night 7 and the 660 card is closed',
-      night7==7 and ('660 nights are finished' in app7 or 'does not open a 660' in app7) and '10 Feb 2027' in app7 and 'still waiting on Nathe' in app7, (night7, app7[:700]))
+  chk('On 10 Feb the current night is night 7, the 660 card is closed, and it goes straight into match play',
+      night7==7 and '10 Feb 2027' in app7 and 'straight into match play' in app7 and 'no scored 150' in app7.lower() and 'warm-up + shoot-up' not in app7.lower(), (night7, app7[:900]))
 
   onion_after=pg.evaluate("""()=>{
     const lg=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||l.name==='Onion Shed Challenge');
@@ -421,6 +428,22 @@ try:
     return rows.every(r=>r.count==null);
   }""")
   chk('Onion Shed standings stay cumulative totals, not best 4 of 6', onion_ok)
+  ties=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    const ev=(a,b,c)=>({e:Array(20).fill([a,b,c]),nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()});
+    lg.order=lg.order||[];lg.gn=lg.gn||{};lg.sc=lg.sc||{};
+    [['gtiea','Tie Tens'],['gtieb','Tie Nines']].forEach(([id,n])=>{
+      if(!lg.order.includes(id))lg.order.push(id);
+      lg.gn[id]={n,t:Date.now(),by:'test'};
+      lg.sc[id]={1:ev(...(id==='gtiea'?['10','10','8']:['10','9','9'])),2:ev(...(id==='gtiea'?['10','10','8']:['10','9','9'])),3:ev(...(id==='gtiea'?['10','10','8']:['10','9','9'])),4:ev(...(id==='gtiea'?['10','10','8']:['10','9','9']))};
+    });
+    save();
+    const rows=lkTable(lg);
+    const A=rows.find(r=>r.id==='gtiea'), B=rows.find(r=>r.id==='gtieb');
+    return {at:A&&A.t,ax:A&&A.x,aten:A&&A.tens,ark:A&&A.rk,bt:B&&B.t,bx:B&&B.x,bten:B&&B.tens,brk:B&&B.rk};
+  }""")
+  chk('Equal best-4 totals and 11s are split on 10s from the counting scores',
+      ties['at']==ties['bt'] and ties['ax']==ties['bx'] and ties['aten']>ties['bten'] and ties['ark']<ties['brk'], ties)
 
   # L6 — pot display only (entries × $10, 60/30/10, no payments)
   pot=pg.evaluate("""()=>{
@@ -438,25 +461,30 @@ try:
     /* six nights, 12 paid each */
     for(let w=1;w<=6;w++)ids.forEach(id=>lkSetPaid(id,LK_DATES[w-1],true));
     const p6=lkPot(lg);
+    ids.forEach(id=>lkSetPaid(id,LK_DATES[6],true));
+    const p7=lkPot(lg);
     lkSetPaid(ids[0],LK_DATES[0],false);
     const pUndone=lkPot(lg);
-    /* range fee must not be in the pot figure */
-    const noRange=p1.pot===120 && p6.pot===720;
+    const core=x=>({entries:x.entries,pot:x.pot,first:x.first,second:x.second,third:x.third,currency:x.currency,whole:x.whole});
     lkView(lg.code);
     lg.host='nathe';save();
-    return {p1,p6,pUndone,noRange};
+    return {p1:core(p1),p6:core(p6),pUndone,p7:core(p7),n7:p7.nights&&p7.nights[6],owed:p1.owed};
   }""")
   chk('12 paid entries on night 1 show pot $120, split $72 / $36 / $12',
       pot['p1']=={'entries':12,'pot':120,'first':72,'second':36,'third':12,'currency':'AUD','whole':True}, pot['p1'])
   chk('After six nights, 12 archers all paid each night, pot is $720, split $432 / $216 / $72',
       pot['p6']=={'entries':72,'pot':720,'first':432,'second':216,'third':72,'currency':'AUD','whole':True}, pot['p6'])
   chk('Unticking a payment lowers the pot',
-      pot['pUndone']['entries']==71 and pot['pUndone']['pot']==710, pot['pUndone'])
+      pot['pUndone']['entries']==83 and pot['pUndone']['pot']==830, pot['pUndone'])
   pg.wait_for_selector('#lkpot', timeout=8000)
   potui=pg.inner_text('#lkpot')
   chk('The pot card is display only, notes the $25 range fee, and does not add it to the pot',
-      'display only' in potui.lower() and '$25' in potui and 'does not take' in potui.lower() and '710' in potui,
+      'display only' in potui.lower() and '$25' in potui and 'does not take' in potui.lower() and '830' in potui,
       potui[:400])
+  chk('Night 7 also goes into the pot: 12 more paid entries take it to $840, split $504 / $252 / $84',
+      pot['p7']=={'entries':84,'pot':840,'first':504,'second':252,'third':84,'currency':'AUD','whole':True} and pot['n7'] and pot['n7']['paid']==12 and pot['n7']['total']==120, pot)
+  chk('The pot card lists each night, the running pot, outstanding amounts and the live 60/30/10 split',
+      'Outstanding' in potui and 'Live split' in potui and 'N7' in potui, potui[:500])
 
   # L9 — groups of up to 4, one scorer, 20-end 660, night sign-ups first, no plot face
   grp=pg.evaluate("""()=>{
@@ -617,6 +645,72 @@ try:
       practice['face'], practice)
 
   chk('No page errors after the no-plot league card', not errs, errs)
+  # Scale: no hard cap, 80 archers, 20 groups of 4, standings, pot, print view
+  scale=pg.evaluate("""()=>{
+    window._lgToday='2026-11-18';
+    const lg=lkEnsure();
+    lg.order=lg.order||[];lg.gn=lg.gn||{};lg.sc=lg.sc||{};
+    const ev=(a,b,c)=>({e:Array(20).fill([a,b,c]),nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()});
+    const ids=[];
+    for(let i=0;i<80;i++){
+      const id='g80_'+i;
+      const rec=lkApplyReg({name:'Scale '+String(i+1).padStart(2,'0'),code:LK_POSTER_CODE,night:LK_DATES[0],id});
+      if(rec&&rec.ok===false&&rec.msg)return {err:rec.msg,at:i};
+      ids.push(id);
+      lg.sc[id]=lg.sc[id]||{};
+      lg.sc[id][1]=i===0?ev('X','X','X'):ev('X','10','9');
+    }
+    const groups=[];
+    for(let i=0;i<20;i++)groups.push(ids.slice(i*4,i*4+4));
+    const gErr=lkSetGroups(1,groups);
+    const hostWas=lg.host;
+    lg.host=(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'steven';
+    ids.forEach(id=>lkSetPaid(id,LK_DATES[0],true));
+    ids.slice(0,40).forEach(id=>lkSetPaid(id,LK_DATES[6],true));
+    const p=lkPot(lg);
+    const rows=lkTable(lg);
+    const listed=ids.filter(id=>(lg.order||[]).includes(id)).length;
+    const a0=rows.find(r=>r.id==='g80_0');
+    const parts=typeof lgSnapParts==='function'?lgSnapParts(lg):[];
+    const oversized=parts.some(part=>JSON.stringify(part).length>3600);
+    const orderInSnap=new Set([].concat(...parts.map(part=>part.order||[]))).size;
+    lg.host=hostWas;save();
+    lkView(lg.code);
+    return {
+      listed, cap:typeof h2hCap==='function'?h2hCap(lg):0,
+      gErr, groups:((((lg.grp||{})[1]||{}).g)||[]).length,
+      g0:((((lg.grp||{})[1]||{}).g)||[])[0]&&(((lg.grp||{})[1]||{}).g)[0].length,
+      stand:rows.filter(r=>String(r.id).startsWith('g80_')).length,
+      a0:a0&&a0.t,
+      potN1:p.nights[0].paid, potN7:p.nights[6].paid, pot:p.pot,
+      parts:parts.length, oversized, orderInSnap, maxPart:Math.max(0,...parts.map(part=>JSON.stringify(part).length))
+    };
+  }""")
+  chk('80 archers can register with no field cap',
+      scale.get('listed')==80 and scale.get('cap')>=80 and not scale.get('err'), scale)
+  chk('A night with 80 archers makes 20 groups of 4, standings for all 80, and pot maths for nights 1 and 7',
+      scale.get('gErr')=='' and scale.get('groups')==20 and scale.get('g0')==4 and scale.get('stand')==80 and scale.get('a0')==660 and scale.get('potN1')>=80 and scale.get('potN7')>=40, scale)
+  chk('Relay snapshots still chunk at 80 scores and include the full field',
+      scale.get('parts')>=1 and not scale.get('oversized') and scale.get('orderInSnap')>=80, scale)
+  pg.wait_for_selector('#lktab', timeout=8000)
+  ui80=pg.evaluate("()=>({rows:document.querySelectorAll('#lktab tbody tr').length, groups:document.querySelectorAll('#lkgrptab tbody tr').length, potn:!!document.querySelector('#lkpotnights')})")
+  chk('The league view lists 80 standings rows and 20+ groups',
+      ui80['rows']>=80 and ui80['groups']>=20 and ui80['potn'], ui80)
+
+  css_txt=(Path(ROOT)/'style.css').read_text()
+  res=pg.evaluate("()=>{try{lkResultsView(1)}catch(e){return {err:String(e)}}; const el=document.querySelector('#lkresults'); return {ok:!!el, night:(el&&el.getAttribute('data-lkn'))||'', scores:document.querySelectorAll('#lknightscores tbody tr').length, stand:document.querySelectorAll('#lkresstand tbody tr').length, pot:!!document.querySelector('#lkrespot'), print:!!document.querySelector('#lkprint'), share:!!document.querySelector('#lkshare')}; }")
+  chk('Print and share results show that night, best-4 standings and the pot at 80 rows, with A4 print CSS',
+      isinstance(res,dict) and res.get('ok') and res.get('night')=='1' and res.get('scores')>=80 and res.get('stand')>=80 and res.get('pot') and res.get('print') and res.get('share') and '@page' in css_txt and 'A4' in css_txt and '@media print' in css_txt, res)
+  share=pg.evaluate("""()=>{
+    let posted=false;
+    const orig=navigator.share;
+    navigator.share=async (d)=>{posted='share-called';return d&&(d.url||d.files)};
+    const p=lkShareResults(lkEnsure(),1);
+    return Promise.resolve(p).then(()=>({posted,url:typeof lkResultsUrl==='function'?lkResultsUrl(1):''})).finally(()=>{if(orig)navigator.share=orig;else delete navigator.share});
+  }""")
+  chk('Share uses the device share sheet or a link, and the app does not post publicly itself',
+      share['posted']=='share-called' and '#lk-results' in share['url'] and 'n=1' in share['url'], share)
+
   b.close()
 finally:
   srv.kill()

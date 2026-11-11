@@ -40,7 +40,7 @@ const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
 const lgHas=e=>!!(e&&e.e&&e.e.some(x=>x&&x.length));
 const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=(e.nEnds||10));
 const lgToday=()=>{if(window._lgToday)return window._lgToday;const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-function lgInfo(lg,w){if(typeof lkIs==='function'&&lkIs(lg)&&!(+w>=7))return{ends:20,keys:LG_KEYS,face:'40cm',dist:'18 m',done:'660 finished',title:'Lancaster 660',kicker:'Night'};return{ends:10,keys:LG_KEYS,face:LG_FACE,dist:'18 m',done:'300 finished',title:LG_RL,kicker:'Week'}}
+function lgInfo(lg,w){if(typeof lkIs==='function'&&lkIs(lg)&&!(+w>=7))return{ends:20,keys:LG_KEYS,face:'triangular 40 cm 3-spot',dist:'18 m',done:'660 finished',title:'Lancaster 660',kicker:'Night'};return{ends:10,keys:LG_KEYS,face:LG_FACE,dist:'18 m',done:'300 finished',title:LG_RL,kicker:'Week'}}
 function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,h2hCap(lg))}
 /* current week: by the week dates if set, else the first week not yet shot by everyone (or the host's 'Next week') */
 function lgWeek(lg){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(cap,n||1))}
@@ -84,7 +84,7 @@ function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=nu
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
- if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd!=='Lancaster 660')s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
+ if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -102,15 +102,37 @@ function lgFinal(lg){let seeds=lg.fin&&lg.fin.length>=2?lg.fin:null;if(!seeds&&l
 function lgForce(code){const lg=lgGet(code);if(!lg||lg.host!=h2hMe()||lg.fin)return false;const seeds=lgTable(lg).filter(r=>lgDoneE(lgEnt(lg,r.id,LG_W))).map(r=>r.id);if(seeds.length<2)return false;
  lg.fin=seeds;lg.fint=Date.now();lg.dirty=1;save();lgFinal(lg);lgTick(true);return true}
 /* ---------- relay: snapshots, merge, offline queue ---------- */
-function lgSnapParts(lg){const me=h2hMe(),head={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,order:lgArchers(lg),cw:lg.cw||1,cwt:lg.cwt||0,grp:lg.grp||{},fin:lg.fin||null,fint:lg.fint||0,gn:lg.gn||{},...h2hNm()};
+function lgSnapParts(lg){
+ const me=h2hMe(),LIM=3400,size=o=>JSON.stringify(o).length;
+ const order=typeof lgArchers==='function'?lgArchers(lg):(lg.order||[]).slice();
+ const meta={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,cw:lg.cw||1,cwt:lg.cwt||0,fin:lg.fin||null,fint:lg.fint||0,...h2hNm()};
+ const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
+ const fat={...meta,...roster};
  const items=[];for(const id in lg.sc||{})for(const w in lg.sc[id]){const e=lg.sc[id][w];if(e&&e.e)items.push([id,w,{e:lgEnc(e.e),u:e.u||0,by:e.by||'',f:e.f||'vert'}])}
- const parts=[];let cur={};const size=o=>JSON.stringify(o).length;
- for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size({...head,sc:c2})>3400){parts.push(cur);cur={};(cur[id]={})[w]=v}else cur=c2}
- parts.push(cur);const t=Date.now();return parts.map((sc,k)=>({...head,sc,part:k+1,np:parts.length,t}))}
+ const useSlim=size({...fat,sc:{},part:99,np:99,t:1})>LIM;
+ const parts=[];
+ const stamp=o=>({...o,part:99,np:99,t:1});
+ if(useSlim){
+  let chunk=[];
+  for(const id of order){const next=chunk.concat([id]);if(chunk.length&&size(stamp({...meta,order:next}))>LIM){parts.push({...meta,order:chunk});chunk=[id]}else chunk=next}
+  if(chunk.length)parts.push({...meta,order:chunk});
+  const grp=lg.grp||{};
+  if(Object.keys(grp).length){if(size(stamp({...meta,grp}))<=LIM)parts.push({...meta,grp});else for(const w of Object.keys(grp))parts.push({...meta,grp:{[w]:grp[w]}})}
+  const gn=lg.gn||{};let bag={};
+  for(const id of Object.keys(gn)){const c2=Object.assign({},bag);c2[id]=gn[id];if(Object.keys(bag).length&&size(stamp({...meta,gn:c2}))>LIM){parts.push({...meta,gn:bag});bag={};bag[id]=gn[id]}else bag=c2}
+  if(Object.keys(bag).length)parts.push({...meta,gn:bag});
+ }
+ const head=useSlim?meta:fat;
+ let cur={};
+ for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size(stamp({...head,sc:c2}))>LIM){parts.push({...head,sc:cur});cur={};(cur[id]={})[w]=v}else cur=c2}
+ if(Object.keys(cur).length||!useSlim&&!parts.length)parts.push(useSlim?{...head,sc:cur}:{...head,sc:cur});
+ if(!parts.length)parts.push({...fat,sc:{}});
+ const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
+}
 function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;if(LG_SINCE[lg.code]&&(d.t||0)<LG_SINCE[lg.code])return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
-  if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){lg.weeks=d.weeks.slice(0,LG_W).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
+  if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){const cap=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d))||d.code==='LINGKN26'||lg.code==='LINGKN26')?7:LG_W;lg.weeks=d.weeks.slice(0,cap).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
   if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=LG_W&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
   if((d.cwt||0)>(lg.cwt||0)){lg.cw=Math.max(1,Math.min(LG_W,+d.cw||1));lg.cwt=d.cwt;ch=true}}

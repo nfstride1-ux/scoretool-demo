@@ -53,7 +53,7 @@ def main() -> None:
     if args.kind == "lingkana":
         url = args.url or (base + "#lk-register")
         dest = SHOTS / "lingkana-register-qr.png"
-        caption = "Lingkana Indoor League — register"
+        caption = "Lingkana League — register"
     else:
         url = args.url or (base + "#os-register")
         dest = SHOTS / "onion-shed-register-qr.png"
