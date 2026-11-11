@@ -70,13 +70,14 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
     next archer, in the same order as before, keeping the page where it is. The 27 Oct Next button stays as an option (S.lgNextBtn):
     the card then stays on this archer showing the three arrows until Next is tapped. Display only. */
  if(E.length==3){if(S.lgNextBtn){window._lgAct=id;window._lgHold={id,n:e.e.length};window._lgLast=null}else{window._lgLast={code,w,id,n:e.e.length,E:[...E]};lgNextArcher(code,w,id)}}
+ if(typeof lkIs==='function'&&lkIs(lg))window._lkHoldRelay=E.length!=3;else window._lkHoldRelay=false;
  lgAfter(lg);return true}
 /* the archer after `id` in this phone's group (same order the old auto-advance used), skipping finished archers; null when everyone is finished */
 /* the line that confirms the end just saved when the card has moved on by itself */
 function lgLastLine(lg,w,ids){const L=window._lgLast;if(S.lgNextBtn||!L||L.code!=lg.code||L.w!=w||!ids.includes(L.id)||ids.length<2)return'';return`<p class="small" id="lglast" style="margin:0 0 4px">Saved: ${esc(lgName(L.id))}, end ${L.n}: ${L.E.map(esc).join(' ')}.</p>`}
 const lgNextPref=(lg,ids)=>ids.length>1?`<label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0 0"><input type="checkbox" id="lgnextpref" ${S.lgNextBtn?'checked':''}> Stay on each archer after the 3rd arrow and tap Next to move on</label>`:'';
 function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
-function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
+function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
 /* my own week is also kept with my other sessions (values only; league scoring no longer stores plots). Only a week I score
@@ -123,13 +124,17 @@ let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
 const LG_RSOK=k=>'scoretool.opost.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'nathe')+'.'+k;function lgOpGet(k){try{return +localStorage.getItem(LG_RSOK(k))||0}catch(e){return 0}}function lgOpSet(k){try{localStorage.setItem(LG_RSOK(k),String(Date.now()))}catch(e){}}
 
+function lgRelayReady(lg){
+  /* L11: Lingkana holds relay posts mid-end (flag set from lgKey / lgUndo), so a 12-archer night does not post on every arrow. Other leagues are unchanged. */
+  if(typeof lkIs!=='function'||!lkIs(lg))return true;
+  return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
   const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true}save()}
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */
   const dty=lg.dirty,reo=!dty&&!lgOpened[lg.code]&&Date.now()-lgOpGet(lg.code)>=LG_REOPEN;if(!lgOpened[lg.code]&&!reo&&!dty)lgOpened[lg.code]=1;
-  if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}
+  if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){if(!lgRelayReady(lg)){if(window._lgRelayNote)window._lgRelayNote('hold',lg.code);continue}if(window._lgRelayNote)window._lgRelayNote('post',lg.code);let ok=true;for(const o of lgSnapParts(lg))if(!await window.h2hPost(lgTopic(lg.code),o)){ok=false;break}
    /* a re-send on open only stamps its own key and leaves the saved record untouched */
    if(ok&&reo&&!dty&&!lg.qfail){lgOpSet(lg.code);lgOpened[lg.code]=1}else{if(ok){if(reo&&!dty)lgOpSet(lg.code);lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}}
  finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}

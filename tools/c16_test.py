@@ -548,6 +548,42 @@ try:
   chk('After a correct password the Lingkana score card is on screen, still with no plot face',
       pg.locator('#lgentry').count()==1 and pg.locator('#cspface').count()==0)
 
+  # L11 — relay posts per end, not per arrow
+  relay=pg.evaluate("""async ()=>{
+    window._lgToday='2026-11-18';
+    const lg=lkEnsure();
+    const fresh='grelay1';
+    if(!lg.order.includes(fresh)){lg.order.push(fresh);lg.gn=lg.gn||{};lg.gn[fresh]={n:'Relay One',t:Date.now(),by:'test'}}
+    let g=(((lg.grp||{})[1]||{}).g||[]).filter(id=>id!==fresh);
+    if(g.length>=4)g=g.slice(0,3);
+    g.push(fresh);
+    lkSetGroups(1,[g]);
+    lg.sc=lg.sc||{};delete lg.sc[fresh];
+    lg.dirty=0;save();
+    const notes=[];
+    window._lgRelayNote=(k,code)=>notes.push(k+' '+(code||''));
+    const idle=()=>new Promise(r=>{const t0=Date.now();(function w(){if(!lgBusy||Date.now()-t0>3000)r();else setTimeout(w,15)})()});
+    await idle();
+    notes.length=0;
+    lgKey(lg.code,1,fresh,'10');
+    await idle();
+    const after1=notes.slice();
+    lgKey(lg.code,1,fresh,'9');
+    await idle();
+    const after2=notes.slice();
+    lgKey(lg.code,1,fresh,'8');
+    await idle();
+    const after3=notes.slice();
+    const e=lgEnt(lg,fresh,1);
+    return {after1,after2,after3,arrows:(e&&e.e[0]||[]).length,tot:e?lgTot(e.e,e):0,hold:!!window._lkHoldRelay};
+  }""")
+  chk('Lingkana does not post to the relay after the first or second arrow of an end',
+      all('post' not in x for x in (relay['after1']+relay['after2'])) and relay['after2'] is not None,
+      relay)
+  chk('Lingkana posts to the relay once the end is complete',
+      any(x.startswith('post') for x in relay['after3']) and relay['arrows']==3 and relay['tot']==27,
+      relay)
+
   # No plotting on league scoring (Nathe 11 Nov 7:57am)
   pg.evaluate("""()=>{
     if(typeof lgPresetRecord==='function'&&!lgGet('ONIONSHD')&&!lgGet('ONIONSH2')){S.leagues=S.leagues||[];S.leagues.push(lgPresetRecord());save()}
