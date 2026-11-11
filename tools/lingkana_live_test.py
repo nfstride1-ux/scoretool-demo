@@ -195,6 +195,118 @@ try:
                      for p in (saved.get('posts') or []))
         chk('register post was captured in-memory, not sent to the live relay', caught)
 
+        # Tick-box group picker: seed local names only, keep h2hPost stubbed so nothing hits the live relay
+        page.evaluate("""() => {
+          window._lkPosts = window._lkPosts || [];
+          window.h2hPost = function(){window._lkPosts.push([].slice.call(arguments));return Promise.resolve()};
+          window._lkAuthed = 'LINGKN26';
+          try { sessionStorage.setItem('scoretool.lk.auth','LINGKN26'); } catch(e) {}
+          try { localStorage.removeItem('scoretool.lk.reg'); } catch(e) {}
+          const lg = lkEnsure();
+          lg.order = []; lg.gn = {}; lg.reg = {}; lg.grp = {}; lg.claim = {}; lg.sc = {};
+          const add = (name, tonight) => {
+            const r = lkApplyReg({name, night: tonight ? '2026-11-18' : '2026-12-02', at: Date.now()}, lg);
+            if (r && r.ok && !tonight && lg.reg && lg.reg['2026-12-02']) {
+              /* keep them in the season list only */
+              delete lg.reg['2026-12-02'];
+            }
+            return r && r.id;
+          };
+          const ids = {
+            sam: add('Sam Archer', true),
+            jordan: add('Jordan Lee', true),
+            riley: add('Riley Chen', true),
+            alex: add('Alex River', true),
+            morgan: add('Morgan Blake', false),
+            casey: add('Casey Ng', false)
+          };
+          window._lkTestIds = ids;
+          window._lkFlowNight = 1;
+          window._lkPicked = [];
+          window._lkFromLeague = 1;
+          try { localStorage.removeItem('scoretool.lk.reg'); } catch(e) {}
+        }""")
+        page.evaluate("() => { lkView('LINGKN26'); }")
+        page.wait_for_selector('#lkgrp', timeout=5000)
+        gtxt = page.inner_text('#lkgrp')
+        chk('league groups card has no filter box, name dropdown or Add to group',
+            page.locator('#lkpickq').count()==0 and page.locator('#lkpick').count()==0 and page.locator('#lkaddg').count()==0
+            and page.locator('#lkgrptab').count()==0 and 'Add to group' not in gtxt and page.locator('#lkpickgrp').count()==1)
+        page.click('#lkpickgrp')
+        page.wait_for_selector('#lkselect', timeout=5000)
+        names = page.locator('#lkarchlist .lk-row .nm').all_inner_texts()
+        heads = page.locator('#lkarchlist .lk-tgt').all_inner_texts()
+        chk('picker lists tonight\'s sign-ups first, then the rest of the league, by full name',
+            names[:4]==['Sam Archer','Jordan Lee','Riley Chen','Alex River']
+            and 'Morgan Blake' in names and 'Casey Ng' in names
+            and names.index('Sam Archer') < names.index('Morgan Blake')
+            and any('tonight' in h.lower() for h in heads) and any('league' in h.lower() or 'registered' in h.lower() for h in heads))
+        chk('picker has Back and Start (0) and no testers who are not registered',
+            page.locator('#lkbacklogin').count()==1 and 'Back' in (page.locator('#lkbacklogin').inner_text() or '')
+            and 'Start (0)' in (page.locator('#lkstart').inner_text() or '')
+            and 'Logan' not in ' '.join(names) and 'Dana Chapman' not in ' '.join(names))
+        for lab in ['Sam Archer','Jordan Lee','Riley Chen','Alex River']:
+            page.locator('.lk-row', has_text=lab).locator('input').check()
+            page.wait_for_timeout(80)
+        chk('Start label shows 4 after four ticks', 'Start (4)' in (page.locator('#lkstart').inner_text() or ''))
+        page.locator('.lk-row', has_text='Morgan Blake').click()
+        page.wait_for_timeout(200)
+        msg5 = page.inner_text('#lkselmsg') or ''
+        morgan_on = page.locator('.lk-row', has_text='Morgan Blake').locator('input').is_checked()
+        chk('a fifth tick is blocked with a short message and is not selected',
+            (not morgan_on) and ('up to 4' in msg5.lower() or 'at most 4' in msg5.lower() or '4 archers' in msg5.lower())
+            and 'Start (4)' in (page.locator('#lkstart').inner_text() or ''))
+        page.click('#lkstart')
+        page.wait_for_selector('#lgentry, #lksheet', timeout=5000)
+        started = page.evaluate("""() => {
+          const ids = window._lkScoreIds || [];
+          const lg = lkEnsure();
+          const G = (((lg.grp||{})[1]||{}).g||[]);
+          const names = ids.map(id => (typeof lkStandName==='function'&&lkStandName(id,lg))||id);
+          return {ids, names, groups: G.length, g0: (G[0]||[]).slice(), entry: !!document.getElementById('lgentry')};
+        }""")
+        chk('Start opens scoring with the four ticked archers as one group',
+            started.get('entry') and started.get('groups')==1 and started.get('names')==['Sam Archer','Jordan Lee','Riley Chen','Alex River'])
+
+        # Back to the picker and free those four so a second group can be started; they must then lock
+        page.evaluate("() => { window._lkScoreMode=null; if (typeof lkFlowSelect==='function') lkFlowSelect(); }")
+        page.wait_for_selector('#lkselect', timeout=5000)
+        # untick the four (releases this phone's claim); they stay in group 1 so they should lock
+        for lab in ['Sam Archer','Jordan Lee','Riley Chen','Alex River']:
+            box = page.locator('.lk-row', has_text=lab).locator('input')
+            if box.is_checked():
+                box.uncheck()
+                page.wait_for_timeout(80)
+        page.wait_for_timeout(200)
+        locks = page.evaluate("""() => {
+          return [...document.querySelectorAll('#lkarchlist .lk-row')].map(r => ({
+            name: (r.querySelector('.nm')||{}).textContent||'',
+            locked: r.classList.contains('locked'),
+            disabled: !!(r.querySelector('input')||{}).disabled,
+            padlock: !!r.querySelector('.lk-padlock')
+          }));
+        }""")
+        taken = [r for r in locks if r['name'] in ('Sam Archer','Jordan Lee','Riley Chen','Alex River')]
+        free = [r for r in locks if r['name'] in ('Morgan Blake','Casey Ng')]
+        chk('first group names are locked with a padlock and are not tickable for a second group',
+            len(taken)==4 and all(r['locked'] and r['disabled'] and r['padlock'] for r in taken)
+            and len(free)==2 and all((not r['locked']) and (not r['disabled']) for r in free))
+        page.locator('.lk-row', has_text='Morgan Blake').locator('input').check()
+        page.wait_for_timeout(80)
+        page.locator('.lk-row', has_text='Casey Ng').locator('input').check()
+        page.wait_for_timeout(80)
+        page.click('#lkstart')
+        page.wait_for_selector('#lgentry, #lksheet', timeout=5000)
+        second = page.evaluate("""() => {
+          const lg = lkEnsure();
+          const G = (((lg.grp||{})[1]||{}).g||[]);
+          const nm = id => (typeof lkStandName==='function'&&lkStandName(id,lg))||id;
+          return {n: G.length, g0: (G[0]||[]).map(nm), g1: (G[1]||[]).map(nm), score: (window._lkScoreIds||[]).map(nm)};
+        }""")
+        chk('second group starts with the remaining archers and leaves the first group in place',
+            second.get('n')==2 and second.get('g0')==['Sam Archer','Jordan Lee','Riley Chen','Alex River']
+            and second.get('g1')==['Morgan Blake','Casey Ng'] and second.get('score')==['Morgan Blake','Casey Ng'])
+
         # non-host cannot open the paid page or see pot ticks
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844})
         p2 = ctx2.new_page()

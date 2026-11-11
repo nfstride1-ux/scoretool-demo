@@ -201,9 +201,12 @@ function lkView(code){
   if($('#lkregshare'))$('#lkregshare').onclick=()=>lkShareRegister();
   if($('#lkpotnight'))$('#lkpotnight').onchange=()=>{window._lkPotNight=+$('#lkpotnight').value;lkView(lg.code)};
   if($('#lkpwsave'))$('#lkpwsave').onclick=()=>{lkSetPassword(($('#lkpwnew')||{}).value).then(m=>{const e=$('#lkpwsetmsg');if(e)e.textContent=m||'Password saved.';if(!m){const i=$('#lkpwnew');if(i)i.value=''}})};
-  if($('#lkaddg'))$('#lkaddg').onclick=()=>{const m=lkAddToGroup(Math.min(6,lgWeek(lg)),+(($('#lkpickg')||{}).value||0),(($('#lkpick')||{}).value||''));const e=$('#lkgrpmsg');if(e)e.textContent=m||'Added.';if(!m)lkView(lg.code)};
-  document.querySelectorAll('[data-lkscore]').forEach(b=>b.onclick=()=>{const m=lkScoreGroup(Math.min(6,lgWeek(lg)),+b.getAttribute('data-lkscore'));const e=$('#lkgrpmsg');if(e&&m)e.textContent=m});
-  if($('#lkpickq'))$('#lkpickq').oninput=()=>{const q=(($('#lkpickq')||{}).value||'').toLowerCase();document.querySelectorAll('#lkpick option').forEach(o=>{o.hidden=!!q&&!o.textContent.toLowerCase().includes(q)})};
+  if($('#lkpickgrp'))$('#lkpickgrp').onclick=()=>{
+    window._lkFromLeague=1;
+    window._lkFlowNight=Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);
+    if(lg.pwHash&&!lkAuthed(lg)){window._lkWantScore={pick:1};lkUnlockView(lg);return}
+    if(typeof lkFlowSelect==='function')lkFlowSelect();
+  };
   if($('#lkresultsgo'))$('#lkresultsgo').onclick=()=>{const w=Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);window._lkResNight=w;try{history.replaceState(null,'',location.pathname+location.search+'#lk-results&n='+w)}catch(e){}lkResultsView(w)};
   lkBindStandUI(lg);
 
@@ -785,6 +788,19 @@ function lkSetGroups(w,G){
   lg.dirty=1;if(typeof save==='function')save();
   return '';
 }
+function lkAppendGroup(w,ids){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(+w>=7)return 'Night 7 scoring is not open yet.';
+  const I=(ids||[]).filter(Boolean);
+  if(!I.length)return 'Tick the archers you are scoring.';
+  if(I.length>4)return 'A group can have at most 4 archers.';
+  const G=(((lg.grp||{})[w]||{}).g||[]).map(g=>g.slice());
+  const same=G.findIndex(g=>g.length===I.length&&I.every(id=>g.includes(id)));
+  if(same>=0)return '';
+  if(I.some(id=>G.some(g=>g.includes(id))))return 'That archer is already in a group tonight.';
+  G.push(I.slice());
+  return lkSetGroups(w,G);
+}
 function lkAddToGroup(w,gi,id){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
   const who=String(id||'');if(!who)return 'Pick an archer.';
@@ -812,25 +828,11 @@ function lkScoreGroup(w,gi){
 function lkGroupHTML(lg){
   const w=Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);
   if((typeof lgWeek==='function'?lgWeek(lg):1)>=7)return '';
-  const pick=lkPickerOrder(lg,w);
-  const G=(((lg.grp||{})[w]||{}).g||[]).map(g=>g.slice());
-  const show=G.concat([[]]);
-  const names=id=>h((typeof lgName==='function'&&lgName(id))||id);
-  const gBlocks=`<div class="lg-wrap" style="max-height:320px;overflow:auto"><table class="ad-tab" id="lkgrptab"><thead><tr><th>Group</th><th>Archers</th><th></th></tr></thead><tbody>`+
-    show.map((g,i)=>`<tr data-lkgi="${i}"><td>G${i+1} · ${g.length}/4</td><td>${g.length?g.map(names).join(', '):'<span class="muted">empty</span>'}</td><td>${g.length?`<button class="btn alt" data-lkscore="${i}">Score</button>`:''}</td></tr>`).join('')+
-    `</tbody></table></div>`;
-  const opts=pick.map(id=>`<option value="${h(id)}">${names(id)}</option>`).join('')||'<option value="">No one on the list</option>';
-  const gopts=show.map((g,i)=>`<option value="${i}">Group ${i+1}${g.length?' ('+g.length+'/4)':''}</option>`).join('');
   return`<div class="card" id="lkgrp"><span class="kicker">Night ${w} · groups</span>
     <h3>Up to 4 archers, one scorer</h3>
-    <p class="small muted">The scorer picks from tonight's sign-ups first, then the rest of the league list. Groups of up to 4, as many groups as needed (20+ on a big night). Scoring is on this phone, with a number pad (no plot face).</p>
-    <label for="lkpick">Add an archer</label>
-    <input id="lkpickq" maxlength="40" autocomplete="off" placeholder="Filter names">
-    <div class="row" style="gap:6px;flex-wrap:wrap"><select id="lkpick" style="flex:1">${opts}</select>
-    <select id="lkpickg">${gopts}</select>
-    <button class="btn alt" id="lkaddg">Add to group</button></div>
+    <p class="small muted">Tick up to 4 archers for this phone. Tonight's sign-ups are listed first, then the rest of the league. Names already in another group tonight are locked.</p>
+    <p><button class="btn alt" type="button" id="lkpickgrp">Pick a group</button></p>
     <p class="small" id="lkgrpmsg" role="alert"></p>
-    ${gBlocks}
     </div>`;
 }
 
@@ -881,7 +883,8 @@ function lkUnlockView(lg){
     const e=document.querySelector('#lkpwmsg');
     if(m){if(e)e.textContent=m;return}
     const want=window._lkWantScore;window._lkWantScore=null;
-    if(want)lkScoreGroup(want.w,want.gi);else if(typeof lkFlowSelect==='function')lkFlowSelect();else lkView(lg.code);
+    if(want&&want.pick){if(typeof lkFlowSelect==='function')lkFlowSelect();else lkView(lg.code)}
+    else if(want)lkScoreGroup(want.w,want.gi);else if(typeof lkFlowSelect==='function')lkFlowSelect();else lkView(lg.code);
   })};
   if($('#lkpwgo'))$('#lkpwgo').onclick=go;
   if($('#lkpw'))$('#lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
@@ -1021,6 +1024,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,lkDropHostIfUnregistered,lkStandName,lkStripContact,lkBeta,lkHostArchersView,lkShareRegister,lkPublicReg,lkPaidNights,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAppendGroup,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();

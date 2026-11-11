@@ -43,6 +43,16 @@
     if(!c||!c.by||c.by===who)return null;
     return c;
   }
+  function takenTonight(lg,w,id){
+    const other=claimedByOther(lg,w,id);
+    if(other)return other;
+    if((window._lkPicked||[]).includes(id))return null;
+    const G=(((lg.grp||{})[w]||{}).g||[]);
+    if(!G.some(g=>(g||[]).includes(id)))return null;
+    const c=claims(lg,w)[id], who=me();
+    if(c&&c.by===who)return null;
+    return {by:'group',name:'Another group'};
+  }
   function applyClaim(d,lg){
     if(!d||!lg||d.code!==lg.code||!d.night||!d.id)return false;
     lg.claim=lg.claim||{};lg.claim[d.night]=lg.claim[d.night]||{};
@@ -290,51 +300,63 @@
     if(typeof lkAuthed==='function'&&lg.pwHash&&!lkAuthed(lg)){login();return}
     hideChrome(true);
     const w=nightOf(lg);
-    const list=signups(lg,w);
     const nm=id=> (typeof lkStandName==='function'?lkStandName(id,lg):((typeof lgName==='function'&&lgName(id))||id));
-    const season=(lg.order||[]).map(id=>({id,name:nm(id)}));
-    /* Show tonight's sign-ups; if none yet, show the season list so a scorer can still pick */
-    const rows=list.length?list.map(r=>({id:r.id,name:r.name||nm(r.id),target:r.target,round:r.round||LK_R})):season;
-    const selected=(window._lkPicked||[]).filter(id=>rows.some(r=>r.id===id)&&!claimedByOther(lg,w,id));
+    /* Tonight's sign-ups first, then the rest of the registered league list. No testers unless they are registered. */
+    const ids=(typeof lkPickerOrder==='function'?lkPickerOrder(lg,w):[]);
+    const tonight=new Set((signups(lg,w)||[]).map(r=>r&&r.id).filter(Boolean));
+    const rows=ids.map(id=>({id,name:nm(id),tonight:tonight.has(id)}));
+    const selected=(window._lkPicked||[]).filter(id=>rows.some(r=>r.id===id)&&!takenTonight(lg,w,id));
     window._lkPicked=selected.slice();
-    const groups=grouped(rows.map(r=>({...r,target:r.target})));
     const el=appEl();if(!el)return;
-    const selHtml=selected.length?`<div class="lk-selbox" id="lkselections"><h3>Selections</h3><ul>${selected.map(id=>`<li>${esc((rows.find(r=>r.id===id)||{}).name||id)}</li>`).join('')}</ul></div>`:'';
-    const body=groups.map(g=>{
-      const items=g.rows.map(r=>{
-        const other=claimedByOther(lg,w,r.id);
-        const on=selected.includes(r.id);
-        const lock=other||on;
-        return `<label class="lk-row${other?' locked':''}" data-lkid="${esc(r.id)}">
+    const rowHtml=r=>{
+      const other=takenTonight(lg,w,r.id);
+      const on=selected.includes(r.id);
+      return `<label class="lk-row${other?' locked':''}" data-lkid="${esc(r.id)}">
           <span class="nm">${esc(r.name)}</span>
           <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${other?'disabled':''}>
-          ${lock?`<span class="lk-padlock" title="${other?'Selected on another phone':'Selected'}">🔒</span>`:''}
+          ${other?`<span class="lk-padlock" title="${esc((other.name||'Another group')+' already has this archer')}">🔒</span>`:''}
         </label>`;
-      }).join('');
-      return `<div class="lk-tgt">Target ${esc(g.t)}</div>${items}`;
-    }).join('')||'<p>No archers registered for this night yet.</p>';
+    };
+    const first=rows.filter(r=>r.tonight), rest=rows.filter(r=>!r.tonight);
+    let body='';
+    if(first.length)body+=`<div class="lk-tgt">Tonight's sign-ups</div>`+first.map(rowHtml).join('');
+    if(rest.length)body+=`<div class="lk-tgt">${first.length?'Also in the league':'Registered archers'}</div>`+rest.map(rowHtml).join('');
+    if(!body)body='<p>No archers registered for this league yet.</p>';
     el.innerHTML=`<div class="lkf" id="lkselect">
-      <h1>${esc(lg.name)} ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'} <span class="lk-count" id="lkcount">${rows.length} / ${Math.max(rows.length,(lg.order||[]).length)}</span></h1>
+      <h1>${esc(lg.name)} ${typeof lkBeta==='function'?lkBeta():'<span class="lk-beta">Beta</span>'} <span class="lk-count" id="lkcount">${rows.length}</span></h1>
       <label for="lknight">Night</label>
       <select id="lknight">${LK_DATES.map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('')}</select>
-      ${selHtml}
       <div id="lkarchlist">${body}</div>
       ${btn('lkregarch','Register Archer','grey')}
       ${typeof lkCanHost==='function'&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostarch">Registered archers</button><button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
-      ${bar(btn('lkbacklogin','Back / Login','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
+      ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
     </div>`;
     $id('lknight').onchange=()=>{setNight(+$id('lknight').value);window._lkPicked=[];selectArchers()};
     $id('lkregarch').onclick=()=>regSearch();
-    $id('lkbacklogin').onclick=()=>{window._lkPicked=[];login()};
+    $id('lkbacklogin').onclick=()=>{
+      window._lkPicked=[];
+      if(window._lkFromLeague){
+        window._lkFromLeague=0;
+        hideChrome(false);
+        if(typeof lkView==='function')lkView(lg.code);
+        else if(typeof nav==='function')nav('lab_leagues');
+        return;
+      }
+      login();
+    };
     if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
     if($id('lkhostarch'))$id('lkhostarch').onclick=()=>{if(typeof lkHostArchersView==='function')lkHostArchersView()};
     const toggle=id=>{
       const msg=$id('lkselmsg');
-      const other=claimedByOther(lg,w,id);
-      if(other){if(msg)msg.textContent=(other.name||'Another scorer')+' already has this archer.';return}
+      const other=takenTonight(lg,w,id);
+      if(other){if(msg)msg.textContent=(other.name||'Another group')+' already has this archer.';return}
       const has=window._lkPicked.includes(id);
-      if(!has&&window._lkPicked.length>=4){if(msg)msg.textContent='Pick up to 4 archers for this phone.';return}
+      if(!has&&window._lkPicked.length>=4){
+        if(msg)msg.textContent='Pick up to 4 archers for this phone.';
+        el.querySelectorAll('input[data-lkid]').forEach(b=>{if(b.getAttribute('data-lkid')===id)b.checked=false});
+        return;
+      }
       const err=setClaim(lg,w,id,!has);
       if(err){if(msg)msg.textContent=err;return}
       if(has)window._lkPicked=window._lkPicked.filter(x=>x!==id);
@@ -348,7 +370,7 @@
       const ids=window._lkPicked||[];
       const msg=$id('lkselmsg');
       if(!ids.length){if(msg)msg.textContent='Tick the archers you are scoring.';return}
-      const add=typeof lkSetGroups==='function'?lkSetGroups(w,[ids]):'';
+      const add=typeof lkAppendGroup==='function'?lkAppendGroup(w,ids):(typeof lkSetGroups==='function'?lkSetGroups(w,[ids]):'');
       if(add){if(msg)msg.textContent=add;return}
       window._lkScoreIds=ids.slice();
       window._lkScoreI=0;
