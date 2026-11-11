@@ -425,12 +425,51 @@ try:
       stand['b'] and stand['b']['t']==600+50+600+40+150 and stand['b']['miss'][3] is None and stand['b']['miss'][4] is None and stand['b']['open'],
       stand.get('b'))
   pg.wait_for_selector('#lktab', timeout=8000)
-  html=pg.evaluate("()=>({txt:document.querySelector('#lkstand')?document.querySelector('#lkstand').innerText:'', marks:document.querySelectorAll('#lktab .lk-count').length, miss:(document.querySelector('#lktab .lk-miss')||{}).textContent, ital:!!document.querySelector('#lktab i')})")
+  html=pg.evaluate("()=>({txt:document.querySelector('#lkstand')?document.querySelector('#lkstand').innerText:'', marks:document.querySelectorAll('#lktab .lk-keep').length, miss:(document.querySelector('#lktab .lk-miss')||{}).textContent, ital:!!document.querySelector('#lktab i'), pills:document.querySelectorAll('#lktab .lk-count').length, x11:/×11/.test((document.querySelector('#lktab')||{}).innerText||'')})")
   chk('The standings card shows max 2,640 and all six night columns',
       ('2,640' in html['txt'] or '2640' in html['txt'].replace(',','')) and 'N1' in html['txt'] and 'N6' in html['txt'],
       html['txt'][:300])
   chk('Counting scores are marked and missed nights show an em dash',
       html['marks']>=4 and html['miss']=='—' and html['ital'], html)
+  chk('Standings scores are plain numbers, with no black pills and no 11s tacked onto the night cells',
+      html['pills']==0 and not html['x11'], html)
+  look=pg.evaluate("""()=>{
+    const tab=document.querySelector('#lktab');
+    if(!tab)return {err:'no table'};
+    const keep=tab.querySelector('td.lk-keep'), drop=tab.querySelector('td.lk-drop'), best=tab.querySelector('td.best');
+    const rk=tab.querySelector('td.rk'), nm=tab.querySelector('td.nm');
+    const cs=el=>el?getComputedStyle(el):{};
+    return {
+      stickyRk:rk&&cs(rk).position, stickyNm:nm&&cs(nm).position, nowrap:nm&&cs(nm).whiteSpace,
+      keepColor:keep&&cs(keep).color, dropColor:drop&&cs(drop).color, missColor:tab.querySelector('td.lk-miss')&&cs(tab.querySelector('td.lk-miss')).color,
+      keepBg:keep&&cs(keep).backgroundColor, dropBg:drop&&cs(drop).backgroundColor,
+      bestWeight:best&&cs(best).fontWeight, border:keep&&cs(keep).borderRightWidth
+    };
+  }""")
+  chk('Rank and name stay pinned on the left, names stay on one line, and columns have a vertical rule',
+      look.get('stickyRk')=='sticky' and look.get('stickyNm')=='sticky' and look.get('nowrap')=='nowrap' and look.get('border') and look['border']!='0px', look)
+  chk('All night scores use the same solid dark colour; the 4 that count have a light tint; Best 4 is bold',
+      look.get('keepColor') and look.get('keepColor')==look.get('dropColor') and int((look.get('bestWeight') or '0').replace('bold','700') or 0)>=600 and look.get('keepBg') and look.get('keepBg')!=look.get('dropBg'), look)
+  dups=pg.evaluate("""()=>{
+    const lg=lkEnsure();
+    lg.order=lg.order||[];lg.gn=lg.gn||{};lg.sc=lg.sc||{};
+    const ev=()=>({e:Array(20).fill(['10','10','9']),nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()});
+    if(!lg.order.includes('gcasey'))lg.order.push('gcasey');
+    if(!lg.order.includes('gcasex'))lg.order.push('gcasex');
+    lg.order.push('gcasey');
+    lg.gn.gcasey={n:'Casey Cole',t:Date.now(),by:'test'};
+    lg.gn.gcasex={n:'casey  cole',t:Date.now(),by:'test'};
+    lg.sc.gcasey={1:ev(),2:ev()};
+    lg.sc.gcasex={};
+    save();
+    const rows=lkTable(lg);
+    const hits=rows.filter(r=>lkNormName(r.nm)==='casey cole');
+    if(typeof lkFlowReview==='function')lkFlowReview();
+    const ui=[...document.querySelectorAll('#lktab td.nm')].filter(el=>lkNormName(el.textContent)==='casey cole').length;
+    return {n:hits.length, t:hits[0]&&hits[0].t, nights:hits[0]&&hits[0].W.map(c=>c?c.s:null), ui};
+  }""")
+  chk('The same archer only appears once in standings, even with a second all-zero row or a repeated id',
+      dups.get('n')==1 and dups.get('ui')==1 and dups.get('t')==1160 and dups.get('nights')==[580,580,None,None,None,None], dups)
   onion_ok=pg.evaluate("""()=>{
     const onion=(S.leagues||[]).find(l=>l.code==='ONIONSH2'||/onion/i.test(l.name||''));
     if(!onion)return true;
