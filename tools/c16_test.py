@@ -570,6 +570,46 @@ try:
   chk('Tapping X on the Lingkana group card scores 11 and keeps a 20-end entry',
       scored['nEnds']==20 and scored['xv']==11 and scored['tot']==11 and scored['first']=='X', scored)
 
+  # Group score sheet after an end, like the solo Score Sheet (11 Nov, Nathe)
+  sheet=pg.evaluate("""()=>{
+    window._lgToday='2026-11-18';
+    const lg=lkEnsure();
+    const ids=(((lg.grp||{})[1]||{}).g||[])[0]||window._lkScoreIds||[];
+    const keep=JSON.stringify(lg.sc||{});
+    ids.forEach(id=>{
+      lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};
+      lg.sc[id][1]={e:[['X','10','9']],nEnds:20,xv:11,lancaster:true,round:'Lancaster 660',by:'test',u:Date.now()};
+    });
+    save();
+    window._lkScoreIds=ids.slice();window._lkFlowNight=1;window._lkScoreMode='sheet';
+    if(typeof lkFlowHideChrome==='function')lkFlowHideChrome(true);
+    lkFlowScore();
+    const el=document.querySelector('#lksheet');
+    const totals=[...document.querySelectorAll('#lksheet .ad-sum .big')].map(n=>n.textContent.trim());
+    const out={
+      sheet:!!el,
+      title:(document.querySelector('#lksheet .ad-title')||{}).innerText||'',
+      finishLater:!!document.querySelector('#lksheet #labfl'),
+      add:!!document.querySelector('#lksheet #addsc'),
+      finished:!!document.querySelector('#lksheet #finnow'),
+      back:!!document.querySelector('#lksheet #sback'),
+      discard:!!document.querySelector('#lksheet #labdiscard'),
+      nSheets:document.querySelectorAll('#lksheet .ad-sheet').length,
+      cols:/\\bScores\\b/.test((el&&el.innerText)||'') && /\\bEnd\\b/.test((el&&el.innerText)||'') && /\\bProg\\b/.test((el&&el.innerText)||''),
+      totals,
+      face:!!document.querySelector('#cspface'),
+      ids:ids.length,
+      text:(el&&el.innerText||'').slice(0,500)
+    };
+    lg.sc=JSON.parse(keep);save();
+    window._lkScoreMode='entry';
+    if(typeof lkFlowScore==='function')lkFlowScore();
+    return out;
+  }""")
+  chk('After an end, the group score sheet shows every archer with the solo Score Sheet look and Add Scores',
+      sheet.get('sheet') and 'Score Sheet' in sheet.get('title','') and sheet.get('finishLater') and sheet.get('add') and sheet.get('finished') and sheet.get('back') and sheet.get('discard') and sheet.get('nSheets')==sheet.get('ids') and sheet.get('ids',0)>=1 and sheet.get('cols') and (not sheet.get('face')) and all(t=='30' for t in sheet.get('totals') or []),
+      sheet)
+
   # Host can change the default scoring password (test value only here, not the default)
   TEST_PW='c16-test-only'
   pw=pg.evaluate("""async (pw)=>{

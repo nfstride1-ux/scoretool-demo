@@ -467,55 +467,232 @@
     $id('lkaddarch').onclick=()=>regSearch();
   }
 
+  function endsOf(e){return ((e&&e.e)||[]).filter(z=>z&&z.length===3)}
+  function nEndsOf(e){return endsOf(e).length}
+  function lastEnd(e){const E=(e&&e.e)||[];return E.length?E[E.length-1]:null}
+  function hasPartial(e){const L=lastEnd(e);return!!(L&&L.length&&L.length<3)}
+  function sessOf(e){return {round:'Lancaster 660',ends:endsOf(e),face3:'vegas',max:660,lancaster:true,xv:11}}
+  function waveReady(lg,w,ids){return ids.every(id=>!hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
+  function anyScored(lg,w,ids){return ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0||hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
+  function allDone(lg,w,ids){return ids.length>0&&ids.every(id=>typeof lgDoneE==='function'&&lgDoneE((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
+  function pickEntryId(lg,w,ids){
+    const fx=window._csFx;
+    if(fx&&fx.ns&&ids.some(id=>fx.ns==='lg|'+lg.code+'|'+w+'|'+id)){
+      const id=fx.ns.split('|').pop();if(ids.includes(id))return id;
+    }
+    const part=ids.find(id=>hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}));
+    if(part)return part;
+    const act=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
+    if(act&&!((typeof lgDoneE==='function')&&lgDoneE(lgEnt(lg,act,w))))return act;
+    const ns=ids.map(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}));
+    const m=Math.min.apply(null,ns);
+    return ids.find((id,i)=>ns[i]===m&&!(typeof lgDoneE==='function'&&lgDoneE(lgEnt(lg,id,w))))||ids[0];
+  }
+  function faceSub(s,info){
+    if(typeof sheetSections==='function'&&s.ends&&s.ends.length){
+      const sec=sheetSections(s)[0];if(sec&&sec.k)return sec.k;
+    }
+    return ((info&&info.face)||'triangular 40 cm 3-spot')+((info&&info.dist)?' @ '+info.dist:'');
+  }
+  function oneSheet(id,lg,w,info){
+    const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
+    const ends=endsOf(e),s=sessOf(e);
+    let run=0;
+    const arrowsAll=ends.flat();
+    const tot=typeof lgTot==='function'?lgTot(ends,e):arrowsAll.reduce((t,a)=>t+(a==='X'?11:a==='M'?0:(+a||0)),0);
+    const shot=arrowsAll.length,early=ends.length<(info.ends||20),fullMax=660,per=11;
+    const stats=typeof hiStats==='function'?hiStats(arrowsAll,s):'';
+    const rows=ends.map((end,i)=>{
+      const es=typeof endSum==='function'?endSum(end,s):(typeof lgTot==='function'?lgTot([end],e):0);
+      run+=es;
+      return `<tr><td>${i+1}</td><td>${end.map((a,j)=>`<span class="adb ${typeof col==='function'?col(a):''}" role="button" tabindex="0" data-lkfix="${esc(id)},${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
+    }).join('');
+    return `<div class="ad-sheet" data-lksid="${esc(id)}"><div class="ad-name">${esc((typeof lgName==='function'&&lgName(id))||id)}</div><div class="ad-band">${esc(info.title||'Lancaster 660')}</div>
+      <table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(faceSub(s,info))}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="ad-sum">${stats}&nbsp; <b class="big">${tot}</b><span class="small muted">&nbsp;/ ${early?shot*per+' <span class="small">('+shot+' arrows shot)</span>':fullMax}</span></div></div>`;
+  }
+  function finishLater(){
+    window._lkScoreMode=null;window._csFx=null;window._lgHold=null;
+    home();
+  }
+  function groupSheet(){
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    if(!lg){home();return}
+    const w=nightOf(lg);
+    const ids=window._lkScoreIds||window._lkPicked||[];
+    if(!ids.length){selectArchers();return}
+    hideChrome(true);
+    window._lkScoreMode='sheet';
+    window._csFx=null;
+    const info=typeof lgInfo==='function'?lgInfo(lg,w):{ends:20,title:'Lancaster 660',face:'triangular 40 cm 3-spot',dist:'18 m'};
+    const done=allDone(lg,w,ids);
+    const arrows=ids.some(id=>{const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};return ((e.e||[]).flat().length)>0});
+    const el=appEl();if(!el)return;
+    el.innerHTML=`<div class="ad" id="lksheet">
+      <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score Sheet</div>
+      ${ids.map(id=>oneSheet(id,lg,w,info)).join('')}
+      <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}${done?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div>
+      ${done?'':'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>'}
+    </div>`;
+    $id('labfl').onclick=()=>finishLater();
+    $id('sback').onclick=()=>{window._lkScoreMode=null;selectArchers()};
+    if($id('addsc'))$id('addsc').onclick=()=>{
+      window._csFx=null;window._lgHold=null;
+      const next=pickEntryId(lg,w,ids);
+      window._lgAct=next;window._lkScoreI=Math.max(0,ids.indexOf(next));
+      window._lkScoreMode='entry';
+      entryScreen();
+    };
+    if($id('finnow'))$id('finnow').onclick=()=>{
+      if(!done){
+        const shotN=ids.reduce((t,id)=>t+(((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}).e||[]).flat().length,0);
+        const totN=ids.reduce((t,id)=>{const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};return t+(typeof lgTot==='function'?lgTot(endsOf(e),e):0)},0);
+        if(!confirm(`Finish round now? ${shotN} arrows, ${totN} points across the group.`))return;
+      }
+      window._lkScoreMode=null;review();
+    };
+    if($id('labdiscard'))$id('labdiscard').onclick=()=>{
+      if(!confirm("Discard this card? These archers' scores for this night are deleted from this phone."))return;
+      lg.sc=lg.sc||{};
+      ids.forEach(id=>{if(lg.sc[id])delete lg.sc[id][w]});
+      lg.dirty=1;if(typeof save==='function')save();
+      window._lkScoreMode=null;window._csFx=null;window._lgHold=null;
+      selectArchers();
+    };
+    el.querySelectorAll('[data-lkfix]').forEach(b=>{
+      const go=()=>{
+        const [id,i,j]=b.getAttribute('data-lkfix').split(',');
+        const ns='lg|'+lg.code+'|'+w+'|'+id;
+        const fx=window._csFx;
+        window._csFx=(fx&&fx.ns===ns&&fx.i=== +i&&fx.j=== +j)?null:{ns,i:+i,j:+j};
+        if(!window._csFx)return;
+        window._lgAct=id;window._lkScoreI=Math.max(0,ids.indexOf(id));
+        window._lkFixRet=1;window._lkScoreMode='entry';
+        entryScreen();
+      };
+      b.onclick=b.onkeydown=ev=>{if(ev.type==='keydown'&&ev.key!=='Enter'&&ev.key!==' ')return;go()};
+    });
+  }
+  function entryScreen(){
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    if(!lg){home();return}
+    const w=nightOf(lg);
+    const ids=window._lkScoreIds||window._lkPicked||[];
+    if(!ids.length){selectArchers();return}
+    const id=pickEntryId(lg,w,ids);
+    window._lgAct=id;
+    window._lkScoreI=Math.max(0,ids.indexOf(id));
+    window._lkScoreMode='entry';
+    hideChrome(true);
+    const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
+    const E=e.e||[];
+    const last=E[E.length-1];
+    const fx=window._csFx&&window._csFx.ns==='lg|'+lg.code+'|'+w+'|'+id?window._csFx:null;
+    const hold=!!(window._lgHold&&window._lgHold.id===id&&last&&last.length===3);
+    const cur=fx&&E[fx.i]?E[fx.i]:(last&&(last.length<3||hold)?last:[]);
+    const ei=fx?fx.i:(last&&(last.length<3||hold)?E.length-1:E.length);
+    const done=typeof lgDoneE==='function'&&lgDoneE(e);
+    const info=typeof lgInfo==='function'?lgInfo(lg,w):{ends:20,title:'Lancaster 660',face:'triangular 40 cm 3-spot',dist:'18 m'};
+    const NE=info.ends||20;
+    const s=sessOf(e);
+    const endTot=typeof endSum==='function'?endSum(cur,s):(typeof lgTot==='function'?lgTot([cur],e):0);
+    const completed=E.filter(z=>z&&z.length===3);
+    const before=completed.slice(0,fx?fx.i:completed.length-(hold?1:0));
+    const prog=(typeof lgTot==='function'?lgTot(before,e):0)+endTot;
+    const keys=(typeof LG_KEYS!=='undefined'?LG_KEYS:['X','10','9','8','7','6','M']);
+    const lock=typeof lgLockedBy==='function'&&lgLockedBy(lg,w,id);
+    const endDone=cur.length===3||done;
+    const el=appEl();if(!el)return;
+    const ape=3;
+    const chips=Array.from({length:ape},(_,j)=>cur[j]!=null?`<span class="adb ${typeof col==='function'?col(cur[j]):''}" role="button" tabindex="0" data-lkfix="${esc(id)},${ei},${j}" aria-label="fix arrow ${esc(cur[j])}"${fx&&fx.i===ei&&fx.j===j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${esc(cur[j])}</span>`:'<span class="adb adb-empty"></span>').join('');
+    const hint=lock?`Being scored on ${esc((typeof lgName==='function'&&lgName(lock))||lock)}'s phone.`
+      :fx?'Tap a score to fix this arrow.'
+      :endDone?(done?(info.done||'Finished')+'.':'End complete. Tap an arrow to fix it, or press Next.')
+      :'Tap a score.';
+    el.innerHTML=`<div class="ad" id="lgentry">
+      <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score End</div>
+      <div class="ad-head"><div class="ad-left">
+        <div class="ad-box ad-line" title="${esc((typeof lgName==='function'&&lgName(id))||id)}"><b>${esc((typeof lgName==='function'&&lgName(id))||id)}</b></div>
+        <div class="ad-box ad-line"><b id="endno">${done?(info.done||'Finished'):`End ${Math.min(NE,ei+1)} of ${NE}`}</b> · <span id="roundname">${esc(info.title||'Lancaster 660')}</span>${info.dist?` · <b id="enddist">${esc(info.dist)}</b>`:''} · <span id="facesize">${esc(info.face||'triangular 40 cm 3-spot')}</span></div>
+      </div>
+      <div class="ad-right"><div class="ad-num"><span>End</span><b>${endTot}</b></div><div class="ad-num"><span>Prog</span><b>${prog}</b></div></div></div>
+      <div class="ad-chips" aria-label="Arrows this end">${chips}
+        <button class="ad-small" id="lgundo" ${(!E.some(x=>x&&x.length)||lock||fx)?'disabled':''}>↶ Undo</button>
+        ${fx?`<button class="ad-small" id="delarrow">✕ Delete arrow</button><button class="ad-small" id="fixcancel">Done</button>`:''}
+      </div>
+      <p class="small muted" id="lkendmsg" style="margin:2px 12px">${hint}</p>
+      ${lock||(done&&!fx)?'':`<div class="ad-pad lc-pad" style="--cols:${keys.length}">${keys.map(k=>`<button type="button" class="${typeof col==='function'?col(k):''}" data-lgk="${k}" aria-label="score ${k}" ${endDone&&!fx?'disabled':''}>${k}</button>`).join('')}</div>`}
+      <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fx?'':'disabled'}>Next ›</button></div>
+    </div>`;
+    $id('labfl').onclick=()=>finishLater();
+    $id('eback').onclick=()=>{window._csFx=null;window._lgHold=null;window._lkFixRet=null;window._lkScoreMode='sheet';groupSheet()};
+    if($id('enext'))$id('enext').onclick=()=>goNext(lg,w,ids,id);
+    const tapKey=k=>{
+      if(lock)return;
+      window._lgAct=id;window._lgKeep=1;
+      if(typeof lgKey==='function')lgKey(lg.code,w,id,k);
+      window._lgAct=id;window._lgKeep=null;
+      const e2=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
+      const L=lastEnd(e2);
+      if(L&&L.length===3)window._lgHold={id,n:e2.e.length};
+      if(window._lkFixRet&&!window._csFx){window._lkFixRet=null;window._lkScoreMode='sheet';groupSheet();return}
+      entryScreen();
+    };
+    el.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>tapKey(b.getAttribute('data-lgk')));
+    el.querySelectorAll('[data-lkfix]').forEach(b=>{
+      const go=()=>{
+        const [aid,i,j]=b.getAttribute('data-lkfix').split(',');
+        const ns='lg|'+lg.code+'|'+w+'|'+aid;
+        const curFx=window._csFx;
+        window._csFx=(curFx&&curFx.ns===ns&&curFx.i=== +i&&curFx.j=== +j)?null:{ns,i:+i,j:+j};
+        entryScreen();
+      };
+      b.onclick=b.onkeydown=ev=>{if(ev.type==='keydown'&&ev.key!=='Enter'&&ev.key!==' ')return;go()};
+    });
+    if($id('lgundo'))$id('lgundo').onclick=()=>{
+      window._lgAct=id;window._lgKeep=1;window._csFx=null;window._lgHold=null;
+      if(typeof lgUndo==='function')lgUndo(lg.code,w,id);
+      window._lgKeep=null;
+      entryScreen();
+    };
+    if($id('fixcancel'))$id('fixcancel').onclick=()=>{
+      window._csFx=null;
+      if(window._lkFixRet){window._lkFixRet=null;window._lkScoreMode='sheet';groupSheet();return}
+      entryScreen();
+    };
+    if($id('delarrow'))$id('delarrow').onclick=()=>{
+      window._lgAct=id;window._lgKeep=1;
+      if(typeof lgFxDel==='function')lgFxDel(lg.code,w,id);
+      window._lgKeep=null;window._lgHold=null;
+      if(window._lkFixRet){window._lkFixRet=null;window._lkScoreMode='sheet';groupSheet();return}
+      entryScreen();
+    };
+  }
+  function goNext(lg,w,ids,id){
+    window._csFx=null;window._lgHold=null;window._lkFixRet=null;
+    const mine=nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]});
+    const i=ids.indexOf(id);
+    for(let j=1;j<ids.length;j++){
+      const n=ids[(i+j)%ids.length];
+      const en=(typeof lgEnt==='function'&&lgEnt(lg,n,w))||{e:[]};
+      if(hasPartial(en)||nEndsOf(en)<mine){
+        if(typeof lgLockedBy==='function'&&lgLockedBy(lg,w,n))continue;
+        window._lgAct=n;window._lkScoreI=ids.indexOf(n);window._lkScoreMode='entry';
+        entryScreen();return;
+      }
+    }
+    window._lkScoreMode='sheet';
+    groupSheet();
+  }
   function scoreScreen(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
     const w=nightOf(lg);
     const ids=window._lkScoreIds||window._lkPicked||[];
     if(!ids.length){selectArchers();return}
-    let i=Math.max(0,Math.min(ids.length-1,+(window._lkScoreI||0)));
-    const id=ids[i];
-    window._lgAct=id;
-    hideChrome(true);
-    const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
-    const E=e.e||[];
-    const last=E[E.length-1];
-    const cur=last&&last.length<3?last:[];
-    const done=typeof lgDoneE==='function'&&lgDoneE(e);
-    const tot=typeof lgTot==='function'?lgTot(E,e):0;
-    const ends=E.filter(z=>z&&z.length===3).length;
-    const info=typeof lgInfo==='function'?lgInfo(lg,w):{ends:20};
-    const NE=info.ends||20;
-    const en=Math.min(NE, ends+(cur.length?0:1));
-    const el=appEl();if(!el)return;
-    const keys=(typeof LG_KEYS!=='undefined'?LG_KEYS:['X','10','9','8','7','6','M']);
-    el.innerHTML=`<div class="lkf" id="lgentry">
-      <div class="lk-score-head">
-        <h1>${esc((typeof lgName==='function'&&lgName(id))||id)}</h1>
-        <div class="tot">${tot}</div>
-      </div>
-      <p class="lk-end" id="lkendmsg">${esc(info.title||'Lancaster 660')} · ${done?(info.done||'Finished'):('End '+en+' of '+NE)}</p>
-      <div class="lk-slots">${[0,1,2].map(j=>`<span class="${cur[j]?'on':''}">${cur[j]?esc(cur[j]):''}</span>`).join('')}</div>
-      ${done?'':`<div class="lk-pad ad-pad lc-pad">${keys.map(k=>`<button type="button" class="${k==='M'?'m':''}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}
-      ${bar(btn('lkscoreback','Back','grey'), (done||ids.length>1)?btn('lknextarcher', i<ids.length-1?'Next archer':'Done','green'):btn('lkundo','Undo','grey'))}
-    </div>`;
-    el.querySelectorAll('[data-lgk]').forEach(b=>b.onclick=()=>{
-      window._lgAct=id;window._lgKeep=1;
-      if(typeof lgKey==='function')lgKey(lg.code,w,id,b.getAttribute('data-lgk'));
-      window._lgKeep=null;
-      scoreScreen();
-    });
-    $id('lkscoreback').onclick=()=>selectArchers();
-    if($id('lkundo'))$id('lkundo').onclick=()=>{
-      window._lgAct=id;window._lgKeep=1;
-      if(typeof lgUndo==='function')lgUndo(lg.code,w,id);
-      window._lgKeep=null;
-      scoreScreen();
-    };
-    if($id('lknextarcher'))$id('lknextarcher').onclick=()=>{
-      if(i<ids.length-1){window._lkScoreI=i+1;scoreScreen();return}
-      selectArchers();
-    };
+    if(window._lkScoreMode==='sheet'){groupSheet();return}
+    if(window._lkScoreMode!=='entry'&&waveReady(lg,w,ids)&&(allDone(lg,w,ids)||ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0))){groupSheet();return}
+    entryScreen();
   }
 
   function review(){
