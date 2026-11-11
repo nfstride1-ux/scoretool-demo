@@ -58,3 +58,20 @@ body.lk-flow{--lk-green:#2e7d32;--lk-green-d:#1b5e20;--lk-grey:#6b7280;--lk-grey
 .lk-end{margin:8px 0 0;font-size:15px;color:#4b5563}
 .lk-host{margin:16px 0 0;background:transparent;border:0;color:#6b7280;text-decoration:underline;font:600 14px var(--body,system-ui,sans-serif);padding:0;cursor:pointer}
 .lk-qrbox{background:#fff;border:1px dashed #c5c9d0;border-radius:12px;padding:20px;text-align:center;margin:12px 0}
+
+/* League scoring uses the app's own Score End / Score Sheet look, stacked for the group. */
+body.lk-flow .ad{margin:0 0 12px;max-width:100%}
+body.lk-flow #lksheet.ad,body.lk-flow #lgentry.ad{margin:0}
+body.lk-flow #lksheet .ad-sheet{margin:10px}
+body.lk-flow #scroller{padding:0 0 24px}
+
+/* Keep Back / Finished / Add Scores on screen when four sheets are stacked. */
+body.lk-flow #lksheet.ad{padding-bottom:calc(8px + 72px + env(safe-area-inset-bottom,0px))}
+body.lk-flow #lksheet .ad-foot{
+  position:fixed;left:0;right:0;bottom:0;
+  max-width:430px;margin:0 auto;z-index:21;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+}
+body.lk-flow #lksheet .ad-discard{margin-bottom:8px}
+
+body.lk-flow #sbar{display:none!important}
