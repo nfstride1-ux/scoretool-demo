@@ -15,7 +15,7 @@ const LG_R='Vegas 300 (18 m)',LG_W=6,LG_SNAP=6*36e5,LG_EXCL=['phill'],LG_KEYS=['
 const LG_RL='300 (18 m)',rdLabel=r=>r==LG_R?LG_RL:r;window.rdLabel=rdLabel;
 const LG_FINTXT='Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).';
 const lgAll=()=>S.leagues=S.leagues||[],lgGet=c=>lgAll().find(l=>l.code==c);
-const lgTopic=c=>H2H_NS+'-lg-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
+const lgTopic=c=>{const code=String(c).toLowerCase().replace(/[^a-z0-9]/g,'');return code==='lingkn26'?H2H_NS+'-lg-lingkn26-live':H2H_NS+'-lg-'+code};
 /* Added shooters (22 Oct 2026, Nathe): people who won't score themselves (no app). The host, or Nathe as admin, adds them by name
    (under-16s by nickname only) and enters and edits their weekly 300s. Stored in lg.gn {id:{n,j,t,by}} (ids 'g' + 6 characters, never
    a tester id) and in lg.order like anyone else, so they're in the table, the 10-archer max and the day-6 shoot-up seeding. They sync
@@ -28,58 +28,65 @@ const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
 function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,24);
  if(n.length<2)return'Type a name (at least 2 characters).';if(!/^[A-Za-z0-9 '_-]+$/.test(n))return'Use letters, numbers, spaces, \' - and _ only.';if(nmRude(n))return'Please use a different name.';
  if(jr&&/\s/.test(n))return'Under-16s go by nickname only: one word, no surname.';
- if(lgArchers(lg).length>=h2hCap(lg))return'This league is full (10 archers).';
+ if(lgArchers(lg).length>=h2hCap(lg))return'This league is full ('+h2hCap(lg)+' archers).';
  if(lgArchers(lg).some(id=>lgName(id).toLowerCase()==n.toLowerCase()))return'Someone in this league already has that name.';
  const L='abcdefghjkmnpqrstuvwxyz23456789';let id;do{id='g'+Array.from(crypto.getRandomValues(new Uint32Array(6)),x=>L[x%L.length]).join('')}while((lg.order||[]).includes(id));
  lg.gn=lg.gn||{};lg.gn[id]={n,j:jr?1:0,t:Date.now(),by:h2hMe()};lg.order=lg.order||[];lg.order.push(id);lg.dirty=1;save();lgTick(true);return''}
 window.lgAddGuest=lgAddGuest;
-const lgV=a=>a=='X'?10:a=='M'?0:(+a||0),lgTot=E=>E.flat().reduce((t,a)=>t+lgV(a),0),lgXs=E=>E.flat().filter(a=>a=='X').length;
-const lgEnc=E=>E.map(e=>e.map(a=>a=='10'?'T':a).join('')).join('/'),lgDec=s=>String(s||'').split('/').filter(x=>x!=='').slice(0,10).map(e=>[...e].slice(0,3).map(c=>c=='T'?'10':c).filter(a=>LG_KEYS.includes(a)));
+const lgXV=e=>e&&(e.xv==11||e.lancaster||e.round=='Lancaster 660')?11:10;
+const lgV=(a,e)=>a=='X'?lgXV(e):a=='M'?0:(+a||0),lgTot=(E,e)=>E.flat().reduce((t,a)=>t+lgV(a,e),0),lgXs=E=>E.flat().filter(a=>a=='X').length;
+const lgEnc=E=>E.map(e=>e.map(a=>a=='10'?'T':a).join('')).join('/'),lgDec=(s,n)=>String(s||'').split('/').filter(x=>x!=='').slice(0,n||20).map(e=>[...e].slice(0,3).map(c=>c=='T'?'10':c).filter(a=>LG_KEYS.includes(a)));
 const lgEnt=(lg,id,w)=>((lg.sc||{})[id]||{})[w]||null;
 const lgHas=e=>!!(e&&e.e&&e.e.some(x=>x&&x.length));
-const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=10);
-const lgToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const lgDoneE=e=>!!(e&&e.e&&e.e.filter(x=>x&&x.length==3).length>=(e.nEnds||10));
+const lgToday=()=>{if(window._lgToday)return window._lgToday;const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function lgInfo(lg,w){if(typeof lkIs==='function'&&lkIs(lg)&&!(+w>=7))return{ends:20,keys:LG_KEYS,face:'triangular 40 cm 3-spot',dist:'18 m',done:'660 finished',title:'Lancaster 660',kicker:'Night'};return{ends:10,keys:LG_KEYS,face:LG_FACE,dist:'18 m',done:'300 finished',title:LG_RL,kicker:'Week'}}
 function lgArchers(lg){return(lg.order||[]).filter(id=>!LG_EXCL.includes(id)).slice(0,h2hCap(lg))}
 /* current week: by the week dates if set, else the first week not yet shot by everyone (or the host's 'Next week') */
-function lgWeek(lg){const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(LG_W,n||1))}
- let w=Math.max(1,Math.min(LG_W,lg.cw||1));const A=lgArchers(lg);while(w<LG_W&&A.length&&A.every(id=>lgDoneE(lgEnt(lg,id,w))))w++;return w}
+function lgWeek(lg){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);const W=(lg.weeks||[]).filter(Boolean);if(W.length){const t=lgToday();let n=0;(lg.weeks||[]).forEach((d,k)=>{if(d&&d<=t)n=k+1});return Math.max(1,Math.min(cap,n||1))}
+ let w=Math.max(1,Math.min(cap,lg.cw||1));const A=lgArchers(lg);while(w<cap&&A.length&&A.every(id=>lgDoneE(lgEnt(lg,id,w))))w++;return w}
 /* league table: cumulative total, ties on X; missing weeks '-' */
-function lgTable(lg){const rows=lgArchers(lg).map(id=>{const W=[];let t=0,x=0;for(let w=1;w<=LG_W;w++){const e=lgEnt(lg,id,w);if(lgHas(e)){const s=lgTot(e.e),xx=lgXs(e.e);W.push({s,x:xx,d:lgDoneE(e)});t+=s;x+=xx}else W.push(null)}return{id,nm:lgName(id),W,t,x}});
+function lgTable(lg){const rows=lgArchers(lg).map(id=>{const W=[];let t=0,x=0;for(let w=1;w<=LG_W;w++){const e=lgEnt(lg,id,w);if(lgHas(e)){const s=lgTot(e.e,e),xx=lgXs(e.e);W.push({s,x:xx,d:lgDoneE(e)});t+=s;x+=xx}else W.push(null)}return{id,nm:lgName(id),W,t,x}});
  rows.sort((a,b)=>b.t-a.t||b.x-a.x||a.nm.localeCompare(b.nm));rows.forEach((r,k)=>{r.rk=k&&rows[k-1].t==r.t&&rows[k-1].x==r.x?rows[k-1].rk:k+1});rows.forEach(r=>r.tie=rows.filter(o=>o.rk==r.rk).length>1);return rows}
 /* ---------- groups ---------- */
 const lgGroups=(lg,w)=>(((lg.grp||{})[w]||{}).g||[]).map(g=>g.filter(id=>lgArchers(lg).includes(id)));
 const lgGroupOf=(lg,w,id)=>{const G=lgGroups(lg,w);const k=G.findIndex(g=>g.includes(id));return k<0?null:k};
 /* host: set week w's groups. 26 Oct 2026: an archer who has already started can be moved too (ends already scored stay with them: scores are keyed by archer and week, never by group); only the host may change groups */
 function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=me)return false;const N=G.map(g=>g.filter(id=>lgArchers(lg).includes(id)));
+ if(typeof lkIs==='function'&&lkIs(lg)&&N.some(g=>g.length>4))return false;
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
- const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){/* fixing one arrow, as Just me: replaced in place, plot kept */window._csFx=null;if(!csFxPut(e,3,fxs,k,xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+ if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
+ const lkVals=typeof lkIs==='function'&&lkIs(lg);
+ /* Lingkana is values only (no plots). Other leagues still store a plot when the archer taps the face. */
+ const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,lkVals?null:xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
  if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
- if(xy||e.p){/* plotted arrow (one archer on this phone): its position kept beside the end, same order as the scores; never sent on the relay */const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
- /* a complete end is put in order (highest first, X before 10) with its plots, exactly as Just me does */
- if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((e.p&&e.p[ix])||[])],[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}
+ if(!lkVals&&(xy||e.p)){const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
+ /* a complete end is put in order (highest first, X before 10), with plots on non-Lingkana leagues */
+ if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((!lkVals&&e.p&&e.p[ix])||[])];if(lkVals){const[E2]=csSorted(E);E.splice(0,3,...E2);if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,[],E,[])}else{const[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
  /* 31 Oct 2026 (queue): auto-advance is the default again. Only once the third arrow is saved (save() above) does the card move to the
     next archer, in the same order as before, keeping the page where it is. The 27 Oct Next button stays as an option (S.lgNextBtn):
     the card then stays on this archer showing the three arrows until Next is tapped. Display only. */
  if(E.length==3){if(S.lgNextBtn){window._lgAct=id;window._lgHold={id,n:e.e.length};window._lgLast=null}else{window._lgLast={code,w,id,n:e.e.length,E:[...E]};lgNextArcher(code,w,id)}}
+ if(typeof lkIs==='function'&&lkIs(lg))window._lkHoldRelay=E.length!=3;else window._lkHoldRelay=false;
  lgAfter(lg);return true}
 /* the archer after `id` in this phone's group (same order the old auto-advance used), skipping finished archers; null when everyone is finished */
 /* the line that confirms the end just saved when the card has moved on by itself */
 function lgLastLine(lg,w,ids){const L=window._lgLast;if(S.lgNextBtn||!L||L.code!=lg.code||L.w!=w||!ids.includes(L.id)||ids.length<2)return'';return`<p class="small" id="lglast" style="margin:0 0 4px">Saved: ${esc(lgName(L.id))}, end ${L.n}: ${L.E.map(esc).join(' ')}.</p>`}
 const lgNextPref=(lg,ids)=>ids.length>1?`<label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0 0"><input type="checkbox" id="lgnextpref" ${S.lgNextBtn?'checked':''}> Stay on each archer after the 3rd arrow and tap Next to move on</label>`:'';
 function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
-function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg)}
+function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
-/* my own week is also kept with my other sessions (plots and the 3-spot tag, so groups, heatmaps and the analysis work like Just me). Only a week I score
+/* my own week is also kept with my other sessions (plots on non-Lingkana leagues, so groups and analysis work like Just me). Only a week I score
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
- if(!s){s={id:sid,date:lgToday(),round:LG_R,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code,face3:'vert'};S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
+ if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -97,38 +104,103 @@ function lgFinal(lg){let seeds=lg.fin&&lg.fin.length>=2?lg.fin:null;if(!seeds&&l
 function lgForce(code){const lg=lgGet(code);if(!lg||lg.host!=h2hMe()||lg.fin)return false;const seeds=lgTable(lg).filter(r=>lgDoneE(lgEnt(lg,r.id,LG_W))).map(r=>r.id);if(seeds.length<2)return false;
  lg.fin=seeds;lg.fint=Date.now();lg.dirty=1;save();lgFinal(lg);lgTick(true);return true}
 /* ---------- relay: snapshots, merge, offline queue ---------- */
-function lgSnapParts(lg){const me=h2hMe(),head={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,order:lgArchers(lg),cw:lg.cw||1,cwt:lg.cwt||0,grp:lg.grp||{},fin:lg.fin||null,fint:lg.fint||0,gn:lg.gn||{},...h2hNm()};
+function lgSnapParts(lg){
+ const me=h2hMe(),LIM=3400,size=o=>JSON.stringify(o).length;
+ const order=typeof lgArchers==='function'?lgArchers(lg):(lg.order||[]).slice();
+ const meta={k:'ls',code:lg.code,by:me,name:lg.name,host:lg.host,weeks:lg.weeks||[],wt:lg.wt||0,cw:lg.cw||1,cwt:lg.cwt||0,fin:lg.fin||null,fint:lg.fint||0,...h2hNm()};
+ if(typeof lkIs==='function'&&lkIs(lg)){
+  meta.format='lingkana';meta.inviteOnly=!!lg.inviteOnly;
+  if(lg.pwHash){meta.pwHash=lg.pwHash;meta.pwSalt=lg.pwSalt||'';meta.pwt=lg.pwt||0}
+  if(lg.paidt)meta.paidt=lg.paidt;
+  if(lg.claimt)meta.claimt=lg.claimt;
+ }
+ const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
+ const fat={...meta,...roster};
  const items=[];for(const id in lg.sc||{})for(const w in lg.sc[id]){const e=lg.sc[id][w];if(e&&e.e)items.push([id,w,{e:lgEnc(e.e),u:e.u||0,by:e.by||'',f:e.f||'vert'}])}
- const parts=[];let cur={};const size=o=>JSON.stringify(o).length;
- for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size({...head,sc:c2})>3400){parts.push(cur);cur={};(cur[id]={})[w]=v}else cur=c2}
- parts.push(cur);const t=Date.now();return parts.map((sc,k)=>({...head,sc,part:k+1,np:parts.length,t}))}
+ const useSlim=size({...fat,sc:{},part:99,np:99,t:1})>LIM;
+ const parts=[];
+ const stamp=o=>({...o,part:99,np:99,t:1});
+ if(useSlim){
+  let chunk=[];
+  for(const id of order){const next=chunk.concat([id]);if(chunk.length&&size(stamp({...meta,order:next}))>LIM){parts.push({...meta,order:chunk});chunk=[id]}else chunk=next}
+  if(chunk.length)parts.push({...meta,order:chunk});
+  const grp=lg.grp||{};
+  if(Object.keys(grp).length){if(size(stamp({...meta,grp}))<=LIM)parts.push({...meta,grp});else for(const w of Object.keys(grp))parts.push({...meta,grp:{[w]:grp[w]}})}
+  const gn=lg.gn||{};let bag={};
+  for(const id of Object.keys(gn)){const c2=Object.assign({},bag);c2[id]=gn[id];if(Object.keys(bag).length&&size(stamp({...meta,gn:c2}))>LIM){parts.push({...meta,gn:bag});bag={};bag[id]=gn[id]}else bag=c2}
+  if(Object.keys(bag).length)parts.push({...meta,gn:bag});
+ }
+ const head=useSlim?meta:fat;
+ let cur={};
+ for(const [id,w,v] of items){const c2=JSON.parse(JSON.stringify(cur));(c2[id]=c2[id]||{})[w]=v;if(Object.keys(cur).length&&size(stamp({...head,sc:c2}))>LIM){parts.push({...head,sc:cur});cur={};(cur[id]={})[w]=v}else cur=c2}
+ if(Object.keys(cur).length||!useSlim&&!parts.length)parts.push(useSlim?{...head,sc:cur}:{...head,sc:cur});
+ if(!parts.length)parts.push({...fat,sc:{}});
+ if(typeof lkIs==='function'&&lkIs(lg)){
+  const emit=(key,obj)=>{if(obj&&Object.keys(obj).length)parts.push({...meta,[key]:obj})}
+  const pack=(key,obj)=>{if(!obj||!Object.keys(obj).length)return;
+   if(size(stamp({...meta,[key]:obj}))<=LIM){emit(key,obj);return}
+   let bag={};
+   const flush=()=>{if(Object.keys(bag).length){emit(key,bag);bag={}}};
+   const take=(k,v)=>{const c2=Object.assign({},bag);c2[k]=v;if(Object.keys(bag).length&&size(stamp({...meta,[key]:c2}))>LIM){flush();bag[k]=v}else bag=c2};
+   for(const k of Object.keys(obj)){
+    const v=obj[k];
+    if(Array.isArray(v)&&size(stamp({...meta,[key]:{[k]:v}}))>LIM){
+     let chunk=[];
+     for(const rec of v){const next=chunk.concat([rec]);if(chunk.length&&size(stamp({...meta,[key]:{[k]:next}}))>LIM){take(k,chunk);flush();chunk=[rec]}else chunk=next}
+     if(chunk.length)take(k,chunk);
+    }else if(v&&typeof v==='object'&&!Array.isArray(v)&&size(stamp({...meta,[key]:{[k]:v}}))>LIM){
+     let sub={};const keys=Object.keys(v);
+     for(const id of keys){const s2=Object.assign({},sub);s2[id]=v[id];if(Object.keys(sub).length&&size(stamp({...meta,[key]:{[k]:s2}}))>LIM){take(k,sub);flush();sub={[id]:v[id]}}else sub=s2}
+     if(Object.keys(sub).length)take(k,sub);
+    }else take(k,v);
+   }
+   flush()}
+  pack('reg',lg.reg||{});pack('paid',lg.paid||{});pack('claim',lg.claim||{});
+  if(lg.claimt)meta.claimt=lg.claimt;
+ }
+ const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
+}
 function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;if(LG_SINCE[lg.code]&&(d.t||0)<LG_SINCE[lg.code])return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
-  if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){lg.weeks=d.weeks.slice(0,LG_W).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
-  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=LG_W&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
+  if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){const cap=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d))||d.code==='LINGKN26'||lg.code==='LINGKN26')?7:LG_W;lg.weeks=d.weeks.slice(0,cap).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
+  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
-  if((d.cwt||0)>(lg.cwt||0)){lg.cw=Math.max(1,Math.min(LG_W,+d.cw||1));lg.cwt=d.cwt;ch=true}}
+  if((d.cwt||0)>(lg.cwt||0)){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);lg.cw=Math.max(1,Math.min(cap,+d.cw||1));lg.cwt=d.cwt;ch=true}
+  if(d.format==='lingkana'&&lg.format!=='lingkana'){lg.format='lingkana';ch=true}
+  if(d.inviteOnly!=null&&!!d.inviteOnly!==!!lg.inviteOnly){lg.inviteOnly=!!d.inviteOnly;ch=true}
+  if(d.pwHash&&(d.pwt||0)>=(lg.pwt||0)&&(d.pwHash!==lg.pwHash||d.pwSalt!==lg.pwSalt)){lg.pwHash=d.pwHash;lg.pwSalt=d.pwSalt||'';lg.pwt=d.pwt||0;ch=true}
+  if(d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
  if((fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
   if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
  lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}
- lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=LG_W))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
+ lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
   if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
+ /* Lingkana sign-ups: union by night and archer, so a register on another phone is not dropped. */
+ if((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26'){
+  if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
+   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(!rec.id&&r.name===rec.name)));
+    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}
+  if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
 const LG_RSOK=k=>'scoretool.opost.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'nathe')+'.'+k;function lgOpGet(k){try{return +localStorage.getItem(LG_RSOK(k))||0}catch(e){return 0}}function lgOpSet(k){try{localStorage.setItem(LG_RSOK(k),String(Date.now()))}catch(e){}}
 
+function lgRelayReady(lg){
+  /* L11: Lingkana holds relay posts mid-end (flag set from lgKey / lgUndo), so a 12-archer night does not post on every arrow. Other leagues are unchanged. */
+  if(typeof lkIs!=='function'||!lkIs(lg))return true;
+  return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
-  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true}save()}
+  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'){if(lkApplyClaim(d,lg))ch=true}}save()}
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */
   const dty=lg.dirty,reo=!dty&&!lgOpened[lg.code]&&Date.now()-lgOpGet(lg.code)>=LG_REOPEN;if(!lgOpened[lg.code]&&!reo&&!dty)lgOpened[lg.code]=1;
-  if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){let ok=true;for(const o of lgSnapParts(lg))if(!await h2hPost(lgTopic(lg.code),o)){ok=false;break}
+  if(lg.dirty||reo||Date.now()-(lg.posted||0)>LG_SNAP){if(!lgRelayReady(lg)){if(window._lgRelayNote)window._lgRelayNote('hold',lg.code);continue}if(window._lgRelayNote)window._lgRelayNote('post',lg.code);let ok=true;for(const o of lgSnapParts(lg))if(!await window.h2hPost(lgTopic(lg.code),o)){ok=false;break}
    /* a re-send on open only stamps its own key and leaves the saved record untouched */
    if(ok&&reo&&!dty&&!lg.qfail){lgOpSet(lg.code);lgOpened[lg.code]=1}else{if(ok){if(reo&&!dty)lgOpSet(lg.code);lg.posted=Date.now();lg.dirty=0;lg.qfail=0;lgOpened[lg.code]=1}else lg.qfail=1;save()}}}}
- finally{lgBusy=false}if(ch){if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
+ finally{lgBusy=false}if(ch){if($('#lkselect')&&typeof lkFlowSelect==='function'){lkFlowSelect()}else if(($('#lgentry')||$('#lksheet'))&&typeof lkFlowScore==='function'&&window._lkScoreIds){lkFlowScore()}else if($('#lgview')&&window._lgv){window._lgKeep=1;lgView(window._lgv)}else if($('#lgcard')&&!cur&&view=='score'&&!($('#lgnew')||{}).open&&!($('#h2hnew')||{}).open)score()}}
 setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true),2500);addEventListener('online',()=>lgTick(true));
 /* invites + join */
 window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||lgIsPresetCode(d.code)||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
@@ -136,7 +208,7 @@ window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||l
 function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h2hCode(),lg={code,name:nmClean(name||'').slice(0,40)||'Onion Shed Challenge',host:me,order:[me,...T.filter(id=>id!=me&&!LG_EXCL.includes(id))].slice(0,H2H_MAX),
  weeks:(weeks||[]).slice(0,LG_W),wt:Date.now(),cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),dirty:1};lgAll().push(lg);save();
  for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);return lg}
-async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(code.length!=8)return'Type the 8-character league code.';if(lgIsPresetCode(code))return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);return''}
+async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(typeof lkJoinGuard==='function'){const block=lkJoinGuard(code,me);if(block)return block}if(code.length!=8)return'Type the 8-character league code.';if(lgIsPresetCode(code))return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);return''}
  const L=await h2hPoll(lgTopic(code));const s=(L||[]).filter(d=>d.k=='ls'&&d.code==code);if(!s.length)return'No league found with that code yet. Ask the host to open the league, then try again.';
  const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<h2hCap(lg))lg.order.push(me);
  lgAll().push(lg);save();lgTick(true);lgView(code);return''}
@@ -203,23 +275,24 @@ const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
   open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
- const e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(10,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
- const PL=ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
-  AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:10,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> \u00b7 ${fin?'300 finished':'End '+(ei+1)+' of 10'}`}):null;
- /* one archer on this phone: the same score card as Just me (plotting on the face, chips to fix an arrow, table of ends). Several archers stay buttons. */
+ const I=lgInfo(lg,w),NE=I.ends,e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(NE,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
+ /* Lingkana is values only. Other leagues: one archer on this phone gets the Just me face (Hide target still works). Shared phones stay buttons only. */
+ const lkVals=typeof lkIs==='function'&&lkIs(lg),
+  PL=!lkVals&&ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
+  AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:NE,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> · ${fin?I.done:'End '+(ei+1)+' of '+NE}`}):null;
  window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
- return`<div class="card" id="lgentry"><span class="kicker">Score card · week ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
-  return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/10'}</span></button>`}).join('')}</div>
- ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?'300 finished':'End '+e.e.length+' of 10 complete'):done?'300 finished':'End '+en+' of 10'} · ${LG_FACE} · 18 m</p>${lgLastLine(lg,w,ids)}
+ return`<div class="card" id="lgentry"><span class="kicker">Score card · ${I.kicker} ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
+  return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/'+NE}</span></button>`}).join('')}</div>
+ ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?I.done:'End '+e.e.length+' of '+NE+' complete'):done?I.done:'End '+en+' of '+NE} · ${I.face} · ${I.dist}</p>${lgLastLine(lg,w,ids)}
  ${lock?`<p class="small" id="lglock">Being scored on ${esc(lgName(lock))}'s phone. Only one phone can score an archer's week.</p><button class="btn ghost" id="lgtake" data-lgtk="${esc(a)}">Take over scoring here</button>`:hold?`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot on">${esc(last[j]||'')}</span>`).join('')}</div>
- <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?'300 finished.':'End '+e.e.length+' of 10 is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
+ <p class="small" id="lgendmsg" style="margin:6px 0 0">${done?I.done+'.':'End '+e.e.length+' of '+NE+' is in.'} Check the three arrows, then tap Next.</p><button class="btn alt" id="lgnextarcher" style="margin-top:8px;min-height:56px;font-size:18px;width:100%">Next</button>`:done?'':`<div class="vg-slots">${[0,1,2].map(j=>`<span class="vg-slot${cur3[j]?' on':''}">${cur3[j]?esc(cur3[j]):''}</span>`).join('')}</div>
  <div class="ad-pad lc-pad" style="--cols:7;margin-top:8px">${LG_KEYS.map(k=>`<button class="${col(k)}" data-lgk="${k}" aria-label="score ${k}">${k}</button>`).join('')}</div>`}<button class="btn ghost" id="lgundo" style="margin-top:6px" ${lock?'disabled':''}>Undo</button>`}
  ${AD?'':lgNextPref(lg,ids)}
  <p class="small muted" id="lgq">${lg.qfail?'Offline: results are saved here and will send when you are back online.':lg.dirty?'Sending…':'Saved and sent to the league.'}</p></div>`}
 /* analysis straight under the score once my own week is finished: the same summary and group analysis Just me shows */
 function lgAnCard(lg,w){try{const me=h2hMe();if(!lgDoneE(lgEnt(lg,me,w))||!window.roundSummary)return'';const s=S.sessions.find(x=>x.id=='lg-'+lg.code+'-w'+w);if(!s)return'';return`<div id="lgan">${roundSummary(s)}${window.shootCompareHTML?shootCompareHTML(s):''}</div>`}catch(e){console.error(e);return''}}
 /* Scoring taps, Undo, fixing an arrow and background relay refreshes re-draw this screen; they set window._lgKeep so the page stays exactly where it was (score keys and sheet stay on screen). Opening the screen, an archer chip and Back still start at the top. Display only. */
-function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
+function lgView(code){const lg=lgGet(code);if(!lg)return;const _lkScore=window._lgE&&window._lgE.code==code;if(typeof lkView==='function'&&typeof lkIs==='function'&&lkIs(lg)&&!_lkScore)return lkView(code);const keepY=window._lgKeep?scrollY:null;window._lgKeep=null;window._lgv=code;cur=null;$('#tabs').hidden=false;const me=h2hMe(),host=lg.host==me,w=lgWeek(lg),rows=lgTable(lg),G=lgGroups(lg,w),gk=lgGroupOf(lg,w,me),fm=lg.fin&&h2hGet(lgFinCode(lg));
  const wk=d=>d?new Date(d+'T00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
  const E=window._lgE&&window._lgE.code==code&&window._lgE.w==w?window._lgE:null;
  const mine=gk==null?`<p class="small" style="margin:0 0 6px">You score on your own phone this week.</p><button class="btn alt" data-lgme="1">${lgDoneE(lgEnt(lg,me,w))?'View my week '+w:'Score my week '+w}</button>`
@@ -243,10 +316,10 @@ function lgView(code){const lg=lgGet(code);if(!lg)return;const keepY=window._lgK
 const sp=!!(E&&!fm);
 if(sp){const SI=E.ids,rw=SI.map(id=>{const x=lgEnt(lg,id,w),EE=(x&&x.e||[]).filter(z=>z&&z.length);return{id,n:EE.filter(z=>z.length==3).length,t:lgTot(EE),x:lgXs(EE),EE}});
  app.innerHTML=`<div id="lgview" class="lgsp"><div class="card dark"><span class="kicker">League · week ${w} · ${SI.length>1?'shared phone':'scoring'}</span><h1>${esc(lg.name)}</h1>
-<p class="small" style="margin:0">${esc(window.rdPick?rdPick(LG_R):LG_RL)} · ${LG_FACE} · 18 m · ${w<6?'Week '+w+' of 6':'Day 6'}${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}</p><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="lgtoleague" data-lgtl="1">Back to league</button></div></div>
+<p class="small" style="margin:0">${esc((lgInfo(lg,w).title))} · ${esc(lgInfo(lg,w).face)} · ${esc(lgInfo(lg,w).dist)} · ${lgInfo(lg,w).kicker+' '+w}${lg.weeks&&lg.weeks[w-1]?' · '+wk(lg.weeks[w-1]):''}</p><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="btn ghost" id="lgtoleague" data-lgtl="1">Back to league</button></div></div>
 ${lgEntryCard(lg,w,SI)}
-<div class="card" id="lgscores"><h3>Scores</h3><table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>Ends</th><th>Score</th><th>X</th></tr></thead><tbody>${rw.map(r=>`<tr data-lgsrow="${esc(r.id)}"><td>${esc(lgName(r.id))}${r.id==me?' (you)':''}</td><td>${r.n}/10</td><td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table>
-<p class="small muted" style="margin:4px 0 0">This week's 300 only. The league table is on the league screen.</p>
+<div class="card" id="lgscores"><h3>Scores</h3><table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>Ends</th><th>Score</th><th>X</th></tr></thead><tbody>${rw.map(r=>`<tr data-lgsrow="${esc(r.id)}"><td>${esc(lgName(r.id))}${r.id==me?' (you)':''}</td><td>${r.n}/${lgInfo(lg,w).ends}</td><td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')}</tbody></table>
+<p class="small muted" style="margin:4px 0 0">This week's scores only. The league table is on the league screen.</p>
 <details id="lgsends"><summary class="small">Ends for each archer</summary>${rw.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(lgName(r.id))}</b>: ${r.EE.length?r.EE.map((e,i)=>`E${i+1} ${esc(e.join(' '))} (${lgTot([e])})`).join(' · '):'no ends yet'}</div>`).join('')}</details></div>
 ${lgAnCard(lg,w)}
 <div class="card">${lg.qfail?'<p class="small" id="lgoff">Offline: results waiting to send.</p>':''}<div class="row" style="gap:6px;justify-content:flex-start"><button class="btn ghost" id="lgrf">Refresh now</button><button class="btn alt" id="lgtoleague2" data-lgtl="1">Back to league</button></div></div></div>`}

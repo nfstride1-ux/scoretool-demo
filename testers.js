@@ -25,6 +25,11 @@ const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',
     as Estiaan, Nathe 21 Oct 2026). His crawl stays paused in the scores database; this file is a one-off load. 22 Oct 2026 (Nathe): shown as Danie everywhere; id, link and stored data stay 'darnie'. */
  {id:'darnie',name:'Danie Oosthuizen',short:'Danie',bow:'Compound',data:true,guest:true}];
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
+/* Profiles made on this phone (not the original list). Their scores use scoretool.v1.<id>, same as any other archer. */
+(function(){try{const A=JSON.parse(localStorage.getItem('scoretool.archers')||'[]')||[];
+ A.forEach(a=>{if(!a||!a.id||TESTERS.some(t=>t.id===a.id))return;
+  const name=String(a.name||'Archer').slice(0,40);
+  TESTERS.push({id:String(a.id),name,short:String(a.short||name).split(/\s+/)[0],bow:a.bow||'Compound',data:false,custom:true,junior:!!a.junior})})}catch(e){}})();
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
  if(id=='nathan'||id=='nathaniel')id='nathe';if(id=='phil')id='phill';
  if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else id=localStorage.getItem('scoretool.tester');
@@ -60,8 +65,22 @@ function setTester(id){const was=TESTER&&TESTER.id;
  try{if(id=='nathe')localStorage.removeItem(ADMIN_KEY);else if(was=='nathe'||window.ADMIN_VIEW)localStorage.setItem(ADMIN_KEY,'nathe')}catch(e){}
  localStorage.setItem('scoretool.tester',id);const u=new URL(location.href);u.searchParams.delete('tester');u.hash='';location.href=u.toString()}
 function testerLink(id){return location.origin+location.pathname+'?tester='+id}
-function testerPicker(){return`<div class="card dark"><span class="kicker">Tester sign-in</span><h1>Who's testing?</h1><p>Pick your name. Your scores are saved on this phone, separate from the other testers.</p>
-${TESTERS.map(t=>`<button class="btn full" style="margin:8px 0" data-tester="${t.id}">${t.name}</button>`).join('')}<p class="small muted">You can change this later in Me.</p></div>`}
-function bindTesterPicker(root){(root||document).querySelectorAll('[data-tester]').forEach(b=>b.onclick=()=>setTester(b.dataset.tester))}
-function testerCard(){return`<div class="card"><span class="kicker">Tester</span><h2>Testing as ${TESTER?TESTER.name:'nobody'}</h2><p class="small muted">${TESTER&&TESTER.id=='nathe'?"Each tester's data is kept separate on this phone.":'Your scores are kept separate on this phone.'}</p>
-<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTER&&(TESTER.id=='nathe'||window.ADMIN_VIEW)?TESTERS.filter(t=>t.id!=TESTER.id).map(t=>`<button class="btn ghost" data-tester="${t.id}">Switch to ${t.short}</button>`).join(''):''}</div></div>`}
+function pickerLabel(t){if(t.custom&&t.junior){const D=window.NM_DEF;if(D&&D[t.id])return D[t.id];return t.short}return t.name}
+function testerPicker(){return`<div class="card dark" id="whopick"><span class="kicker">Your profile</span><h1>Who's shooting?</h1><p>Pick your name, or make your own profile. Scores stay on this phone.</p>
+${TESTERS.map(t=>`<button class="btn full" style="margin:8px 0" data-tester="${t.id}">${pickerLabel(t)}</button>`).join('')}
+<div class="card" id="newprofile"><span class="kicker">New archer</span><h2>Create my profile</h2><p class="small">You can start without picking a name from the list.</p>
+<label for="npname">Your name</label><input id="npname" maxlength="40" autocomplete="name">
+<label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="npjun" type="checkbox" style="width:auto"> Under 16. The list shows a nickname, not a full name.</label>
+<p class="small" id="npmsg"></p><button class="btn alt full" id="npc" type="button">Create my profile</button></div>
+<p class="small muted">You can change this later in Me.</p></div>`}
+function bindTesterPicker(root){(root||document).querySelectorAll('[data-tester]').forEach(b=>b.onclick=()=>setTester(b.dataset.tester));
+ const c=document.getElementById('npc');if(!c)return;
+ c.onclick=()=>{const n=(document.getElementById('npname').value||'').trim();const msg=document.getElementById('npmsg');
+  if(n.length<2){msg.textContent='Use at least 2 characters.';return}
+  const id='u'+Math.random().toString(36).slice(2,8),junior=!!(document.getElementById('npjun')&&document.getElementById('npjun').checked);
+  let A=[];try{A=JSON.parse(localStorage.getItem('scoretool.archers')||'[]')||[]}catch(e){A=[]}
+  A.push({id,name:n,short:n.split(/\s+/)[0],bow:'Compound',junior});
+  localStorage.setItem('scoretool.archers',JSON.stringify(A));
+  setTester(id)}}
+function testerCard(){return`<div class="card" id="archercard"><span class="kicker">Profile</span><h2>${TESTER?TESTER.name:'No profile yet'}</h2><p class="small muted">Scores stay on this phone, separate for each archer.</p>
+<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTER&&(TESTER.id=='nathe'||window.ADMIN_VIEW)?TESTERS.filter(t=>t.id!=TESTER.id&&!t.custom).map(t=>`<button class="btn ghost" data-tester="${t.id}">Switch to ${pickerLabel(t)}</button>`).join(''):''}</div></div>`}

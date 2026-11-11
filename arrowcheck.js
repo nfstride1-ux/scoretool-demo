@@ -66,8 +66,10 @@ function write(id,vals,base){const sets=typeof mySets=='function'?mySets():[],a=
 E._ackTest={focVerdict,spineVerdict,FOCR};
 const _ca=E.lab_calc;if(_ca)E.lab_calc=function(){_ca();css();const C=S.calc||{};const grid=app.querySelector('.labgrid2'),cards=grid?[...grid.querySelectorAll(':scope > .card')]:[];if(cards.length<3)return;
  const n=k=>num(C[k]),has=k=>C[k]!=null&&String(C[k]).trim()!=='';
- const est=n('ibo')-10*(30-n('dl'))-Math.max(0,n('gr')-5*n('dw'))/3-n('sg')/3,own=has('fpsU');
- const fps=own?n('fpsU'):(C.spdOn&&isFinite(est)&&est>0?Math.round(est):NaN);
+ /* R1: the same range-checked rule of thumb as the speed card, so a slip (12365 gr) never gives or saves a speed */
+ const L=window.arrowLim||(()=>null),ok1=(k,l)=>L(l,C[k])?NaN:n(k);
+ const est=window.arrowSpeedEst?arrowSpeedEst(ok1('ibo','ibo'),ok1('dl','dl'),ok1('dw','dw'),ok1('gr','tw'),has('sg')?ok1('sg','sg'):0):n('ibo')-10*(30-n('dl'))-Math.max(0,n('gr')-5*n('dw'))/3-n('sg')/3,own=has('fpsU');
+ const fps=own?ok1('fpsU','fps'):(C.spdOn&&isFinite(est)&&est>0?Math.round(est):NaN);
  const foc=(n('bp')-n('len')/2)/n('len')*100;
  const oF=C.arrF?window.myArrow&&myArrow(C.arrF):null,oS=C.arrS?window.myArrow&&myArrow(C.arrS):null;
  /* L6 (AC1, 1 Nov 2026): until the speed card is used or a bow is picked there, check with the current saved bow's figures, not the 340 fps default */
@@ -95,7 +97,7 @@ const _ca=E.lab_calc;if(_ca)E.lab_calc=function(){_ca();css();const C=S.calc||{}
  const pf=$('#c_arrF');if(pf){const o0=pf.onchange;pf.onchange=function(){delete C.spine;delete C.pt;CF=null;return o0&&o0.apply(this,arguments)}}
  const ps=$('#c_arrS');if(ps){const o1=ps.onchange;ps.onchange=function(){CF=null;return o1&&o1.apply(this,arguments)}}
  /* ---- (a) Save to this arrow ---- */
- const valsS=()=>({totalGr:isFinite(n('gr'))?Math.round(n('gr')):'',fps:isFinite(fps)?Math.round(fps):'',fpsSrc:isFinite(fps)?(own?'own':'estimate'):'',bow:bowName(C),date:today()});
+ const valsS=()=>({totalGr:isFinite(ok1('gr','tw'))?Math.round(n('gr')):'',fps:isFinite(fps)?Math.round(fps):'',fpsSrc:isFinite(fps)?(own?'own':'estimate'):'',bow:bowName(C),date:today()});
  const valsF=()=>{const o=oF||{};const prev=(o.calc||{});const v={foc:isFinite(foc)?+f1(foc):'',bow:bowName(C),use,date:today()};
   if(!prev.totalGr&&o.weight)v.totalGr=Math.round(o.weight);if(C.arrS==C.arrF){const s=valsS();if(s.totalGr)v.totalGr=s.totalGr;if(s.fps){v.fps=s.fps;v.fpsSrc=s.fpsSrc}}return v};
  const diffsF=()=>{if(!oF)return[];const d=[];const add=(k,l,u,to)=>{if(to==null||String(to).trim()==='')return;const from=String(oF[k]??'').trim(),t=String(to).trim();

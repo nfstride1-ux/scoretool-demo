@@ -232,6 +232,8 @@ function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.d
  <p class="small" id="csmsg" role="alert" style="font-weight:600;margin:4px 0">${esc(D.msg||'')}</p></fieldset>
  <label>Match play after the shoot</label>${n>=2?csSeg('csmp',[['off','Off'],['on','On']],D.mp?'on':'off'):`<p class="small muted" id="csmpna" style="margin:2px 0">Needs 2 or more people.</p>`}
  <p class="small muted" style="margin:4px 0">You can switch match play on or off later too.</p>
+ <button type="button" class="btn ghost full" id="csh2h" style="margin-top:8px">Head-to-head or match night</button>
+ <p class="small muted" style="margin:4px 0 0">Two phones, or a match night, lives here with Casual. Same rounds and the same saved scores.</p>
  <button class="btn alt full" id="csgo" style="margin-top:10px" ${n<1?'disabled':''}>Start casual shoot</button></div>`}
 function csBindSetup(root){const D=csDraft(),q=s=>root.querySelector(s),re=()=>score();
  const keep=()=>{const a=q('#csname'),b=q('#csdt'),c=q('#cstype'),n3=q('#cs3n');if(n3)D.d3n=Math.max(1,Math.min(CS3D_MAX,Math.round(+n3.value)||20));if(a)D.name=a.value;if(b)D.date=b.value;if(c)D.typed=c.value};
@@ -249,6 +251,7 @@ function csBindSetup(root){const D=csDraft(),q=s=>root.querySelector(s),re=()=>s
  const bindLink=()=>root.querySelectorAll('[data-cslink]').forEach(b=>b.onclick=()=>{keep();if(full()){D.msg='That\'s the maximum of 10 people.';return re()}D.ppl.push({tid:b.dataset.cslink});D.typed='';D.msg='';re()});bindLink();
  const ad=q('#csaddn');if(ad)ad.onclick=()=>{keep();if(full()){D.msg='That\'s the maximum of 10 people.';return re()}const c=csNameCheck(D.typed);if(!c.ok){D.msg=c.msg;return re()}
   if(D.ppl.some(p=>!p.tid&&p.n.toLowerCase()==c.n.toLowerCase())){D.msg='That name is already in.';return re()}D.ppl.push({n:c.n});D.typed='';D.msg='';re();const t=$('#cstype');if(t)t.focus()};
+ const h2h=q('#csh2h');if(h2h)h2h.onclick=()=>{keep();nav('lab_match')};
  const go=q('#csgo');if(go)go.onclick=()=>{keep();const n=(D.self?1:0)+D.ppl.length;if(n<1){D.msg='Add at least 1 person.';return re()}if(n>CS_MAX){D.msg='10 people at most.';return re()}
   const cs=csCreate({name:D.name,round:D.round,face3:D.face3,date:D.date,self:D.self,selfF:D.selfF,ppl:D.ppl,mp:D.mp&&n>=2});if(!cs){D.msg='Could not start. Check the names.';return re()}window._csD=null;window._csMode=null;S.lastRound=cs.round;save();csView(cs.code)}}
 function csListCard(){if(!TESTER)return'';const L=csAll().filter(x=>x.status!='declined').slice().reverse();if(!L.length)return'';

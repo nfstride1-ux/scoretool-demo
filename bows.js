@@ -16,7 +16,7 @@ const mine=()=>(typeof myBows=='function'?myBows():[]);
 const withSpec=()=>mine().filter(b=>specs()[b.id]);
 const bname=(b,s)=>s&&(s.make||s.model)?[s.make,s.model].filter(Boolean).join(' '):b.name;
 const fnum=v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:NaN};
-const KL=k=>k=='ATA'?'ATA':k=='actual'?'Measured':k===''?'Speed':'IBO';
+const KL=k=>k=='ATA'?'ATA':k=='IBO/ATA'?'IBO/ATA':k=='actual'?'Measured':k===''?'Speed':'IBO';
 const sum=s=>[s.type=='recurve'?[s.riserLen?s.riserLen+'" riser':'',s.limbLb?s.limbLb+' lb limbs':''].filter(Boolean).join(' · '):(s.speed?KL(s.kind??'IBO')+' '+s.speed+' fps':''),s.dw?s.dw+' lb':'',s.dl?s.dl+'"':''].filter(Boolean).join(' · ')||'no figures yet';
 window.bowSnap=id=>{const b=mine().find(x=>x.id==id),s=b&&specs()[id];if(!s)return null;
  return{setup:id,name:bname(b,s),type:s.type||'compound',make:s.make||'',model:s.model||'',year:s.year||'',speed:s.speed||'',kind:s.kind??'IBO',bh:s.bh||'',ata:s.ata||'',dw:s.dw||'',dl:s.dl||'',lo:s.lo||'',limbLb:s.limbLb||'',limbLen:s.limbLen||'',riser:s.riser||'',limbs:s.limbs||'',riserLen:s.riserLen||'',fit:s.fit||'',url:s.url||''}};
@@ -49,7 +49,8 @@ function results(k,q){const L=pool(k),w=norm(q).split(' ').filter(Boolean);if(!w
  return mk.map(m=>`<div class="mbgrp"><div class="kicker" style="margin:8px 0 2px">${h(m)}</div>${show.filter(x=>x.make==m).map(x=>`<button type="button" class="mbopt" role="option" data-pk="${x.id}" style="display:block;width:100%;text-align:left;padding:8px 10px;margin:2px 0;border:1px solid var(--line);border-radius:10px;background:none;color:inherit"><b>${h(x.model)}</b>${x.year?` <span class="muted small">${h(x.year)}</span>`:''}<br><span class="small muted">${h(optSum(x))}</span></button>`).join('')}</div>`).join('')
   +(M.length>show.length?`<p class="small muted">${M.length-show.length} more: keep typing to narrow it down.</p>`:'')}
 const optSum=x=>x.kind=='riser'?[x.len?x.len+'" riser':'',x.fit,x.weight].filter(Boolean).join(' · '):x.kind=='limbs'?[x.sizes,x.lbRange,x.fit].filter(Boolean).join(' · '):[x.speed?KL(x.speedKind)+' '+x.speed+' fps':'',x.ata?x.ata+'" axle-to-axle':'',x.bh?x.bh+'" brace':''].filter(Boolean).join(' · ');
-const KIND_HINT={ATA:'Hoyt publish ATA speed (350 gr, 70 lb, 30"), which reads lower than IBO. It is used as the IBO figure in the Arrow chooser and Calculators.',
+const KIND_HINT={'IBO/ATA':'This speed field is labelled IBO/ATA. The published figure is used as it is in the Arrow chooser and Calculators.',
+ ATA:'Hoyt publish ATA speed (350 gr, 70 lb, 30"), which reads lower than IBO. It is used as the IBO figure in the Arrow chooser and Calculators.',
  '':"The maker gives a speed but doesn't say whether it is IBO or ATA. It is used as the IBO figure in the Arrow chooser and Calculators.",
  actual:"Darton publish a measured ('actual') speed rather than IBO or ATA. It is used as the IBO figure in the Arrow chooser and Calculators."};
 function form(){const s=EDIT.s,rec=s.type=='recurve',k=s.kind??'IBO';
@@ -64,7 +65,7 @@ function form(){const s=EDIT.s,rec=s.type=='recurve',k=s.kind??'IBO';
   ${F('dw','Draw weight on your fingers','lb','e.g. 40')}${F('dl','Draw length','inches','e.g. 28')}`
  :`${finder('compound','Find your bow')}${srcLine(s.src,s.url,s.srcType)}${s.url?`<p class="small muted" style="margin:0 0 6px">Blank boxes weren't published there: type your own.${s.speedNote?' Speed: '+h(s.speedNote)+'.':''}</p>`:''}
   ${F('make','Make','','e.g. Hoyt')+F('model','Model','','e.g. Concept X 40')+F('year','Year','','e.g. 2025')}
-  <label for="mb_speed">Speed rating <span class="muted small">(fps)</span></label><div class="row" style="gap:6px"><input id="mb_speed" data-f="speed" inputmode="decimal" value="${h(s.speed||'')}" style="flex:1"><select id="mb_kind" aria-label="Speed standard" style="width:130px"><option value="IBO"${k=='IBO'?' selected':''}>IBO</option><option value="ATA"${k=='ATA'?' selected':''}>ATA</option><option value=""${k===''?' selected':''}>Not stated</option><option value="actual"${k=='actual'?' selected':''}>Measured</option></select></div>${KIND_HINT[k]?`<p class="hint">${KIND_HINT[k]}</p>`:''}
+  <label for="mb_speed">IBO/ATA <span class="muted small">(fps)</span></label><div class="row" style="gap:6px"><input id="mb_speed" data-f="speed" inputmode="decimal" value="${h(s.speed||'')}" style="flex:1"><select id="mb_kind" aria-label="IBO/ATA" style="width:150px"><option value="IBO/ATA"${k=='IBO/ATA'?' selected':''}>IBO/ATA</option><option value="IBO"${k=='IBO'?' selected':''}>IBO</option><option value="ATA"${k=='ATA'?' selected':''}>ATA</option><option value=""${k===''?' selected':''}>Not stated</option><option value="actual"${k=='actual'?' selected':''}>Measured</option></select></div>${KIND_HINT[k]?`<p class="hint">${KIND_HINT[k]}</p>`:''}
   ${F('bh','Brace height','inches')+F('ata','Axle-to-axle','inches')+F('dw','Your draw weight','lb',s.dwRange?'published: '+s.dwRange:'e.g. 60')+F('dl','Your draw length','inches',s.dlRange?'published: '+s.dlRange:'e.g. 29')+F('lo','Let-off','%',s.lo?'':'')}`}
  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="mbsave">Save bow</button><button class="btn ghost" id="mbcancel">Cancel</button></div></div>`}
 E.lab_mybows=function(){const L=withSpec(),N=named();
@@ -118,7 +119,7 @@ window.acBowFill=R=>{const id=acId(R),s=id?bowSnap(id):null,o=Object.assign({},R
 window.curSavedBow=()=>{const id=curId();return id?bowSnap(id):null};
 const acPicker=sel=>{const A=mine();if(!A.length)return picker('ac_mybow',sel,'Saved bow');
  return`<div id="ac_myboww" style="margin:0 0 8px"><label for="ac_mybow">Saved bow</label><select id="ac_mybow"><option value=""${sel===''?' selected':''}>None, I'll type them</option>${A.map(b=>{const s=specs()[b.id];return`<option value="${b.id}"${b.id==sel?' selected':''}>${h(bname(b,s))}${s?'':' (no specs yet)'}</option>`}).join('')}</select></div>`};
-const KN={IBO:'IBO',ATA:'ATA',actual:'measured','':'standard not stated'};
+const KN={IBO:'IBO','IBO/ATA':'IBO/ATA',ATA:'ATA',actual:'measured','':'standard not stated'};
 const bindMb=()=>app.querySelectorAll('[data-mb]').forEach(a=>a.onclick=e=>{e.preventDefault();nav('lab_mybows')});
 const filled=(s,keys)=>keys.filter(([k])=>s[k]).map(([,l])=>l);
 

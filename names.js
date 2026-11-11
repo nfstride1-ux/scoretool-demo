@@ -37,7 +37,7 @@ const nmIdx=id=>TESTERS.findIndex(t=>t.id==id);
    id with no default. */
 const NM_DEF={nathe:'Nathe',phill:'Phill',logan:'Logan',steven:'Snookie',joseph:'Joe',michael:'Choongy',dana:'Dana',tahuri:'Tahuri',estiaan:'Estiaan',nate:'Nate',darnie:'Danie'};
 const nmDef=id=>NM_DEF[id]||null;
-const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);return i<0?'Tester':'Tester '+(i+1)};
+const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);return i<0?'Archer':'Archer '+(i+1)};
 window.NM_DEF=NM_DEF;
 /* Rule check. Returns {ok,n,msg}. selfId is skipped for the uniqueness check; pass uniq=false to check format/rude only. */
 function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
@@ -47,10 +47,10 @@ function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
  if(nmRude(n))return{ok:false,n,msg:'Please pick a different name.'};
  const lo=n.toLowerCase(),toks=lo.split(/[\s_-]+/);
  if(selfId&&NM_DEF[selfId]&&NM_DEF[selfId].toLowerCase()==lo)return{ok:true,n,msg:''};
- if(Object.entries(NM_DEF).some(([id,d])=>id!=selfId&&d.toLowerCase()==lo))return{ok:false,n,msg:'That is another tester\'s name.'};
+ if(Object.entries(NM_DEF).some(([id,d])=>id!=selfId&&d.toLowerCase()==lo))return{ok:false,n,msg:'That name is already taken.'};
  if(NM_REAL.sur.some(s=>toks.includes(s)||lo.replace(/[\s_-]/g,'').includes(s.replace(/[\s_-]/g,'')))||NM_REAL.full.some(([,f])=>f.toLowerCase()==lo))return{ok:false,n,msg:NM_HINT};
  if(/^tester\s*\d*$/i.test(n))return{ok:false,n,msg:'Pick a name of your own.'};
- if(uniq){const D=nmDir();if(Object.entries(D).some(([id,e])=>id!=selfId&&e&&String(e.n).toLowerCase()==lo))return{ok:false,n,msg:'Another tester already has that name.'}}
+ if(uniq){const D=nmDir();if(Object.entries(D).some(([id,e])=>id!=selfId&&e&&String(e.n).toLowerCase()==lo))return{ok:false,n,msg:'That name is already taken.'}}
  return{ok:true,n,msg:''}}
 /* who owns each name: earliest pick wins (tie: TESTERS order) */
 function nmOwners(D){const O={};Object.entries(D).forEach(([id,e])=>{if(!e||!e.n)return;const k=String(e.n).toLowerCase(),o=O[k];
@@ -98,7 +98,7 @@ function nmSetMine(n){const id=TESTER.id,o={n,nt:Date.now()};localStorage.setIte
 (function(){if(!TESTER)return;const o=nmOwn(TESTER.id);if(o){const D=nmDir();if(!D[TESTER.id]||D[TESTER.id].n!=o.n){D[TESTER.id]={...o,u:o.nt};nmSaveDir(D)}}})();
 /* --- screens --- */
 function nmForm(id,cta){const o=TESTER&&nmOwn(TESTER.id);return`<label for="${id}">Display name</label><input id="${id}" maxlength="16" autocomplete="off" autocapitalize="words" value="${o?esc(o.n):''}" placeholder="${TESTER&&nmDef(TESTER.id)?esc(nmDef(TESTER.id))+' (default)':'e.g. Arrowhead_7'}">
- <p class="small muted" style="margin:4px 0">${NM_HINT} 2 to 16 letters, numbers, spaces, - or _. Other testers see only this name.</p><p class="small" id="${id}err" role="alert" style="margin:4px 0;font-weight:600"></p><button class="btn alt full" id="${id}go">${cta}</button>`}
+ <p class="small muted" style="margin:4px 0">${NM_HINT} 2 to 16 letters, numbers, spaces, - or _. Other people see only this name.</p><p class="small" id="${id}err" role="alert" style="margin:4px 0;font-weight:600"></p><button class="btn alt full" id="${id}go">${cta}</button>`}
 function nmBindForm(id,done){const go=$('#'+id+'go'),inp=$('#'+id);if(!go)return;const sub=()=>{const c=nmCheck(inp.value,TESTER.id);if(!c.ok){$('#'+id+'err').textContent='⚠ '+c.msg;return}nmSetMine(c.n);done()};
  go.onclick=sub;inp.onkeydown=e=>{if(e.key=='Enter')sub()}}
 /* 'Not now' is remembered per tester as a timestamp (scoretool.dname.asked.<id>). A skip or own pick from before the relay reset point
@@ -111,7 +111,7 @@ const nmSkipped=id=>nmSkipMem||(+nmLS.get(nmAskKey(id))||0)>=NM_RESET;
 function nmNeedPrompt(){if(!TESTER||window.ADMIN_VIEW)return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
- <p class="small">${clash?'Another tester picked that name first. Choose a different one.':'This is the name other testers see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}
+ <p class="small">${clash?'Someone else picked that name first. Choose a different one.':'This is the name other people see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}
  ${clash?'':'<button class="btn ghost full" id="nmlater" style="margin-top:6px">Not now</button><p class="small muted">Until you pick one you show as '+esc(nmNeutral(TESTER.id))+'. You can set it any time in Me.</p>'}</div>`;
  nmBindForm('nmin',()=>{$('#tabs').hidden=false;nav('home')});const l=$('#nmlater');if(l)l.onclick=()=>{nmSkipMem=true;nmLS.set(nmAskKey(TESTER.id),String(Date.now()));$('#tabs').hidden=false;nav('home')}}
 const _nmRender=render;render=function(){if(TESTER&&S.unlocked&&S.profile&&!/^#(share|coach)=/.test(location.hash)&&nmNeedPrompt())return nmScreen();return _nmRender()};

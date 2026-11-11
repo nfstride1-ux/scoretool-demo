@@ -4,6 +4,22 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## v2026-11-11-1824-live (2026-11-11)
+### What changed
+- The Lingkana League from the /test/ app is now on the live root app at https://nfstride1-ux.github.io/scoretool-demo/ . Existing tester scores stay under the same live storage keys (scoretool.v1 / scoretool.v1.<id>). The /test/ copy is unchanged.
+- Before this change the previous live root was tagged `live-backup-2026-11-11-relayhold` (commit 8b13619, version v2026-11-01-1446-relayhold). Rollback: `git push --force-with-lease origin 8b13619:main` (or check out that tag and push main to it).
+- Invite code LK-TEST26, league record code LINGKN26, default scoring password as on the test page. The live league starts with no demo or test archers or scores. Nathe is the host only.
+- Lingkana relay topic is `scoretool-h2h-q7m4-lg-lingkn26-live` (not the /test/ topic `scoretool-h2h-q7m4-lg-lingkn26`), so test sign-ups and test scores do not appear on live. Other leagues and matches still use the existing live topics under `scoretool-h2h-q7m4`.
+- Register page is at /lk-register.html (and /#lk-register). Poster/register links use the live root, not /test/.
+- Group scoring for Lingkana stays values only, with the Score Sheet after each end. Onion Shed and other leagues keep the own-phone target face and Hide target, as before.
+- Hidden on live (scripts not loaded): C10 IFAA Field/Hunter scorer, C11 Past Scores, C12/C14 account sign-in and account backups, C13 draft Terms/Refund pages, C15 world rounds picker, and the paid-tier preview switch. Lemon Squeezy is not connected.
+- Service worker cache is `scoretool-v2026-11-11-1824-live`. Activate deletes older `scoretool-*` caches but leaves `scoretool-test-*` so /test/ keeps working.
+### Files
+New on root: lingkana.js, lkflow.js, lkflow.css, lk-register.html, rounds_aa.js, tune.js, results.js, vendor/ocr/. Updated app, lab, league, testers, casual-era copies from the test app, tools/sw_template.js, whatsnew.js, version.json, sw.js, index.html, CHANGELOG.md.
+### Tests
+- Data-survival (old root v2026-11-01-1446-relayhold seeded scoretool.v1, then new root): 13 passed, 0 failed. Old 271 practice round still present; no sttest prefix.
+- whatsnew_test 33/0; backup_test 24/0; nav_test 99/0; testers_test 189/0; pbnote_test 14/0; league_test 60/0; lgpage_test 40/0; nopreset_test 29/0; lgauto_test 16/0.
+- Full `qa/run_regression.py` was not run before this deploy (time). Known: run it after Pages is up if needed.
 ## v2026-11-01-1446-relayhold (2026-11-01)
 ### What changed
 - Relay fix for ntfy.sh 429 throttling (Level 1 report item N1: about one relay message per league arrow; parked since 1 Nov 03:20 as 329c66e + 76604ee, never pushed). The slow-start half of that work already shipped alone as squadfix (7d171df), so it is not repeated here.
