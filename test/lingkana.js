@@ -162,6 +162,7 @@ function lkView(code){
   document.querySelectorAll('[data-lkscore]').forEach(b=>b.onclick=()=>{const m=lkScoreGroup(Math.min(6,lgWeek(lg)),+b.getAttribute('data-lkscore'));const e=$('#lkgrpmsg');if(e&&m)e.textContent=m});
   if($('#lkpickq'))$('#lkpickq').oninput=()=>{const q=(($('#lkpickq')||{}).value||'').toLowerCase();document.querySelectorAll('#lkpick option').forEach(o=>{o.hidden=!!q&&!o.textContent.toLowerCase().includes(q)})};
   if($('#lkresultsgo'))$('#lkresultsgo').onclick=()=>{const w=Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);window._lkResNight=w;try{history.replaceState(null,'',location.pathname+location.search+'#lk-results&n='+w)}catch(e){}lkResultsView(w)};
+  lkBindStandUI(lg);
 
 }
 
@@ -412,6 +413,15 @@ function lkTable(lg){
   rows.forEach(r=>r.tie=rows.filter(o=>o.rk==r.rk).length>1);
   return rows;
 }
+function lkLastScoredNight(lg){
+  let n=0;
+  (lkTable(lg)||[]).forEach(r=>((r&&r.W)||[]).forEach((c,i)=>{if(c)n=Math.max(n,i+1)}));
+  return n;
+}
+function lkStandSubtitle(lg){
+  const n=lkLastScoredNight(lg);
+  return n?('After Night '+n+' · '+lkFmtD(lkNightKey(lg,n))):'No nights scored yet';
+}
 function lkTableHTML(lg){
   const me=(typeof h2hMe==='function'&&h2hMe())||'';
   const rows=lkTable(lg);
@@ -423,11 +433,130 @@ function lkTableHTML(lg){
   };
   const tot=r=>r.open?`<i>${r.t}</i>`:String(r.t);
   return`<div class="card" id="lkstand"><h3>Standings · best 4 of 6</h3>
+    <div class="lk-printhead"><p class="lk-printbrand">ScoreTool</p><h2>Lingkana Indoor League · Standings</h2><p>${h(lkStandSubtitle(lg))}</p></div>
     <div class="lk-standwrap"><table class="lk-stand" id="lktab"><colgroup><col class="rk"><col class="nm"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="best"><col class="xs"><col class="ts"></colgroup>
     <thead><tr><th></th><th class="nm">Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
     <tbody>${rows.map(r=>`<tr data-lkrow="${h(r.id)}"><td class="rk">${r.tie?'=':''}${r.rk}</td><td class="nm">${h(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map((c,i)=>cells(r,c,i)).join('')}<td class="best">${tot(r)}</td><td class="xs">${r.x}</td><td class="ts">${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No scores yet.</td></tr>'}</tbody></table></div>
+    <div class="lk-standbar">
+      <button class="btn alt" type="button" id="lkstandshare">Share</button>
+      <button class="btn alt" type="button" id="lkstandprint">Print</button>
+      <p class="small" id="lkstandsharemsg" role="status"></p>
+    </div>
     <p class="small muted" style="margin:4px 0 0">No minimum nights. The total is the best 4 scores from the nights they shot (or all of them if they have fewer than four). Max 2,640. The four that count are marked. A missed night is — and is not a zero. Italics = still shooting. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12. Night 7 is not in this table.</p>
     </div>`;
+}
+function lkBindStandUI(lg){
+  if($('#lkstandshare'))$('#lkstandshare').onclick=()=>lkShareStandings(lg);
+  if($('#lkstandprint'))$('#lkstandprint').onclick=()=>lkPrintStandings();
+}
+function lkPrintStandings(){
+  const b=document.body;
+  b.classList.add('lk-print-stand');
+  const done=()=>{if(!b.classList.contains('lk-print-stand'))return;b.classList.remove('lk-print-stand');window.removeEventListener('afterprint',done)};
+  window.addEventListener('afterprint',done);
+  window.print();
+  setTimeout(done,60000);
+}
+function lkLoadLogo(){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>res(img);
+    img.onerror=()=>res(null);
+    img.src='icons/icon-192.png';
+  });
+}
+async function lkStandingsPng(lg){
+  const league=lg||lkEnsure();
+  const rows=lkTable(league);
+  const sub=lkStandSubtitle(league);
+  const cols=['','Archer','N1','N2','N3','N4','N5','N6','Best 4','11s','10s'];
+  const cw=[36,170,52,52,52,52,52,52,60,44,44];
+  const pad=28, rowH=28, headH=26, scale=2;
+  const tableW=cw.reduce((a,b)=>a+b,0);
+  const W=Math.max(794, tableW+pad*2);
+  const top=92;
+  const H=top+headH+Math.max(rows.length,1)*rowH+pad+16;
+  const c=document.createElement('canvas');c.width=W*scale;c.height=H*scale;
+  const g=c.getContext('2d');g.scale(scale,scale);
+  g.fillStyle='#fff';g.fillRect(0,0,W,H);
+  const logo=await lkLoadLogo();
+  if(logo)g.drawImage(logo,pad,16,28,28);
+  g.fillStyle='#0f172a';
+  g.font='600 15px system-ui,sans-serif';
+  g.textBaseline='middle';
+  g.textAlign='left';
+  g.fillText('ScoreTool',pad+(logo?36:0),30);
+  g.textBaseline='alphabetic';
+  g.font='bold 22px system-ui,sans-serif';
+  g.fillText('Lingkana Indoor League · Standings',pad,66);
+  g.font='13px system-ui,sans-serif';
+  g.fillStyle='#475569';
+  g.fillText(sub,pad,84);
+  const xs=[];let acc=pad;for(const w of cw){xs.push(acc);acc+=w}
+  const drawCell=(i,yy,h,txt,opts)=>{
+    const ox=xs[i], w=cw[i];
+    g.fillStyle=(opts&&opts.bg)||'#fff';
+    g.fillRect(ox,yy,w,h);
+    g.fillStyle=(opts&&opts.color)||'#0f172a';
+    g.font=((opts&&opts.bold)?'600 ':'500 ')+'12px system-ui,sans-serif';
+    g.textBaseline='middle';
+    const left=i<=1;
+    g.textAlign=left?'left':'right';
+    let t=String(txt);
+    if(i===1){while(t.length>1&&g.measureText(t).width>w-16)t=t.slice(0,-2)+'\u2026'}
+    g.fillText(t,left?ox+8:ox+w-8,yy+h/2);
+    g.strokeStyle='#e5e7eb';g.lineWidth=1;
+    g.beginPath();g.moveTo(ox+w+0.5,yy);g.lineTo(ox+w+0.5,yy+h);g.stroke();
+  };
+  let y=top;
+  cols.forEach((t,i)=>drawCell(i,y,headH,t,{bold:true,color:'#475569'}));
+  g.strokeStyle='#d1d5db';g.beginPath();g.moveTo(pad,y+headH+0.5);g.lineTo(pad+tableW,y+headH+0.5);g.stroke();
+  y+=headH;
+  rows.forEach(r=>{
+    const line=[(r.tie?'=':'')+r.rk, r.nm];
+    (r.W||[]).forEach(c=>line.push(c?String(c.s):'\u2014'));
+    while(line.length<8)line.push('\u2014');
+    line.push(String(r.t), String(r.x||0), String(r.tens||0));
+    line.forEach((t,i)=>{
+      const night=i>=2&&i<=7;
+      const on=night&&r.count&&r.count.includes(i-2);
+      drawCell(i,y,rowH,t,{bg:on?'#edf2f7':'#fff',bold:i===8,color:'#0f172a'});
+    });
+    g.strokeStyle='#e5e7eb';g.beginPath();g.moveTo(pad,y+rowH+0.5);g.lineTo(pad+tableW,y+rowH+0.5);g.stroke();
+    y+=rowH;
+  });
+  if(!rows.length){
+    g.fillStyle='#475569';g.font='13px system-ui,sans-serif';g.textAlign='left';g.textBaseline='alphabetic';
+    g.fillText('No scores yet.',pad,y+18);
+  }
+  return new Promise(res=>c.toBlob(b=>res(b?new File([b],'lingkana-standings.png',{type:'image/png'}):null),'image/png'));
+}
+async function lkShareStandings(lg){
+  const league=lg||lkEnsure();
+  const title='Lingkana Indoor League · Standings';
+  const text=title+' \u00b7 '+lkStandSubtitle(league);
+  const msg=$('#lkstandsharemsg');
+  const say=s=>{if(msg)msg.textContent=s};
+  let file=null;try{file=await lkStandingsPng(league)}catch(e){file=null}
+  const nav=typeof navigator!=='undefined'?navigator:null;
+  if(nav&&typeof nav.share==='function'){
+    if(file&&(typeof nav.canShare!=='function'||nav.canShare({files:[file]}))){
+      try{await nav.share({title,text,files:[file]});say('Shared.');return}catch(e){if(e&&e.name==='AbortError')return}
+    }
+    try{await nav.share({title,text});say('Shared.');return}catch(e){if(e&&e.name==='AbortError')return}
+  }
+  if(file){
+    try{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(file);
+      a.download=file.name;
+      a.rel='noopener';
+      document.body.appendChild(a);a.click();a.remove();
+      say('Saved the standings picture.');
+      return;
+    }catch(e){}
+  }
+  say('Could not make a picture to share.');
 }
 
 
@@ -472,7 +601,7 @@ function lkPotHTML(lg){
     const nm=h((typeof lgName==='function'&&lgName(id))||id);
     const on=!!paid[id];
     const box=host?`<input type="checkbox" data-lkpaid="${h(id)}" ${on?'checked':''}>`:(on?'Paid':'—');
-    return`<label class="lk-paidrow" style="display:flex;gap:8px;align-items:center;margin:2px 0">${box}<span>${nm}</span></label>`;
+    return`<label class="lk-paidrow"><span class="nm">${nm}</span>${box}</label>`;
   }).join('')||'<p class="small muted">No one on the list yet.</p>';
   const nightRows=p.nights.map(n=>`<tr data-lkpn="${n.w}"${n.w===w?' class="on"':''}><td>N${n.w}</td><td>${h(lkFmtD(n.date))}</td><td>${n.paid}</td><td>$${n.total}</td><td>${n.out?('$'+n.owed):'—'}</td></tr>`).join('');
   return`<div class="card" id="lkpot"><span class="kicker">Club pot · display only</span>
@@ -485,7 +614,7 @@ function lkPotHTML(lg){
     <label for="lkpotnight" style="margin-top:8px">Tick who paid on</label>
     <select id="lkpotnight">${LK_DATES.map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>Night ${i+1} · ${h(lkFmtD(d))}${i===6?' · shoot-up':''}</option>`).join('')}</select>
     <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them.</p>
-    <div id="lkpaidlist" style="max-height:240px;overflow:auto">${rows}</div>
+    <div id="lkpaidlist">${rows}</div>
     </div>`;
 }
 
@@ -735,6 +864,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();

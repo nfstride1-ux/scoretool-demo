@@ -297,8 +297,8 @@
         const on=selected.includes(r.id);
         const lock=other||on;
         return `<label class="lk-row${other?' locked':''}" data-lkid="${esc(r.id)}">
-          <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${other?'disabled':''}>
           <span class="nm">${esc(r.name)}</span>
+          <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${other?'disabled':''}>
           ${lock?`<span class="lk-padlock" title="${other?'Selected on another phone':'Selected'}">🔒</span>`:''}
         </label>`;
       }).join('');
@@ -715,6 +715,7 @@
       if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),typeof lkNightKey==='function'?lkNightKey(lg,nw):'',box.checked);
       review();
     });
+    if(typeof lkBindStandUI==='function')lkBindStandUI(lg);
   }
 
   function enter(code){
