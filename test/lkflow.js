@@ -415,6 +415,21 @@
     if(typeof scoreScreen==='function')scoreScreen();
   }
 
+  /* Lingkana picker only. Onion Shed has no paid tick, so null means "do not filter".
+     Filters the list on screen. Does not drop anyone out of a group already being scored. */
+  function paidPickerIds(lg,w){
+    if(isOnion())return null;
+    if(typeof lkNightPaid!=='function')return null;
+    const ids=(lkNightPaid(lg,w)||{}).ids;
+    return new Set(Array.isArray(ids)?ids.map(String):[]);
+  }
+  function pickerSignups(lg,w){
+    const list=(nightSignups(lg,w)||[]).slice();
+    const paid=paidPickerIds(lg,w);
+    if(!paid)return list;
+    return list.filter(r=>r&&r.id&&paid.has(String(r.id)));
+  }
+
   function selectArchers(){
     const lg=eventLg();
     if(!lg){home();return}
@@ -422,7 +437,8 @@
     hideChrome(true);
     const w=nightOf(lg);
     const target=+(window._lkTarget||0);
-    const list=nightSignups(lg,w);
+    const registered=nightSignups(lg,w)||[];
+    const list=pickerSignups(lg,w);
     const rows=list.map(r=>({id:r.id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||r.id),target:archerTarget(lg,w,r.id)}));
     const el=appEl();if(!el)return;
     const title=esc(lg.name||evName());
@@ -439,7 +455,7 @@
       el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}">
         <h1>${title}</h1>
         ${nightSel}
-        <p class="small muted">Tap a target, then tick up to 4 archers already registered for this night. Registration is on the Event Registration page.</p>
+        <p class="small muted">${isOnion()?'Tap a target, then tick up to 4 archers already registered for this night. Registration is on the Event Registration page.':'Tap a target, then tick up to 4 archers marked paid for this night. Registered archers who are not ticked paid stay off this list.'}</p>
         <div class="lk-tgrid" id="lktargets">${grid}</div>
         ${hostPwBtn}
         ${bar(btn('lkbacklogin','Back / Login','grey'),'')}
@@ -471,7 +487,7 @@
         <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${taken?'disabled':''}>
         ${taken?`<span class="lk-padlock" title="${esc(why)}">🔒</span>`:''}
       </label>`;
-    }).join('')||'<p>No archers registered for this night yet. They sign up on the Event Registration page.</p>';
+    }).join('')||(paidPickerIds(lg,w)&&registered.some(r=>r&&r.id)?'<p>No archers marked paid for this night yet. They stay registered, and show here once the host ticks them paid.</p>':'<p>No archers registered for this night yet. They sign up on the Event Registration page.</p>');
     el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}" data-target="${target}">
       <h1>${title}</h1>
       ${nightSel}
