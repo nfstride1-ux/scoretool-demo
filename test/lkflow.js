@@ -232,7 +232,7 @@
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const el=appEl();if(!el)return;
-    const name=myName()||(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
+    const name=myName()||'';
     const ev=lg?lg.name:LK_NAME;
     el.innerHTML=`<div class="lkf" id="lkloginpage">
       <h1>Login</h1>
@@ -281,8 +281,9 @@
     const msg=$id('lkqrmsg');
     const accept=text=>{
       const s=String(text||'');
-      if(/ONIONSH2|onion.?shed/i.test(s)){setEv((typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2');login();return true}
-      if(/scoretool-demo\/test|LK-TEST26|LINGKN26|lk-register|lk-login/i.test(s)){setEv((typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26');login();return true}
+      /* lk-onion26 is the Lingkana invite code — do not treat it as Onion Shed. */
+      if(/ONIONSH2|ONIONSHD|#os-|onion-shed|onion shed/i.test(s)&&!/lk-onion26/i.test(s)){setEv((typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2');home(evCode());return true}
+      if(/scoretool-demo|lk-onion26|lk-home|LINGKN26|lk-register|lk-login|#lingkana/i.test(s)){setEv((typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26');home(LK_CODE||evCode());return true}
       if(msg)msg.textContent='That code is not for this event.';
       return false;
     };
@@ -898,7 +899,7 @@
   function regEntry(){
     if(isOnion())return osRegister();
     hideChrome(true);
-    try{history.replaceState(null,'',location.pathname+location.search+((typeof LK_REGISTER_HASH==='string'&&LK_REGISTER_HASH)||'#lk-register'))}catch(e){}
+    try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
     if(typeof lkRegisterView==='function')lkRegisterView();
     const back=document.getElementById('lkregback');
     if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
@@ -928,7 +929,6 @@
     if(typeof lgSeed==='function')lgSeed();
     hideChrome(true);
     const el=appEl();if(!el)return;
-    const name=myName()||(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
     const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
     const ev=evName();
     el.innerHTML=`<div class="lkf" id="lkloginpage" data-ev="${esc(code)}">
@@ -936,37 +936,26 @@
       <label for="lkevent">Select Event</label>
       <select id="lkevent"><option value="${esc(code)}" selected>${esc(ev)}</option></select>
       <label for="lkscorer">Scorer Full Name</label>
-      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(name)}">
+      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="">
       <label for="lkcode">League code</label>
-      <input id="lkcode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" value="${esc(code)}">
-      <p class="small muted">This league has no scoring password. Members open it with the league code.</p>
+      <input id="lkcode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" value="">
+      <label for="lkpw">Password</label>
+      <input id="lkpw" type="password" autocomplete="off" value="">
+      <p class="small muted">This is a demo league. Login and password can be left blank — no code or scoring password is required.</p>
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
     </div>`;
     const go=()=>{
       const n=($id('lkscorer').value||'').trim();
-      const msg=$id('lkpwmsg');
-      if(n.length<2){if(msg)msg.textContent='Type the scorer\'s full name.';return}
-      setMyName(n);
-      const raw=($id('lkcode').value||code);
-      const openExisting=()=>{
-        window._lkTarget=0;window._lkPicked=[];
-        selectArchers();
-      };
-      const lg=typeof lgGet==='function'?lgGet(code):null;
-      const who=me();
-      if(lg&&(!who||(lg.order||[]).includes(who)||(typeof lgIsG==='function'&&lgIsG(who))||(lg.gn&&lg.gn[who]))){openExisting();return}
-      if(typeof lgJoin==='function'){
-        Promise.resolve(lgJoin(raw)).then(m=>{
-          if(m){if(msg)msg.textContent=m;return}
-        });
-        return;
-      }
-      if(msg)msg.textContent='Could not open that league on this phone.';
+      if(n)setMyName(n);
+      window._lkTarget=0;window._lkPicked=[];
+      selectArchers();
     };
     $id('lkpwgo').onclick=go;
     $id('lkloginback').onclick=()=>home(code);
+    $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     $id('lkcode').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+    $id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
   }
 
   function osKnown(lg){
@@ -991,7 +980,13 @@
       ((lg.reg[k])||[]).forEach(r=>{if(r)add(r.id,r.name)});
     }
     ((lg&&lg.order)||[]).forEach(id=>add(id,(typeof lgName==='function'&&lgName(id))||id));
-    return out;
+    const hostId=(lg&&lg.host)||'nathe';
+    return out.filter(a=>{
+      const n=String(a.name||'').trim().toLowerCase();
+      if(a.id===hostId||a.id==='nathe')return false;
+      if(n==='nathe'||n==='nathaniel stride')return false;
+      return true;
+    });
   }
   function osSaveNights(lg,id,name,weeks){
     if(!lg)return 'The league is not on this phone yet.';
@@ -1119,14 +1114,22 @@
     window._lkNavHooked=1;
   }
 
+  function pathIsPublicEvent(){
+    const path=String(location.pathname||'');
+    return /\/test(\/|$)/.test(path)||/\/scoretool-demo\/?$/.test(path)||/\/scoretool-demo\/index\.html$/.test(path);
+  }
   function shouldBoot(){
-    if(!/\/test(\/|$)/.test(String(location.pathname||'')))return false;
+    if(!pathIsPublicEvent())return false;
     const q=new URLSearchParams(location.search);
     if(q.get('app')==='1')return false;
     if(q.has('tester'))return false;
-    if(typeof lkIsRegHash==='function'&&lkIsRegHash())return false;
     if(typeof lkIsResHash==='function'&&lkIsResHash())return false;
     return true;
+  }
+  function wantsEventHome(){
+    if(typeof lkIsHomeHash==='function'&&lkIsHomeHash())return true;
+    if(typeof lkIsRegHash==='function'&&lkIsRegHash())return true;
+    return false;
   }
 
   /* Expose for tests and relay refresh */
@@ -1160,8 +1163,23 @@
     if(window._lkFlowStarted)return;
     window._lkFlowStarted=1;
     hideChrome(true);
+    if(wantsEventHome()){
+      const code=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
+      try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
+      home(code);
+      return;
+    }
     list();
   }
+  addEventListener('hashchange',()=>{
+    if(!pathIsPublicEvent())return;
+    if(typeof lkIsResHash==='function'&&lkIsResHash())return;
+    if(wantsEventHome()){
+      const code=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
+      try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
+      home(code);
+    }
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0));
   else setTimeout(boot,0);
 })();

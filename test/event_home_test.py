@@ -46,7 +46,7 @@ try:
     live_v = json.loads((ROOT / 'version.json').read_text())['version']
     test_v = json.loads((ROOT / 'test' / 'version.json').read_text())['version']
     chk('live-root version.json is still v2026-11-11-2216-live', live_v == 'v2026-11-11-2216-live', live_v)
-    chk('test version.json is the new test build', test_v == 'v2026-11-12-0825-test', test_v)
+    chk('test version.json is the new test build', test_v == 'v2026-11-12-0840-test', test_v)
 
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path='/usr/bin/google-chrome',
@@ -109,6 +109,14 @@ try:
         reg = page.inner_text('body')
         chk('Event Registration opens the existing register page',
             'Register for a shoot night' in reg or 'Poster invite code' in reg, reg[:200])
+        chk('first-time Event Registration still asks for the invite code',
+            page.locator('#lkregcode').count()==1, reg[:200])
+        known_txt = page.inner_text('#lkknown') if page.locator('#lkknown').count() else ''
+        body_reg = page.inner_text('#lkregpage') if page.locator('#lkregpage').count() else reg
+        chk('Event Registration does not list Nathe or Nathaniel Stride',
+            'nathe' not in body_reg.lower() and 'nathaniel' not in body_reg.lower() and 'stride' not in body_reg.lower(),
+            body_reg[:300])
+        page.screenshot(path=str(SHOT / '08-register-without-nathe.png'), full_page=False)
 
         if page.locator('#lkregback').count():
             page.locator('#lkregback').click()
@@ -176,9 +184,28 @@ try:
         page.wait_for_selector('#lkhome', timeout=4000)
         page.locator('#lklogin').click()
         page.wait_for_selector('#lkloginpage', timeout=4000)
-        chk('Onion Shed login uses the league code, not a new scoring password',
-            page.locator('#lkcode').count() == 1 and page.locator('#lkpw').count() == 0)
-        page.locator('#lkloginback').click()
+        scorer = page.locator('#lkscorer').input_value() if page.locator('#lkscorer').count() else 'MISSING'
+        codev = page.locator('#lkcode').input_value() if page.locator('#lkcode').count() else 'MISSING'
+        pwv = page.locator('#lkpw').input_value() if page.locator('#lkpw').count() else ''
+        chk('Onion Shed login and password fields are blank and not required',
+            page.locator('#lkscorer').count()==1 and scorer=='' and page.locator('#lkcode').count()==1 and codev==''
+            and pwv=='' and 'no code or scoring password is required' in page.inner_text('#lkloginpage').lower(),
+            f'scorer={scorer!r} code={codev!r} pw={pwv!r} '+page.inner_text('#lkloginpage')[:200])
+        page.screenshot(path=str(SHOT / '11-onion-shed-login-blank.png'), full_page=False)
+        # Proceed with blank fields — no code or password required
+        page.locator('#lkpwgo').click()
+        page.wait_for_timeout(500)
+        chk('Onion Shed login proceeds without a code or password',
+            page.locator('#lktargets, #lkselect, #lkhome, #lkloginpage').count()>=1,
+            page.inner_text('body')[:240])
+        if page.locator('#lkselectback, #lktgtback, #lkback').count():
+            page.evaluate("() => window.lkFlowHome && window.lkFlowHome('ONIONSH2')")
+        elif page.locator('#lkloginback').count():
+            page.locator('#lkloginback').click()
+        else:
+            page.evaluate("() => window.lkFlowHome && window.lkFlowHome('ONIONSH2')")
+        page.wait_for_selector('#lkhome', timeout=4000)
+        # re-open login only if we left it, already back at home
         page.wait_for_selector('#lkhome', timeout=4000)
         page.locator('#lkereg').click()
         page.wait_for_timeout(400)
@@ -321,7 +348,10 @@ try:
             page.wait_for_timeout(300)
         chk('new archer still sees name and optional email/phone fields',
             page.locator('#lkregname').count()==1 and page.locator('#lkregemail').count()==1 and page.locator('#lkregphone').count()==1)
-        page.fill('#lkregcode', 'LK-TEST26')
+        if page.locator('#lkregcode').count():
+            page.fill('#lkregcode', 'lk-onion26')
+        else:
+            chk('new archer still sees the invite code field before first register', False, 'code field missing')
         page.fill('#lkregname', 'Sam Archer')
         # night select should exist for a new fill; if name already known it might flip after typing? name is typed, not tapped
         if page.locator('#lkregemail').count():
@@ -341,9 +371,13 @@ try:
             and 'sam@example.com' not in page.inner_text('body').lower()
             and '0400000000' not in page.inner_text('body'),
             page.inner_text('#lkregpage').strip()[:300] if page.locator('#lkregpage').count() else page.inner_text('body')[:300])
+        chk('returning archer does not need the invite code again',
+            page.locator('#lkregcode').count()==0,
+            page.inner_text('#lkregpage')[:300] if page.locator('#lkregpage').count() else 'no page')
         chk('Get ScoreTool was not added or removed on the test register page',
             'get scoretool' not in page.inner_text('#lkregpage').lower() if page.locator('#lkregpage').count() else True)
         page.screenshot(path=str(SHOT / '07-register-tap-name.png'), full_page=False)
+        page.screenshot(path=str(SHOT / '10-returning-no-invite-code.png'), full_page=False)
 
         # Onion Shed: same 13-target picker, no Register Archer, 300 scoring unchanged
         page.evaluate("""(names) => {
@@ -416,6 +450,36 @@ try:
         page.evaluate("() => window.lkFlowList && window.lkFlowList()")
         page.wait_for_timeout(200)
 
+        # Poster / share URL and old register links open the event home, not a standalone register page
+        home_page = ctx.new_page()
+        home_page.route(guard.RELAY, lambda route: route.fulfill(status=200, body='', headers={
+            'access-control-allow-origin': '*', 'content-type': 'application/json'}))
+        home_page.goto(f'{BASE}/test/#lk-home', wait_until='networkidle')
+        home_page.wait_for_timeout(800)
+        home_page.wait_for_selector('#lkhome', timeout=8000)
+        htxt = home_page.inner_text('#lkhome')
+        chk('share/QR hash #lk-home opens the Lingkana event home',
+            home_page.locator('#lkhome').count()==1
+            and all(lab in htxt for lab in ['Login to Event', 'Login with QR Code', 'Event Registration', 'Review Scoresheet', 'Rules'])
+            and home_page.locator('#lkregpage').count()==0,
+            htxt[:240])
+        # Exact QR target used by the test page
+        ev_url = home_page.evaluate("() => (typeof lkEventHomeUrl==='function'&&lkEventHomeUrl())||''")
+        chk('lkEventHomeUrl is the stable event-home URL',
+            ev_url.endswith('/test/#lk-home') or ev_url.endswith('/test/#lk-home/'), ev_url)
+        home_page.screenshot(path=str(SHOT / '12-qr-event-home.png'), full_page=False)
+        # old register hash
+        home_page.goto(f'{BASE}/test/#lk-register', wait_until='networkidle')
+        home_page.wait_for_selector('#lkhome', timeout=8000)
+        chk('old #lk-register hash lands on the event home, not a standalone register page',
+            home_page.locator('#lkhome').count()==1 and home_page.locator('#lkregpage').count()==0,
+            (home_page.locator('#lkhome').inner_text()[:200] if home_page.locator('#lkhome').count() else home_page.inner_text('body')[:200]))
+        home_page.goto(f'{BASE}/test/lk-register.html', wait_until='networkidle')
+        home_page.wait_for_timeout(800)
+        chk('lk-register.html redirects to the event home',
+            home_page.locator('#lkhome').count()==1 and home_page.locator('#lkregpage').count()==0,
+            home_page.evaluate('() => location.href'))
+        home_page.close()
 
         # live root still the previous live version
         root_page = ctx.new_page()
@@ -426,7 +490,7 @@ try:
         chk('HTTP /version.json is still v2026-11-11-2216-live', live.get('version') == 'v2026-11-11-2216-live', str(live))
         root_page.goto(f'{BASE}/test/version.json')
         tv = json.loads(root_page.inner_text('body'))
-        chk('HTTP /test/version.json is the new test build', tv.get('version') == 'v2026-11-12-0825-test', str(tv))
+        chk('HTTP /test/version.json is the new test build', tv.get('version') == 'v2026-11-12-0840-test', str(tv))
 
         # Score tab with tester: each league once as a flyer card
         tpage = ctx.new_page()
@@ -435,7 +499,7 @@ try:
         tpage.goto(f'{BASE}/test/?tester=nathe&app=1')
         tpage.wait_for_timeout(1000)
         tpage.evaluate("""() => {
-          try { localStorage.setItem('scoretool.whatsnew.seen','v2026-11-12-0825-test'); } catch(e) {}
+          try { localStorage.setItem('scoretool.whatsnew.seen','v2026-11-12-0840-test'); } catch(e) {}
           if (typeof S !== 'undefined' && S) { S.unlocked = true; if (!S.profile) S.profile = 'nathe'; if (typeof save === 'function') save(); }
         }""")
         tpage.reload()

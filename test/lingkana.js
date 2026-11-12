@@ -14,8 +14,9 @@ const LK_HOST='nathe';
 /* Test URL on GitHub Pages. The live root app at /scoretool-demo/ is unchanged. */
 const LK_PUBLIC_BASE='https://nfstride1-ux.github.io/scoretool-demo/test/';
 const LK_REGISTER_HASH='#lk-register';
-/* Printed on the poster; gates the public register page. Not a scoring password. */
-const LK_POSTER_CODE='LK-TEST26';
+const LK_HOME_HASH='#lk-home';
+/* Printed on the poster; gates first-time registration only. Exact code: lk-onion26 (Lingkana, not Onion Shed). Not a scoring password. */
+const LK_POSTER_CODE='lk-onion26';
 /* Default scoring password hash (SHA-256 of salt + NUL + the default). The plaintext is not stored on the league record. Host can change it. */
 const LK_PW_SALT='c16go1a2';
 const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aacee1';
@@ -48,7 +49,7 @@ const lkFmtD=d=>{if(!d)return'';const x=new Date(d+'T00:00:00');return x.toLocal
 
 function lkRecord(){
   return{code:LK_CODE,name:LK_NAME,format:'lingkana',host:LK_HOST,venue:LK_VENUE,hours:LK_HOURS,
-    order:[LK_HOST],weeks:LK_DATES.slice(),wt:Date.now(),cw:1,cwt:0,grp:{},gn:{},sc:{},reg:{},status:'active',
+    order:[],weeks:LK_DATES.slice(),wt:Date.now(),cw:1,cwt:0,grp:{},gn:{},sc:{},reg:{},status:'active',
     created:Date.now(),preset:1,inviteOnly:true,
     pwSalt:LK_PW_SALT,pwHash:LK_PW_HASH,pwt:1};
 }
@@ -62,6 +63,58 @@ function lkEnsure(){
   if('cap' in lg)delete lg.cap;
   if(!lg.pwHash){lg.pwSalt=LK_PW_SALT;lg.pwHash=LK_PW_HASH;lg.pwt=lg.pwt||1}
   if(typeof lkPullReg==='function')lkPullReg(lg);
+  lkStripHostEntries(lg);
+  lkDropHostIfUnregistered(lg);
+  return lg;
+}
+function lkIsHostPerson(id,name){
+  if(id&&(id===LK_HOST||id==='nathe'))return true;
+  const n=lkCleanName(name||'').toLowerCase();
+  return n==='nathe'||n==='nathaniel stride';
+}
+/* The host stays host (password, host tools) even when not on the registered list. Drop them from order unless they have a non-host sign-up or a score. */
+function lkDropHostIfUnregistered(lg){
+  if(!lg||!lkIs(lg))return lg;
+  const host=lg.host||LK_HOST;
+  const hasReg=Object.values(lg.reg||{}).some(list=>Array.isArray(list)&&list.some(r=>r&&!lkIsHostPerson(r.id,r.name)&&(r.id===host)));
+  const hasSc=!!(lg.sc&&lg.sc[host]&&Object.keys(lg.sc[host]).length);
+  if(hasReg||hasSc)return lg;
+  const next=(lg.order||[]).filter(id=>id!==host&&id!=='nathe');
+  if(next.length!==(lg.order||[]).length){
+    lg.order=next;
+    if(typeof save==='function')save();
+  }
+  return lg;
+}
+/* Clear the host's personal/test identity from the event-league register and known-name list only. Does not bump LK_FRESH or wipe other archers. */
+function lkStripHostEntries(lg){
+  if(!lg||!lkIs(lg))return lg;
+  let ch=false;
+  const next=(lg.order||[]).filter(id=>{
+    const n=(lg.gn&&lg.gn[id]&&lg.gn[id].n)||'';
+    return !lkIsHostPerson(id,n);
+  });
+  if(next.length!==(lg.order||[]).length){lg.order=next;ch=true}
+  if(lg.gn){
+    for(const id of Object.keys(lg.gn)){
+      if(lkIsHostPerson(id,(lg.gn[id]&&lg.gn[id].n)||'')){delete lg.gn[id];ch=true}
+    }
+  }
+  if(lg.reg){
+    for(const night of Object.keys(lg.reg)){
+      const L=(lg.reg[night]||[]).filter(r=>r&&!lkIsHostPerson(r.id,r.name));
+      if(L.length!==(lg.reg[night]||[]).length){lg.reg[night]=L;ch=true}
+    }
+  }
+  if(lg.claim){
+    for(const night of Object.keys(lg.claim)){
+      const bag=lg.claim[night]||{};
+      for(const id of Object.keys(bag)){
+        if(lkIsHostPerson(id,(bag[id]&&bag[id].name)||'')){delete bag[id];ch=true}
+      }
+    }
+  }
+  if(ch&&typeof save==='function')save();
   return lg;
 }
 function lkSeed(){/* do not auto-insert a league record into existing tester lists; the card offers Open */return}
@@ -146,8 +199,8 @@ function lkView(code){
     <button class="btn alt" id="lkgadd" style="margin-top:6px">Add</button>
     <p class="small" id="lkgmsg" role="alert"></p>
     <p class="small muted">In the league: ${(lg.order||[]).length} archer${(lg.order||[]).length===1?'':'s'}.</p>
-    <p class="small muted" style="margin-top:8px">Poster register link (swap LK_PUBLIC_BASE before printing): <code id="lkregurl">${h(lkRegisterUrl())}</code></p>
-    <p class="small muted">Invite code to print on the poster: <b id="lkpostercode">${h(LK_POSTER_CODE)}</b>. This is not the scoring password.</p>
+    <p class="small muted" style="margin-top:8px">Poster / share link (opens the event home): <code id="lkregurl">${h(lkEventHomeUrl())}</code></p>
+    <p class="small muted">Invite code to print on the poster: <b id="lkpostercode">${h(LK_POSTER_CODE)}</b>. First-time registration only. This is not the scoring password.</p>
     </div>`:'';
   app.innerHTML=`<div class="card" id="lgview" data-lk="1"><span class="kicker">Invite-only league</span>
     <h1>${h(lg.name)}</h1>
@@ -179,16 +232,50 @@ function lkView(code){
 }
 
 
-function lkRegisterUrl(){
+function lkEventHomeUrl(){
   const base=String(window.LK_PUBLIC_BASE||LK_PUBLIC_BASE||'').replace(/\/?$/,'/');
-  return base+LK_REGISTER_HASH;
+  return base+(window.LK_HOME_HASH||LK_HOME_HASH||'#lk-home');
+}
+function lkRegisterUrl(){
+  /* Poster and share links open the event home, not a standalone register page. */
+  return lkEventHomeUrl();
 }
 function lkNormPoster(s){return String(s||'').toUpperCase().replace(/\s+/g,'').replace(/^#/,'')}
 function lkPosterOk(code){return lkNormPoster(code)===lkNormPoster(window.LK_POSTER_CODE||LK_POSTER_CODE)}
+function lkHashName(){
+  return String(location.hash||'').replace(/^#/,'').split('?')[0].split('&')[0];
+}
 function lkIsRegHash(){
-  const raw=String(location.hash||'').replace(/^#/,'').split('?')[0].split('&')[0];
+  const raw=lkHashName();
   const q=new URLSearchParams(location.search);
   return raw==='lk-register'||q.get('page')==='lk-register';
+}
+function lkIsHomeHash(){
+  const raw=lkHashName();
+  const q=new URLSearchParams(location.search);
+  return raw==='lk-home'||raw==='lingkana'||q.get('page')==='lk-home'||q.get('page')==='lingkana';
+}
+function lkDeviceRegistered(){
+  try{return (lkRegInbox()||[]).some(r=>r&&(r.league===LK_CODE||r.poster||r.name))}catch(e){return false}
+}
+function lkAlreadyRegistered(opts){
+  opts=opts||{};
+  const id=opts.id||null;
+  const name=lkCleanName(opts.name||'');
+  if(lkDeviceRegistered()&&(id||name)){
+    const box=lkRegInbox()||[];
+    if(box.some(r=>r&&((id&&r.id===id)||(name&&lkCleanName(r.name).toLowerCase()===name.toLowerCase()))))return true;
+  }
+  const lg=lkGet()||(typeof lkEnsure==='function'&&lkEnsure())||null;
+  const known=typeof lkKnownRegistrants==='function'?lkKnownRegistrants(lg):[];
+  if(known.some(a=>(id&&a.id===id)||(name&&lkCleanName(a.name).toLowerCase()===name.toLowerCase())))return true;
+  if(lg&&lg.reg){
+    for(const night of Object.keys(lg.reg)){
+      const L=lg.reg[night]||[];
+      if(L.some(r=>r&&((id&&r.id===id)||(name&&lkCleanName(r.name).toLowerCase()===name.toLowerCase()))))return true;
+    }
+  }
+  return false;
 }
 function lkRegInbox(){try{const v=JSON.parse(localStorage.getItem(LK_REG_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
 function lkRegPush(rec){const box=lkRegInbox();box.push(rec);try{localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}catch(e){}}
@@ -219,8 +306,10 @@ function lkApplyReg(rec,lg){
   lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];
   const me=(typeof h2hMe==='function'&&h2hMe())||'';
   let id=rec.id||null;
-  if(!id&&me&&(typeof lgName==='function'?lgName(me):me).toLowerCase()===name.toLowerCase())id=me;
+  if(id&&lkIsHostPerson(id,name))id=null;
+  if(!id&&me&&!lkIsHostPerson(me,'')&&(typeof lgName==='function'?lgName(me):me).toLowerCase()===name.toLowerCase())id=me;
   if(!id)id=lkFindArcher(lg,name);
+  if(id&&lkIsHostPerson(id,name))id=null;
   const first=!id||!(lg.order||[]).includes(id);
   if(!id){
     if(me&&!(lg.order||[]).includes(me)&&!(lgArchers&&false)){
@@ -252,9 +341,10 @@ function lkPullReg(lg){
 }
 function lkRegister(opts){
   opts=opts||{};
-  const code=opts.posterCode||opts.code||'';
-  if(!lkPosterOk(code))return 'That invite code is not right. Use the code printed on the poster.';
   const name=lkCleanName(opts.name);if(name.length<2)return'Type a name (at least 2 characters).';
+  const returning=!!opts.returning||lkAlreadyRegistered({id:opts.id,name:name});
+  const code=opts.posterCode||opts.code||'';
+  if(!returning&&!lkPosterOk(code))return 'That invite code is not right. Use the code printed on the poster.';
   if(typeof nmRude==='function'&&nmRude(name))return'Please use a different name.';
   const night=String(opts.night||'');
   if(!LK_DATES.includes(night))return'Pick a shoot night.';
@@ -294,11 +384,19 @@ function lkDefaultNight(){
   for(const d of LK_DATES){if(d>=today){pick=d;break}pick=d}
   return pick;
 }
-function lkBootReg(){
-  if(!lkIsRegHash())return false;
+function lkBootHome(){
+  if(!(lkIsHomeHash()||lkIsRegHash()))return false;
+  const homeHash=window.LK_HOME_HASH||LK_HOME_HASH||'#lk-home';
+  const stay=()=>{try{if(location.hash!==homeHash)history.replaceState(null,'',location.pathname+location.search+homeHash)}catch(e){}};
+  stay();
+  setTimeout(stay,0);
   try{if($('#tabs'))$('#tabs').hidden=true}catch(e){}
-  lkRegisterView();
-  return true;
+  if(typeof lkFlowHome==='function'){lkFlowHome(LK_CODE);setTimeout(stay,0);return true}
+  return false;
+}
+function lkBootReg(){
+  /* Old #lk-register links and lk-register.html now open the event home, not a standalone register page. */
+  return lkBootHome();
 }
 function lkKnownRegistrants(lg){
   lg=lg||lkGet()||(typeof lkEnsure==='function'&&lkEnsure())||null;
@@ -330,12 +428,16 @@ function lkKnownRegistrants(lg){
     for(const night in reg){
       (reg[night]||[]).forEach(r=>{if(r)add(r.id,r.name,r)});
     }
-    (lg.order||[]).forEach(id=>add(id,((lg.gn||{})[id]&&(lg.gn||{})[id].n)||''));
+    (lg.order||[]).forEach(id=>{
+      const n=((lg.gn||{})[id]&&(lg.gn||{})[id].n)||'';
+      if(lkIsHostPerson(id,n))return;
+      add(id,n);
+    });
   }
   try{
-    (lkRegInbox()||[]).forEach(r=>{if(r)add(r.id,r.name,r)});
+    (lkRegInbox()||[]).forEach(r=>{if(r&&!lkIsHostPerson(r.id,r.name))add(r.id,r.name,r)});
   }catch(e){}
-  return [...by.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  return [...by.values()].filter(a=>!lkIsHostPerson(a.id,a.name)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
 }
 function lkRegisterView(){
   const appEl=typeof app!=='undefined'?app:(typeof $==='function'&&$('#app'));
@@ -354,9 +456,9 @@ function lkRegisterView(){
     return`<label class="lk-tick"><input type="checkbox" name="nights" value="${h(d)}" ${on?'checked':''}> ${h(lkFmtD(d))} · Night ${i+1} · ${h(lab)}</label>`;
   }).join('');
   const def=lkDefaultNight();
-  const me=(typeof h2hMe==='function'&&h2hMe())||'';
-  const myName=pick?pick.name:(me&&typeof lgName==='function'?lgName(me):(me||''));
-  const knownHtml=known.length?`<div class="lk-known" id="lkknown"><p class="small muted">If you have already registered, tap your name, tick the nights you will shoot and save. You will not need to enter your email or phone again.</p>${known.map(a=>`<button type="button" class="lk-known-btn${pick&&((pick.id&&pick.id===a.id)||pick.name===a.name)?' on':''}" data-lkret="${h(a.id||a.name)}">${h(a.name)}</button>`).join('')}</div>`:'';
+  const myName=pick?pick.name:'';
+  const skipCode=!!pick||lkDeviceRegistered();
+  const knownHtml=known.length?`<div class="lk-known" id="lkknown"><p class="small muted">If you have already registered, tap your name, tick the nights you will shoot and save. You will not need the invite code or to enter your email or phone again.</p>${known.map(a=>`<button type="button" class="lk-known-btn${pick&&((pick.id&&pick.id===a.id)||pick.name===a.name)?' on':''}" data-lkret="${h(a.id||a.name)}">${h(a.name)}</button>`).join('')}</div>`:'';
   const contact=pick?`<p id="lkretnote">Signing in as <b>${h(pick.name)}</b>. Your email and phone are already saved.</p>`:
     `<label for="lkregemail">Email <span class="muted">(optional)</span></label>
       <input id="lkregemail" name="email" type="email" maxlength="80" autocomplete="email">
@@ -369,12 +471,12 @@ function lkRegisterView(){
     <h1>Register for a shoot night</h1>
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
-    <p>This page is invite-only. Type the invite code printed on the poster, then register for the night you will shoot. There is no deadline — you can register on the night.</p>
-    <p class="small muted">The first time you register, your name stays on the league list for the season. You still need to sign up again for every shoot night.</p>
+    <p>${skipCode?'Tap your name to sign up for more nights, or register someone new. There is no deadline — you can register on the night.':'This page is invite-only. Type the invite code printed on the poster, then register for the night you will shoot. There is no deadline — you can register on the night.'}</p>
+    <p class="small muted">The first time you register, your name stays on the league list for the season. You still need to sign up again for every shoot night. After that you will not need the invite code again.</p>
     ${knownHtml}
     <form id="lkregform" autocomplete="on">
-      <label for="lkregcode">Poster invite code</label>
-      <input id="lkregcode" name="code" required autocomplete="off" autocapitalize="characters" placeholder="Code on the poster">
+      ${skipCode?'':`<label for="lkregcode">Poster invite code</label>
+      <input id="lkregcode" name="code" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Code on the poster">`}
       <label for="lkregname">Name</label>
       <input id="lkregname" name="name" required maxlength="24" autocomplete="name" value="${h(myName)}" placeholder="Your name" ${pick?'readonly':''}>
       ${nightFields}
@@ -405,6 +507,7 @@ function lkRegisterView(){
     const code=(appEl.querySelector('#lkregcode')||{}).value;
     const name=(appEl.querySelector('#lkregname')||{}).value;
     const bow=(appEl.querySelector('#lkregbow')||{}).value;
+    const returning=!!pick||lkAlreadyRegistered({id:pick&&pick.id,name:name});
     let nightsToSave=[];
     if(pick){
       nightsToSave=[...appEl.querySelectorAll('#lkregnights input:checked')].map(x=>x.value);
@@ -416,7 +519,7 @@ function lkRegisterView(){
     const phone=pick?(pick.phone||''):(appEl.querySelector('#lkregphone')||{}).value;
     let last='';
     for(const night of nightsToSave){
-      last=lkRegister({posterCode:code,name,night,bow,email,phone,id:pick&&pick.id});
+      last=lkRegister({posterCode:code,name,night,bow,email,phone,id:pick&&pick.id,returning:returning});
       if(last){if(box)box.textContent=last;return}
     }
     window._lkRetPick=null;
@@ -940,15 +1043,15 @@ function lkBootResults(){
 const _lkH2H=window.h2hCard;
 if(_lkH2H){window.h2hCard=function(){const html=_lkH2H.apply(this,arguments);setTimeout(lkDecorateCard,0);return html}}
 const _lkRender=window.render;
-if(_lkRender){window.render=function(){if(lkBootReg())return;if(lkBootResults())return;return _lkRender.apply(this,arguments)}}
-addEventListener('hashchange',()=>{if(lkIsRegHash())lkBootReg();else if(lkIsResHash())lkBootResults()});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{lkBootReg()||lkBootResults()},0));
-else setTimeout(()=>{lkBootReg()||lkBootResults()},0);
+if(_lkRender){window.render=function(){if(lkBootHome())return;if(lkBootResults())return;return _lkRender.apply(this,arguments)}}
+addEventListener('hashchange',()=>{if(lkIsHomeHash()||lkIsRegHash())lkBootHome();else if(lkIsResHash())lkBootResults()});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{lkBootHome()||lkBootResults()},0));
+else setTimeout(()=>{lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_REG_KEY,LK_FEE,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,LK_RULES,lkRulesHTML,
-  lkRegisterUrl,lkPosterOk,lkRegister,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkEventHomeUrl,lkRegisterUrl,lkPosterOk,lkRegister,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();
