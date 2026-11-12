@@ -147,9 +147,11 @@
     return Object.keys(m).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(t=>({t,rows:m[t]}));
   }
   function nightOf(lg){
+    const max=isOnion()?6:((typeof LK_NIGHTS==='number'&&LK_NIGHTS)||7);
     const w=+(window._lkFlowNight||0);
-    if(w>=1&&w<=LK_NIGHTS)return w;
-    return Math.min(LK_NIGHTS, (typeof lgWeek==='function'?lgWeek(lg):1)||1);
+    if(w>=1&&w<=max)return w;
+    const cur=(typeof lgWeek==='function'?lgWeek(lg):1)||1;
+    return Math.min(max, cur);
   }
   function setNight(w){window._lkFlowNight=+w||1}
 
@@ -333,78 +335,189 @@
     };
   }
 
+
+  const LK_TARGETS=13; /* Lingkana: 13 shooting lanes. Onion Shed: Nathe, 12 Nov 8:09am, also a max of 13 lanes. */
+  function eventLg(){
+    if(isOnion()){
+      if(typeof lgSeed==='function')lgSeed();
+      return (typeof lgGet==='function'&&lgGet(evCode()))||null;
+    }
+    return (typeof lkEnsure==='function'&&lkEnsure())||null;
+  }
+  function nightKey(lg,w){
+    if(isOnion())return String(w);
+    return (typeof lkNightKey==='function'&&lkNightKey(lg,w))||((typeof LK_DATES!=='undefined'&&LK_DATES[(w||1)-1])||'');
+  }
+  function nightSignups(lg,w){
+    if(isOnion())return (((lg||{}).reg)||{})[nightKey(lg,w)]||[];
+    if(typeof lkNightSignups==='function')return lkNightSignups(lg,w)||[];
+    return signups(lg,w);
+  }
+  function nightChoices(lg,w){
+    if(isOnion()){
+      return [1,2,3,4,5,6].map(n=>{
+        const d=(lg&&lg.weeks&&lg.weeks[n-1])||'';
+        const lab=n<6?('Week '+n):'Day 6 (together)';
+        return`<option value="${n}" ${n===w?'selected':''}>${esc(lab)}${d?' · '+esc(d):''}</option>`;
+      }).join('');
+    }
+    return (LK_DATES||[]).map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('');
+  }
+  function archerTarget(lg,w,id){
+    const rec=(nightSignups(lg,w)||[]).find(r=>r&&r.id===id);
+    const t=rec&&rec.target!=null?+rec.target:0;
+    if(t>=1&&t<=LK_TARGETS)return t;
+    if(!isOnion()){
+      const G=((((lg||{}).grp)||{})[w]||{}).g||[];
+      for(let i=0;i<G.length;i++){
+        if((G[i]||[]).includes(id)){
+          /* Prefer an explicit target stored on the group when present; otherwise this is only a scoring group, not a lane. */
+          const gt=G[i]&&G[i]._target;
+          if(gt>=1&&gt<=LK_TARGETS)return +gt;
+        }
+      }
+    }
+    return 0;
+  }
+  function setTargets(lg,w,target,ids){
+    if(!lg)return 'The league is not on this phone yet.';
+    const k=nightKey(lg,w);
+    lg.reg=lg.reg||{};
+    const list=lg.reg[k]||[];
+    const set=new Set(ids||[]);
+    list.forEach(r=>{
+      if(!r||!r.id)return;
+      if(set.has(r.id))r.target=+target;
+      else if(+r.target===+target)delete r.target;
+    });
+    lg.reg[k]=list;
+    lg.dirty=1;
+    if(typeof save==='function')save();
+    return '';
+  }
+  function startScoring(lg,w,ids){
+    window._lkScoreIds=ids.slice();
+    window._lkScoreI=0;
+    window._lkScoreMode=null;
+    window._lgE={code:lg.code,w:+w,ids:ids.slice()};
+    window._lgAct=ids[0];
+    window._lgHold=null;
+    window._lkFlowNight=+w;
+    if(isOnion()){
+      /* lgView scores the current week (lgWeek). With no week dates set, cw is what that uses. Do not change 300 scoring. */
+      if(!((lg.weeks||[]).filter(Boolean).length))lg.cw=+w;
+      hideChrome(false);
+      window._lkFlow=false;
+      if(typeof lgView==='function')lgView(lg.code);
+      return;
+    }
+    if(typeof scoreScreen==='function')scoreScreen();
+  }
+
   function selectArchers(){
-    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    const lg=eventLg();
     if(!lg){home();return}
-    if(typeof lkAuthed==='function'&&lg.pwHash&&!lkAuthed(lg)){login();return}
+    if(!isOnion()&&typeof lkAuthed==='function'&&lg.pwHash&&!lkAuthed(lg)){login();return}
     hideChrome(true);
     const w=nightOf(lg);
-    const list=signups(lg,w);
-    const season=(lg.order||[]).map(id=>({id,name:(typeof lgName==='function'&&lgName(id))||id}));
-    /* Show tonight's sign-ups; if none yet, show the season list so a scorer can still pick */
-    const rows=list.length?list.map(r=>({id:r.id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||r.id),target:r.target,round:r.round||LK_R})):season;
-    const selected=(window._lkPicked||[]).filter(id=>rows.some(r=>r.id===id)&&!claimedByOther(lg,w,id));
-    window._lkPicked=selected.slice();
-    const groups=grouped(rows.map(r=>({...r,target:r.target})));
+    const target=+(window._lkTarget||0);
+    const list=nightSignups(lg,w);
+    const rows=list.map(r=>({id:r.id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||r.id),target:archerTarget(lg,w,r.id)}));
     const el=appEl();if(!el)return;
-    const selHtml=selected.length?`<div class="lk-selbox" id="lkselections"><h3>Selections</h3><ul>${selected.map(id=>`<li>${esc((rows.find(r=>r.id===id)||{}).name||id)}</li>`).join('')}</ul></div>`:'';
-    const body=groups.map(g=>{
-      const items=g.rows.map(r=>{
-        const other=claimedByOther(lg,w,r.id);
-        const on=selected.includes(r.id);
-        const lock=other||on;
-        return `<label class="lk-row${other?' locked':''}" data-lkid="${esc(r.id)}">
-          <span class="nm">${esc(r.name)}</span>
-          <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${other?'disabled':''}>
-          ${lock?`<span class="lk-padlock" title="${other?'Selected on another phone':'Selected'}">🔒</span>`:''}
-        </label>`;
+    const title=esc(lg.name||evName());
+    const nightSel=`<label for="lknight">Night</label><select id="lknight">${nightChoices(lg,w)}</select>`;
+    const hostPwBtn=(!isOnion()&&typeof lkCanHost==='function'&&lkCanHost(lg))?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:'';
+
+    if(!(target>=1&&target<=LK_TARGETS)){
+      const counts={};
+      rows.forEach(r=>{if(r.target)counts[r.target]=(counts[r.target]||0)+1});
+      const grid=Array.from({length:LK_TARGETS},(_,i)=>{
+        const n=i+1, c=counts[n]||0;
+        return `<button type="button" class="lk-tbtn" data-lktgt="${n}" id="lktgt${n}">${n}${c?`<span class="lk-tcount">${c}</span>`:''}</button>`;
       }).join('');
-      return `<div class="lk-tgt">Target ${esc(g.t)}</div>${items}`;
-    }).join('')||'<p>No archers registered for this night yet.</p>';
-    el.innerHTML=`<div class="lkf" id="lkselect">
-      <h1>${esc(lg.name)} <span class="lk-count" id="lkcount">${rows.length} / ${Math.max(rows.length,(lg.order||[]).length)}</span></h1>
-      <label for="lknight">Night</label>
-      <select id="lknight">${LK_DATES.map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('')}</select>
+      el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}">
+        <h1>${title}</h1>
+        ${nightSel}
+        <p class="small muted">Tap a target, then tick up to 4 archers already registered for this night. Registration is on the Event Registration page.</p>
+        <div class="lk-tgrid" id="lktargets">${grid}</div>
+        ${hostPwBtn}
+        ${bar(btn('lkbacklogin','Back / Login','grey'),'')}
+      </div>`;
+      $id('lknight').onchange=()=>{setNight(+$id('lknight').value);window._lkTarget=0;window._lkPicked=[];selectArchers()};
+      $id('lkbacklogin').onclick=()=>{window._lkTarget=0;window._lkPicked=[];home(evCode())};
+      if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
+      el.querySelectorAll('[data-lktgt]').forEach(b=>b.onclick=()=>{window._lkTarget=+b.getAttribute('data-lktgt');window._lkPicked=[];selectArchers()});
+      return;
+    }
+
+    const selected=(window._lkPicked||[]).filter(id=>{
+      const row=rows.find(r=>r.id===id);
+      if(!row)return false;
+      if(claimedByOther(lg,w,id))return false;
+      const on=archerTarget(lg,w,id);
+      return !on||on===target;
+    });
+    window._lkPicked=selected.slice();
+    const selHtml=selected.length?`<div class="lk-selbox" id="lkselections"><h3>Selections</h3><ul>${selected.map(id=>`<li>${esc((rows.find(r=>r.id===id)||{}).name||id)}</li>`).join('')}</ul></div>`:'';
+    const body=rows.map(r=>{
+      const other=claimedByOther(lg,w,r.id);
+      const onT=archerTarget(lg,w,r.id);
+      const taken=!!other||(onT&&onT!==target);
+      const on=selected.includes(r.id);
+      const why=other?((other.name||'Another scorer')+' already has this archer.'):('Already on target '+onT);
+      return `<label class="lk-row${taken?' locked':''}" data-lkid="${esc(r.id)}">
+        <span class="nm">${esc(r.name)}</span>
+        <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${taken?'disabled':''}>
+        ${taken?`<span class="lk-padlock" title="${esc(why)}">🔒</span>`:''}
+      </label>`;
+    }).join('')||'<p>No archers registered for this night yet. They sign up on the Event Registration page.</p>';
+    el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}" data-target="${target}">
+      <h1>${title}</h1>
+      ${nightSel}
+      <div class="lk-tgt" id="lktgtlabel">Target ${target}</div>
       ${selHtml}
       <div id="lkarchlist">${body}</div>
-      ${btn('lkregarch','Register Archer','grey')}
-      ${typeof lkCanHost==='function'&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
+      ${hostPwBtn}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
-      ${bar(btn('lkbacklogin','Back / Login','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
+      ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
     </div>`;
-    $id('lknight').onchange=()=>{setNight(+$id('lknight').value);window._lkPicked=[];selectArchers()};
-    $id('lkregarch').onclick=()=>regSearch();
-    $id('lkbacklogin').onclick=()=>{window._lkPicked=[];login()};
+    $id('lknight').onchange=()=>{setNight(+$id('lknight').value);window._lkTarget=0;window._lkPicked=[];selectArchers()};
+    $id('lkbacklogin').onclick=()=>{window._lkTarget=0;window._lkPicked=[];selectArchers()};
     if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
     const toggle=id=>{
       const msg=$id('lkselmsg');
       const other=claimedByOther(lg,w,id);
       if(other){if(msg)msg.textContent=(other.name||'Another scorer')+' already has this archer.';return}
+      const onT=archerTarget(lg,w,id);
+      if(onT&&onT!==target){if(msg)msg.textContent='That archer is already on target '+onT+'.';return}
       const has=window._lkPicked.includes(id);
-      if(!has&&window._lkPicked.length>=4){if(msg)msg.textContent='Pick up to 4 archers for this phone.';return}
-      const err=setClaim(lg,w,id,!has);
-      if(err){if(msg)msg.textContent=err;return}
+      if(!has&&window._lkPicked.length>=4){if(msg)msg.textContent='Pick up to 4 archers for this target.';const box=el.querySelector('#lkarchlist input[data-lkid="'+id+'"]');if(box)box.checked=false;return}
+      if(!isOnion()){
+        const err=setClaim(lg,w,id,!has);
+        if(err){if(msg)msg.textContent=err;return}
+      }
       if(has)window._lkPicked=window._lkPicked.filter(x=>x!==id);
       else window._lkPicked.push(id);
       selectArchers();
     };
-    el.querySelectorAll('[data-lkid]').forEach(box=>{
-      if(box.tagName==='INPUT')box.onchange=()=>toggle(box.getAttribute('data-lkid'));
+    el.querySelectorAll('#lkarchlist input[data-lkid]').forEach(box=>{
+      box.onchange=()=>toggle(box.getAttribute('data-lkid'));
     });
     $id('lkstart').onclick=()=>{
       const ids=window._lkPicked||[];
       const msg=$id('lkselmsg');
       if(!ids.length){if(msg)msg.textContent='Tick the archers you are scoring.';return}
-      const add=typeof lkSetGroups==='function'?lkSetGroups(w,[ids]):'';
-      if(add){if(msg)msg.textContent=add;return}
-      window._lkScoreIds=ids.slice();
-      window._lkScoreI=0;
-      window._lgE={code:lg.code,w:+w,ids:ids.slice()};
-      window._lgAct=ids[0];
-      window._lgHold=null;
-      scoreScreen();
+      if(ids.length>4){if(msg)msg.textContent='Pick up to 4 archers for this target.';return}
+      const put=setTargets(lg,w,target,ids);
+      if(put){if(msg)msg.textContent=put;return}
+      if(!isOnion()&&typeof lkSetGroups==='function'){
+        const add=lkSetGroups(w,[ids]);
+        if(add){if(msg)msg.textContent=add;return}
+      }
+      startScoring(lg,w,ids);
     };
   }
+
 
   function regSearch(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -837,9 +950,8 @@
       setMyName(n);
       const raw=($id('lkcode').value||code);
       const openExisting=()=>{
-        hideChrome(false);
-        window._lkFlow=false;
-        if(typeof lgView==='function')lgView(code);
+        window._lkTarget=0;window._lkPicked=[];
+        selectArchers();
       };
       const lg=typeof lgGet==='function'?lgGet(code):null;
       const who=me();
@@ -857,6 +969,45 @@
     $id('lkcode').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
   }
 
+  function osKnown(lg){
+    const out=[];
+    const add=(id,name)=>{
+      const n=String(name||(id&&typeof lgName==='function'&&lgName(id))||id||'').trim();
+      if(!n)return;
+      let rec=id&&out.find(x=>x.id===id);
+      if(!rec)rec=out.find(x=>x.name.toLowerCase()===n.toLowerCase());
+      if(!rec){rec={id:id||null,name:n,nights:[]};out.push(rec)}
+      if(id&&!rec.id)rec.id=id;
+      if(n&&rec.name!==n){
+        const looksLikeId=rec.name.toLowerCase()===(rec.id||'').toLowerCase();
+        if(looksLikeId||n.length>rec.name.length)rec.name=n;
+      }
+      rec.nights=rec.nights||[];
+      for(let w=1;w<=6;w++){
+        if(!rec.nights.includes(w)&&((lg.reg||{})[String(w)]||[]).some(r=>r&&((id&&r.id===id)||String(r.name||'').toLowerCase()===n.toLowerCase())))rec.nights.push(w);
+      }
+    };
+    for(const k in ((lg&&lg.reg)||{})){
+      ((lg.reg[k])||[]).forEach(r=>{if(r)add(r.id,r.name)});
+    }
+    ((lg&&lg.order)||[]).forEach(id=>add(id,(typeof lgName==='function'&&lgName(id))||id));
+    return out;
+  }
+  function osSaveNights(lg,id,name,weeks){
+    if(!lg)return 'The league is not on this phone yet.';
+    lg.reg=lg.reg||{};
+    const who=id||name;
+    for(const w of weeks){
+      const k=String(w);
+      lg.reg[k]=lg.reg[k]||[];
+      if(!lg.reg[k].some(r=>r&&(r.id===id||(name&&String(r.name||'').toLowerCase()===String(name).toLowerCase())))){
+        lg.reg[k].push({id:id||null,name,at:Date.now()});
+      }
+    }
+    lg.dirty=1;
+    if(typeof save==='function')save();
+    return '';
+  }
   function osRegister(){
     if(typeof lgSeed==='function')lgSeed();
     hideChrome(true);
@@ -864,39 +1015,65 @@
     const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
     const lg=typeof lgGet==='function'?lgGet(code):null;
     const can=!!(lg&&typeof lgCanEd==='function'&&lgCanEd(lg));
-    const member=!!(lg&&me()&&(lg.order||[]).includes(me()));
-    const weeks=[1,2,3,4,5,6].map(w=>{
+    const known=lg?osKnown(lg):[];
+    const pick=window._osRegPick||null;
+    const weekBoxes=[1,2,3,4,5,6].map(w=>{
       const d=(lg&&lg.weeks&&lg.weeks[w-1])||'';
       const lab=w<6?('Week '+w):'Day 6 (together)';
-      return`<option value="${w}">${esc(lab)}${d?' · '+esc(d):''}</option>`;
+      const on=pick&&(pick.nights||[]).includes(w);
+      return `<label class="lk-tick"><input type="checkbox" data-osw="${w}" ${on?'checked':''}> ${esc(lab)}${d?' · '+esc(d):''}</label>`;
     }).join('');
+    const names=known.length?`<div class="lk-known" id="osknown"><p class="small muted">If you have already registered, tap your name, tick the weeks you will shoot and save.</p>${known.map(a=>`<button type="button" class="lk-known-btn${pick&&pick.id===a.id?' on':''}" data-osid="${esc(a.id)}">${esc(a.name)}</button>`).join('')}</div>`:'';
     el.innerHTML=`<div class="lkf" id="lkregpage" data-ev="${esc(code)}">
       <h1>Event Registration</h1>
       <p class="small muted">${esc(evName())}. Weeks 1 to 5 are a 300, in person or over FaceTime. Day 6 is a 300 together in the Onion Shed, then the shoot-up.</p>
-      ${member?'<p>You are already in this league. You do not need to register again.</p>':''}
-      ${can?`<p class="small muted">The host can add a name-only shooter here. You enter their 300s each week.</p>
-        <label for="lkgname">Name</label>
-        <input id="lkgname" maxlength="24" autocomplete="name" placeholder="Name">
-        <label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lkgjr"> Under 16 (nickname only)</label>
-        <label for="lkregweek">Week</label>
-        <select id="lkregweek">${weeks}</select>
-        <p class="lk-msg" id="lkregmsg" role="alert"></p>
-        ${bar(btn('lkregback','Back','grey'),btn('lkreggo','Add','green'))}`
-        :`${member?'': '<p>Ask the host to add you to this league. There is no public register page for this event.</p>'}
-        ${bar(btn('lkregback','Back','grey'),'')}`}
+      ${names}
+      ${pick?`<p id="ospicked">Signing in as <b>${esc(pick.name)}</b>.</p>`:`<label for="lkgname">Name</label>
+        <input id="lkgname" maxlength="24" autocomplete="name" placeholder="Your name">
+        ${can?`<label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lkgjr"> Under 16 (nickname only)</label>`:''}`}
+      <p class="small" style="margin-top:10px">Weeks</p>
+      <div id="osweeks">${weekBoxes}</div>
+      <p class="lk-msg" id="lkregmsg" role="alert"></p>
+      ${bar(btn('lkregback','Back','grey'),btn('lkreggo',pick?'Save':'Register','green'))}
+      ${!can&&!known.length?'<p class="small muted">Ask the host to add you to this league if your name is not listed.</p>':''}
     </div>`;
-    $id('lkregback').onclick=()=>home(code);
-    if($id('lkreggo'))$id('lkreggo').onclick=()=>{
-      const nm=($id('lkgname').value||'').trim();
-      const jr=!!($id('lkgjr')&&$id('lkgjr').checked);
+    $id('lkregback').onclick=()=>{window._osRegPick=null;home(code)};
+    el.querySelectorAll('[data-osid]').forEach(b=>b.onclick=()=>{
+      const a=known.find(x=>x.id===b.getAttribute('data-osid'));
+      window._osRegPick=a||null;
+      osRegister();
+    });
+    $id('lkreggo').onclick=()=>{
       const msg=$id('lkregmsg');
-      if(nm.length<2){if(msg)msg.textContent='Type a name.';return}
-      const out=typeof lgAddGuest==='function'?lgAddGuest(code,nm,jr):'Cannot add a shooter on this phone.';
-      if(out){if(msg)msg.textContent=out;return}
-      if(msg)msg.textContent='Added. You can score them from Login to Event.';
-      if($id('lkgname'))$id('lkgname').value='';
+      const weeks=[...el.querySelectorAll('[data-osw]:checked')].map(x=>+x.getAttribute('data-osw'));
+      if(!weeks.length){if(msg)msg.textContent='Tick the weeks you will shoot.';return}
+      let id=pick&&pick.id, name=pick&&pick.name;
+      if(!pick){
+        name=(($id('lkgname')||{}).value||'').trim();
+        if(name.length<2){if(msg)msg.textContent='Type a name.';return}
+        if(can&&typeof lgAddGuest==='function'){
+          const already=known.find(a=>a.name.toLowerCase()===name.toLowerCase());
+          if(!already){
+            const jr=!!($id('lkgjr')&&$id('lkgjr').checked);
+            const out=lgAddGuest(code,name,jr);
+            if(out){if(msg)msg.textContent=out;return}
+          }
+        }else if(!known.some(a=>a.name.toLowerCase()===name.toLowerCase())){
+          if(msg)msg.textContent='Ask the host to add you to this league first.';return
+        }
+        const fresh=typeof lgGet==='function'?lgGet(code):lg;
+        const got=(typeof osKnown==='function'&&osKnown(fresh)||[]).find(a=>a.name.toLowerCase()===name.toLowerCase());
+        if(got){id=got.id;name=got.name}
+      }
+      const L=typeof lgGet==='function'?lgGet(code):lg;
+      const err=osSaveNights(L,id,name,weeks);
+      if(err){if(msg)msg.textContent=err;return}
+      window._osRegPick=null;
+      if(msg)msg.textContent='You are registered for those weeks. Tap your name next time — you will not need to type it again.';
+      setTimeout(()=>osRegister(),400);
     };
   }
+
 
   function osReview(){
     if(typeof lgSeed==='function')lgSeed();

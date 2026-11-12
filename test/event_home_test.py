@@ -46,7 +46,7 @@ try:
     live_v = json.loads((ROOT / 'version.json').read_text())['version']
     test_v = json.loads((ROOT / 'test' / 'version.json').read_text())['version']
     chk('live-root version.json is still v2026-11-11-2216-live', live_v == 'v2026-11-11-2216-live', live_v)
-    chk('test version.json is the new test build', test_v == 'v2026-11-12-0815-test', test_v)
+    chk('test version.json is the new test build', test_v == 'v2026-11-12-0825-test', test_v)
 
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path='/usr/bin/google-chrome',
@@ -198,6 +198,225 @@ try:
             'review scoresheet' in rv.lower() and ('total' in rv.lower() or 'not on this phone' in rv.lower() or 'archer' in rv.lower()),
             rv[:240])
 
+
+        # --- 13-target picker + returning-archer register (Lingkana, then Onion Shed) ---
+        DEMO = ['Sam Archer','Alex River','Kim Brook','Pat Reed','Jo West']
+
+        def auth_and_seed_lingkana():
+            return page.evaluate("""(names) => {
+              try { sessionStorage.setItem('scoretool.lk.auth','LINGKN26'); } catch(e) {}
+              window._lkAuthed = 'LINGKN26';
+              const lg = (typeof lkEnsure==='function'&&lkEnsure())||null;
+              if (!lg) return 'no league';
+              const night = (typeof LK_DATES!=='undefined'&&LK_DATES[0]) || '2026-11-18';
+              lg.reg = lg.reg || {};
+              lg.order = lg.order || [];
+              lg.gn = lg.gn || {};
+              lg.reg[night] = names.map((name,i) => {
+                const id = 'demo'+(i+1);
+                if (!lg.order.includes(id)) lg.order.push(id);
+                lg.gn[id] = {n:name, t:Date.now()};
+                return {id, name, at:Date.now()};
+              });
+              if (typeof save==='function') save();
+              window._lkTarget = 0; window._lkPicked = [];
+              if (typeof lkFlowHome==='function') lkFlowHome('LINGKN26');
+              if (typeof lkFlowSelect==='function') lkFlowSelect();
+              return 'ok';
+            }""", DEMO)
+
+        # public test URL already on Onion Shed review; go back to list then Lingkana
+        if page.locator('#lkrevback').count():
+            page.locator('#lkrevback').click()
+        elif page.locator('#lkresback').count():
+            page.locator('#lkresback').click()
+        elif page.locator('#lkhomeback').count():
+            pass
+        else:
+            page.evaluate("() => window.lkFlowList && window.lkFlowList()")
+        if page.locator('#lkhome').count() and page.locator('#lkhomeback').count():
+            # we may be on OS event home after review back; go to list if needed later
+            pass
+
+        seeded = auth_and_seed_lingkana()
+        chk('seeded Lingkana night-1 demo sign-ups', seeded == 'ok', str(seeded))
+        page.wait_for_selector('#lktargets, #lkselect', timeout=5000)
+        btns = page.locator('#lktargets .lk-tbtn, button[data-lktgt]')
+        chk('Lingkana target page shows 13 target numbers', btns.count() == 13, str(btns.count()))
+        nums = [btns.nth(i).get_attribute('data-lktgt') or btns.nth(i).inner_text().strip().split()[0] for i in range(btns.count())]
+        chk('Lingkana targets are 1 through 13', nums == [str(i) for i in range(1,14)], str(nums))
+        body = page.inner_text('body')
+        chk('Lingkana target page has no Register Archer button',
+            page.locator('#lkregarch').count()==0 and 'register archer' not in body.lower(), body[:240])
+        page.screenshot(path=str(SHOT / '05-thirteen-targets.png'), full_page=False)
+
+        page.locator('#lktgt1, [data-lktgt="1"]').first.click()
+        page.wait_for_selector('#lkarchlist, #lktgtlabel', timeout=4000)
+        labels = page.locator('#lkarchlist .lk-row .nm')
+        shown = [labels.nth(i).inner_text().strip() for i in range(labels.count())]
+        chk('after tapping a target, tonight\'s registered names are listed',
+            all(n in shown for n in DEMO), str(shown))
+        chk('picker lists only tonight\'s sign-ups (no extra Register Archer)',
+            page.locator('#lkregarch').count()==0 and page.locator('#lktgtlabel').inner_text().strip().lower().startswith('target 1'))
+        page.screenshot(path=str(SHOT / '06-pick-shooters.png'), full_page=False)
+
+        # max 4
+        for name in DEMO[:4]:
+            row = page.locator('#lkarchlist .lk-row', has_text=name)
+            box = row.locator('input[type="checkbox"]')
+            if not box.is_checked():
+                box.check()
+            page.wait_for_timeout(150)
+        page.locator('#lkarchlist .lk-row', has_text=DEMO[4]).locator('input[type="checkbox"]').click()
+        page.wait_for_timeout(200)
+        fifth = page.locator('#lkarchlist .lk-row', has_text=DEMO[4]).locator('input[type="checkbox"]')
+        msg = page.locator('#lkselmsg').inner_text() if page.locator('#lkselmsg').count() else ''
+        chk('a fifth tick is blocked with a short message',
+            (not fifth.is_checked()) and 'up to 4' in msg.lower(), msg)
+
+        # name already on another target is locked
+        page.evaluate("""() => {
+          const lg = (typeof lkEnsure==='function'&&lkEnsure())||null;
+          const w = 1;
+          const night = (typeof lkNightKey==='function'&&lkNightKey(lg,w)) || ((typeof LK_DATES!=='undefined'&&LK_DATES[0])||'2026-11-18');
+          const list = ((lg.reg||{})[night])||[];
+          const rec = list.find(r => r && r.name==='Jo West');
+          if (rec) rec.target = 3;
+          if (typeof save==='function') save();
+          window._lkPicked = [];
+          window._lkTarget = 1;
+          if (typeof lkFlowSelect==='function') lkFlowSelect();
+        }""")
+        page.wait_for_selector('#lkarchlist', timeout=4000)
+        jo = page.locator('#lkarchlist .lk-row', has_text='Jo West')
+        chk('a name already on another target is locked and not tickable',
+            'locked' in (jo.get_attribute('class') or '') and jo.locator('input').is_disabled(),
+            jo.get_attribute('class') or '')
+
+        # Start opens existing scoring
+        for name in DEMO[:2]:
+            row = page.locator('#lkarchlist .lk-row', has_text=name)
+            if 'locked' in (row.get_attribute('class') or ''):
+                continue
+            box = row.locator('input[type="checkbox"]')
+            if not box.is_checked():
+                box.check()
+            page.wait_for_timeout(150)
+        page.locator('#lkstart').click()
+        page.wait_for_timeout(600)
+        chk('Start opens the existing Lingkana scoring screen',
+            page.locator('#lgentry, #lgsheet, .ad-title').count() >= 1
+            and ('score end' in page.inner_text('body').lower() or 'lancaster' in page.inner_text('body').lower() or page.locator('#lgentry').count()==1),
+            page.inner_text('body')[:240])
+
+        # Returning archer on Event Registration: register once, then tap name, no email/phone
+        page.evaluate("() => { window._lkRetPick=null; if (typeof lkFlowHome==='function') lkFlowHome('LINGKN26'); }")
+        page.wait_for_selector('#lkhome', timeout=4000)
+        page.locator('#lkereg').click()
+        page.wait_for_selector('#lkregpage, #lkregform', timeout=4000)
+        # Use a fresh name so this path is the new-archer form first
+        if page.locator('#lkregemail').count()==0 and page.locator('[data-lkret]').count():
+            # already in returning state; clear pick by reloading the view
+            page.evaluate("() => { window._lkRetPick=null; if (typeof lkRegisterView==='function') lkRegisterView(); }")
+            page.wait_for_timeout(300)
+        chk('new archer still sees name and optional email/phone fields',
+            page.locator('#lkregname').count()==1 and page.locator('#lkregemail').count()==1 and page.locator('#lkregphone').count()==1)
+        page.fill('#lkregcode', 'LK-TEST26')
+        page.fill('#lkregname', 'Sam Archer')
+        # night select should exist for a new fill; if name already known it might flip after typing? name is typed, not tapped
+        if page.locator('#lkregemail').count():
+            page.fill('#lkregemail', 'sam@example.com')
+            page.fill('#lkregphone', '0400000000')
+        if page.locator('#lkregnight').count():
+            page.locator('#lkregnight').select_option(index=0)
+        page.locator('#lkreggo').click()
+        page.wait_for_timeout(800)
+        # after save the view redraws; tap the name
+        page.wait_for_selector('.lk-known-btn, [data-lkret]', timeout=4000)
+        page.locator('.lk-known-btn, [data-lkret]', has_text='Sam Archer').first.click()
+        page.wait_for_timeout(300)
+        chk('returning archer taps their name and does not re-enter email or phone',
+            page.locator('#lkregemail').count()==0 and page.locator('#lkregphone').count()==0
+            and page.locator('#lkretnote, #lkregnights').count() >= 1
+            and 'sam@example.com' not in page.inner_text('body').lower()
+            and '0400000000' not in page.inner_text('body'),
+            page.inner_text('#lkregpage').strip()[:300] if page.locator('#lkregpage').count() else page.inner_text('body')[:300])
+        chk('Get ScoreTool was not added or removed on the test register page',
+            'get scoretool' not in page.inner_text('#lkregpage').lower() if page.locator('#lkregpage').count() else True)
+        page.screenshot(path=str(SHOT / '07-register-tap-name.png'), full_page=False)
+
+        # Onion Shed: same 13-target picker, no Register Archer, 300 scoring unchanged
+        page.evaluate("""(names) => {
+          if (typeof lgSeed==='function') lgSeed();
+          const code = (typeof LG_PRESET!=='undefined'&&LG_PRESET.code)||'ONIONSH2';
+          let lg = (typeof lgGet==='function'&&lgGet(code))||null;
+          if (!lg && typeof S!=='undefined' && S && typeof lgPresetRecord==='function'){
+            S.leagues = S.leagues||[];
+            lg = lgPresetRecord(code);
+            S.leagues.push(lg);
+            if (typeof save==='function') save();
+          }
+          if (!lg) return 'no os league';
+          lg.reg = lg.reg || {}; lg.gn = lg.gn || {}; lg.order = lg.order || [];
+          const ids = [];
+          names.forEach((name,i) => {
+            const id = 'osdemo'+(i+1);
+            if (!lg.order.includes(id)) lg.order.push(id);
+            lg.gn[id] = {n:name, t:Date.now()};
+            ids.push(id);
+          });
+          lg.reg['1'] = names.map((name,i) => ({id:ids[i], name, at:Date.now()}));
+          if (typeof save==='function') save();
+          window._lkTarget = 0; window._lkPicked = [];
+          if (typeof lkFlowHome==='function') lkFlowHome(code);
+          if (typeof lkFlowSelect==='function') lkFlowSelect();
+          return 'ok';
+        }""", DEMO)
+        page.wait_for_selector('#lktargets, #lkselect', timeout=5000)
+        obtns = page.locator('#lktargets .lk-tbtn, button[data-lktgt]')
+        chk('Onion Shed target page shows 13 target numbers', obtns.count()==13, str(obtns.count()))
+        obody = page.inner_text('body')
+        chk('Onion Shed target page has no Register Archer button',
+            page.locator('#lkregarch').count()==0 and 'register archer' not in obody.lower(), obody[:240])
+        page.locator('#lktgt2, [data-lktgt="2"]').first.click()
+        page.wait_for_selector('#lkarchlist', timeout=4000)
+        onames = [page.locator('#lkarchlist .lk-row .nm').nth(i).inner_text().strip() for i in range(page.locator('#lkarchlist .lk-row .nm').count())]
+        chk('Onion Shed picker lists tonight\'s registered demo names', all(n in onames for n in DEMO), str(onames))
+        page.locator('#lkarchlist .lk-row', has_text='Sam Archer').locator('input[type="checkbox"]').check()
+        page.wait_for_timeout(150)
+        page.locator('#lkstart').click()
+        page.wait_for_timeout(700)
+        ostxt = page.inner_text('body')
+        chk('Onion Shed Start opens existing 300 scoring, not a 660 conversion',
+            ('300' in ostxt.lower() or 'week' in ostxt.lower() or page.locator('#lgview, #lgentry').count()>=1)
+            and 'lancaster 660' not in ostxt.lower()
+            and 'max 660' not in ostxt.lower(),
+            ostxt[:300])
+
+        # OS Event Registration: tap an existing name, tick weeks, no invented email/phone/poster
+        page.evaluate("() => { window._osRegPick=null; if (typeof lkFlowHome==='function') lkFlowHome('ONIONSH2'); }")
+        page.wait_for_selector('#lkhome', timeout=4000)
+        page.locator('#lkereg').click()
+        page.wait_for_selector('#lkregpage', timeout=4000)
+        rtxt = page.inner_text('#lkregpage')
+        chk('Onion Shed register has no poster code or email/phone fields',
+            page.locator('#lkregcode, #lkregemail, #lkregphone').count()==0
+            and 'poster' not in rtxt.lower() and 'email' not in rtxt.lower(),
+            rtxt[:240])
+        if page.locator('.lk-known-btn, [data-osid]', has_text='Sam Archer').count():
+            page.locator('.lk-known-btn, [data-osid]', has_text='Sam Archer').first.click()
+            page.wait_for_timeout(250)
+            chk('Onion Shed returning archer can tick weeks after tapping their name',
+                page.locator('#ospicked').count()==1 and page.locator('[data-osw]').count()==6
+                and page.locator('#lkregemail, #lkregphone, #lkregcode').count()==0)
+        else:
+            chk('Onion Shed returning archer can tick weeks after tapping their name', False, rtxt[:240])
+
+        # back to a safe place for the HTTP version checks that follow
+        page.evaluate("() => window.lkFlowList && window.lkFlowList()")
+        page.wait_for_timeout(200)
+
+
         # live root still the previous live version
         root_page = ctx.new_page()
         root_page.route(guard.RELAY, lambda route: route.fulfill(status=200, body='', headers={
@@ -207,7 +426,7 @@ try:
         chk('HTTP /version.json is still v2026-11-11-2216-live', live.get('version') == 'v2026-11-11-2216-live', str(live))
         root_page.goto(f'{BASE}/test/version.json')
         tv = json.loads(root_page.inner_text('body'))
-        chk('HTTP /test/version.json is the new test build', tv.get('version') == 'v2026-11-12-0815-test', str(tv))
+        chk('HTTP /test/version.json is the new test build', tv.get('version') == 'v2026-11-12-0825-test', str(tv))
 
         # Score tab with tester: each league once as a flyer card
         tpage = ctx.new_page()
@@ -216,7 +435,7 @@ try:
         tpage.goto(f'{BASE}/test/?tester=nathe&app=1')
         tpage.wait_for_timeout(1000)
         tpage.evaluate("""() => {
-          try { localStorage.setItem('scoretool.whatsnew.seen','v2026-11-12-0815-test'); } catch(e) {}
+          try { localStorage.setItem('scoretool.whatsnew.seen','v2026-11-12-0825-test'); } catch(e) {}
           if (typeof S !== 'undefined' && S) { S.unlocked = true; if (!S.profile) S.profile = 'nathe'; if (typeof save === 'function') save(); }
         }""")
         tpage.reload()

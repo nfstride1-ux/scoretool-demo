@@ -105,3 +105,16 @@ body.lk-flow #sbar{display:none!important}
 .lkf #lkevlist h1{margin-bottom:6px}
 #lkhome .lk-bar, .lk-rules .lk-bar, #lkevlist .lk-bar{margin-top:18px}
 #lkhome .lk-bar .lk-btn, .lk-rules .lk-bar .lk-btn{flex:1 1 100%}
+
+/* 13-target picker and returning-archer name list (12 Nov 2026). */
+.lk-tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 18px}
+.lk-tbtn{position:relative;min-height:56px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#111;font:800 18px var(--body,system-ui,sans-serif);cursor:pointer}
+.lk-tbtn:active{background:#e8f5e9}
+.lk-tcount{position:absolute;top:4px;right:6px;min-width:1.2em;padding:0 4px;border-radius:999px;background:#111;color:#fff;font-size:11px;line-height:1.4}
+.lk-known{margin:10px 0 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lk-known > p{flex:1 1 100%;margin:0 0 4px}
+.lk-known-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:8px 14px;font:700 15px var(--body,system-ui,sans-serif);cursor:pointer;color:#111}
+.lk-known-btn.on{background:var(--lk-green,#2e7d32);color:#fff;border-color:var(--lk-green,#2e7d32)}
+.lkf .lk-tick{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500}
+.lkf .lk-tick input{width:18px;height:18px;accent-color:var(--lk-green,#2e7d32)}
+#lkretnote,#ospicked{margin:8px 0 10px}
