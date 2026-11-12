@@ -267,9 +267,42 @@ window.lgSeed=lgSeed;window.lgPresetRecord=lgPresetRecord;window.LG_PRESET=LG_PR
 const LG_RULES=['Six 300s at 18 m on the vertical 3-spot.','Each week for 5 weeks everyone shoots a 300 round, in person or over FaceTime.','On the 6th day they all shoot another 300 together in person in the Onion Shed.','The running total of all six 300s (maximum 1800, ties split on X count) sets the league table.','Shoot-up match play happens on day 6 only, starting once everyone\'s day-6 300 is in. Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).','Entry is $10 each night, winner takes all, minus a jokey 75%.'];
 const lgRulesCard=lg=>lg&&lg.code==LG_PRESET.code?`<div class="card" id="lgrules2"><h3 style="margin:0 0 6px">League rules</h3><ul class="small" style="margin:0;padding-left:18px;line-height:1.45">${LG_RULES.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ul></div>`:'';
 /* ---------- screens ---------- */
+/* Known venue events: each appears once, with its flyer as the card background. Opening goes to the event home. */
+function lgEventCode(kind){
+  if(kind==='lingkana')return (typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
+  if(kind==='onion')return (LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
+  return'';
+}
+function lgEventKnown(){
+  const lk=lgEventCode('lingkana'), os=lgEventCode('onion');
+  const venue=(typeof LK_VENUE==='string'&&LK_VENUE)||'Lingkana Archery range, 107 Robinson Ave, Belmont WA 6104';
+  return[
+    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:venue+' · invite only'},
+    {code:os,kind:'onion',name:(LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge',flyer:'img/onion-shed-flyer.jpg',sub:'Six 300s at 18 m, then a day-6 shoot-up'}
+  ];
+}
+function lgEventCardHTML(ev){
+  const escFn=typeof esc==='function'?esc:(typeof h==='function'?h:t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
+  return`<button type="button" class="st-evcard" data-evopen="${escFn(ev.code)}" data-evkind="${escFn(ev.kind)}" style="background-image:url('${escFn(ev.flyer)}')"><span class="st-evcard-shade"></span><span class="st-evcard-body"><b>${escFn(ev.name)}</b><span class="st-evsub">${escFn(ev.sub)}</span></span></button>`;
+}
+function lgEventCardsHTML(){
+  const seen=new Set();
+  const bits=[];
+  for(const ev of lgEventKnown()){
+    if(!ev.code||seen.has(ev.code))continue;
+    seen.add(ev.code);
+    bits.push(lgEventCardHTML(ev));
+  }
+  return`<div class="st-evlist">${bits.join('')}</div>`;
+}
+function lgEventCodes(){return new Set(lgEventKnown().map(e=>e.code).filter(Boolean))}
+window.lgEventKnown=lgEventKnown;window.lgEventCardsHTML=lgEventCardsHTML;window.lgEventCardHTML=lgEventCardHTML;window.lgEventCodes=lgEventCodes;
 function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().filter(l=>!lgPresetHidden(l)).reverse();
- return`<div class="card" id="lgcard"><span class="kicker">Leagues</span><h3>Your leagues</h3>${L.length?'':'<p class="small muted" style="margin:2px 0 8px">You are not in any leagues yet. Join one with the code from its host, or start your own.</p>'}
- ${L.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
+ const used=lgEventCodes();
+ const extras=L.filter(l=>!used.has(l.code));
+ return`<div class="card" id="lgcard"><span class="kicker">Leagues</span><h3 class="st-evh">Leagues</h3>
+ ${lgEventCardsHTML()}
+ ${extras.map(lg=>lg.status=='invite'?`<div class="list-item"><b>${esc(lgName(lg.host))} invited you to ${esc(lg.name)}</b><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="btn alt" data-lgacc="${lg.code}">Join league</button><button class="btn ghost" data-lgno="${lg.code}">Not now</button></div></div>`
   :`<div class="list-item row"><span><b>${esc(lg.name)}</b><div class="small muted">${lg.fin?'Final shoot-up':'Week '+lgWeek(lg)+' of 6'} · ${lgArchers(lg).length} archers</div></span><button class="btn ghost" data-lgopen="${lg.code}">Open</button></div>`).join('')}
  <details id="lgnew"><summary>New league</summary><label for="lgname">League name</label><input id="lgname" maxlength="40" placeholder="League name"><p class="small muted" style="margin:6px 0">Format: six 300s at 18 m on the vertical 3-spot, cumulative total, then one shoot-up final. <span id="lgrules">${LG_FINTXT}</span></p>
  <fieldset class="h2hops nm-real"><legend>Who's in</legend><button type="button" class="btn ghost" id="lgtpl" style="margin:0 0 6px">Use the usual group</button>${TESTERS.filter(t=>t.id!=me&&!LG_EXCL.includes(t.id)).map(t=>`<label class="h2htk"><input type="checkbox" data-lgop="${t.id}"> ${esc(t.name)}</label>`).join('')}</fieldset>
@@ -278,6 +311,7 @@ function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().filter
  <button class="btn alt full" id="lggo" style="margin-top:8px">Create league</button></details>
  <div class="row" style="gap:6px;margin-top:8px"><input id="lgjc" placeholder="League code" maxlength="8" autocapitalize="characters" style="flex:1"><button class="btn ghost" id="lgjgo">Join</button></div><p class="small" id="lgjmsg" role="alert"></p></div>`}
 function lgBindCard(){const c=$('#lgcard');if(!c)return;
+ c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
  c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code)});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});

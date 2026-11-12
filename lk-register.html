@@ -2,14 +2,14 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lingkana League — Register</title>
+<title>Lingkana League</title>
 <meta name="robots" content="noindex">
-<!-- Public register entry. The service worker serves index.html for navigations, so this page just forwards to the hash route. Swap the base by changing LK_PUBLIC_BASE in lingkana.js and regenerating the QR. -->
+<!-- Old register QR / bookmarked URL. Forwards to the event home (Login, QR, Event Registration, Review Scoresheet, Rules), not a standalone register page. -->
 <script>
 (function(){
   var q=location.search||'';
-  location.replace('./'+q+'#lk-register');
+  location.replace('./'+q+'#lk-home');
 })();
 </script>
-<p><a href="./#lk-register">Register for the Lingkana League</a></p>
+<p><a href="./#lk-home">Open the Lingkana League</a></p>
 </html>

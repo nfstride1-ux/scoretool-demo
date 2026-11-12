@@ -45,7 +45,7 @@ def names_once(text, name):
 try:
     live_v = json.loads((ROOT / 'version.json').read_text())['version']
     test_v = json.loads((ROOT / 'test' / 'version.json').read_text())['version']
-    chk('live-root version.json is still v2026-11-11-2216-live', live_v == 'v2026-11-11-2216-live', live_v)
+    chk('live-root version.json is the new live build', live_v == 'v2026-11-12-0848-live', live_v)
     chk('test version.json is the new test build', test_v == 'v2026-11-12-0840-test', test_v)
 
     with sync_playwright() as p:
@@ -487,7 +487,7 @@ try:
             'access-control-allow-origin': '*', 'content-type': 'application/json'}))
         root_page.goto(f'{BASE}/version.json')
         live = json.loads(root_page.inner_text('body'))
-        chk('HTTP /version.json is still v2026-11-11-2216-live', live.get('version') == 'v2026-11-11-2216-live', str(live))
+        chk('HTTP /version.json is the new live build', live.get('version') == 'v2026-11-12-0848-live', str(live))
         root_page.goto(f'{BASE}/test/version.json')
         tv = json.loads(root_page.inner_text('body'))
         chk('HTTP /test/version.json is the new test build', tv.get('version') == 'v2026-11-12-0840-test', str(tv))
