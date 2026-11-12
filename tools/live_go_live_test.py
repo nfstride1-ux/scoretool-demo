@@ -17,7 +17,7 @@ PORT = '8797'
 BASE = f'http://localhost:{PORT}'
 SHOT = Path('/workspace/scoretool/test-ui')
 SHOT.mkdir(parents=True, exist_ok=True)
-LIVE_VER = 'v2026-11-12-0848-live'
+LIVE_VER = 'v2026-11-12-0804-live'
 TEST_VER = 'v2026-11-12-0840-test'
 QR_URL = 'https://nfstride1-ux.github.io/scoretool-demo/#lk-home'
 
@@ -29,7 +29,7 @@ HOME_BTNS = ['Login to Event', 'Login with QR Code', 'Event Registration', 'Revi
 try:
     live_v = json.loads((ROOT / 'version.json').read_text())['version']
     test_v = json.loads((ROOT / 'test' / 'version.json').read_text())['version']
-    chk('live-root version.json is v2026-11-12-0848-live', live_v == LIVE_VER, live_v)
+    chk('live-root version.json is v2026-11-12-0804-live', live_v == LIVE_VER, live_v)
     chk('/test/ version.json is still v2026-11-12-0840-test', test_v == TEST_VER, test_v)
     chk('live lgTopic still uses the live2 Lingkana relay',
         "lingkn26-live2" in (ROOT / 'league.js').read_text())
