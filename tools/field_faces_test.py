@@ -68,11 +68,11 @@ with sync_playwright() as p:
     chk('saved per end after reload',sess=='[{"p":"blue","f":60,"d":35},{"p":"blue","f":20,"d":15}]')
     # old score: inject old field session without ff
     E('S.sessions.push({id:"sold",date:"2026-01-01",round:"WA Field 24 Marked",ends:[["6","5","4"]],pos:[[]],note:"",finished:true});localStorage.setItem(KEY,JSON.stringify(S))')
-    pg.reload(); pg.wait_for_timeout(1200); E('cur=null;sv="sheet"'); pg.click('nav [data-v=score]'); pg.wait_for_timeout(300)
-    if pg.locator('[data-open="sold"]').count()==0:
-        E('cur=null;score()'); pg.wait_for_timeout(300)
+    pg.reload(); pg.wait_for_timeout(1200)
+    E("nav('scorecards')"); pg.wait_for_timeout(400)
+    pg.locator('[data-open="sold"]').scroll_into_view_if_needed()
     pg.click('[data-open="sold"]'); pg.wait_for_timeout(400)
-    chk('old score shows face not set',"face not set" in pg.inner_text('#app'))
+    chk('old score opens on one sheet, no face-group header',pg.locator('.ad-tab').count()==1 and 'face not set' not in pg.inner_text('#app') and '6' in pg.locator('.ad-tab').inner_text())
     chk('old score has no ff/peg added on view',E('JSON.stringify([cur.ff||null,cur.peg||null])')=='[null,null]')
     # target round untouched
     E('cur=null;sv="sheet";score()'); pg.wait_for_timeout(300)
