@@ -321,6 +321,8 @@ const indoor3=(R,F)=>!!(R&&F&&R.ape==3&&!R.aba&&!/field/.test(F.face||'')&&/^(40
 const bugsOn=s=>!!(s&&s.bugs&&ROUNDS[s.round]&&/field/.test(faceR(ROUNDS[s.round],0).face||''));
 /* a session is on a 3-spot if it chose one (face3), used the old Bugs Eyes column (same layout), or has no plotted arrows yet; older plotted sessions keep the full 40cm face they were plotted on */
 const use3=(s,R,F)=>indoor3(R,F)&&s.face3!='single'&&!!(s.face3||s.bugs||!(s.pos||[]).some(e=>(e||[]).some(Boolean)));
+/* Bugs Eyes is the field 3-spot: same spot tabs, zoom and next-spot advance as the indoor 3-spot (Spot 1, Spot 2, Spot 3). */
+const bug3=(s,R,i)=>!!(s&&s.bugs&&R&&isFld(faceR(R,i)));
 const to1spot=(p,L)=>{const c=L.reduce((b,q)=>Math.hypot(p.x-q[0],p.y-q[1])<Math.hypot(p.x-b[0],p.y-b[1])?q:b,L[0]);return{...p,x:(p.x-c[0])/0.6,y:(p.y-c[1])/0.6}};
 const face3R=(F,c)=>({...F,face:((F.face||'').match(/^\d+/)||['40'])[0]+'cm 3-spot',[(c&&c.face3)=='vegas'?'tri':'vert']:true});const isSix=R=>!isBug(R)&&/6-ring/.test(R.face||'');const isSpot=R=>/3-spot/.test(R.face||'');const isIfaa=R=>!!(R&&(R.ifaa||/ifaa/i.test((R.face||'')+(R.type||''))));window.isIfaa=isIfaa;const isFld=R=>!isBug(R)&&!isIfaa(R)&&/field/.test((R&&R.face)||'')&&!(R&&R.scheme&&R.scheme!=='wa10');
 /* Australian Indoor 18m faces (23 Oct 2026, Nathe): face3 'vert' = vertical 3-spot, the "traffic light"; 'vegas' = triangular 3-spot; 'single' = the single 40cm face
@@ -385,15 +387,25 @@ window.arrowKey=s=>{const d=s&&s.arrowD;if(d&&d.k)return d.k;const mm=arrowMM(s)
 /* line-cutter radius for plotScore, in its own units (3-spot: per-spot units, 1 = full-face radius; 20cm field column: 100 mm). null = old allowance */
 window.arrowLC=(R,s,cm)=>{if(!s||!s.lcT||!R||isBug(R))return null;const D=arrowMM(s);if(!(D>0))return null;if(isFld(R)&&R.col)return D/2/100;const c=cm||+(((R.face||'').match(/^(\d+)cm/)||[])[1]||0);return c?D/2/(c*5):null};
 window.arrowRU=(R,D,cm)=>{if(!R||!(D>0)||isBug(R))return null;if(isFld(R)&&R.col)return D/2/100*0.3;const c=cm||+(((R.face||'').match(/^(\d+)cm/)||[])[1]||0);if(!c)return null;const r=D/2/(c*5);return spots3(R)?r*0.6:r};
+/* Field chooser only (WA Book 4 Art. 19.1.7, versions 2026-03-13 and 2026-08-15; Archery Australia field uses the same limit):
+   shaft diameter will not exceed 9.3 mm. Whole millimetres from 4 mm through 9 mm. A 27 (27/64 in, 10.7 mm) is over 9.3 mm, so it is not offered.
+   Other rounds keep the full chooser (64ths, thin shafts, custom mm). Stored arrowD {k,mm} is unchanged. */
+window.arrowIsFld=s=>{const R=s&&s.round&&ROUNDS[s.round];return !!(R&&isFld(faceR(R,0)))};
+window.arrowFldMaxMM=9;
+window.arrowFldOpts=()=>{const o=[];for(let mm=4;mm<=arrowFldMaxMM;mm++)o.push(['f'+mm,mm+' mm',mm]);return o};
+const arrowHit=k=>arrowOpts().find(o=>o[0]==k)||arrowFldOpts().find(o=>o[0]==k);
 /* the picker, one select. sid = session id, or 'cur' for the shoot being scored. Changing it writes only s.arrowD and redraws. */
-window.arrowSizeLab=s=>{const k=arrowKey(s),o=arrowOpts().find(x=>x[0]==k);return o?o[1]:(+arrowMM(s)).toFixed(2)+' mm'};
+window.arrowSizeLab=s=>{const k=arrowKey(s),o=arrowHit(k);return o?o[1]:(+arrowMM(s)).toFixed(2)+' mm'};
 window.arrowSizeTxt=s=>`<span class="small arrowsz">Arrow size ${arrowSizeLab(s)}</span>`;
-window.arrowPick=(s,sid)=>{const k=arrowKey(s),mm=arrowMM(s),O=arrowOpts(),gs=[...new Set(O.map(o=>o[3]))];
+window.arrowPick=(s,sid)=>{const k=arrowKey(s),mm=arrowMM(s),fld=arrowIsFld(s),O=fld?arrowFldOpts():arrowOpts();
+ if(fld){let sel=O.some(o=>o[0]==k)?k:O.reduce((b,o)=>Math.abs(o[2]-mm)<Math.abs(b[2]-mm)?o:b,O[0])[0];
+  return`<label class="small arrowsz"><span>Arrow size</span> <select data-arrowsz="${String(sid).replace(/"/g,'')}" aria-label="Arrow size, whole millimetres allowed on a field round">${O.map(o=>`<option value="${o[0]}"${o[0]==sel?' selected':''}>${o[1]}</option>`).join('')}</select></label>`}
+ const gs=[...new Set(O.map(o=>o[3]))];
  return`<label class="small arrowsz"><span>Arrow size</span> <select data-arrowsz="${String(sid).replace(/"/g,'')}" aria-label="Arrow size, drawn to scale on the face">${gs.map(g=>`<optgroup label="${g}">${O.filter(o=>o[3]==g).map(o=>`<option value="${o[0]}"${o[0]==k?' selected':''}>${o[1]}</option>`).join('')}</optgroup>`).join('')}<option value="mm"${k=='mm'?' selected':''}>Custom mm${k=='mm'?' ('+(+mm).toFixed(2)+' mm)':''}</option></select></label>`};
 document.addEventListener('change',ev=>{const el=ev.target;if(!el||!el.matches||!el.matches('select[data-arrowsz]'))return;const sid=el.dataset.arrowsz,
  s=sid=='cur'?cur:(S.sessions||[]).find(x=>String(x.id)==sid);if(!s||!s.lcT||(s.pos||[]).some(E=>(E||[]).some(Boolean)))return;/* size is fixed once an arrow is scored with it */let k=el.value,mm;
  if(k=='mm'){const v=prompt('Arrow shaft diameter in mm (for example 9.13 for a 23)',(+arrowMM(s)).toFixed(2));mm=parseFloat(String(v||'').replace(',','.'));if(!(mm>=3&&mm<=12)){el.value=arrowKey(s);return}}
- else mm=(arrowOpts().find(o=>o[0]==k)||[])[2];if(!(mm>0))return;s.arrowD={k,mm:+(+mm).toFixed(3)};save();
+ else mm=(arrowHit(k)||[])[2];if(!(mm>0))return;s.arrowD={k,mm:+(+mm).toFixed(3)};save();
  const w=el.closest('.shpc');if(w&&window.shotPlotRedraw)shotPlotRedraw(w,s);else if(sid=='cur')score()});
 let _AR=null;/* true arrow radius for the face being drawn (faceSVG sets it); null = old fixed size */
 const arrowDot=(p,r,sw,lab)=>{const T=_AR||r,W=_AR?Math.min(sw,_AR*0.3):sw;return CB()?(p.sel?`<circle cx="${p.x}" cy="${p.y}" r="${r*3.3}" fill="none" stroke="${FMO}" stroke-width="${sw*2.4}"/><circle cx="${p.x}" cy="${p.y}" r="${r*3.3}" fill="none" stroke="#fff" stroke-width="${sw*1.2}"/>`:'')+`<circle cx="${p.x}" cy="${p.y}" r="${r*2.3}" fill="#fff" stroke="#000" stroke-width="${sw*(p.sel?1.6:1)}"/>`+cbLab(p.x,p.y,r*2.3,lab):p.sel?`<circle cx="${p.x}" cy="${p.y}" r="${T*2.3}" fill="none" stroke="${FMO}" stroke-width="${sw*2.4}"/><circle cx="${p.x}" cy="${p.y}" r="${T*2.3}" fill="none" stroke="${FM}" stroke-width="${sw*1.2}"/><circle cx="${p.x}" cy="${p.y}" r="${(T-W*0.65).toFixed(4)}" fill="${FM}" stroke="${FMO}" stroke-width="${(W*1.3).toFixed(4)}"/>`:`<circle cx="${p.x}" cy="${p.y}" r="${(T-W/2).toFixed(4)}" fill="#22c55e" stroke="#000" stroke-width="${W.toFixed(4)}"/>`};
@@ -419,13 +431,13 @@ function putArrow(k,xy){const R=ROUNDS[cur.round];if(typeof worldAccept==='funct
  const e=cur.ends[i];e.push(k);if(xy)xy.sn=e.length;/* shot number in the end, kept with the arrow when the end is sorted (end by end viewer) */(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
  if(endComplete(R,e,i)){const pe=[...e],pq=[...(cur.pos[i]||[])];sortEnd(i);stOrd.set(cur.id,i,pe,pq,cur.ends[i],cur.pos[i]);if(i==cur.ends.length-1)justDone=true;
   if(later&&isFull(cur)){justDone=false;sv='sheet';fix=null;fixRet=false}
-  /* one target face (single face, field, outdoor): once its arrows are plotted, open the next target. The last target stays until Next. A 3-spot end stays too: its targets are the spots, and the last spot waits for Next. */
-  else if(xy&&justDone&&i==cur.ends.length-1&&cur.ends.length<roundEnds(R,cur)&&!use3(cur,R,faceR(R,i)))justDone=false}
- /* a numbered spot is one target. After its arrow is plotted, show the next spot. Spot 3 is the last target on this face, so it stays. */
- if(xy&&!later&&R.ape==3&&cur.spot>=1&&cur.spot<3&&use3(cur,R,faceR(R,Math.max(0,i))))cur.spot++;
+  /* one target face (single face, outdoor): once its arrows are plotted, open the next end. The last end stays until Next. A 3-spot end stays too: its targets are the spots, and the last spot waits for Next. Field stays on the end until Next, which returns to the scorecard. */
+  else if(xy&&justDone&&i==cur.ends.length-1&&cur.ends.length<roundEnds(R,cur)&&!use3(cur,R,faceR(R,i))&&!isFld(faceR(R,i)))justDone=false}
+ /* a numbered spot is one target. After its arrow is plotted, show the next spot. Spot 3 is the last target on this face, so it stays. Indoor 3-spot and Bugs Eyes. */
+ if(xy&&!later&&R.ape==3&&cur.spot>=1&&cur.spot<3&&(use3(cur,R,faceR(R,Math.max(0,i)))||bug3(cur,R,Math.max(0,i))))cur.spot++;
  save();score()}
 const SIDEHILL=`<details class="tipcard" id="sidehill"><summary>Tip: side hill shots</summary><b>Side hill shots: keep the bow level</b><ol><li>If the bubble is off at full draw, let down and start again. Twisting the bow level at full draw sets the shot up to miss the other way.</li><li>Before you draw, tip the top of the bow a little into the hill, slightly more than feels right.</li><li>Draw with the bow still tipped, then let it relax back to level by itself.</li><li>Pause just short of anchor and check the bubble is level and still.</li><li>Then come to anchor and shoot. You don't need to watch the bubble for the rest of the shot.</li></ol></details>`;
-let crEdit=null,sv='sheet',justDone=false,fixRet=false;
+let crEdit=null,sv='sheet',justDone=false,fixRet=false,fldHold=null,fldHoldId=null;
 function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S.customRounds||[]).map(c=>c.name),std=Object.keys(ROUNDS).filter(r=>!ROUNDS[r].custom&&!ROUNDS[r].legacy);
  const rdBlock=typeof worldPickerHTML==='function'?worldPickerHTML():`<label for="rd">Round</label><select id="rd"><optgroup label="Standard rounds">${std.map(r=>`<option value="${esc(r)}" ${r==S.lastRound?'selected':''}>${esc(rdPick(r))}</option>`).join('')}</optgroup>${mine.length?`<optgroup label="My rounds">${mine.map(r=>`<option value="${esc(r)}" ${r==S.lastRound?'selected':''}>${esc(rdPick(r))}</option>`).join('')}</optgroup>`:''}<option value="__new">+ Create my own practice round</option></select>`;
  app.innerHTML=`<div class="card"><span class="kicker">New session</span><h1>Score it</h1>${rdBlock}
@@ -435,13 +447,13 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  try{if(window.h2hBind)h2hBind()}catch(err){console.error('h2hBind',err)};$('#rd').onchange=e=>{if(e.target.value=='__new'){crEdit={i:-1};score()}else pegRow()};if(window.worldBindPicker)worldBindPicker();
  app.querySelectorAll('[data-ce]').forEach(b=>b.onclick=()=>{window._csMode=null;crEdit={i:+b.dataset.ce};score()});
  app.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>{const c=S.customRounds[+b.dataset.cd];if(!confirm(`Delete "${c.name}"? Sessions already shot keep their scores.`))return;S.customRounds.splice(+b.dataset.cd,1);save();score()});
- const startRound=r=>{if(!ROUNDS[r])return;if(window.worldPrepareStart)worldPrepareStart(r);S.lastRound=r;sv='entry';justDone=false;fix=null;PZ.k=1;PZ.cx=PZ.cy=0;cur={id:'s'+Date.now(),date:($('#dt')||{}).value||today(),round:r,ends:[[]],pos:[[]],note:'',lcT:1,arrowD:{k:arrowKey(null),mm:+(+arrowMM(null)).toFixed(3)}};if(ROUNDS[r]&&ROUNDS[r].lancaster)cur.face3='vegas';else if(indoor3(ROUNDS[r],faceR(ROUNDS[r],0)))cur.face3=f3Start(r);if(isFld(faceR(ROUNDS[r],0))){cur.peg=selPeg;cur.ff=[]}if(window.worldAfterStart)worldAfterStart(cur);S.sessions.push(cur);save();history.pushState({scoring:1},'');score();scrollTo(0,0)};
+ const startRound=r=>{if(!ROUNDS[r])return;if(window.worldPrepareStart)worldPrepareStart(r);S.lastRound=r;sv='entry';justDone=false;fix=null;fldHold=null;fldHoldId=null;PZ.k=1;PZ.cx=PZ.cy=0;cur={id:'s'+Date.now(),date:($('#dt')||{}).value||today(),round:r,ends:[[]],pos:[[]],note:'',lcT:1,arrowD:{k:arrowKey(null),mm:+(+arrowMM(null)).toFixed(3)}};if(ROUNDS[r]&&ROUNDS[r].lancaster)cur.face3='vegas';else if(indoor3(ROUNDS[r],faceR(ROUNDS[r],0)))cur.face3=f3Start(r);if(isFld(faceR(ROUNDS[r],0))){cur.peg=selPeg;cur.ff=[]}if(window.worldAfterStart)worldAfterStart(cur);S.sessions.push(cur);save();history.pushState({scoring:1},'');score();scrollTo(0,0)};
  $('#st').onclick=()=>{if($('#rd').value=='__new')return;startRound($('#rd').value)};
  /* Start straight from a saved round in My rounds */app.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{const c=(S.customRounds||[])[+b.dataset.cs];if(c){window._csMode=null;startRound(c.name)}});bindList();return}
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0),P=cur.pos||[];
  if(R.aba&&window.abaScore)return abaScore(R);if(sv=='sheet'&&!fix){window._pzEnd=null;return scoreSheet(R,fin)}/* coming back reopens the end with the kept zoom (zkOpen) */
- const full=endComplete(R,last,cur.ends.length-1),hole=shortEnd(R),showingDone=full&&(justDone||fin)&&(hole<0||hole==cur.ends.length-1),ei=fix?fix[0]:showingDone?cur.ends.length-1:hole>=0?hole:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
- {const zk=cur.id+'|'+ei,k3=use3(cur,R,faceR(R,ei));if(window._pzSE!==zk){window._pzSE=zk;if(k3&&cur.spot>0)cur.spot=1}if(window._pzEnd!==zk){window._pzEnd=zk;zkOpen(k3)}window._zkOn=k3}/* indoor 3-spot: a new end opens on Spot 1 and keeps the zoom the archer set (zkOpen); any other face opens on the full face */
+ const full=endComplete(R,last,cur.ends.length-1),hole=shortEnd(R),showingDone=full&&(justDone||fin)&&(hole<0||hole==cur.ends.length-1),fldRound=isFld(faceR(R,0)),held=fldRound&&fldHoldId==cur.id&&fldHold!=null&&fldHold>=0&&fldHold<cur.ends.length&&!showingDone?fldHold:null,ei=fix?fix[0]:held!=null?held:showingDone?cur.ends.length-1:hole>=0?hole:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
+ {const zk=cur.id+'|'+ei,k3=use3(cur,R,faceR(R,ei))||bug3(cur,R,ei);if(window._pzSE!==zk){window._pzSE=zk;if(k3&&cur.spot>0)cur.spot=1}if(window._pzEnd!==zk){window._pzEnd=zk;zkOpen(k3)}window._zkOn=k3}/* indoor 3-spot and Bugs Eyes: a new end opens on Spot 1 and keeps the zoom the archer set (zkOpen); any other face opens on the full face */
  const FR0=faceR(R,ei),BG=!!cur.bugs&&isFld(FR0),I3=use3(cur,R,FR0),FF=isFld(FR0)&&!BG?fldFor(cur,ei,FR0):null,FR=BG?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FF?fldFR(FF):I3?face3R(FR0,cur):FR0,FL=FF?fldDists(cur.peg,FF.f,fldMarked(FR0)):null,SC=isBug(FR)?BUGC:spots3(FR),SP=SC&&cur.spot?SC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isIfaa(R)||isIfaa(FR)||isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
  const shown=fix?[...(P[fix[0]]||[])].map((p,j)=>p&&j<(cur.ends[fix[0]]||[]).length&&{...p,k:(cur.ends[fix[0]]||[])[j],sel:j==fix[1]}).filter(Boolean):(P[ei]||[]).map((p,j)=>p&&j<e.length&&{...p,k:e[j]}).filter(Boolean);
  const endDone=endComplete(R,e,ei),prog=cur.ends.slice(0,ei+1).reduce((t,y)=>t+endSum(y,cur),0),locked=endDone&&!fix;
@@ -496,16 +508,19 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
    if(!g.mode&&performance.now()-g.t<TAP_MS&&Math.hypot(ev.clientX-g.x0,ev.clientY-g.y0)<TAP_PX)plotAt(ev)}}
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;const [i,j]=el.dataset.fix.split(',').map(Number);fix=fix&&fix[0]==i&&fix[1]==j?null:[i,j];score()});
  $('#undo').onclick=()=>{while(cur.ends.length>1&&!cur.ends[cur.ends.length-1].length)cur.ends.pop();const n=cur.ends.length-1,l=cur.ends[n];if(!l||!l.length)return;const pp=(cur.pos||[])[n],r=stOrd.take(cur.id,n,l,pp);if(r){cur.ends[n]=r.E;if(pp)cur.pos[n]=r.P}else{l.pop();if(pp)pp.length=l.length}justDone=false;save();score()};
- if($('#prevend'))$('#prevend').onclick=()=>{const pe=cur.ends[ei-1]||[];fix=[ei-1,Math.max(0,pe.length-1)];score()};
- if($('#fixcancel'))$('#fixcancel').onclick=()=>{fix=null;score()};
- if($('#delarrow'))$('#delarrow').onclick=()=>{const[i,j]=fix;cur.ends[i].splice(j,1);if(cur.pos&&cur.pos[i])cur.pos[i].splice(j,1);fix=null;if(i==cur.ends.length-1)justDone=false;save();score()};
- $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;sv='sheet';score()};
- $('#enext').onclick=()=>{justDone=false;sv='sheet';score()}}
+ if($('#prevend'))$('#prevend').onclick=()=>{if(fldRound){fldHold=ei-1;fldHoldId=cur.id;fix=null;fixRet=false;justDone=false;score();return}const pe=cur.ends[ei-1]||[];fix=[ei-1,Math.max(0,pe.length-1)];score()};
+ if($('#fixcancel'))$('#fixcancel').onclick=()=>{if(fldRound){const back=fixRet,stay=fix?fix[0]:fldHold;fix=null;fixRet=false;if(back){fldHold=null;fldHoldId=null;justDone=false;sv='sheet';score();return}if(stay!=null){fldHold=stay;fldHoldId=cur.id}score();return}fix=null;score()};
+ if($('#delarrow'))$('#delarrow').onclick=()=>{const[i,j]=fix;cur.ends[i].splice(j,1);if(cur.pos&&cur.pos[i])cur.pos[i].splice(j,1);fix=null;if(i==cur.ends.length-1)justDone=false;if(fldRound){fldHold=i;fldHoldId=cur.id}save();score()};
+ $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;fldHold=null;fldHoldId=null;sv='sheet';score()};
+ $('#enext').onclick=()=>{justDone=false;fldHold=null;fldHoldId=null;sv='sheet';score()}}
 const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':isIfaa(F)||/ifaa/i.test(F.face||'')?'IFAA face 20-65cm (5-3)':/field/.test(F.face||'')?'WA field face 20-80cm (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ full$/,'').replace(/ (6-ring|3-spot)/,' ($1)')}`;
 const ZLV=[1,2,3],zStep=k=>k<=1.001?0:k<2.999?1:2;/* 0: normal (shows Z1), 1: zoomed below 3x (shows Z2), 2: 3x or more (shows Reset) */
 const faceSize=F=>F.bugs?'Bugs Eyes 3-spot':isIfaa(F)||/ifaa/i.test(F.face||'')?'IFAA 20-65cm face':isFld(F)?(((F.face||'').match(/(\d+(?:-\d+)?)cm/)||[])[1]||'')+'cm field face':F.face=='any'?'Full face':(m=>m?m[1]+'cm '+(isSix(F)?'6-ring':isSpot(F)?'3-spot':'face'):'Full face')((F.face||'').match(/(\d+)cm/));
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
-function sheetSections(s){const R=ROUNDS[s.round],out=[];s.ends.forEach((x,i)=>{const F=faceR(R,i),e=isFld(F)&&!s.bugs&&s.ff&&s.ff[i],k=isFld(F)&&!s.bugs?(e?`${e.f}cm field face (6-1) @ ${e.d}m · ${PEGN[e.p||s.peg]||''} peg`:faceName(F)+' · face not set'):faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
+function sheetSections(s){const R=ROUNDS[s.round],out=[];
+ /* Field (marked or unmarked, any peg) is one continuous sheet: ends 1, 2, 3… with one End column. Face and distance stay on the end for scoring and plotting, not as section headers. */
+ if(R&&isFld(faceR(R,0)))return[{k:'',ends:s.ends.map((_,i)=>i),plain:true}];
+ s.ends.forEach((x,i)=>{const F=faceR(R,i),e=isFld(F)&&!s.bugs&&s.ff&&s.ff[i],k=isFld(F)&&!s.bugs?(e?`${e.f}cm field face (6-1) @ ${e.d}m · ${PEGN[e.p||s.peg]||''} peg`:faceName(F)+' · face not set'):faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 /* Zoom kept on the indoor 3-spot faces (Just me, Casual, match nights, Vegas, League): the level the archer sets (Z1/Z2/Reset or a pinch) stays across spots, ends, archers and an app reload until they change it. One shared place (also used by casual.js). Other faces open each end on the full face. */
 window.zkLoad=()=>{if(!window._zkL){window._zkL=1;try{const v=+localStorage.getItem('scoretool.zoomk');if(v>=1&&v<=4)window._zk=v}catch(e){}}return window._zk||1};
@@ -515,15 +530,15 @@ function hiStats(A,s){const R0=ROUNDS[s.round]||{};if(R0.aba)return'';if(R0.lanc
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),nEnds=roundEnds(R,s),nArr=typeof apeOf==="function"&&R.apes?R.apes.reduce((a,b)=>a+b,0):nEnds*(R.ape||1),fullMax=bugsOn(s)?nArr*6:(s.max!=null?s.max:R.max),per=fullMax&&nArr?fullMax/nArr:0,early=!isFull(s);
  app.innerHTML=`<div class="ad"><div class="ad-title">Score Sheet</div><div class="ad-sheet"><div class="ad-name">${esc(S.profile)}</div><div class="ad-band">${esc(s.round)}${R.custom?' · practice':''}</div>${s.h2h&&window.h2hChip?`<div style="padding:6px 8px">${h2hChip(s)}</div>`:''}
- ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(bugsOn(s)?'Bugs Eyes field 3-spot (6-1)'+((/@.*/.exec(sec.k)||[''])[0]?' '+(/@.*/.exec(sec.k)||[''])[0]:''):sec.k)}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>
+ ${secs.map(sec=>{const A=sec.ends.flatMap(i=>s.ends[i]);return`<table class="ad-tab"><thead><tr><th>#</th><th>Scores${sec.plain?'':`<div style="font-weight:400">${esc(bugsOn(s)?'Bugs Eyes field 3-spot (6-1)'+((/@.*/.exec(sec.k)||[''])[0]?' '+(/@.*/.exec(sec.k)||[''])[0]:''):sec.k)}</div>`}</th><th>End</th><th>Prog</th></tr></thead><tbody>
  ${sec.ends.map(i=>{run+=endSum(s.ends[i]);return`<tr><td>${i+1}</td><td>${s.ends[i].map((a,j)=>`<span class="adb ${col(a)}" role="button" tabindex="0" data-fix="${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${a}</span>`).join('')}</td><td>${endSum(s.ends[i])}</td><td>${run}</td></tr>`}).join('')}</tbody></table>
- ${secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
+ ${!sec.plain&&secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
  <div class="ad-sum">${hiStats(arrowsAll,s)}&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${early?arrowsIn(s)*per+' <span class="small">('+arrowsIn(s)+' arrows shot)</span>':fullMax}</span></div></div>
  ${fin?roundSummary(s)+(window.shootCompareHTML?shootCompareHTML(s):'')+(window.endViewHTML?endViewHTML(s):'')+`<div class="ad-sheet" style="padding:10px">${window.phBoxHtml&&s.id?phBoxHtml(s.id,'fin'):''}${noteBox(s)}<button class="btn alt full" id="finsess" style="margin-top:10px">${window.icon?icon('check'):''} Finish session</button><button class="btn ghost full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
  <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:'')+(window.shareSheet?`<button class="ad-fin" id="shsheet">Share</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();if(fin&&window.endViewBind)endViewBind(app);/* end by end viewer: finished shoots only */
- app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';score()});
- if($('#addsc'))$('#addsc').onclick=()=>{sv='entry';score()};
+ app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';if(isFld(faceR(R,0))){fldHold=fix[0];fldHoldId=s.id}score()});
+ if($('#addsc'))$('#addsc').onclick=()=>{fldHold=null;fldHoldId=null;sv='entry';score()};
  if($('#finnow'))$('#finnow').onclick=()=>{if(!confirm(`Finish round now? ${arrowsIn(s)} arrows, ${total(s)} points.`))return;while(s.ends.length>1&&!s.ends[s.ends.length-1].length){s.ends.pop();if(s.pos)s.pos.length=Math.min(s.pos.length,s.ends.length)}s.finished=true;fix=null;justDone=false;sv='sheet';save();score()};
  if($('#shsheet'))$('#shsheet').onclick=()=>shareSheet(s);if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};

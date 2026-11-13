@@ -4,6 +4,16 @@ Newest first. Each entry names the version tag shown in Settings.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 
+## Field scorer preview (not a version bump, not deployed)
+
+WA Field only. Indoor, outdoor, league and stored session shapes are unchanged. Version tag stays `v2026-11-12-0804-live`.
+
+- Bugs Eyes uses the indoor 3-spot controls: All spots, Spot 1, Spot 2, Spot 3, and the same zoom (Z1 is 2x, Z2 is 3x, Reset). The zoom stays when you change spot. A plotted arrow moves to the next spot. Spot 3 waits.
+- Plotting the last arrow of a field end stays on that end. Next returns to the scorecard.
+- The field scorecard is one sheet: #, Scores, End, Prog, in end order, one running total. Face and distance are not section headers, and there is no per-section 6's/5's line. The footer still shows 6's, 5's, the total and arrows shot.
+- Opening end 1 no longer jumps to the next empty end. Cause: Back stepped into fix mode and hid the back button, and Done cleared that fix and let the scorer pick the first unfinished end. With 17 ends stored, that end is shown as End 18. Done from the sheet now returns to the sheet. Back on a field round steps one end at a time and stays there.
+- The field arrow list is 4 mm, 5 mm, 6 mm, 7 mm, 8 mm and 9 mm. World Archery Book 4 Art. 19.1.7 (2026-03-13 and 2026-08-15) caps a field shaft at 9.3 mm. Archery Australia field uses that limit. A 27 (27/64 in, 10.7 mm) is over 9.3 mm, so it is not offered. Other rounds keep the full list.
+
 ## v2026-11-11-2216-live (2026-11-11)
 ### What changed
 - The Lingkana "Night N · groups" filter box, name dropdown, Add to group button and groups table are gone. The league card now has a Pick a group button that opens the earlier tick-box picker: a scrollable list of registered archers (tonight's sign-ups first, then the rest of the league), each a card row with a checkbox and full name, max 4 ticks, a lock on names already in another group tonight, and a bottom bar with Back and green Start (N). Start opens the existing scoring screen with those archers. A second group leaves the first group in place.
