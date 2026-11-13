@@ -95,7 +95,8 @@
 .ic{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block}.ic .g{stroke:var(--gold)}.ic .gf{fill:var(--gold);stroke:none}[data-theme=light] .ic.icf .gf{fill:#b07a00}
 .labwho{background:var(--blue-bg);color:var(--blue);border:1px solid var(--chip-b);border-radius:99px;font:700 14px var(--body);padding:6px 12px;cursor:pointer;margin-right:8px;min-height:36px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tabs .ic{width:22px;height:22px;display:block;margin:0 auto 2px}.hub-tile .i .ic{width:30px;height:30px}.hub-score .ic{width:46px;height:46px}
-.hub-past{background:var(--night,#0b1220);color:#fff;margin:0 0 14px}.labrow .i .ic{width:24px;height:24px}.logo .ic{width:26px;height:26px;vertical-align:-6px}.labtheme .ic{width:20px;height:20px;vertical-align:-4px}
+.hub-past{background:var(--night,#0b1220);color:#fff;margin:0 0 14px}
+.sc-open{display:block;width:100%;text-align:left;margin-top:6px}.labrow .i .ic{width:24px;height:24px}.logo .ic{width:26px;height:26px;vertical-align:-6px}.labtheme .ic{width:20px;height:20px;vertical-align:-4px}
 @media (max-width:520px){.labwho,.labme{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.labtheme{min-width:36px;padding:0 6px;margin-right:6px}.logo .ic{width:22px;height:22px}}
 @media (max-width:400px){.top .demo-pill,.top .lab-pill{font-size:10px;padding:3px 6px}}
 @media (max-width:520px){.labme{flex-shrink:0;padding:6px 9px;font-size:13px;margin-right:6px}.top .logo{font-size:20px;min-width:0}.help-btn{flex-shrink:0}}

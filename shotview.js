@@ -197,8 +197,10 @@ window.shotDone=shotDone;
 function bindBack(){const b=$('#shback');if(b)b.onclick=()=>nav(b.dataset.go)}
 function doneView(){let id=window._doneId;try{id=id||sessionStorage.getItem(KEY)}catch(e){}const s=(S.sessions||[]).find(x=>x.id==id);
  app.innerHTML=`<div class="labbar"><button class="btn ghost labback" id="shback" data-go="score">‹ Score</button><h1>Session finished</h1></div>
- <div class="card shdone"><div class="shdone-ic" aria-hidden="true">${IC('check')}</div><h2>All done</h2>${s?`<p><b>${H(s.round)}</b> · ${total(s)} · ${H(fmtD(s.date))}</p>`:''}<p class="small muted">Saved on this phone. You'll find it in Past sessions.</p>
- <div class="shdone-act"><button class="btn full" id="shwins">See my wins</button><button class="btn ghost full" id="shnew">Score another round</button></div></div>`;
- bindBack();$('#shwins').onclick=()=>nav('home');$('#shnew').onclick=()=>nav('score')}
+ <div class="card shdone"><div class="shdone-ic" aria-hidden="true">${IC('check')}</div><h2>All done</h2>${s?`<p><b>${H(s.round)}</b> · ${total(s)} · ${H(fmtD(s.date))}</p>`:''}<p class="small muted">Saved on this phone. Open it any time from Scorecards.</p>
+ <div class="shdone-act"><button class="btn alt full" id="shcard">Open this scorecard</button><button class="btn full" id="shwins">See my wins</button><button class="btn ghost full" id="shnew">Score another round</button></div></div>`;
+ bindBack();
+ $('#shcard').onclick=()=>{if(window.openScorecard)openScorecard(id,'shotdone');else nav('scorecards')};
+ $('#shwins').onclick=()=>nav('home');$('#shnew').onclick=()=>nav('score')}
 window.EXTRA_VIEWS=Object.assign(window.EXTRA_VIEWS||{},{shotdone:doneView});
 })();
