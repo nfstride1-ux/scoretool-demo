@@ -529,7 +529,7 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  /* Finish session (23 Oct 2026, Steven): the round is already saved arrow by arrow, so this only closes the sheet and shows the done state (no save, no second copy) */
  if($('#finsess'))$('#finsess').onclick=()=>{const id=s.id;cur=null;sv='sheet';fix=null;justDone=false;if(window.shotDone&&id)shotDone(id);else nav('score')};
- $('#sback').onclick=()=>fin?(cur=null,save(),score()):leaveScoring()}
+ $('#sback').onclick=()=>{if(!fin)return leaveScoring();const back=window._sheetBack;window._sheetBack=null;cur=null;save();if(back)nav(back);else score()}}
 const AA_MAP={'WA 720 (70m)':'WA 70/720','WA 720 (60m)':'WA 60/720','WA 720 (50m Compound)':'WA 50/720','Short Canberra (50/40/30m)':'Short Canberra','Junior Canberra (40/30/20m)':'Junior Canberra','Indoor WA 18m':'WA Indoor 18m','Australian Indoor 18m':'Australian Indoor 18m','WA 90/1440 (90/70/50/30m)':'WA 90/1440','WA 60/900 (60/50/40m)':'WA 60/900 (Canberra)','AA 50/1440 (50/40/30/20m)':'AA 50/1440'};
 function pbPrev(s){if(!window._anShoots)return null;try{const all=_anShoots(),me=all.find(o=>o.s===s),rd=me?me.round:s.round,ord=o=>o.date+(o.s&&o.s.id?'|'+o.s.id:''),meK=s.date+'|'+(s.id||'');
  const ps=all.filter(o=>o.round==rd&&!o.part&&o.s!==s&&ord(o)<meK&&(o.ends&&o.ends.length||o.score)).map(o=>o.score);return ps.length?{pb:Math.max(...ps),n:ps.length}:{pb:null,n:0}}catch(e){return null}}

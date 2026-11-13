@@ -6,8 +6,9 @@ let BS=null;
 /* 22 Oct 2026: every tester with data gets the card from his own sheets (data/sheets_<id>.json; Nathe data/my_scoresheets.json).
    Testers without sheets (data:false) don't get the card. Display only, nothing stored. */
 const SID=(typeof TESTER!='undefined'&&TESTER)?(TESTER.data?TESTER.id:null):'nathe';
+window._bsReady=!SID;
 const isMe=()=>!!BS;
-if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;if(typeof view!='undefined'&&(view=='stats'||view=='lab_analysis')&&$('#bscard'))render()}).catch(()=>{});
+if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;window._bsReady=true;if(typeof view!='undefined'&&(((view=='stats'||view=='lab_analysis')&&$('#bscard'))||view=='scorecards'))render()}).catch(()=>{window._bsReady=true;if(typeof view!='undefined'&&view=='scorecards')render()});
 const BOW=d=>(String(d||'').match(/Compound|Recurve|Longbow|Barebow/i)||['Other'])[0].replace(/^./,c=>c.toUpperCase());
 const DISC=['Outdoor','Indoor','Field','3D','Clout'],DN={Outdoor:'Outdoor target',Indoor:'Indoor',Field:'Field','3D':'3D',Clout:'Clout'};
 /* Official results round -> ScoreTool round with the same ends (for Ghost match). 1440s shot in 3-arrow ends at 50/30 m are paired into 6s. */
@@ -98,4 +99,25 @@ const _og=window.offGhost;window.offGhost=function(appRound){const p=window._bsG
 const _st=stats;stats=function(){_st.apply(this,arguments);if($('#bscard'))return;const h=bestCard();if(!h)return;const go=$('#goan');if(go)go.insertAdjacentHTML('afterend',h);else app.insertAdjacentHTML('afterbegin',h);bindBest()};
 window.bsFollowRound=function(round){const bow=curBow(),G=bow?groups(bow):[],g=G.find(x=>anRoundOf(x.rd)==round);if(g){window._bsRd=g.rd;window._bsPick=null;window._anFree=false;return true}window._anFree=true;return false};
 window.labBestCard=bestCard;/* for Full analysis */
+/* Official personal bests for Scorecards. Read only: sheets, results and confirmed official rows.
+   Practice shoots are not included. Nothing stored is written. */
+window.officialPbRows=function(){try{
+ const seen=new Set(),L=[];
+ const add=s=>{if(!s||s.part||!(+s.sc>0)||!s.rd)return;const k=String(s.d)+'|'+s.rd+'|'+s.sc;if(seen.has(k))return;seen.add(k);L.push(s)};
+ const sheetRows=entries();sheetRows.forEach(add);
+ if(!sheetRows.length&&window._bsReady!==false&&typeof findReal==='function')findReal(S.profile||'').forEach(r=>{if(!r||r.incomplete||!(r.score>0))return;
+  const n=String(r.round||''),cl=/clout/i.test(n),fld=/field/i.test(n),td=/3d|3-d/i.test(n),ind=/indoor|vegas/i.test(n);
+  add({d:typeof normDate==='function'?normDate(r.date):r.date,ev:r.event||'',disc:cl?'Clout':fld?'Field':td?'3D':ind?'Indoor':'Outdoor',div:r.division||'',rd:r.round,sc:+r.score,part:false,bow:BOW(r.division),src:'csv'})});
+ const bowNow=()=>{try{return curBow()||practiceBow()||''}catch(e){return ''}};
+ const discOf=n=>/clout/i.test(n)?'Clout':/field/i.test(n)?'Field':/3d|3-d/i.test(n)?'3D':/indoor|18m|25m|vegas/i.test(n)?'Indoor':'Outdoor';
+ if(window.importedShoots)importedShoots().forEach(s=>add({d:s.date,ev:s.event||'Imported',disc:discOf(s.round),div:'',rd:s.round,sc:+s.score,part:false,bow:bowNow(),src:'imported'}));
+ if(window.officialAdded)officialAdded().forEach(s=>add({d:s.date,ev:s.event||'Official',disc:discOf(s.round),div:'',rd:s.round,sc:+s.score,part:false,bow:bowNow(),src:'official'}));
+ const Bs=bows();
+ let bow=window._scBow&&L.some(s=>s.bow==window._scBow)?window._scBow:(bowNow()||(Bs[0]&&Bs[0][0])||'');
+ const use=bow?L.filter(s=>s.bow==bow):L.slice();
+ const G={};
+ use.forEach(s=>{const g=G[s.rd]||(G[s.rd]={rd:s.rd,disc:s.disc||'Outdoor',best:null});
+  if(!g.best||s.sc>g.best.sc||(s.sc==g.best.sc&&String(s.d)<String(g.best.d)))g.best={d:s.d,sc:s.sc,ev:s.ev||'',date:fmt(s.d),div:s.div||'',bow:s.bow||bow}});
+ const rows=Object.values(G).filter(g=>g.best).sort((a,b)=>b.best.sc-a.best.sc||String(a.rd).localeCompare(String(b.rd)));
+ return{bow,bows:Bs.map(b=>b[0]),rows}}catch(e){return{bow:'',bows:[],rows:[]}}};
 })();

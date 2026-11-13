@@ -17,7 +17,7 @@ window.ARROW_LIM=ARROW_LIM;
 /* the speed rule of thumb only where it makes sense: every input in range and a result of at least 100 fps; otherwise NaN, never a negative speed */
 window.arrowSpeedEst=function(ibo,dl,dw,tw,sg){const L=window.arrowLim;if([['ibo',ibo],['dl',dl],['dw',dw],['tw',tw]].some(([k,v])=>!isFinite(v)||L(k,v))||(isFinite(sg)&&L('sg',sg)))return NaN;
  const e=ibo-10*(30-dl)-Math.max(0,tw-5*dw)/3-(isFinite(sg)?sg:0)/3;return e>=100?Math.round(e):NaN};
-const SECTION={home:'home',score:'score',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',whatsnew:'me',me:'me'};
+const SECTION={home:'home',score:'score',scorecards:'home',stats:'myarch',analytics:'myarch',diary:'myarch',badges:'myarch',recap:'myarch',rewards:'myarch',squad:'clubs',follow:'clubs',profile:'me',help:'me',suggest:'me',whatsnew:'me',me:'me'};
 const secOf=v=>v.startsWith('lab_')?(LABSEC[v]||'home'):(SECTION[v]||v);
 const LABSEC={};
 const label=e=>((e.querySelector('.kicker,h2,h3,summary')||e).innerText||'').trim().toUpperCase();
@@ -58,6 +58,7 @@ home=function(){addMe();let last='';try{const L=latestShoot();if(L)last=`Last sh
  const nm=(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||'';
  app.innerHTML=`<p class="muted" style="margin:0 0 10px">G'day${nm?' '+h(String(nm).split(' ')[0]):''}${last?' · '+last:''}</p>
  <button class="hub-score" data-go="score"><span aria-hidden="true">🎯</span><span>Score<small>Start or carry on a shoot</small></span></button>
+ <button class="hub-score hub-past" id="gocards" data-go="scorecards"><span aria-hidden="true">📋</span><span>Scorecards<small>Practice scores and official personal bests</small></span></button>
  <div class="hub-grid">
   <button class="hub-tile" data-go="myarch"><span class="i" aria-hidden="true">📓</span><b>My archery</b><small>Stats, PBs, diary, setups, sight marks</small></button>
   <button class="hub-tile" data-go="clubs"><span class="i" aria-hidden="true">👥</span><b>Clubs &amp; leagues</b><small>Squads, leagues, match play, following</small></button>
@@ -361,7 +362,7 @@ E.lab_analysis=function(){let bc='',an='';window._anSel=null;try{bc=window.labBe
 /* ---------- Back buttons: every screen below a section names its parent and goes there (works on a direct load) ---------- */
 const TOP=new Set(['home','score','myarch','clubs','tools']);
 const PAR={stats:['Stats & PBs','myarch','My archery'],analytics:['Analytics','myarch','My archery'],badges:['Badge collection','lab_season','Season & badges'],recap:['Monthly recap','lab_season','Season & badges'],
- follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],whatsnew:['What\'s new','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home']};
+ follow:['Following','clubs','Clubs'],profile:['Edit my card','lab_profile','Profile & card'],help:['Help','lab_settings','Settings & help'],whatsnew:['What\'s new','lab_settings','Settings & help'],suggest:['Suggest a change','lab_settings','Settings & help'],lab_me:['Me','home','Home'],scorecards:['Scorecards','home','Home']};
 Object.assign(LABSEC,{lab_analysis:'myarch'});
 const ALIAS=v=>v=='squad'?'lab_squad':v=='me'?'lab_settings':v=='diary'?'lab_diary':v=='rewards'?'lab_ranks':v=='lab_season'?'lab_ranks':v;
 const known=v=>['home','score','stats','diary','me','squad'].includes(v)||typeof (window.EXTRA_VIEWS||{})[v]=='function';
@@ -376,8 +377,9 @@ function discardCtl(){if($('#labdiscard')||!cur)return;const fin=isDone(cur)||(!
   S.sessions=S.sessions.filter(x=>x!==c);if(window.calDiscard)calDiscard(c.id);fix=null;sv='sheet';justDone=false;cur=null;save();nav('score')}}
 function scoringCtl(){discardCtl();if($('#labfl'))return;const t=app.querySelector('.ad-title');
  const fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0);
- if(!t){/* ABA 3D scorer: card layout, so a normal top bar */const lb=fin?'‹ Score':'Finish later';app.insertAdjacentHTML('afterbegin',`<div class="labbar"><button class="btn ghost labback" id="labfl"${fin?'':' title="Every target is already saved. Carry on later from Score or Home."'}>${lb}</button><h1>${fin?'Score sheet':'Scoring'}</h1></div>`)}else t.insertAdjacentHTML('afterbegin',fin?'<button class="labfl" id="labfl" aria-label="Close this score sheet and go to Score">‹ Score</button>':'<button class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Score or Home.">Finish later</button>');
- $('#labfl').onclick=()=>{if(!fin&&!arrowsIn(cur)&&isNew(cur))S.sessions=S.sessions.filter(x=>x!==cur);fix=null;sv='sheet';justDone=false;cur=null;save();nav('score')}}
+ const back=window._sheetBack=='scorecards'?'Scorecards':window._sheetBack=='shotdone'?'All done':'Score';
+ if(!t){/* ABA 3D scorer: card layout, so a normal top bar */const lb=fin?'‹ '+back:'Finish later';app.insertAdjacentHTML('afterbegin',`<div class="labbar"><button class="btn ghost labback" id="labfl"${fin?'':' title="Every target is already saved. Carry on later from Score or Home."'}>${lb}</button><h1>${fin?'Score sheet':'Scoring'}</h1></div>`)}else t.insertAdjacentHTML('afterbegin',fin?`<button class="labfl" id="labfl" aria-label="Close this score sheet and go to ${back}">‹ ${back}</button>`:'<button class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Score or Home.">Finish later</button>');
+ $('#labfl').onclick=()=>{if(!fin&&!arrowsIn(cur)&&isNew(cur))S.sessions=S.sessions.filter(x=>x!==cur);const go=fin?window._sheetBack:null;window._sheetBack=null;fix=null;sv='sheet';justDone=false;cur=null;save();nav(go||'score')}}
 function ensureBack(){try{if(typeof TESTER=='undefined'||!TESTER||!S.unlocked||!S.profile||/^#(share|coach)=/.test(location.hash)||$('#tabs').hidden)return;
  if(view=='score'){if(typeof cur!='undefined'&&cur)scoringCtl();return}
  if(TOP.has(view))return;const inn=inner();let b=app.querySelector(':scope>.labbar');
