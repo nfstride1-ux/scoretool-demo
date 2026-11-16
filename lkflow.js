@@ -211,7 +211,7 @@
         <div class="lk-home">
           ${btn('lklogin','Login to Event','green')}
           ${btn('lkqr','Login with QR Code','green')}
-          ${btn('lkereg','Event Registration','grey')}
+          ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
           ${btn('lkrules','Rules','grey')}
         </div>

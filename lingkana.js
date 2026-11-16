@@ -516,7 +516,7 @@ function lkRegisterView(){
       <label for="lkregbow">Bow type <span class="muted">(optional)</span></label>
       <input id="lkregbow" name="bow" maxlength="24" placeholder="e.g. Compound" value="${h(pick&&pick.bow||'')}">
       ${contact}
-      <button class="btn alt" type="submit" id="lkreggo" style="margin-top:10px">${pick?'Save':'Register'}</button>
+      <button class="btn lk-go" type="submit" id="lkreggo" style="margin-top:10px">${pick?'Save':'Register'}</button>
       <p class="small lk-err" id="lkregmsg" role="alert"></p>
     </form>
     <p class="small muted">Scoring on the night is separate and password-protected. This page does not take payments.</p>

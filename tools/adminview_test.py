@@ -28,6 +28,7 @@ try:
       if pg.locator('nav [data-v=score]').is_visible():break
       d=pg.get_by_text('Demo unlock')
       if d.count():d.first.click()
+      elif pg.evaluate("typeof S!='undefined'&&!!S&&!S.unlocked"):pg.evaluate("S.unlocked=true;save();render()")
       elif pg.locator('#app button').count():pg.locator('#app button').first.click()
       pg.wait_for_timeout(500)
     pg.wait_for_timeout(500)

@@ -2,6 +2,13 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## Entitlement note and Lingkana register buttons (not a version bump, not deployed)
+
+Version tag stays `v2026-11-12-0804-live`. Not deployed. Details: `docs/lemonsqueezy-entitlement.md`.
+
+- The Unlock ScoreTool button is gone. It used to set `S.unlocked` on this phone with no payment. A phone that already has `unlocked: true` still opens the app; that value is not deleted or rewritten. A phone without it sees “Not open yet” and cannot turn the app on. There is no Lemon Squeezy store or server yet, so nothing here grants access.
+- Lingkana Event Registration is the same green as Login. Review, Rules, Back and Get ScoreTool are white buttons with a dark outline, not the dull grey that looked switched off. On the register form, Register is green and a disabled Register is a dull grey. Back is a white button with dark text.
+
 ## Custom round and Lingkana readability (not a version bump, not deployed)
 
 Version tag stays `v2026-11-12-0804-live`. Not deployed.
