@@ -5,7 +5,26 @@ body.lk-flow nav.tabs,
 body.lk-flow #scroller > p.small.muted,
 body.lk-flow .demo-pill,
 body.lk-flow #avtoast{display:none!important}
-body.lk-flow #shell{min-height:100dvh;background:#f4f5f7;color:#1a1a1a}
+body.lk-flow #shell{min-height:100dvh;background:#f4f5f7;color:var(--ink)}
+/* Cards keep the app theme. Text on them uses the theme ink, not the light-skin colour. */
+body.lk-flow .card,
+body.lk-flow .card h1,
+body.lk-flow .card h2,
+body.lk-flow .card h3,
+body.lk-flow .card label,
+body.lk-flow .card li,
+body.lk-flow .card th,
+body.lk-flow .card td,
+.lkf .card,
+.lkf .card h1,
+.lkf .card h2,
+.lkf .card h3,
+.lkf .card label,
+.lkf .card th,
+.lkf .card td{color:var(--ink)}
+.lk-err{color:#ffb4ab;font-weight:700}
+[data-theme=light] .lk-err{color:#8f1d1d}
+.lk-ok{background:var(--green-bg);color:var(--ink);border:1px solid var(--green);border-radius:10px;padding:10px 12px;font-weight:800;margin:8px 0 12px}
 body.lk-flow #scroller{padding:0 0 88px;background:#f4f5f7}
 body.lk-flow #app{padding:16px;max-width:430px;margin:0 auto}
 body.lk-flow{--lk-green:#2e7d32;--lk-green-d:#1b5e20;--lk-grey:#6b7280;--lk-grey-d:#4b5563;--lk-red:#c62828}
@@ -23,8 +42,8 @@ body.lk-flow{--lk-green:#2e7d32;--lk-green-d:#1b5e20;--lk-grey:#6b7280;--lk-grey
 .lk-btn{display:block;width:100%;border:0;border-radius:12px;min-height:64px;padding:16px 18px;font:800 18px var(--body,system-ui,sans-serif);cursor:pointer;text-align:center}
 .lk-btn.green{background:var(--lk-green);color:#fff}
 .lk-btn.green:active{background:var(--lk-green-d)}
-.lk-btn.grey{background:#9ca3af;color:#fff}
-.lk-btn.grey:active{background:var(--lk-grey-d)}
+.lk-btn.grey{background:#4b5563;color:#fff}
+.lk-btn.grey:active{background:#374151}
 .lk-btn:disabled{opacity:.5;cursor:not-allowed}
 .lk-bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid #e5e7eb;z-index:20;max-width:430px;margin:0 auto}
 .lk-bar .lk-btn{min-height:56px;font-size:17px;flex:1}
@@ -60,7 +79,7 @@ body.lk-flow{--lk-green:#2e7d32;--lk-green-d:#1b5e20;--lk-grey:#6b7280;--lk-grey
 .lk-pad button{min-height:64px;border:0;border-radius:12px;font:800 22px var(--body,system-ui,sans-serif);background:#111;color:#fff;cursor:pointer}
 .lk-pad button.m{background:#6b7280}
 .lk-end{margin:8px 0 0;font-size:15px;color:#4b5563}
-.lk-host{margin:16px 0 0;background:transparent;border:0;color:#6b7280;text-decoration:underline;font:600 14px var(--body,system-ui,sans-serif);padding:0;cursor:pointer}
+.lk-host{margin:16px 0 0;background:transparent;border:0;color:#374151;text-decoration:underline;font:600 14px var(--body,system-ui,sans-serif);padding:0;cursor:pointer}
 .lk-qrbox{background:#fff;border:1px dashed #c5c9d0;border-radius:12px;padding:20px;text-align:center;margin:12px 0}
 
 /* League scoring uses the app's own Score End / Score Sheet look, stacked for the group. */

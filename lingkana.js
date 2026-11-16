@@ -292,7 +292,15 @@ function lkAlreadyRegistered(opts){
   return false;
 }
 function lkRegInbox(){try{const v=JSON.parse(localStorage.getItem(LK_REG_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
-function lkRegPush(rec){const box=lkRegInbox();box.push(rec);try{localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}catch(e){}}
+function lkRegSame(a,b){const league=x=>String((x&&x.league)||LK_CODE);
+ return !!a&&!!b&&lkCleanName(a.name).toLowerCase()===lkCleanName(b.name).toLowerCase()&&String(a.night||'')===String(b.night||'')&&league(a)===league(b)}
+/* Same name (trimmed, case-insensitive) + night + league updates the first match in place.
+   Older extra copies of that same key are left in the list. Nothing is deleted. */
+function lkRegPush(rec){const box=lkRegInbox();const i=box.findIndex(r=>lkRegSame(r,rec));let stored;
+ if(i>=0){const prev=box[i]||{};stored=Object.assign({},prev,rec,{id:rec.id||prev.id,at:rec.at||Date.now()});box[i]=stored}
+ else{stored=rec;box.push(rec)}
+ try{localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}catch(e){}
+ return {box,stored}}
 function lkCleanName(raw){
   let n=String(raw||'').trim();
   if(typeof nmClean==='function')n=nmClean(n);
@@ -338,8 +346,11 @@ function lkApplyReg(rec,lg){
     }
   }
   lg.reg[night]=lg.reg[night]||[];
-  const already=lg.reg[night].some(r=>r.id===id);
-  if(!already)lg.reg[night].push({id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''});
+  const nameKey=name.toLowerCase();
+  const row=lg.reg[night].find(r=>r&&(r.id===id||lkCleanName(r.name).toLowerCase()===nameKey));
+  const already=!!row;
+  if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;id=row.id||id}
+  else lg.reg[night].push({id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''});
   lg.dirty=1;if(typeof save==='function')save();
   return{ok:true,id,first:first&&!already?1:0,night,already,name};
 }
@@ -364,13 +375,12 @@ function lkRegister(opts){
   if(!LK_DATES.includes(night))return'Pick a shoot night.';
   /* No registration deadline: a sign-up on the night, or after it has started, is accepted. */
   const rec={name,night,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,poster:1};
-  lkRegPush(rec);
+  const put=lkRegPush(rec);
   if(typeof S!=='undefined'&&S){
     const r=lkApplyReg(rec);
     if(!r.ok)return r.msg||'Could not add that registration.';
-    rec.id=r.id;rec._applied=1;
-    try{const box=lkRegInbox();const last=box[box.length-1];if(last&&last.at===rec.at){last.id=r.id;last._applied=1;localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}}catch(e){}
-    rec.id=rec.id||r.id;
+    put.stored.id=r.id;put.stored._applied=1;rec.id=r.id;
+    try{localStorage.setItem(LK_REG_KEY,JSON.stringify(put.box))}catch(e){}
   }
   try{
     if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
@@ -453,6 +463,13 @@ function lkKnownRegistrants(lg){
   }catch(e){}
   return [...by.values()].filter(a=>!lkIsHostPerson(a.id,a.name)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
 }
+function lkRegOkText(nights){
+  const ns=(nights||[]).map(d=>LK_DATES.indexOf(d)+1).filter(n=>n>0);
+  if(ns.length===1)return `You're registered for Night ${ns[0]} ✓`;
+  if(ns.length===2)return `You're registered for Night ${ns[0]} and Night ${ns[1]} ✓`;
+  if(ns.length>2)return `You're registered for ${ns.slice(0,-1).map(n=>'Night '+n).join(', ')} and Night ${ns[ns.length-1]} ✓`;
+  return `You're registered ✓`;
+}
 function lkRegisterView(){
   const appEl=typeof app!=='undefined'?app:(typeof $==='function'&&$('#app'));
   if(!appEl)return;
@@ -472,6 +489,7 @@ function lkRegisterView(){
   const def=lkDefaultNight();
   const myName=pick?pick.name:'';
   const skipCode=!!pick||lkDeviceRegistered();
+  const okMsg=window._lkRegOk||'';window._lkRegOk='';
   const knownHtml=known.length?`<div class="lk-known" id="lkknown"><p class="small muted">If you have already registered, tap your name, tick the nights you will shoot and save. You will not need the invite code or to enter your email or phone again.</p>${known.map(a=>`<button type="button" class="lk-known-btn${pick&&((pick.id&&pick.id===a.id)||pick.name===a.name)?' on':''}" data-lkret="${h(a.id||a.name)}">${h(a.name)}</button>`).join('')}</div>`:'';
   const contact=pick?`<p id="lkretnote">Signing in as <b>${h(pick.name)}</b>. Your email and phone are already saved.</p>`:
     `<label for="lkregemail">Email <span class="muted">(optional)</span></label>
@@ -483,6 +501,7 @@ function lkRegisterView(){
       <select id="lkregnight" name="night">${nights}</select>`;
   appEl.innerHTML=`<div class="card" id="lkregpage"><span class="kicker">Lingkana League</span>
     <h1>Register for a shoot night</h1>
+    ${okMsg?`<p class="lk-ok" id="lkregok" role="status">${h(okMsg)}</p>`:''}
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
     <p>${skipCode?'Tap your name to sign up for more nights, or register someone new. There is no deadline — you can register on the night.':'This page is invite-only. Type the invite code printed on the poster, then register for the night you will shoot. There is no deadline — you can register on the night.'}</p>
@@ -498,7 +517,7 @@ function lkRegisterView(){
       <input id="lkregbow" name="bow" maxlength="24" placeholder="e.g. Compound" value="${h(pick&&pick.bow||'')}">
       ${contact}
       <button class="btn alt" type="submit" id="lkreggo" style="margin-top:10px">${pick?'Save':'Register'}</button>
-      <p class="small" id="lkregmsg" role="alert"></p>
+      <p class="small lk-err" id="lkregmsg" role="alert"></p>
     </form>
     <p class="small muted">Scoring on the night is separate and password-protected. This page does not take payments.</p>
     <div id="lkgetbox" style="margin:16px 0 8px">
@@ -522,6 +541,9 @@ function lkRegisterView(){
   if(form)form.onsubmit=e=>{
     e.preventDefault();
     const box=appEl.querySelector('#lkregmsg');
+    const go=appEl.querySelector('#lkreggo');
+    if(go)go.disabled=true;
+    const fail=t=>{if(box)box.textContent=t;if(go)go.disabled=false};
     const code=(appEl.querySelector('#lkregcode')||{}).value;
     const name=(appEl.querySelector('#lkregname')||{}).value;
     const bow=(appEl.querySelector('#lkregbow')||{}).value;
@@ -529,7 +551,7 @@ function lkRegisterView(){
     let nightsToSave=[];
     if(pick){
       nightsToSave=[...appEl.querySelectorAll('#lkregnights input:checked')].map(x=>x.value);
-      if(!nightsToSave.length){if(box)box.textContent='Tick the nights you will shoot.';return}
+      if(!nightsToSave.length){fail('Tick the nights you will shoot.');return}
     }else{
       nightsToSave=[(appEl.querySelector('#lkregnight')||{}).value].filter(Boolean);
     }
@@ -538,12 +560,11 @@ function lkRegisterView(){
     let last='';
     for(const night of nightsToSave){
       last=lkRegister({posterCode:code,name,night,bow,email,phone,id:pick&&pick.id,returning:returning});
-      if(last){if(box)box.textContent=last;return}
+      if(last){fail(last);return}
     }
     window._lkRetPick=null;
-    if(box)box.textContent=pick?'You are registered for those nights. Tap your name next time — you will not need to enter your email or phone again.':'You are registered for that night. Your name stays on the league list; sign up again for each shoot.';
-    /* Re-draw so the name now appears in the list, without exposing email or phone. */
-    setTimeout(()=>lkRegisterView(),400);
+    window._lkRegOk=lkRegOkText(nightsToSave);
+    lkRegisterView();
   };
   const back=appEl.querySelector('#lkregback');
   if(back)back.onclick=()=>{window._lkRetPick=null;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}if(typeof lkFlowHome==='function')lkFlowHome(LK_CODE);else if(typeof lkView==='function'&&lkGet())lkView(LK_CODE);else if(typeof nav==='function')nav('lab_leagues')};
