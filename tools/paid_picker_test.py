@@ -101,9 +101,9 @@ def names(page):
 
 try:
     fresh = (ROOT / 'lingkana.js').read_text()
-    chk('LK_FRESH was not bumped', 'const LK_FRESH=1794401520000' in fresh)
+    chk('LK_FRESH is the 17 Nov wipe of test sign-ups', 'const LK_FRESH=1794881040000' in fresh)
     ver = (ROOT / 'version.json').read_text()
-    chk('live version.json is v2026-11-12-0804-live', 'v2026-11-12-0804-live' in ver)
+    chk('live version.json is v2026-11-17-1030-live', 'v2026-11-17-1030-live' in ver)
 
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path='/usr/bin/google-chrome',

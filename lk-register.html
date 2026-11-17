@@ -4,11 +4,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lingkana League</title>
 <meta name="robots" content="noindex">
-<!-- Old register QR / bookmarked URL. Forwards to the event home (Login, QR, Event Registration, Review Scoresheet, Rules), not a standalone register page. -->
+<!-- Registration link. Opens the register form (#lk-register), which is also what the printed QR encodes. -->
 <script>
 (function(){
   var q=location.search||'';
-  location.replace('./'+q+'#lk-home');
+  location.replace('./'+q+'#lk-register');
 })();
 </script>
 <p><a href="./#lk-home">Open the Lingkana League</a></p>

@@ -116,7 +116,7 @@ try:
   # ---------- 25 m uses the 60 cm face ----------
   to_score(pg);pg.select_option('#rd',W25);pg.wait_for_timeout(300);pg.click('#f3row [data-f1=single]');pg.wait_for_timeout(250);pg.click('#st');pg.wait_for_timeout(800)
   chk('25 m single face is the 60cm full face',pg.evaluate("cur.face3")=='single' and pg.inner_text('#facesize').strip().startswith('60cm'))
-  plot(pg,[(0,0),(0.3,0.3),(0.7,-0.2)]);e=pg.evaluate("cur.ends[0]");chk('25 m single face scores 3 arrows',len(e)==3 and e[0]=='X')
+  plot(pg,[(0,0),(0.3,0.3),(0.7,-0.2)]);e=pg.evaluate("cur.ends[0]");chk('25 m single face scores 3 arrows, centre 10, no X',len(e)==3 and e[0]=='10' and 'X' not in e)
   pg.evaluate("S.sessions=S.sessions.filter(x=>x.id!=cur.id);cur=null;S.face1=false;save()")
   # ---------- Vegas 300 and match nights unchanged ----------
   to_score(pg);pg.select_option('#rd','Vegas 300');pg.wait_for_timeout(300);pg.click('#st');pg.wait_for_timeout(800)
