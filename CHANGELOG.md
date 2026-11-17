@@ -1,6 +1,22 @@
 # ScoreTool changelog
 
 Newest first. Each entry names the version tag shown in Settings.
+
+## Entitlement note and Lingkana register buttons (not a version bump, not deployed)
+
+Version tag stays `v2026-11-12-0804-live`. Not deployed. Details: `docs/lemonsqueezy-entitlement.md`.
+
+- The Unlock ScoreTool button is gone. It used to set `S.unlocked` on this phone with no payment. A phone that already has `unlocked: true` still opens the app; that value is not deleted or rewritten. A phone without it sees “Not open yet” and cannot turn the app on. There is no Lemon Squeezy store or server yet, so nothing here grants access.
+- Lingkana Event Registration is the same green as Login. Review, Rules, Back and Get ScoreTool are white buttons with a dark outline, not the dull grey that looked switched off. On the register form, Register is green and a disabled Register is a dull grey. Back is a white button with dark text.
+
+## Custom round and Lingkana readability (not a version bump, not deployed)
+
+Version tag stays `v2026-11-12-0804-live`. Not deployed.
+
+- Score > Create my own practice round: Ends must be a whole number from 1 to 144, and a custom arrows-per-end from 1 to 12. A figure outside that is named in the same style as the Arrow chooser and left out of the max score. Save round stays off until it is fixed. The typed text is not rewritten to a different number.
+- A round already saved with a bad end count is left on the phone. Scoring it no longer throws in the ghost match, and an insights failure cannot stop the arrow from being saved.
+- Lingkana registration and results cards use the theme text colour, so headings, labels and the table are readable on the dark card. A wrong invite code is shown in that same place. After a successful registration the page says which night. Registering the same name, night and league again updates that row. An older extra copy of the same row is left as it is.
+- Checked with `python3 tools/round_lk_qa_test.py` (390px) and an axe-core colour-contrast pass on Home, Score, My archery, Clubs, Tools, the round form, Lingkana home, login, rules, registration and results. Grey Lingkana buttons and the dark-mode Home Score button were below 4.5:1 and were darkened. The gold "Tool" word on the light header is still the brand gold and was left as it is.
 One entry per release, newest first. Every release records: what changed, the files touched, and the tests run (before the deploy, and again on the live URL after).
 Process (agreed 26 Oct 2026): do not change anything that already works while fixing something else. Before every deploy run `python3 qa/run_regression.py` (all areas, see `qa/regression.md`), then run `python3 qa/run_regression.py --live https://nfstride1-ux.github.io/scoretool-demo/` after it is live. Any suite that fails is either fixed (if the change caused it) or listed here as a known failure. Earlier releases are in `git log`; user-facing notes are in `whatsnew.js`.
 

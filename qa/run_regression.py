@@ -42,6 +42,7 @@ AREAS=[
  ('Calculators',['arrowcheck_test.py','arrowchooser_test.py','arrowuse_test.py']),
  ('Analysis (stats, coach, testers)',['coach2_test.py','coach3_test.py','testers_test.py','sendpast_test.py']),
  ('App shell, What\'s new, offline, Clarity',['whatsnew_test.py','offline_test.py','clarity_test.py']),
+ ('Custom round validation and Lingkana contrast',['round_lk_qa_test.py','entitlement_test.py']),
 ]
 def fetch_live(url,dest):
     base=url.rstrip('/')+'/'

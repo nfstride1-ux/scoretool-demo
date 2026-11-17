@@ -211,7 +211,7 @@
         <div class="lk-home">
           ${btn('lklogin','Login to Event','green')}
           ${btn('lkqr','Login with QR Code','green')}
-          ${btn('lkereg','Event Registration','grey')}
+          ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
           ${btn('lkrules','Rules','grey')}
         </div>
@@ -646,7 +646,9 @@
     hideChrome(true);
     const el=appEl();if(!el)return;
     const w=nightOf(lg||{});
-    const list=signups(lg,w);
+    const rawList=signups(lg,w);
+    const seen=new Set();
+    const list=rawList.filter(r=>{const k=String(r&&r.name||'').trim().replace(/\s+/g,' ').toLowerCase();if(!k)return true;if(seen.has(k))return false;seen.add(k);return true});
     const rows=list.map((r,i)=>`<tr><td>${esc(targetOf(r,i))}</td><td>${esc(r.name||((typeof lgName==='function'&&lgName(r.id))||''))}</td><td>${esc(r.round||LK_R)}</td></tr>`).join('')||'<tr><td colspan="3">No archers registered for this night.</td></tr>';
     el.innerHTML=`<div class="lkf" id="lkreglist">
       <h1>Registered archers</h1>

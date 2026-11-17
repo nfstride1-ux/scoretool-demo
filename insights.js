@@ -232,10 +232,10 @@ function gSources(round,excl){const R=ROUNDS[round],app=[],off=[];if(!R||!R.ape|
  /* a confirmed official result (photo or typed) of this round can be the ghost. Ends are used when they match the round; a total only is a pace line, never invented arrows. */
  if(window.officialAdded)officialAdded().forEach(s=>{const mapped=(typeof GHOST_MAP!='undefined'&&GHOST_MAP[s.round])||(ROUNDS[s.round]?s.round:'');if(mapped!==round||!(s.score>0))return;
   const have=Array.isArray(s.ends)&&s.ends.length==R.ends&&s.ends.every(e=>e&&e.length==R.ape);
-  const ends=have?s.ends.map(e=>e.reduce((t,a)=>t+(a=='X'?10:a=='M'?0:+a),0)):[...Array(R.ends)].map((_,i)=>Math.round(s.score*(i+1)/R.ends)-Math.round(s.score*i/R.ends));
+  const gn=ghostN(R.ends),ends=have?s.ends.map(e=>e.reduce((t,a)=>t+(a=='X'?10:a=='M'?0:+a),0)):(gn?[...Array(gn)].map((_,i)=>Math.round(s.score*(i+1)/gn)-Math.round(s.score*i/gn)):[]);
   off.push({id:'off:'+(s.id||s.date+'|'+s.score),k:'off',date:s.date,sc:+s.score,n:R.ends,full:true,cls:'',fl:'',ev:s.event||'Official',ends,ar:have?s.ends.map(e=>e.slice()):null,pos:null,pace:!have})});
  return{app,off}}
-const paceLine=(tot,n)=>[...Array(n)].map((_,i)=>Math.round(tot*(i+1)/n)-Math.round(tot*i/n));
+const paceLine=(tot,n)=>{const k=typeof ghostN==='function'?ghostN(n):0;return k?[...Array(k)].map((_,i)=>Math.round(tot*(i+1)/k)-Math.round(tot*i/k)):[]};
 function recRows(round){const out=[];if(!RECD)return out;const bow=window.ghostBowNow?window.ghostBowNow():null,gc=myGC(),gl={Male:'men',Female:'women'};
  const mk=(scope,L,src,none)=>{const f=(L||[]).filter(x=>(!bow||String(x.bow).toLowerCase()==String(bow).toLowerCase())&&(!gc.g||x.g==gc.g));
   if(!f.length){out.push({id:'rec:'+scope+':none',scope,text:`${scope=='world'?'World':'National (Australia)'} record · Record not available`,off:true});return}
@@ -246,7 +246,7 @@ function whoData(round,excl){const R=ROUNDS[round],{app,off}=gSources(round,excl
  const top=L=>L.reduce((a,b)=>!a||b.sc>a.sc?b:a,null),pb=top(fullA),best=top(fullAll);
  if(pb)mine.push({id:'pb',text:`My PB · ${pb.sc} (${fmtD(pb.date)})`,it:pb,short:'My PB '+pb.sc});
  if(best&&(!pb||best.sc>pb.sc))mine.push({id:'best',text:`My best ever · ${best.sc} (${fmtD(best.date)}${best.k=='off'?', competition':''})`,it:best,short:'My best '+best.sc});
- if(fullAll.length>1){const n=R.ends,ends=[...Array(n)].map((_,i)=>Math.round(mean(fullAll.map(x=>x.ends[i]||0))));mine.push({id:'avg',text:`My average · ${Math.round(mean(fullAll.map(x=>x.sc)))} (${fullAll.length} scores)`,it:{ends,ar:null,pos:null,date:'',cls:'',sc:ends.reduce((a,b)=>a+b,0),n},short:'My average'})}
+ if(fullAll.length>1){const n=ghostN(R.ends);if(n){const ends=[...Array(n)].map((_,i)=>Math.round(mean(fullAll.map(x=>x.ends[i]||0))));mine.push({id:'avg',text:`My average · ${Math.round(mean(fullAll.map(x=>x.sc)))} (${fullAll.length} scores)`,it:{ends,ar:null,pos:null,date:'',cls:'',sc:ends.reduce((a,b)=>a+b,0),n},short:'My average'})}}
  all.slice(0,80).forEach(x=>mine.push({id:x.id,text:`${fmtD(x.date)} · ${x.sc}${x.full?'':' after '+x.n+' of '+R.ends+' ends'}${x===pb?' · PB':''}${x===best?' · Best':''}${x.fl?' · '+x.fl:''}${x.k=='off'?' · competition'+(x.ev?' ('+x.ev+')':''):''}${x.pace?' · pace line':''}`,it:x,short:fmtD(x.date)+' '+x.sc}));
  mine.forEach(m=>byId[m.id]=m);
  if(mine.length)groups.push({label:'My scores',opts:mine});
@@ -259,8 +259,10 @@ function pickGhost(round,excl){const D=whoData(round,excl);if(!D.any)return null
  return{mode:'pick',src:id,ends:it.ends.slice(),ar:it.ar?it.ar.map(a=>a.slice()):null,pos:note?null:(it.pos&&it.pos.length?it.pos:null),date:it.date?fmtD(it.date):'',label:`Ghost: ${o.short}`,who:o.short,note:(note+part).trim()||undefined}}
 function whoPanel(r){const D=whoData(r,null);if(!D.any)return'';const sel=(window._ghWho&&D.byId[window._ghWho]&&!D.byId[window._ghWho].off)?window._ghWho:D.pbId||Object.keys(D.byId).find(k=>!D.byId[k].off);window._ghWho=sel;
  return`<div id="ghwhow" ${window._ghM=='pick'?'':'hidden'} style="margin-top:6px"><label class="small" for="ghwho">Race who? (${esc(r)})</label><select id="ghwho">${D.groups.map(g=>`<optgroup label="${esc(g.label)}">${g.opts.map(o=>`<option value="${esc(o.id)}" ${o.id==sel?'selected':''} ${o.off?'disabled':''}>${esc(o.text)}</option>`).join('')}</optgroup>`).join('')}</select><p class="small muted" style="margin:2px 0 0">PB is your best round in the app; best ever also counts competition results. A record has only a total, so it races as an even pace line.</p></div>`}
-function ghostFor(round,mode,excl){if(mode=='pick')return pickGhost(round,excl);if(mode=='top')return topGhost(round);if(mode=='off')return window.offGhost?window.offGhost(round):null;const R=ROUNDS[round];const ss=done().filter(s=>s.round==round&&s!==excl&&!s.finished&&s.ends.length);if(!ss.length||!R)return null;
- if(mode=='avg'){const n=R.ends,e=[...Array(n)].map((_,i)=>{const v=ss.filter(s=>s.ends[i]).map(s=>endSum(s.ends[i]));return v.length?Math.round(mean(v)):0});return{mode,src:'avg',n:ss.length,ends:e,pos:null,date:''}}
+/* A saved round with no positive end count (negative, zero, or not a number) has no ghost. Neutral result: null. The stored round is left as it is. */
+function ghostN(n){n=+n;return Number.isFinite(n)&&n>0?Math.floor(n):0}
+function ghostFor(round,mode,excl){const R0=ROUNDS[round];if(R0&&!ghostN(R0.ends))return null;if(mode=='pick')return pickGhost(round,excl);if(mode=='top')return topGhost(round);if(mode=='off')return window.offGhost?window.offGhost(round):null;const R=R0;const ss=done().filter(s=>s.round==round&&s!==excl&&!s.finished&&s.ends.length);if(!ss.length||!R)return null;
+ if(mode=='avg'){const n=ghostN(R.ends);if(!n)return null;const e=[...Array(n)].map((_,i)=>{const v=ss.filter(s=>s.ends[i]).map(s=>endSum(s.ends[i]));return v.length?Math.round(mean(v)):0});return{mode,src:'avg',n:ss.length,ends:e,pos:null,date:''}}
  const s=mode=='best'?ss.reduce((a,b)=>total(b)>total(a)?b:a):ss[ss.length-1];{const fd=faceDiff(round,faceCls(round,s),excl);return{mode,src:s.id,ends:s.ends.map(endSum),pos:fd?null:(s.pos||[]).map(e=>(e||[]).filter(Boolean)),date:s.date,ar:s.ends.map(e=>e.slice()),note:fd||undefined}}}
 function gRes(s){const g=s.ghost;if(!g)return null;if(g.totalOnly){const fin=!!(s.finished||isDone(s)),me=s.ends.reduce((t,e)=>t+endSum(e),0),gh=fin?g.total:0;return{n:0,me,gh,w:0,l:0,gap:fin?me-gh:0,res:!fin?'draw':me>gh?'win':me<gh?'loss':'draw',totalOnly:true,fin}}const R=ROUNDS[s.round]||{},full=s.ends.filter(e=>e.length==R.ape).length,n=Math.min(full,g.ends.length,s.finished||isDone(s)?99:(g.rev||0));
  let me=0,gh=0,w=0,l=0;for(let i=0;i<n;i++){const a=endSum(s.ends[i]),b=g.ends[i];me+=a;gh+=b;if(a>b)w++;else if(b>a)l++}return{n,me,gh,w,l,gap:me-gh,res:me>gh?'win':me<gh?'loss':'draw'}}
@@ -289,14 +291,20 @@ function ghostSheet(){const g=cur.ghost,r=gRes(cur),R=ROUNDS[cur.round],fin=isDo
  return`<div class="gh-res gh-fin"><span class="kicker" style="color:${P}"><span class="ici" aria-hidden="true">${window.icon?icon('ghost'):''}</span> ${esc(g.label||'Ghost match · '+GM[g.mode]+(g.date?' · '+g.date:''))}</span><h2 style="color:${T[1]};margin:4px 0">${T[0]}</h2>
  <div class="stats" style="grid-template-columns:1fr 1fr 1fr">${stat(r.me,'you',G)}${stat(r.gh,'ghost',P)}${stat((r.gap>0?'+':'')+r.gap,'gap')}${stat(r.w+'–'+r.l,'ends won')}${stat(k,'win streak 🔥')}${stat(r.n,'ends compared')}</div>
  ${ghostX(g,r)}${g.totalOnly?'<p class="small muted">This archer only has a published total for this score, so the totals were compared at the end.</p>':''}${g.note?`<p class="small muted">${esc(g.note)}</p>`:''}${cur.finished&&r.n<g.ends.length?`<p class="small muted">Finished early: compared the ${r.n} full end${r.n==1?'':'s'} you shot.</p>`:''}${row}<p class="small muted" style="margin:4px 0 0">Counts toward your PBs and stats like a normal round. Draws keep your streak.</p></div>`}
+/* Insights (ghost match) is secondary. A throw here must not block or change the score that was just saved. */
 const _sc=score;score=function(){
- if(cur&&window._ghPend!==undefined){const m=window._ghPend;window._ghPend=undefined;if(m&&!arrowsIn(cur)){const g=ghostFor(cur.round,m,cur);if(g){g.rev=0;cur.ghost=g;save()}window._bsGhost=null}}
- _sc.apply(this,arguments);
- if(!cur){ghostPick();return}
- if(!cur.ghost)return;const g=cur.ghost,R=ROUNDS[cur.round];
- if(cur.finished||isDone(cur))g.rev=g.ends.length;
- const nx=$('#enext');if(nx)nx.addEventListener('click',()=>{const full=cur.ends.filter(e=>e.length==R.ape).length;g.rev=Math.max(g.rev||0,full);save()},true);
- const fn=$('#finnow');if(fn)fn.addEventListener('click',()=>{},true);
- const chips=app.querySelector('.ad-chips');if(chips&&!$('#ghbar')){chips.insertAdjacentHTML('afterend',ghostBar());const fw=$('#fwrap'),bh=$('#ghbar').offsetHeight;if(fw)fw.style.height=Math.max(160,fw.offsetHeight-bh)+'px'}
- const sh=app.querySelector('.ad-sheet');if(!chips&&sh&&!app.querySelector('.gh-res'))sh.insertAdjacentHTML('afterend',ghostSheet())};
+ try{
+  if(cur&&window._ghPend!==undefined){const m=window._ghPend;window._ghPend=undefined;if(m&&!arrowsIn(cur)){const g=ghostFor(cur.round,m,cur);if(g){g.rev=0;cur.ghost=g;save()}window._bsGhost=null}}
+ }catch(err){console.error('insights',err);try{window._ghPend=undefined}catch(e){}}
+ const out=_sc.apply(this,arguments);
+ try{
+  if(!cur){ghostPick();return out}
+  if(!cur.ghost)return out;const g=cur.ghost,R=ROUNDS[cur.round];
+  if(cur.finished||isDone(cur))g.rev=g.ends.length;
+  const nx=$('#enext');if(nx)nx.addEventListener('click',()=>{const full=cur.ends.filter(e=>e.length==R.ape).length;g.rev=Math.max(g.rev||0,full);save()},true);
+  const fn=$('#finnow');if(fn)fn.addEventListener('click',()=>{},true);
+  const chips=app.querySelector('.ad-chips');if(chips&&!$('#ghbar')){chips.insertAdjacentHTML('afterend',ghostBar());const fw=$('#fwrap'),bh=$('#ghbar').offsetHeight;if(fw)fw.style.height=Math.max(160,fw.offsetHeight-bh)+'px'}
+  const sh=app.querySelector('.ad-sheet');if(!chips&&sh&&!app.querySelector('.gh-res'))sh.insertAdjacentHTML('afterend',ghostSheet())
+ }catch(err){console.error('insights',err)}
+ return out};
 })();

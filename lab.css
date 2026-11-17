@@ -12,7 +12,7 @@
 .labme{background:var(--blue-bg);color:var(--blue);border:0;border-radius:99px;font:700 14px var(--body);padding:7px 12px;cursor:pointer;margin-right:8px;min-height:36px}
 .labbar{display:flex;align-items:center;gap:10px;margin:0 0 12px}.labbar h1{margin:0;font-size:28px}
 .labback{padding:6px 12px!important;min-height:40px!important}
-.hub-score{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:110px;font:800 34px var(--disp);text-transform:uppercase;letter-spacing:.04em;background:var(--blue);color:#fff;border:0;border-radius:18px;cursor:pointer;margin:0 0 14px}
+.hub-score{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:110px;font:800 34px var(--disp);text-transform:uppercase;letter-spacing:.04em;background:#1d4ed8;color:#fff;border:0;border-radius:18px;cursor:pointer;margin:0 0 14px}
 .hub-score small{display:block;font:600 14px var(--body);text-transform:none;letter-spacing:0;opacity:.9}
 .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hub-tile{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:118px;cursor:pointer;color:var(--ink);text-decoration:none;font:inherit}

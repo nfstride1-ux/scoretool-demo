@@ -29,7 +29,9 @@ try:
     pg.goto(f'http://localhost:8774/?tester={tid}');pg.wait_for_timeout(2500)
     for _ in range(3):
       if pg.locator('nav [data-v=score]').is_visible():break
-      pg.locator('#app button').first.click();pg.wait_for_timeout(500)
+      if pg.locator('#gate').count():pg.evaluate("S.unlocked=true;save();render()")
+      elif pg.locator('#app button').count():pg.locator('#app button').first.click()
+      pg.wait_for_timeout(500)
     pg.wait_for_timeout(800);return ctx,pg
   # picker lists every tester, Nate Evans / Danie Oosthuizen left out
   ctx=b.new_context(viewport={'width':390,'height':844});pg=ctx.new_page();pg.goto('http://localhost:8774/');pg.wait_for_timeout(1200)

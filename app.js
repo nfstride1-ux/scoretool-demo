@@ -203,8 +203,21 @@ function targetSVG(pts){const rings=[['#fff','#333'],['#fff','#333'],['#111','#f
 let view=/^#plot/.test(location.hash)?'score':'home',cur=null;
 function nav(v){if(v=='plot')v='score';view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
-function gate(){return`<div class="card dark gate"><span class="kicker">Members only</span><h1>Unlock ScoreTool</h1><p>Track every arrow, see your progress, and celebrate your wins.</p>
-<button class="btn full" id="unlock">Demo unlock (free, no payment)</button></div>`}
+/* No Lemon Squeezy store and no server on this static site. Empty means the check is off:
+   entitlementVerify calls nothing and never grants access. It does not read or write S.unlocked.
+   See docs/lemonsqueezy-entitlement.md. */
+const SCORETOOL_ENTITLEMENT_URL='';
+async function entitlementVerify(){const base=String(SCORETOOL_ENTITLEMENT_URL||'').trim();
+ if(!base)return {ok:false,reason:'no-server'};
+ try{const r=await fetch(base.replace(/\/$/,'')+'/entitlement/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'});
+  if(!r.ok)return {ok:false,reason:'rejected'};
+  const j=await r.json();
+  /* A valid reply is recorded only as this return value. Nothing here sets S.unlocked. */
+  if(j&&j.valid===true&&j.server===true)return {ok:true,exp:j.exp||0};
+  return {ok:false,reason:'rejected'}}
+ catch(e){return {ok:false,reason:'unreachable'}}}
+window.entitlementVerify=entitlementVerify;
+function gate(){return`<div class="card dark gate" id="gate"><span class="kicker">ScoreTool</span><h1>Not open yet</h1><p>Payment is not connected. This phone cannot turn the app on. Scores already saved on this phone are left as they are.</p></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their past competition results.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> competition results loaded.</p>`:
@@ -213,7 +226,8 @@ function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
- if(!S.unlocked){app.innerHTML=gate();$('#unlock').onclick=()=>{S.unlocked=true;save();render()};$('#tabs').hidden=true;return}
+ /* unlocked:true already on this phone is left as it is. There is no button that can set it. */
+ if(!S.unlocked){app.innerHTML=gate();$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
  if(typeof ifaaFromHash=='function'&&/^#score(\?|$)/.test(location.hash)){if(ifaaFromHash())return}
@@ -581,30 +595,54 @@ function roundAutoName(c){const disc=c.kind=='3d'?'3d':(c.disc||'target'),label=
 function freeRoundName(n,old){let name=n||'Target',i=2;while(ROUNDS[name]&&name!==old){name=(n||'Target')+' '+i;i++}return name}
 const DISC_OPT=[['target','Target'],['indoor','Indoor'],['field','Field'],['clout','Clout'],['3d','3D']];
 function discDefaults(disc){if(disc=='indoor')return [{dist:18,unit:'m',size:40,type:'3-spot',ends:10}];if(disc=='field')return [{dist:50,unit:'m',size:80,type:'field',ends:12}];if(disc=='clout')return [{dist:180,unit:'m',size:122,type:'full',ends:6}];return [{dist:70,unit:'m',size:122,type:'full',ends:6}]}
+/* Ends and a custom arrows-per-end must be whole numbers in range. A bad figure stays on screen,
+   is named in the same way as the Arrow chooser, and is left out of the max and the save until it is fixed.
+   Save stays off while any of those boxes is invalid. Nothing already stored is deleted or rewritten. */
+const CR_ENDS=[1,144],CR_APE=[1,12];
+function crRangeMsg(label,raw,lo,hi){const t=String(raw??'').trim();
+ if(t==='')return `${label}: type a whole number from ${lo} to ${hi}. It is left out until it is fixed.`;
+ if(!/^-?\d+$/.test(t))return `${label}: "${t}" is not a whole number. Type the number only. It is left out until it is fixed.`;
+ const x=+t;if(!Number.isFinite(x)||x<lo||x>hi)return `${label}: ${x} is outside the usual range of ${lo} to ${hi}. Check the number. It is left out until it is fixed.`;
+ return ''}
+function crSyncRaw(){const c=crEdit.d;if(!crEdit.raw)crEdit.raw={ape:String(c.ape??6),ends:(c.blocks||[]).map(b=>String(b.ends??'')),apeCustom:![3,6].includes(+c.ape)};
+ const raw=crEdit.raw,n=(c.blocks||[]).length;while(raw.ends.length<n)raw.ends.push(String((c.blocks[raw.ends.length]||{}).ends??''));if(raw.ends.length>n)raw.ends.length=n;return raw}
+function crProblems(){const raw=crSyncRaw(),out=[];raw.ends.forEach((v,i)=>{const m=crRangeMsg(raw.ends.length>1?`Ends (block ${i+1})`:'Ends',v,CR_ENDS[0],CR_ENDS[1]);if(m)out.push({id:'crend'+i,m,sel:'[data-b="'+i+'"] [data-f="ends"]'})});
+ if(raw.apeCustom){const m=crRangeMsg('Arrows per end',raw.ape,CR_APE[0],CR_APE[1]);if(m)out.push({id:'crapem',m,sel:'#capec'})}return out}
+function crApplyValid(){const c=crEdit.d,raw=crSyncRaw();raw.ends.forEach((v,i)=>{if(!crRangeMsg('Ends',v,CR_ENDS[0],CR_ENDS[1])&&c.blocks[i])c.blocks[i].ends=+v});
+ if(!raw.apeCustom){if([3,6].includes(+raw.ape))c.ape=+raw.ape}else if(!crRangeMsg('Arrows per end',raw.ape,CR_APE[0],CR_APE[1]))c.ape=+raw.ape}
 function roundForm(){const c=crEdit.d||(crEdit.i>=0?JSON.parse(JSON.stringify(S.customRounds[crEdit.i])):{name:'',ape:6,xs:true,disc:'target',blocks:[{dist:70,unit:'m',size:122,type:'full',ends:6}]});crEdit.d=c;if(!c.disc)c.disc=c.kind=='3d'?'3d':'target';
  if(c.kind=='3d')return roundForm3D(c);
- const tot=()=>c.blocks.reduce((t,b)=>t+ +b.ends,0)*c.ape*10;
+ const raw=crSyncRaw();
+ const tot=()=>{crApplyValid();return crProblems().length?'—':c.blocks.reduce((t,b)=>t+(+b.ends||0),0)*(+c.ape||0)*10};
  app.innerHTML=`<div class="card"><span class="kicker">${crEdit.i>=0?'Edit':'Create'} my practice round</span><label for="cdisc">Round type</label><select id="cdisc">${DISC_OPT.map(([v,l])=>`<option value="${v}" ${c.disc==v?'selected':''}>${l}</option>`).join('')}</select><label for="cn">Name</label><input id="cn" value="${esc(c.name)}" placeholder="Leave blank to name it from the type and distance">
- <label for="cape">Arrows per end</label><div style="display:flex;gap:6px"><select id="cape" style="flex:1">${[3,6].map(n=>`<option ${c.ape==n?'selected':''}>${n}</option>`).join('')}<option value="c" ${![3,6].includes(+c.ape)?'selected':''}>Custom</option></select><input id="capec" type="number" min="1" max="12" value="${c.ape}" style="flex:1" ${[3,6].includes(+c.ape)?'hidden':''} aria-label="Custom arrows per end"></div>
+ <label for="cape">Arrows per end</label><div style="display:flex;gap:6px"><select id="cape" style="flex:1">${[3,6].map(n=>`<option value="${n}" ${!raw.apeCustom&&+c.ape==n?'selected':''}>${n}</option>`).join('')}<option value="c" ${raw.apeCustom?'selected':''}>Custom</option></select><input id="capec" type="number" inputmode="numeric" value="${esc(raw.ape)}" style="flex:1" ${raw.apeCustom?'':'hidden'} aria-label="Custom arrows per end"></div>
  <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="cxs" style="width:auto" ${c.xs!==false?'checked':''}> Count Xs</label>
  <h3 style="margin-top:10px">Distance blocks</h3>${c.blocks.map((b,i)=>`<div class="list-item" data-b="${i}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
   <label>Distance<div style="display:flex;gap:4px"><input data-f="dist" type="number" min="1" value="${b.dist}" style="min-width:0"><select data-f="unit" style="width:64px">${['m','yd'].map(u=>`<option ${b.unit==u?'selected':''}>${u}</option>`).join('')}</select></div></label>
-  <label>Ends<input data-f="ends" type="number" min="1" max="60" value="${b.ends}"></label>
+  <label>Ends<input data-f="ends" type="number" inputmode="numeric" value="${esc(raw.ends[i])}" aria-label="Ends"></label>
   <label>Face size<select data-f="size">${[122,80,60,40].map(z=>`<option value="${z}" ${b.size==z?'selected':''}>${z}cm</option>`).join('')}</select></label>
   <label>Face type<select data-f="type">${[['full','Full 10-ring'],['6-ring','6-ring'],['3-spot','3-spot'],['field','Field'],['3d','3D']].map(([v,l])=>`<option value="${v}" ${b.type==v?'selected':''}>${l}</option>`).join('')}</select></label></div>
   ${c.blocks.length>1?`<button class="btn ghost" data-rb="${i}" style="margin-top:6px;padding:4px 10px">Remove block</button>`:''}</div>`).join('')}
  <button class="btn ghost" id="addb" style="margin-top:6px">+ Add distance</button>
  <p style="margin:10px 0 0"><b>Max score: <span id="cmax">${tot()}</span></b> <span class="small muted">· practice only, never counted for classification</span></p>
+ <div id="crerrs"></div>
  <div style="display:flex;gap:6px;margin-top:10px"><button class="btn" id="csave">Save round</button><button class="btn ghost" id="ccancel">Cancel</button></div></div>`;
- const up=()=>{$('#cmax').textContent=tot()};
- app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{if(el.dataset.f=='type'&&el.value=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}const b=c.blocks[+el.closest('[data-b]').dataset.b];b[el.dataset.f]=['dist','ends','size'].includes(el.dataset.f)?+el.value:el.value;up()});
- $('#cape').onchange=e=>{if(e.target.value=='c'){$('#capec').hidden=false}else{$('#capec').hidden=true;c.ape=+e.target.value}up()};$('#capec').oninput=e=>{c.ape=Math.max(1,Math.min(12,+e.target.value||1));up()};
+ const paintCr=()=>{const probs=crProblems(),box=$('#crerrs');if(box)box.innerHTML=probs.map(p=>`<p class="labbad" id="${p.id}" role="alert">${esc(p.m)}</p>`).join('');
+  app.querySelectorAll('[data-f=ends],#capec').forEach(el=>{el.removeAttribute('aria-invalid');el.removeAttribute('aria-describedby')});
+  probs.forEach(p=>{const el=app.querySelector(p.sel);if(!el)return;el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby',p.id)});
+  const sv=$('#csave');if(sv)sv.disabled=probs.length>0;const mx=$('#cmax');if(mx)mx.textContent=tot()};
+ app.querySelectorAll('[data-b] [data-f]').forEach(el=>el.oninput=el.onchange=()=>{if(el.dataset.f=='type'&&el.value=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}const b=c.blocks[+el.closest('[data-b]').dataset.b];
+  if(el.dataset.f=='ends'){crSyncRaw().ends[+el.closest('[data-b]').dataset.b]=el.value;paintCr();return}
+  b[el.dataset.f]=el.dataset.f=='dist'||el.dataset.f=='size'?+el.value:el.value;paintCr()});
+ $('#cape').onchange=e=>{const r=crSyncRaw();if(e.target.value=='c'){r.apeCustom=true;$('#capec').hidden=false}else{r.apeCustom=false;r.ape=e.target.value;c.ape=+e.target.value;$('#capec').hidden=true}paintCr()};
+ $('#capec').oninput=e=>{const r=crSyncRaw();r.apeCustom=true;r.ape=e.target.value;paintCr()};
  $('#cn').oninput=e=>c.name=e.target.value;$('#cxs').onchange=e=>c.xs=e.target.checked;
- $('#cdisc').onchange=e=>{c.disc=e.target.value;if(c.disc=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}delete c.kind;c.blocks=discDefaults(c.disc);if(c.disc=='indoor')c.ape=3;roundForm()};
+ $('#cdisc').onchange=e=>{c.disc=e.target.value;if(c.disc=='3d'){c.kind='3d';c.targets=c.targets||20;return roundForm()}delete c.kind;c.blocks=discDefaults(c.disc);if(c.disc=='indoor')c.ape=3;crEdit.raw=null;roundForm()};
  $('#addb').onclick=()=>{const l=c.blocks[c.blocks.length-1];c.blocks.push({...l});roundForm()};
- app.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{c.blocks.splice(+b.dataset.rb,1);roundForm()});
+ app.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{const i=+b.dataset.rb;c.blocks.splice(i,1);if(crEdit.raw&&crEdit.raw.ends)crEdit.raw.ends.splice(i,1);roundForm()});
  $('#ccancel').onclick=()=>{crEdit=null;score()};
- $('#csave').onclick=()=>{const old=crEdit.i>=0?S.customRounds[crEdit.i].name:'';let n=(c.name||'').trim();if(!n)n=freeRoundName(roundAutoName(c),old);if(ROUNDS[n]&&n!==old&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
+ paintCr();
+ $('#csave').onclick=()=>{if(crProblems().length){paintCr();return}crApplyValid();const old=crEdit.i>=0?S.customRounds[crEdit.i].name:'';let n=(c.name||'').trim();if(!n)n=freeRoundName(roundAutoName(c),old);if(ROUNDS[n]&&n!==old&&(!ROUNDS[n].custom||(crEdit.i>=0?S.customRounds[crEdit.i].name!=n:true)))return alert('That name is already used. Pick another.');
   c.name=n;if(!c.disc)c.disc='target';S.customRounds=S.customRounds||[];if(crEdit.i>=0){if(old!=n){delete ROUNDS[old];S.sessions.forEach(x=>{if(x.round==old)x.round=n})}S.customRounds[crEdit.i]=c}else S.customRounds.push(c);S.lastRound=n;crEdit=null;save();regCustom();score()}}
 /* 3D practice round form: the only setting is the number of targets */
 /* the builder's split line: halves are intended (3-arrow half, then 1-arrow half; odd extra goes first) */

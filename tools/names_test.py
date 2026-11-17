@@ -125,6 +125,7 @@ try:
   cf=b.new_context(viewport={'width':390,'height':844});cf.route('https://ntfy.sh/**',relay);F=cf.new_page();F.on('pageerror',lambda e:errs.append(f'fresh: {e}'))
   F.goto('http://localhost:8783/?tester=nathe');F.wait_for_timeout(1500)
   if F.locator('#unlock').count():F.click('#unlock');F.wait_for_timeout(800)
+  elif F.evaluate("typeof S!='undefined'&&!!S&&!S.unlocked"):F.evaluate("S.unlocked=true;save();render()");F.wait_for_timeout(400)
   chk('fresh profile: no name screen, lands on the app',F.locator('#nmscreen').count()==0 and F.locator('#tabs').is_visible())
   F.evaluate("nmSync()");F.wait_for_timeout(500);F.reload();F.wait_for_timeout(2000)
   chk('fresh profile: still no prompt after a sync and reload',F.locator('#nmscreen').count()==0)
