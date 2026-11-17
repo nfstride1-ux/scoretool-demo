@@ -17,7 +17,7 @@ def plot(pg,pts):  # tap the face at face coordinates (x,y), via the svg's own t
     pg.mouse.click(q[0],q[1]);pg.wait_for_timeout(250)
 # plotted (per-spot mapped by shotPts) re-scored on one spot / full face must equal the stored score
 CHECK=r"""(()=>{const s=cur||S.sessions.find(x=>x.id==window._aid),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e),lc=arrowLC(Fi,s);let v;
- if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-(lc>0?lc:0.035);v=d>0.5?'M':d<=0.05?'X':String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false},lc);return[p.k,p.a,v]})})()"""
+ if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-(lc>0?lc:0.035),no10=s.round==='Australian Indoor 18m'&&s.face3!=='vegas'&&s.face3!=='single';v=d>0.5?'M':(no10?d<=0.1:d<=0.05)?'X':String(Math.min(no10?9:10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false},lc);return[p.k,p.a,v]})})()"""
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
@@ -78,7 +78,7 @@ try:
   cl=pg.evaluate("[...document.querySelectorAll('[data-csf3]')].map(b=>b.dataset.csf3+'='+b.textContent.replace('✓','').trim())");print('casual faces',cl)
   chk('Casual: three faces for Aus Indoor',cl==['vert=Vertical 3-spot (traffic light)','vegas=Triangular 3-spot','single=Single 40cm face'])
   pg.evaluate("document.querySelector('#csrd').scrollIntoView({block:'start'})");pg.wait_for_timeout(200);pg.screenshot(path=f'{SH}/picker-casual.png')
-  chk('Casual face text and keys follow the face',pg.evaluate(f"""[['vert','Vertical 3-spot (traffic light)','X 10 9 8 7 6 M'],['vegas','Triangular 3-spot','X 10 9 8 7 6 M'],['single','Single 40cm face','X 10 9 8 7 6 5 4 3 2 1 M']].every(([f,t,k])=>{{const c={{round:'{AUS}',face3:f,disc:'indoor'}};return csFaceTxt(c)==t&&csKeys(c,0).join(' ')==k}})"""))
+  chk('Casual face text and keys follow the face',pg.evaluate(f"""[['vert','Vertical 3-spot (traffic light)','X 9 8 7 6 M'],['vegas','Triangular 3-spot','X 10 9 8 7 6 M'],['single','Single 40cm face','X 10 9 8 7 6 5 4 3 2 1 M']].every(([f,t,k])=>{{const c={{round:'{AUS}',face3:f,disc:'indoor'}};return csFaceTxt(c)==t&&csKeys(c,0).join(' ')==k}})"""))
   chk('Casual WA 18m unchanged: vertical / Vegas only',pg.evaluate("(()=>{document.querySelector('#csrd').value='Indoor WA 18m';document.querySelector('#csrd').dispatchEvent(new Event('change'));return [...document.querySelectorAll('[data-csf3]')].map(b=>b.dataset.csf3).join(',')})()")=='vert,vegas')
   # ---------- head-to-head ----------
   pg.evaluate("cur=null;nav('lab_match')");pg.wait_for_timeout(500);pg.click('#h2hnew summary');pg.select_option('#h2hrd',AUS);pg.wait_for_timeout(300)

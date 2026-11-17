@@ -3,7 +3,7 @@
 import json
 # 30 arrow positions on the vertical 3-spot (global face coordinates), made on the page with the app's own plotScore: each one sits
 # well away from a ring edge (its value does not change if nudged), so phones with different face sizes score the same arrows the same.
-GEN=r"""(rn)=>{const FR=face3R(faceR(ROUNDS[rn],0),{face3:'vert'});let s=4242;const rnd=()=>(s=(s*1103515245+12345)%2147483648)/2147483648;const C=[[0,-0.62],[0,0],[0,0.62]],out=[];
+GEN=r"""(rn)=>{const FR=face3R(faceR(ROUNDS[rn],0),{face3:'vert'});if(rn==='Australian Indoor 18m')FR.no10=true;let s=4242;const rnd=()=>(s=(s*1103515245+12345)%2147483648)/2147483648;const C=[[0,-0.62],[0,0],[0,0.62]],out=[];
  for(let n=0;n<30;n++){const c=C[n%3];for(let t=0;t<800;t++){const r=Math.sqrt(rnd())*0.31,a=rnd()*6.283,x=+(c[0]+r*Math.cos(a)).toFixed(3),y=+(c[1]+r*Math.sin(a)).toFixed(3),v=plotScore(x,y,FR);let ok=true;
   for(let k=0;k<8;k++)if(plotScore(x+0.007*Math.cos(k*.785),y+0.007*Math.sin(k*.785),FR)!=v)ok=false;if(ok){out.push([x,y,v]);break}}}return out}"""
 def click_face(pg,fid,x,y):

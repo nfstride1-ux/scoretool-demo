@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## Follow-up round 2 (not a version bump, not deployed)
+
+Version tag stays `v2026-11-12-0804-live`. Not deployed.
+
+- Australian Indoor 18m on the vertical 3-spot (traffic light) scores X, 9, 8, 7, 6, M. The X is the inner gold, scores 10, and counts as an X. There is no separate 10 button. The triangular face, the single face, Vegas, league, and the other indoor rounds still have a 10.
+- Just me uses the Casual shoot discipline row (Target, Indoor, Field, Clout, 3D). The Round list shows that discipline only. The last discipline is remembered. Casual shoot uses the same row, so it gains Clout. There is no standard clout round in the list yet.
+- Past sessions is back on the Score screen, under Just me. It had been left off the page. Any saved score, including an unfinished one, can be deleted from Home, Past sessions, Scorecards, or the score sheet. The confirm is "Delete this score? This can't be undone." Lists and totals refresh straight away.
+- A custom shoot can be deleted from My rounds or the edit screen. Scores already shot stay, under the saved name, and can still be opened.
+- My bows and My arrows each have Delete. The confirm says a bow's sight marks go with the bow, and an arrow set's sight marks go with the set, on each bow.
+- My results source: Sync now is switched off, with the approval line under it. Nothing is fetched. Paste a table or a CSV is unchanged.
+- Lingkana Register buttons were already restyled on main (Event Registration green, Review / Rules / Back white with a dark outline, a disabled Register dull grey). No further change.
+
 ## Entitlement note and Lingkana register buttons (not a version bump, not deployed)
 
 Version tag stays `v2026-11-12-0804-live`. Not deployed. Details: `docs/lemonsqueezy-entitlement.md`.
