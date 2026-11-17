@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-2230-pinorder
+
+A Lingkana PIN replaces the event passcode on later logins, and a group score card starts every end with the first archer. Cache version is `v2026-11-17-2230-pinorder` (`?v=202611172230`), newer than `v2026-11-17-2115-spot1`. Not merged. PR #1 was not touched.
+
+- Confirmed: the login page always showed Enter the Passcode, and Login always called `lkUnlock` with that field. Show all names also required the passcode before it listed anyone else. A name that already had a PIN was still stopped until the passcode was typed again.
+- A return login is the shoot night, the archer's name and their PIN. The passcode box stays hidden. Search and Show all names find an archer on a new phone without the passcode, and that archer then enters their PIN. A name with no PIN still has to enter the passcode once, and the PIN is saved only after that passcode is right. Host phones (nathe, and Nate Evans) still skip the PIN and use the passcode. Reset PIN is unchanged. Five wrong PINs still lock that name on the phone for a minute.
+- Confirmed: Lingkana `pickEntryId` kept `window._lgAct`, the archer who had just finished, whenever they were not finished for the whole night. Add Scores for the next end therefore opened on the last scorer. The shared-phone league card and casual scoring already moved on, and wrapped to archer 1 when the end was finished, but a reload with no archer held picked the first person who was not finished for the round, even if someone later in the order was behind.
+- Every new end now starts at the first archer in the scorecard order. Within an end the card still moves to the next archer who has fewer complete ends. A reload mid-arrow stays on that arrow. A reload between archers opens the one who is behind. Peel already picks the archer on the lowest target, so that card was left as it is.
+
+### Files
+lkflow.js, lingkana.js, league.js, casual.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, qa/run_regression.py, tools/lk_return_pin_test.py, tools/lingkana_groups_test.py, tools/lk_group_order_test.py, tools/lk_qr_login_test.py, tools/live_go_live_test.py, tools/paid_picker_test.py.
+
 ## v2026-11-17-2115-spot1
 
 On the triangular indoor 3-spot, Spot 1 is the single spot on top, Spot 2 is the bottom left and Spot 3 is the bottom right. Cache version is `v2026-11-17-2115-spot1` (`?v=202611172115`). League scoring and the vertical face are unchanged. Not merged.

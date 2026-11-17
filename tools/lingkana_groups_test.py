@@ -171,16 +171,18 @@ try:
             and page.locator('#lkshowall').count()==1,
             str(labels)+' nights='+str(page.locator('#lknight option').count()))
         page.screenshot(path=str(SHOT / 'lingkana-login-names-390.png'), full_page=False)
-        page.fill('#lkpw', 'nope')
-        page.locator('#lkshowall').click()
-        chk('show all names waits for the event passcode',
-            'event passcode' in (page.inner_text('#lkpwmsg') or '').lower()
-            and page.locator('#lkscorernames .lk-namebtn').all_inner_texts()==['Sam Archer'])
-        page.fill('#lkpw', 'Kana26')
+        chk('Sam already has a PIN, so the return login does not ask for the event passcode',
+            page.locator('#lkpin').is_visible() and not page.locator('#lkpassbox').is_visible())
+        page.fill('#lkfind', 'Alex')
+        page.wait_for_timeout(80)
+        found = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
+        chk('a name search finds another archer without the event passcode',
+            found==['Alex River'], str(found))
+        page.fill('#lkfind', '')
         page.locator('#lkshowall').click()
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').wait_for(timeout=8000)
         labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
-        chk('the event passcode reveals every registered name',
+        chk('Show all names lists every registered archer without the event passcode',
             labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
             str(labels))
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
@@ -223,7 +225,6 @@ try:
             page.evaluate("() => lkCanHost(lkEnsure())") is False)
         page.locator('#lklogin').click()
         page.wait_for_selector('#lkscorernames', timeout=4000)
-        page.fill('#lkpw', 'Kana26')
         page.locator('#lkshowall').click()
         page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').wait_for(timeout=4000)
         page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
@@ -468,13 +469,12 @@ try:
           const rows=((lkEnsure().reg||{})["2026-11-18"]||[]).map(r=>r.name);
           return {rows, tester:(typeof TESTER!=="undefined" && TESTER && TESTER.id) || null};
         }''')
-        chk('a registration on phone A is stored on phone B, and the login list stays empty until the passcode',
+        chk('a registration on phone A is stored on phone B, and the login list stays on this phone until Show all names',
             'Sync Ada' in stored['rows'] and 'Sync Bea' in stored['rows']
             and 'Sync Ada' not in bnames and 'Sync Bea' not in bnames
             and stored['tester'] is None
             and 'no saved archer' in pb.inner_text('#lkloginpage').lower(),
             str(bnames)+' '+str(stored))
-        pb.fill('#lkpw', 'Kana26')
         pb.locator('#lkshowall').click()
         pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').wait_for(timeout=4000)
         pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
@@ -510,12 +510,12 @@ try:
         pc.click('#lklogin')
         pc.wait_for_selector('#lkloginpage', timeout=8000)
         pc.locator('#lknight').select_option('1')
-        pc.fill('#lkpw', 'Kana26')
         pc.locator('#lkshowall').click()
         pc.locator('#lkscorernames .lk-namebtn', has_text='Sync Ada').wait_for(timeout=4000)
         pc.locator('#lkscorernames .lk-namebtn', has_text='Sync Ada').click()
+        chk('an archer with a PIN on a new phone logs in with the PIN and no event passcode',
+            pc.locator('#lkpin').is_visible() and pc.locator('#lkpin2').count()==0 and not pc.locator('#lkpassbox').is_visible())
         pc.fill('#lkpin', '1357')
-        pc.fill('#lkpw', 'Kana26')
         pc.click('#lkpwgo')
         pc.wait_for_selector('#lkassigned', timeout=8000)
         cgroup=pc.inner_text('#lkassigned')

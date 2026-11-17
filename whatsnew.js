@@ -3,6 +3,9 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-2230-pinorder',d:'2026-11-17',items:[
+   ['lock',"Your PIN is enough to log back in","After your Lingkana PIN is set, logging in is the night, your name and your PIN. The event passcode is not asked again. On a new phone, search for your name or tap Show all names, then enter your PIN. A name with no PIN still uses the passcode once, to set one. Five wrong PINs still lock that name for a minute."],
+   ['people',"Each end starts with the first archer","On a group score card, every end starts with the first archer on the card, then the next, in that same order. The archer who finished the previous end does not jump to the front of the next one."]]},
   {v:'v2026-11-17-2115-spot1',d:'2026-11-17',items:[
    ['target',"Spot 1 is the top spot","On the triangular indoor 3-spot, Spot 1 is the single spot on top, Spot 2 is the bottom left and Spot 3 is the bottom right. An arrow saved earlier stays on the same spot. The vertical 3-spot is unchanged.",'514bdcc']]},
   {v:'v2026-11-17-2030-triangle',d:'2026-11-17',items:[

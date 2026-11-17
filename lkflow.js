@@ -396,12 +396,25 @@
     if(pick&&!shown.some(n=>n.id===pick))pick='';
     if(!pick&&shown.length===1)pick=shown[0].id;
     window._lkLoginId=pick;
-    const buttons=shown.map(n=>`<button type="button" class="lk-namebtn${pick===n.id?' on':''}" data-lkscorer="${esc(n.id)}" aria-pressed="${pick===n.id?'true':'false'}">${esc(n.name)}</button>`).join('');
+    const shownIds=new Set(shown.map(n=>String(n.id)));
+    const nameBtn=n=>{
+      const on=String(window._lkLoginId||pick)===String(n.id);
+      return `<button type="button" class="lk-namebtn${on?' on':''}" data-lkscorer="${esc(n.id)}" data-lkname="${esc(n.name)}" aria-pressed="${on?'true':'false'}">${esc(n.name)}</button>`;
+    };
+    const buttons=shown.map(nameBtn).join('');
     const empty=shown.length?'':(showAll
       ?`<p id="lknonames">No one has registered for this night yet.</p>`
-      :`<p id="lknonames">This phone has no saved archer yet. Register, or tap Show all names and enter the event passcode.</p>`);
+      :`<p id="lknonames">This phone has no saved archer yet. Register, search for your name, or tap Show all names.</p>`);
     const reveal=hostPhone?'':`<p><button type="button" class="lk-host" id="lkshowall">Not you? Show all names</button></p>`;
     const reset=hostPhone?`<p><button type="button" class="lk-host" id="lkpinreset">Reset PIN</button></p>`:'';
+    /* A name that already has a PIN logs in with the night, the name and that PIN. The event passcode is only for a name that still has no PIN, and for a host phone. */
+    const needsPass=id=>{
+      if(hostPhone)return true;
+      const rec=names.find(n=>String(n.id)===String(id));
+      if(!rec||cohostRec(rec))return !!rec;
+      const info=typeof lkPinOf==='function'?lkPinOf(lg,rec.id):null;
+      return !(info&&info.pinHash);
+    };
     el.innerHTML=`<div class="lkf" id="lkloginpage">
       <h1>Login</h1>
       <label for="lkevent">Select Event</label>
@@ -411,22 +424,32 @@
       <p class="small" id="lkscorerlabel">Your name</p>
       ${empty}
       <div class="lk-namelist" id="lkscorernames" role="listbox" aria-label="Your name">${buttons}</div>
+      <label for="lkfind">Find a name</label>
+      <input id="lkfind" type="search" autocomplete="off" placeholder="Search all names">
+      <p class="small" id="lkfindnone" hidden>No name matches.</p>
       ${reveal}
       <div id="lkpinbox"></div>
       ${reset}
-      <label for="lkpw">Enter the Passcode</label>
-      <input id="lkpw" type="password" autocomplete="current-password">
+      <div id="lkpassbox">
+        <label for="lkpw">Enter the Passcode</label>
+        <input id="lkpw" type="password" autocomplete="current-password">
+      </div>
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
     </div>`;
+    const paintPass=id=>{
+      const box=$id('lkpassbox');if(!box)return;
+      box.hidden=!needsPass(id);
+    };
     const paintPin=id=>{
       const box=$id('lkpinbox');if(!box)return;
-      const rec=shown.find(n=>n.id===id);
-      if(hostPhone||cohostRec(rec)||!rec){box.hidden=true;box.innerHTML='';return}
+      const rec=names.find(n=>n.id===id);
+      if(hostPhone||cohostRec(rec)||!rec){box.hidden=true;box.innerHTML='';paintPass(id);return}
       const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
       if(left){
         box.hidden=false;
         box.innerHTML=`<p class="lk-msg" id="lkpinlock">Too many wrong PINs. This name is locked on this phone for a minute.</p>`;
+        paintPass(id);
         return;
       }
       const info=typeof lkPinOf==='function'?lkPinOf(lg,rec.id):null;
@@ -436,26 +459,43 @@
       }else{
         box.innerHTML=`<p class="small" id="lkpinset">This name has no PIN yet. Set one to log in.</p><label for="lkpin">4-digit PIN</label><input id="lkpin" type="password" inputmode="numeric" maxlength="4" autocomplete="off"><label for="lkpin2">PIN again</label><input id="lkpin2" type="password" inputmode="numeric" maxlength="4" autocomplete="off">`;
       }
+      paintPass(id);
+      bindEnter();
+    };
+    let go=async()=>{};
+    const bindEnter=()=>{
+      ['lkpin','lkpin2','lkpw'].forEach(i=>{
+        const n=$id(i);if(!n)return;
+        n.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+      });
     };
     paintPin(pick);
     if($id('lkloginback'))$id('lkloginback').onclick=()=>home(evCode());
     if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
-    el.querySelectorAll('[data-lkscorer]').forEach(b=>b.onclick=()=>{
-      window._lkLoginId=b.getAttribute('data-lkscorer');
-      el.querySelectorAll('[data-lkscorer]').forEach(x=>{
-        const on=x===b;
-        x.classList.toggle('on',on);
-        x.setAttribute('aria-pressed',on?'true':'false');
+    const wireNames=()=>{
+      el.querySelectorAll('[data-lkscorer]').forEach(b=>b.onclick=()=>{
+        window._lkLoginId=b.getAttribute('data-lkscorer');
+        el.querySelectorAll('[data-lkscorer]').forEach(x=>{
+          const on=x===b;
+          x.classList.toggle('on',on);
+          x.setAttribute('aria-pressed',on?'true':'false');
+        });
+        paintPin(window._lkLoginId);
       });
-      paintPin(window._lkLoginId);
-    });
+    };
+    const drawNames=q=>{
+      const query=String(q||'').trim().toLowerCase();
+      const open=!!window._lkNamesOpen||hostPhone;
+      const list=names.filter(n=>query?String(n.name).toLowerCase().includes(query):(open||shownIds.has(String(n.id))));
+      const box=$id('lkscorernames');
+      if(box)box.innerHTML=list.map(nameBtn).join('');
+      wireNames();
+      const note=$id('lknonames');if(note)note.hidden=!!list.length;
+      const none=$id('lkfindnone');if(none)none.hidden=!query||!!list.length;
+    };
+    wireNames();
+    if($id('lkfind'))$id('lkfind').oninput=()=>drawNames($id('lkfind').value);
     if($id('lkshowall'))$id('lkshowall').onclick=()=>{
-      const pw=($id('lkpw')&&$id('lkpw').value)||'';
-      const msg=$id('lkpwmsg');
-      if(String(pw)!==String(window.LK_PASSCODE||'')){
-        if(msg)msg.textContent='Enter the event passcode, then tap Show all names.';
-        return;
-      }
       window._lkNamesOpen=1;
       login();
     };
@@ -468,13 +508,14 @@
       if(msg)msg.textContent='PIN cleared. They set a new one at the next login.';
       paintPin(id);
     };
-    const go=async()=>{
+    go=async()=>{
       const id=String(window._lkLoginId||'');
       const rec=names.find(n=>n.id===id);
       const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
       if(!rec){if(msg)msg.textContent='Tap your name.';return}
-      if(!hostPhone&&!cohostRec(rec)){
+      const skipPin=hostPhone||cohostRec(rec);
+      if(!skipPin){
         const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
         if(left){if(msg)msg.textContent='Too many wrong PINs. This name is locked on this phone for a minute.';return}
         const info=typeof lkPinOf==='function'?lkPinOf(lg,rec.id):null;
@@ -483,6 +524,7 @@
           const again=($id('lkpin2')&&$id('lkpin2').value)||'';
           if(!/^\d{4}$/.test(typed)){if(msg)msg.textContent='Enter a 4-digit PIN.';return}
           if(typed!==again){if(msg)msg.textContent='Those PINs do not match.';return}
+          if(String(pw)!==String(window.LK_PASSCODE||'')){if(msg)msg.textContent='That passcode is not right.';return}
           try{
             const salt=lkPinSalt();
             const hash=await lkPinHash(rec.name,typed,salt);
@@ -499,21 +541,29 @@
           }
           if(typeof lkPinClearFails==='function')lkPinClearFails(rec.id);
         }
+        if(typeof lkMarkAuth==='function'&&lg)lkMarkAuth(lg);
       }
       const cohost=rec.id===((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate')||(typeof lkIsCoHostName==='function'&&lkIsCoHostName(rec.name));
       setMyName(rec.name);
       setMyId(rec.id);
       if(typeof lkRememberArcher==='function')lkRememberArcher(rec.id);
       setNight(+($id('lknight')&&$id('lknight').value)||w);
-      (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('Scoring is not available on this phone.')).then(m=>{
-        if(m){if(msg)msg.textContent=m;return}
+      const finish=()=>{
         if(typeof lkMarkCoHost==='function')lkMarkCoHost(cohost);
         if(cohost){review();return}
         showAssigned();
-      });
+      };
+      if(skipPin){
+        (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('Scoring is not available on this phone.')).then(m=>{
+          if(m){if(msg)msg.textContent=m;return}
+          finish();
+        });
+        return;
+      }
+      finish();
     };
     $id('lkpwgo').onclick=go;
-    if($id('lkpw'))$id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+    bindEnter();
   }
 
   /* jsQR fallback when this phone has no BarcodeDetector (iOS Safari). Large photos are scaled down and tried upright and on each side. */
@@ -1076,6 +1126,12 @@
   function hasPartial(e){const L=lastEnd(e);return!!(L&&L.length&&L.length<3)}
   function sessOf(e){return {round:'Lancaster 660',ends:endsOf(e),face3:'vegas',max:660,lancaster:true,xv:11}}
   function waveReady(lg,w,ids){return ids.every(id=>!hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
+  /* Every archer has the same number of complete ends and nobody is mid-arrow. That is the gap between ends. */
+  function endsAligned(lg,w,ids){
+    if(!ids.length||!waveReady(lg,w,ids))return false;
+    const ns=ids.map(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}));
+    return ns.every(n=>n===ns[0]);
+  }
   function anyScored(lg,w,ids){return ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0||hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
   function allDone(lg,w,ids){return ids.length>0&&ids.every(id=>typeof lgDoneE==='function'&&lgDoneE((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}))}
   function pickEntryId(lg,w,ids){
@@ -1083,13 +1139,26 @@
     if(fx&&fx.ns&&ids.some(id=>fx.ns==='lg|'+lg.code+'|'+w+'|'+id)){
       const id=fx.ns.split('|').pop();if(ids.includes(id))return id;
     }
-    const part=ids.find(id=>hasPartial((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}));
+    const ent=id=>(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
+    const part=ids.find(id=>hasPartial(ent(id)));
     if(part)return part;
-    const act=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
-    if(act&&!((typeof lgDoneE==='function')&&lgDoneE(lgEnt(lg,act,w))))return act;
-    const ns=ids.map(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]}));
-    const m=Math.min.apply(null,ns);
-    return ids.find((id,i)=>ns[i]===m&&!(typeof lgDoneE==='function'&&lgDoneE(lgEnt(lg,id,w))))||ids[0];
+    /* Stay on the archer whose three arrows are on screen until Next. Do not treat that as the start of the next end. */
+    const hd=window._lgHold;
+    if(hd&&ids.includes(hd.id)){
+      const e=ent(hd.id),last=(e.e||[])[(e.e||[]).length-1];
+      if(last&&last.length===3&&(e.e||[]).length===hd.n)return hd.id;
+    }
+    /* New end, or a reload between archers: first name in the scorecard order with the fewest complete ends.
+       The archer who finished the previous end is not carried into the next one. */
+    let best=null,bn=1e9;
+    ids.forEach(id=>{
+      const e=ent(id);
+      if(typeof lgDoneE==='function'&&lgDoneE(e))return;
+      if(typeof lgLockedBy==='function'&&lgLockedBy(lg,w,id))return;
+      const n=nEndsOf(e);
+      if(n<bn){bn=n;best=id}
+    });
+    return best||ids[0];
   }
   function faceSub(s,info){
     if(typeof sheetSections==='function'&&s.ends&&s.ends.length){
@@ -1298,7 +1367,7 @@
     const ids=window._lkScoreIds||window._lkPicked||[];
     if(!ids.length){selectArchers();return}
     if(window._lkScoreMode==='sheet'){groupSheet();return}
-    if(window._lkScoreMode!=='entry'&&waveReady(lg,w,ids)&&(allDone(lg,w,ids)||ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0))){groupSheet();return}
+    if(window._lkScoreMode!=='entry'&&endsAligned(lg,w,ids)&&(allDone(lg,w,ids)||ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0))){groupSheet();return}
     entryScreen();
   }
 
