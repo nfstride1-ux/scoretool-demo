@@ -106,8 +106,100 @@ function lkFresh(lg){
     }catch(e){}
     if(typeof save==='function')save();
   }
+  lkSeedCoHost(lg);
   lkDropHostIfUnregistered(lg);
   return lg;
+}
+/* Nathe (account id nathe, or the archer registered as Nathaniel Stride) and co-host Nate Evans.
+   The minimum of two archers does not apply when the paid list is only these organisers. */
+function lkIsNatheArcher(id,name){
+  if(lkIsHostAccount(id))return true;
+  const n=lkCleanName(name||'').toLowerCase();
+  return n==='nathaniel stride'||n==='nathe';
+}
+function lkIsOrganiser(id,name){
+  if(lkIsNatheArcher(id,name))return true;
+  if(id&&(String(id)===LK_COHOST_ID||String(id)==='lkhost:nate'))return true;
+  return lkIsCoHostName(name||'');
+}
+function lkArcherName(lg,id){
+  const who=String(id||'');
+  if(!who)return '';
+  const gn=lg&&lg.gn&&lg.gn[who]&&lg.gn[who].n;
+  if(gn)return gn;
+  if(lg&&lg.reg){
+    for(const night of Object.keys(lg.reg)){
+      const row=(lg.reg[night]||[]).find(r=>r&&String(r.id)===who);
+      if(row&&row.name)return row.name;
+    }
+  }
+  if(who===LK_COHOST_ID||who==='lkhost:nate')return LK_COHOST_NAME;
+  if(typeof lgName==='function'){
+    const n=lgName(who);
+    if(n&&n!==who)return n;
+  }
+  return '';
+}
+function lkGroupAllOrganisers(lg,ids){
+  const g=(ids||[]).filter(Boolean);
+  return !!g.length&&g.every(id=>lkIsOrganiser(id,lkArcherName(lg,id)));
+}
+function lkCoHostRow(r){
+  if(!r)return false;
+  if(r.id&&(String(r.id)===LK_COHOST_ID||String(r.id)==='lkhost:nate'))return true;
+  return lkIsCoHostName(r.name||'');
+}
+/* Nate Evans is an organiser on every shoot night. The 17 Nov wipe and a later snapshot cannot drop him.
+   A registration he makes himself under the same name is the one row: this does not add a second. */
+function lkSeedCoHost(lg){
+  if(!lg||!lkIs(lg))return false;
+  let ch=false;
+  lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];lg.drop=lg.drop||{};
+  const nights=LK_DATES.slice(0,6);
+  for(const id of Object.keys(lg.drop)){
+    const n=(lg.drop[id]&&lg.drop[id].n)||(lg.gn[id]&&lg.gn[id].n)||'';
+    if(id===LK_COHOST_ID||id==='lkhost:nate'||lkIsCoHostName(n)){delete lg.drop[id];ch=true}
+  }
+  const seen=[];
+  nights.forEach(night=>{(lg.reg[night]||[]).forEach(r=>{if(lkCoHostRow(r))seen.push(r)})});
+  let canon=LK_COHOST_ID, at=LK_FRESH, bow='', email='', phone='';
+  const self=seen.filter(r=>r.id&&String(r.id)!==LK_COHOST_ID&&String(r.id)!=='lkhost:nate'&&lkIsCoHostName(r.name||''));
+  const pick=self.slice().sort((a,b)=>(+b.at||0)-(+a.at||0))[0]||seen.slice().sort((a,b)=>(+b.at||0)-(+a.at||0))[0];
+  if(pick&&pick.id&&lkIsCoHostName(pick.name||''))canon=String(pick.id);
+  if(pick){at=+pick.at||at;bow=pick.bow||'';email=pick.email||'';phone=pick.phone||''}
+  if(!lg.order.includes(canon)){lg.order.push(canon);ch=true}
+  const dropIds=new Set(seen.map(r=>String(r.id||'')).filter(id=>id&&id!==canon));
+  dropIds.forEach(id=>{
+    if(!(id===LK_COHOST_ID||id==='lkhost:nate'||lkIsCoHostName((lg.gn[id]&&lg.gn[id].n)||'')))return;
+    if(lg.order.includes(id)){lg.order=lg.order.filter(x=>x!==id);ch=true}
+    if(lg.gn[id]){delete lg.gn[id];ch=true}
+  });
+  if(!lg.gn[canon]||lg.gn[canon].n!==LK_COHOST_NAME){
+    const prev=lg.gn[canon]||{};
+    lg.gn[canon]={n:LK_COHOST_NAME,j:prev.j?1:0,t:prev.t||at,by:prev.by||'organiser'};
+    ch=true;
+  }
+  nights.forEach(night=>{
+    const rows=(lg.reg[night]||[]).slice();
+    const mine=rows.filter(lkCoHostRow);
+    const rest=rows.filter(r=>!lkCoHostRow(r));
+    const keep=mine.find(r=>String(r.id)===canon)||mine[0]||null;
+    if(mine.length===1&&keep&&String(keep.id)===canon&&keep.name===LK_COHOST_NAME){
+      if(!keep.organiser){keep.organiser=1;ch=true}
+      return;
+    }
+    const row={id:canon,name:LK_COHOST_NAME,at:(keep&&+keep.at)||at||LK_FRESH,bow:(keep&&keep.bow)||bow||'',email:(keep&&keep.email)||email||'',phone:(keep&&keep.phone)||phone||'',organiser:1};
+    lg.reg[night]=rest.concat([row]);
+    ch=true;
+  });
+  if(lg.paid){
+    for(const night of Object.keys(lg.paid)){
+      const bag=lg.paid[night]||{};
+      dropIds.forEach(id=>{if(bag[id]){if(!bag[canon])bag[canon]=bag[id];delete bag[id];ch=true}});
+    }
+  }
+  if(ch){lg.dirty=1;if(typeof save==='function')save()}
+  return ch;
 }
 /* The host account id is not an archer row. The name Nathaniel Stride is a real registration when he signs himself up. */
 function lkIsHostAccount(id){
@@ -627,6 +719,7 @@ function lkStripDropped(lg){
   }}
   if(lg.claim){for(const night of Object.keys(lg.claim)){for(const id of Object.keys(lg.claim[night]||{})){if(gone(id)){delete lg.claim[night][id];ch=true}}}}
   if(ch){lg.dirty=1;if(typeof save==='function')save()}
+  if(lkIs(lg))lkSeedCoHost(lg);
   return ch;
 }
 function lkDropArcher(id){
@@ -635,6 +728,7 @@ function lkDropArcher(id){
   if(!lkCanHost(lg))return 'Only the host can remove an archer.';
   const who=String(id||'');if(!who)return 'Pick an archer.';
   const name=(lg.gn&&lg.gn[who]&&lg.gn[who].n)||(typeof lgName==='function'&&lgName(who))||'';
+  if(who===LK_COHOST_ID||who==='lkhost:nate'||lkIsCoHostName(name))return 'Nate Evans is an organiser for every night, so he stays on the list.';
   const at=Date.now();
   lkApplyDrop(lg,who,name,at);
   const whoBy=lkPaidAuthority()||'nathe';
@@ -1201,12 +1295,15 @@ function lkPotHTML(lg){
   const night=lkNightKey(lg,w);
   const paid=(lg.paid&&lg.paid[night])||{};
   const people=lkPickerOrder(lg,w);
+  const signups=lkNightSignups(lg,w);
   const rows=people.map(id=>{
-    const nm=h((typeof lgName==='function'&&lgName(id))||id);
+    const rec=signups.find(r=>r&&String(r.id)===String(id));
+    const nm=h((rec&&rec.name)||(typeof lgName==='function'&&lgName(id))||id);
     const on=!!paid[id];
     const box=host?`<input type="checkbox" data-lkpaid="${h(id)}" ${on?'checked':''}>`:(on?'Paid':'—');
     const ask=host&&window._lkDropAsk===id;
-    const drop=host?(ask?`<span class="lk-dropask">Remove ${nm}?<button type="button" class="lk-remove" data-lkdrop="${h(id)}" data-go="1">Remove</button><button type="button" class="lk-cancel" data-lkdropcancel="1">Cancel</button></span>`:`<button type="button" class="lk-remove" data-lkdrop="${h(id)}">Remove</button>`):'';
+    const cohostRow=String(id)===LK_COHOST_ID||String(id)==='lkhost:nate'||lkIsCoHostName((rec&&rec.name)||lkArcherName(lg,id));
+    const drop=host&&!cohostRow?(ask?`<span class="lk-dropask">Remove ${nm}?<button type="button" class="lk-remove" data-lkdrop="${h(id)}" data-go="1">Remove</button><button type="button" class="lk-cancel" data-lkdropcancel="1">Cancel</button></span>`:`<button type="button" class="lk-remove" data-lkdrop="${h(id)}">Remove</button>`):'';
     return`<div class="lk-paidrow"><label><span class="nm">${nm}</span>${box}</label>${drop}</div>`;
   }).join('')||'<p class="small muted">No one on the list yet.</p>';
   const nightRows=p.nights.map(n=>`<tr data-lkpn="${n.w}"${n.w===w?' class="on"':''}><td>N${n.w}</td><td>${h(lkFmtD(n.date))}</td><td>${n.paid}</td><td>$${n.total}</td><td>${n.out?('$'+n.owed):'—'}</td></tr>`).join('');
@@ -1298,7 +1395,11 @@ function lkChunkFour(people){
   const placed=all.slice(0,LK_REG_CAP);
   const waiting=all.slice(LK_REG_CAP);
   const sizes=lkGroupSizes(placed.length);
-  if(sizes==null)return {groups:[],waiting,solo:placed.slice(),sizes:[]};
+  /* One paid archer is not a group, unless that archer is an organiser (Nathe or Nate Evans). */
+  if(sizes==null){
+    if(placed.length===1&&lkIsOrganiser(placed[0].id,placed[0].name))return {groups:[placed.slice()],waiting,solo:[],sizes:[1]};
+    return {groups:[],waiting,solo:placed.slice(),sizes:[]};
+  }
   const groups=[];
   let at=0;
   sizes.forEach(sz=>{groups.push(placed.slice(at,at+sz));at+=sz});
@@ -1366,7 +1467,7 @@ function lkSetGroups(w,G){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
   if(+w>=7)return 'Night 7 scoring is not open yet.';
   const N=(G||[]).map(g=>(g||[]).filter(Boolean));
-  if(N.some(g=>g.length===1))return 'A group needs at least two archers.';
+  if(N.some(g=>g.length===1&&!lkGroupAllOrganisers(lg,g)))return 'A group needs at least two archers.';
   if(N.some(g=>g.length>4))return 'A group can have at most 4 archers.';
   if(N.filter(g=>g.length).length>LK_LANES)return 'There are only 13 targets.';
   lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};
@@ -1594,6 +1695,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });
 })();
