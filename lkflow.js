@@ -488,17 +488,17 @@
     }
     const signed=(nightSignups(lg,w)||[]).find(r=>r&&String(r.id)===String(id));
     const group=(built.groups||[]).find(g=>(g.ids||[]).map(String).includes(String(id)));
-    const waiting=(built.waiting||[]).some(p=>String(p.id)===String(id));
+    const solo=(built.solo||[]).some(p=>String(p.id)===String(id));
     const who=esc((signed&&signed.name)||myName()||'');
     if(!signed){
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>No target yet</h1><p>Your name is not registered for this night.</p>${backBar}</div>`;
       wireBack();return;
     }
-    if(!group&&waiting){
-      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0" data-wait="1">
-        <h1>No target left</h1>
-        <p>${who}, you are paid for this night, but all 13 targets already have a group.</p>
-        <p class="small muted">Groups are 4 archers. The range has 13 targets, so 52 archers can be placed. You stay on the paid list. This app does not take the entry fee.</p>
+    if(!group&&solo){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0" data-solo="1">
+        <h1>No target yet</h1>
+        <p>${who}, you are the only archer paid for this night.</p>
+        <p class="small muted">A group needs at least two archers, so there is no target yet.</p>
         ${backBar}
       </div>`;
       wireBack();return;
@@ -519,16 +519,14 @@
     const mode=built.mode==='rank'
       ?'Order is the best 4 scores from nights already shot: highest total, then 11s, then 10s. Names with no score yet follow, A to Z.'
       :'Order is A to Z. This night has no earlier result to rank by.';
-    const rem=group.ids.length<4?`<p class="small">This target has ${group.ids.length} ${group.ids.length===1?'archer':'archers'}. Paid archers are grouped in fours, and anyone left over stays together on the last target.</p>`:'';
-    const left=(built.waiting||[]).length;
-    const over=left?`<p class="small">${left} paid ${left===1?'archer is':'archers are'} not on a target. The range has 13 targets.</p>`:'';
+    const rem=group.ids.length<4?`<p class="small">This target has ${group.ids.length} archers.</p>`:'';
     el.innerHTML=`<div class="lkf" id="lkassigned" data-target="${group.target}" data-mode="${esc(built.mode||'')}">
       <h1>${title}</h1>
       <p class="lk-tgt" id="lktgtlabel">Target ${group.target}</p>
       <p>You are scoring this group.</p>
       <ol class="lk-group" id="lkgroupnames">${lis}</ol>
       <p class="small muted">${esc(mode)}</p>
-      ${rem}${over}
+      ${rem}
       ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart','Start scoring','green'))}
     </div>`;
     wireBack();

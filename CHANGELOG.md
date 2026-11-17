@@ -8,7 +8,7 @@ Version tag stays `v2026-11-12-0804-live`. Not deployed.
 
 - Register for a shoot night no longer asks for an invite code. The form is name, shoot night, and optional bow, email and phone. `lk-register.html` opens that form. The page draws a QR of `https://nfstride1-ux.github.io/scoretool-demo/lk-register.html` with the bundled `vendor/qrcode.js` (no third-party QR service).
 - Lingkana login lists the names registered for the selected night. The scorer taps their name. The passcode is exactly `Kana26`. The old password hash is not checked, and the host cannot change it.
-- The 13-target bubble picker is gone for Lingkana. Paid archers (the existing host paid ticks) are split into groups of 4. Night 1, or any night with no earlier score, is A to Z. Later nights use the best-4 total from nights already shot (then 11s, then 10s). After login the scorer opens their target. A short last group keeps the leftover 1, 2 or 3. Only 13 targets are filled (52 archers). Anyone past that is not given a target. Onion Shed still uses its target picker.
+- The 13-target bubble picker is gone for Lingkana. Paid archers (the existing host paid ticks) are grouped 4, then 3, then 2 so nobody is left alone. One paid archer is not given a target. The league closes registration at 52 archers in total. Night 1, or any night with no earlier score, is A to Z. Later nights use the best-4 total from nights already shot (then 11s, then 10s). Onion Shed still uses its target picker.
 
 ## Entitlement note and Lingkana register buttons (not a version bump, not deployed)
 

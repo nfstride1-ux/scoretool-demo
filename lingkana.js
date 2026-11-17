@@ -10,7 +10,8 @@ const LK_R='Lancaster 660';
 const LK_DATES=['2026-11-18','2026-12-02','2026-12-16','2026-12-30','2027-01-13','2027-01-27','2027-02-10'];
 const LK_NIGHTS=7;
 const LK_CAP=0; /* no hard cap on entries; shoot-up stays the top 12 */
-const LK_LANES=13; /* shooting targets on the range. Groups stop at this many. */
+const LK_LANES=13; /* shooting targets on the range */
+const LK_REG_CAP=LK_LANES*4; /* test phase: 52 archers in the whole league, not per night */
 const LK_HOST='nathe';
 /* Test URL on GitHub Pages. The live root app at /scoretool-demo/ is unchanged. */
 const LK_PUBLIC_BASE='https://nfstride1-ux.github.io/scoretool-demo/';
@@ -332,11 +333,20 @@ function lkNewGuestId(lg){
   let id;do{id='g'+rnd()}while(((lg&&lg.order)||[]).includes(id));
   return id;
 }
+function lkRegClosed(lg,name,id){
+  const known=lkKnownRegistrants(lg);
+  const key=lkCleanName(name).toLowerCase();
+  const exists=known.some(a=>(id&&a.id===id)||lkCleanName(a.name).toLowerCase()===key);
+  if(exists||known.length<LK_REG_CAP)return '';
+  return 'This league already has 52 archers. Registration is closed.';
+}
 function lkApplyReg(rec,lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);if(!lg||!rec)return {ok:false,msg:'The league is not on this phone yet.'};
   const name=lkCleanName(rec.name);if(name.length<2)return{ok:false,msg:'Type a name (at least 2 characters).'};
   const night=String(rec.night||'');
   if(!LK_DATES.includes(night)&&(lg.weeks||[]).indexOf(night)<0)return{ok:false,msg:'Pick a shoot night.'};
+  const closed=lkRegClosed(lg,name,rec.id||lkFindArcher(lg,name));
+  if(closed)return{ok:false,msg:closed};
   lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];
   const me=(typeof h2hMe==='function'&&h2hMe())||'';
   let id=rec.id||null;
@@ -382,6 +392,9 @@ function lkRegister(opts){
   if(typeof nmRude==='function'&&nmRude(name))return'Please use a different name.';
   const night=String(opts.night||'');
   if(!LK_DATES.includes(night))return'Pick a shoot night.';
+  const lgNow=typeof lkEnsure==='function'?lkEnsure():lkGet();
+  const closed=lgNow&&lkRegClosed(lgNow,name,opts.id||lkFindArcher(lgNow,name));
+  if(closed)return closed;
   /* No registration deadline: a sign-up on the night, or after it has started, is accepted. */
   const rec={name,night,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,poster:1};
   const put=lkRegPush(rec);
@@ -487,6 +500,7 @@ function lkRegisterView(){
   const appEl=typeof app!=='undefined'?app:(typeof $==='function'&&$('#app'));
   if(!appEl)return;
   if(typeof lkEnsure==='function')lkEnsure();
+  const lg=lkGet();
   const nights=LK_DATES.map(d=>{
     const i=LK_DATES.indexOf(d),lab=lkLabel(i+1);
     return`<option value="${h(d)}">${h(lkFmtD(d))} · Night ${i+1} · ${h(lab)}</option>`;
@@ -494,13 +508,15 @@ function lkRegisterView(){
   const def=lkDefaultNight();
   const okMsg=window._lkRegOk||'';window._lkRegOk='';
   const qrUrl=lkRegisterUrl();
+  const regCount=lkKnownRegistrants(lg).length;
+  const leagueFull=regCount>=LK_REG_CAP;
   appEl.innerHTML=`<div class="card" id="lkregpage"><span class="kicker">Lingkana League</span>
     <h1>Register for a shoot night</h1>
     ${okMsg?`<p class="lk-ok" id="lkregok" role="status">${h(okMsg)}</p>`:''}
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
     <p>Put your name down to compete. There is no deadline — you can register on the night.</p>
-    <p class="small muted">Anyone with this link can register. Print the QR for walk-ins at the venue.</p>
+    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p><p class="small muted">If your name is already on the list, you can still sign up for another night.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers in the league. Print the QR for walk-ins at the venue.</p>'}
     <form id="lkregform" autocomplete="on">
       <label for="lkregname">Name</label>
       <input id="lkregname" name="name" required maxlength="24" autocomplete="name" placeholder="Your name">
@@ -895,16 +911,32 @@ function lkOrderPaid(lg,w){
   });
   return {mode:'rank',people:peopleSorted};
 }
-/* Groups of 4 in sort order, at most LK_LANES targets.
-   A remainder of 1, 2 or 3 stays together on the last target when that still fits in 13.
-   Paid archers past 13 targets (53rd person onward) are not given a target. */
+/* Prefer 4, then 3. A 2 is only used when 3s would leave a single archer (2 or 5 people).
+   One paid archer is not a group. Returns null for that case. */
+function lkGroupSizes(n){
+  n=+n||0;
+  if(n<=0)return [];
+  if(n===1)return null;
+  if(n===2)return [2];
+  if(n===5)return [3,2];
+  let fours=Math.floor(n/4), rem=n%4;
+  while(fours>0&&rem!==0&&rem%3!==0){fours--;rem+=4}
+  const threes=rem/3;
+  const sizes=[];
+  for(let i=0;i<fours;i++)sizes.push(4);
+  for(let i=0;i<threes;i++)sizes.push(3);
+  return sizes;
+}
 function lkChunkFour(people){
   const all=people||[];
-  const placed=all.slice(0,LK_LANES*4);
-  const waiting=all.slice(LK_LANES*4);
+  const placed=all.slice(0,LK_REG_CAP);
+  const waiting=all.slice(LK_REG_CAP);
+  const sizes=lkGroupSizes(placed.length);
+  if(sizes==null)return {groups:[],waiting,solo:placed.slice(),sizes:[]};
   const groups=[];
-  for(let i=0;i<placed.length;i+=4)groups.push(placed.slice(i,i+4));
-  return {groups,waiting};
+  let at=0;
+  sizes.forEach(sz=>{groups.push(placed.slice(at,at+sz));at+=sz});
+  return {groups,waiting,solo:[],sizes};
 }
 function lkNightStarted(lg,w){
   const sc=(lg&&lg.sc)||{};
@@ -926,9 +958,8 @@ function lkGroupsFrom(ids,people,mode,locked,waiting){
     ids:(g||[]).map(String),
     names:(g||[]).map(nameOf)
   }));
-  const last=groups.length?groups[groups.length-1].ids.length:0;
   const wait=(waiting||[]).map(p=>typeof p==='string'?{id:String(p),name:nameOf(p)}:{id:String(p.id),name:p.name||nameOf(p.id)});
-  return {ok:true,locked:!!locked,mode:mode||'alpha',lanes:LK_LANES,remainder:last&&last<4?last:0,groups,waiting:wait};
+  return {ok:true,locked:!!locked,mode:mode||'alpha',lanes:LK_LANES,groups,waiting:wait,sizes:groups.map(g=>g.ids.length)};
 }
 function lkAssignGroups(lg,w){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
@@ -940,7 +971,9 @@ function lkAssignGroups(lg,w){
   if(lkNightStarted(lg,w)&&Array.isArray(existing.g)&&existing.g.length){
     const inG=new Set(existing.g.flat().map(String));
     const waiting=paid.filter(p=>!inG.has(String(p.id)));
-    return lkGroupsFrom(existing.g,paid,existing.mode||'locked',true,waiting);
+    const lockedOut=lkGroupsFrom(existing.g,paid,existing.mode||'locked',true,waiting);
+    lockedOut.solo=[];
+    return lockedOut;
   }
   const ordered=lkOrderPaid(lg,w);
   const chunked=lkChunkFour(ordered.people);
@@ -948,7 +981,7 @@ function lkAssignGroups(lg,w){
   const err=lkSetGroups(w,ids);
   if(err)return {ok:false,msg:err};
   lg.grp[w].mode=ordered.mode;
-  lg.grp[w].wait=chunked.waiting.map(p=>p.id);
+  lg.grp[w].wait=(chunked.waiting||[]).map(p=>p.id);
   const targetOf={};
   ids.forEach((g,i)=>g.forEach(id=>{targetOf[id]=i+1}));
   const k=lkNightKey(lg,w);
@@ -959,12 +992,15 @@ function lkAssignGroups(lg,w){
   });
   lg.dirty=1;
   if(typeof save==='function')save();
-  return lkGroupsFrom(ids,ordered.people,ordered.mode,false,chunked.waiting);
+  const built=lkGroupsFrom(ids,ordered.people,ordered.mode,false,chunked.waiting);
+  built.solo=chunked.solo||[];
+  return built;
 }
 function lkSetGroups(w,G){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
   if(+w>=7)return 'Night 7 scoring is not open yet.';
   const N=(G||[]).map(g=>(g||[]).filter(Boolean));
+  if(N.some(g=>g.length===1))return 'A group needs at least two archers.';
   if(N.some(g=>g.length>4))return 'A group can have at most 4 archers.';
   if(N.filter(g=>g.length).length>LK_LANES)return 'There are only 13 targets.';
   lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};
@@ -1190,8 +1226,8 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();

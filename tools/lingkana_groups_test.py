@@ -92,9 +92,9 @@ try:
           const flat = (built.groups||[]).map(g => g.names);
           return {ids, mode: built.mode, flat, waiting: (built.waiting||[]).map(p => p.name), remainder: built.remainder};
         }""")
-        chk('night 1 groups paid archers A to Z, four then the leftover one',
-            seeded['mode']=='alpha' and seeded['remainder']==1
-            and seeded['flat']==[['Alex River','Casey Ng','Jordan Lee','Riley Chen'],['Sam Archer']]
+        chk('night 1 with 5 paid archers is a group of 3 then a group of 2',
+            seeded['mode']=='alpha'
+            and seeded['flat']==[['Alex River','Casey Ng','Jordan Lee'],['Riley Chen','Sam Archer']]
             and seeded['waiting']==[],
             str(seeded['flat']))
         chk('an unpaid registrant is not in a group',
@@ -120,12 +120,13 @@ try:
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkassigned', timeout=5000)
         group = page.inner_text('#lkassigned')
-        chk('login opens Alex River on target 1 with the first four names',
+        chk('login opens Alex River on target 1 with the first three names',
             page.locator('#lktargets').count()==0
             and page.get_attribute('#lkassigned','data-target')=='1'
             and 'target 1' in group.lower() and 'Alex River (you)' in group
-            and 'Casey Ng' in group and 'Jordan Lee' in group and 'Riley Chen' in group
-            and 'Sam Archer' not in group,
+            and 'Casey Ng' in group and 'Jordan Lee' in group
+            and 'Riley Chen' not in group and 'Sam Archer' not in group
+            and 'This target has 3 archers.' in group,
             group[:300])
         page.screenshot(path=str(SHOT / 'lingkana-assigned-group-390.png'), full_page=False)
 
@@ -160,31 +161,55 @@ try:
         }""")
         chk('a later night groups by best-4 so far, not by name',
             ranked['prior'] is True and ranked['mode']=='rank'
-            and ranked['flat']==[['Casey Ng','Sam Archer','Jordan Lee','Alex River'],['Riley Chen']],
+            and ranked['flat']==[['Casey Ng','Sam Archer','Jordan Lee'],['Alex River','Riley Chen']],
             str(ranked))
 
-        cap = page.evaluate("""() => {
-          const lg = lkEnsure();
-          const night = '2026-12-16';
-          lg.reg[night] = [];
-          lg.paid[night] = {};
-          const ids = [];
-          for (let i=1;i<=53;i++){
-            const name = 'Archer ' + String(i).padStart(2,'0');
-            const r = lkApplyReg({name, night, at:Date.now()}, lg);
-            ids.push(r.id);
-            lg.paid[night][r.id] = 1;
-          }
-          lg.sc = {};
-          const built = lkAssignGroups(lg, 3);
-          return {groups: built.groups.length, last: built.groups[12] && built.groups[12].ids.length,
-                  waiting: (built.waiting||[]).length, lanes: built.lanes,
-                  first: built.groups[0] && built.groups[0].names[0],
-                  waitName: built.waiting[0] && built.waiting[0].name};
+        sizes = page.evaluate("""() => {
+          const out = [];
+          for (let n=1;n<=52;n++) out.push({n, sizes: lkGroupSizes(n)});
+          const one = lkChunkFour([{id:'only', name:'Only One'}]);
+          return {out, solo: (one.solo||[]).map(p=>p.name), oneGroups: one.groups.length};
         }""")
-        chk('53 paid archers fill 13 targets of 4 and leave the 53rd without a target',
-            cap['groups']==13 and cap['last']==4 and cap['waiting']==1 and cap['lanes']==13
-            and cap['first']=='Archer 01' and cap['waitName']=='Archer 53',
+        want = {5:[3,2], 6:[3,3], 7:[4,3], 9:[3,3,3], 10:[4,3,3], 13:[4,3,3,3], 52:[4]*13}
+        bad_sizes = []
+        for row in sizes['out']:
+            n, got = row['n'], row['sizes']
+            if n==1:
+                if got is not None: bad_sizes.append('1 should not be grouped')
+                continue
+            if not got or sum(got)!=n or any(s not in (2,3,4) for s in got):
+                bad_sizes.append(f'{n}:{got}')
+                continue
+            if n not in (2,5) and 2 in got:
+                bad_sizes.append(f'{n} has a 2:{got}')
+            if n in want and got!=want[n]:
+                bad_sizes.append(f'{n} expected {want[n]} got {got}')
+            if len(got)>13:
+                bad_sizes.append(f'{n} uses more than 13 targets')
+        chk('group sizes for 1 to 52 prefer 4, then 3, then 2, and never a lone 1',
+            bad_sizes==[] and sizes['oneGroups']==0 and sizes['solo']==['Only One'],
+            str(bad_sizes[:8]))
+
+        cap = page.evaluate("""() => {
+          try { localStorage.removeItem('scoretool.lk.reg'); } catch(e) {}
+          const lg = lkEnsure();
+          lg.order=[]; lg.gn={}; lg.reg={}; lg.paid={}; lg.sc={};
+          const night='2026-11-18';
+          let failed=null;
+          for (let i=1;i<=52;i++){
+            const name='P'+String(i).padStart(2,'0');
+            const r=lkApplyReg({name, night, at:1}, lg);
+            if(!r.ok){failed=r.msg; break}
+          }
+          const extra=lkApplyReg({name:'Past Cap', night, at:1}, lg);
+          const again=lkApplyReg({name:'P01', night:'2026-12-02', at:2}, lg);
+          return {count: lkKnownRegistrants(lg).length, failed, extraOk: !!(extra&&extra.ok), extraMsg: extra&&extra.msg,
+                  again: !!(again&&again.ok), onNight2: ((lg.reg['2026-12-02']||[]).some(r=>r.name==='P01'))};
+        }""")
+        chk('the league closes at 52 registered archers, and an existing name can still add a night',
+            cap['count']==52 and cap['failed'] is None and cap['extraOk'] is False
+            and cap['extraMsg']=='This league already has 52 archers. Registration is closed.'
+            and cap['again'] is True and cap['onNight2'] is True,
             str(cap))
 
         onion = page.evaluate("""() => {

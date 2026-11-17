@@ -140,7 +140,7 @@ try:
             placed.get('bubbles')==0 and page.locator('#lktargets').count()==0
             and page.locator('#lkassigned').count()==1
             and placed.get('groups')==2
-            and placed.get('first')==['Alex River','Jo West','Kim Brook','Pat Reed'],
+            and placed.get('first')==['Alex River','Jo West','Kim Brook'],
             str(placed))
         page.screenshot(path=str(SHOT / 'live-thirteen-targets.png'), full_page=False)
 
