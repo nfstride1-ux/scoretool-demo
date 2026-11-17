@@ -115,6 +115,8 @@ try:
         page.fill('#lkregbow', 'Recurve')
         page.fill('#lkregemail', 'sam@example.com')
         page.fill('#lkregphone', '0400111222')
+        page.fill('#lkregpin', '1234')
+        page.fill('#lkregpin2', '1234')
         page.locator('#lkreggo').click()
         page.wait_for_selector('#lkregok', timeout=4000)
         saved = page.evaluate("""() => {
@@ -162,18 +164,34 @@ try:
         page.locator('#lklogin').click()
         page.wait_for_selector('#lkscorernames', timeout=5000)
         labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
-        chk('login lists registered names and has no free-text name box',
+        chk('login lists only the archer registered on this phone',
             page.locator('input#lkscorer').count()==0
             and page.locator('#lknight option').count()==6
-            and labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
+            and labels==['Sam Archer']
+            and page.locator('#lkshowall').count()==1,
             str(labels)+' nights='+str(page.locator('#lknight option').count()))
         page.screenshot(path=str(SHOT / 'lingkana-login-names-390.png'), full_page=False)
+        page.fill('#lkpw', 'nope')
+        page.locator('#lkshowall').click()
+        chk('show all names waits for the event passcode',
+            'event passcode' in (page.inner_text('#lkpwmsg') or '').lower()
+            and page.locator('#lkscorernames .lk-namebtn').all_inner_texts()==['Sam Archer'])
+        page.fill('#lkpw', 'Kana26')
+        page.locator('#lkshowall').click()
+        page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').wait_for(timeout=8000)
+        labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
+        chk('the event passcode reveals every registered name',
+            labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
+            str(labels))
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
+        page.fill('#lkpin', '4321')
+        page.fill('#lkpin2', '4321')
         page.fill('#lkpw', 'kana26')
         page.locator('#lkpwgo').click()
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(400)
         chk('a passcode other than Kana26 is refused',
             'not right' in (page.inner_text('#lkpwmsg') or '').lower() and page.locator('#lkassigned').count()==0)
+        page.fill('#lkpin', '4321')
         page.fill('#lkpw', 'Kana26')
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkassigned', timeout=5000)
@@ -205,7 +223,15 @@ try:
             page.evaluate("() => lkCanHost(lkEnsure())") is False)
         page.locator('#lklogin').click()
         page.wait_for_selector('#lkscorernames', timeout=4000)
+        page.fill('#lkpw', 'Kana26')
+        page.locator('#lkshowall').click()
+        page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').wait_for(timeout=4000)
         page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
+        if page.locator('#lkpin2').count():
+            page.fill('#lkpin', '2580')
+            page.fill('#lkpin2', '2580')
+        elif page.locator('#lkpin').count():
+            page.fill('#lkpin', '2580')
         page.fill('#lkpw', 'Kana26')
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkpaidlist input[data-lkpaid]', timeout=5000)
@@ -419,8 +445,10 @@ try:
             return ctx, pg
         A, pa = phone('/#lk-register')
         pa.wait_for_selector('#lkregname', timeout=8000)
-        for nm in ('Sync Ada','Sync Bea'):
+        for nm, pin in (('Sync Ada','1357'),('Sync Bea','2468')):
             pa.fill('#lkregname', nm)
+            pa.fill('#lkregpin', pin)
+            pa.fill('#lkregpin2', pin)
             pa.click('#lkreggo')
             pa.wait_for_selector('#lkregok', timeout=4000)
             pa.wait_for_timeout(300)
@@ -431,12 +459,25 @@ try:
         B, pb = phone('/#lk-home')
         pb.wait_for_selector('#lklogin', timeout=8000)
         pb.click('#lklogin')
-        pb.wait_for_selector('#lkscorernames', timeout=8000)
+        pb.wait_for_selector('#lkloginpage', timeout=8000)
         bnames=pb.locator('#lkscorernames .lk-namebtn').all_inner_texts()
-        chk('a registration on phone A shows on phone B with no ScoreTool profile',
-            'Sync Ada' in bnames and 'Sync Bea' in bnames and pb.evaluate('() => (typeof TESTER!=="undefined" && TESTER && TESTER.id) || null') is None,
-            str(bnames))
+        stored=pb.evaluate('''() => {
+          const rows=((lkEnsure().reg||{})["2026-11-18"]||[]).map(r=>r.name);
+          return {rows, tester:(typeof TESTER!=="undefined" && TESTER && TESTER.id) || null};
+        }''')
+        chk('a registration on phone A is stored on phone B, and the login list stays empty until the passcode',
+            'Sync Ada' in stored['rows'] and 'Sync Bea' in stored['rows']
+            and 'Sync Ada' not in bnames and 'Sync Bea' not in bnames
+            and stored['tester'] is None
+            and 'no saved archer' in pb.inner_text('#lkloginpage').lower(),
+            str(bnames)+' '+str(stored))
+        pb.fill('#lkpw', 'Kana26')
+        pb.locator('#lkshowall').click()
+        pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').wait_for(timeout=4000)
         pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
+        if pb.locator('#lkpin2').count():
+            pb.fill('#lkpin', '1111')
+            pb.fill('#lkpin2', '1111')
         pb.fill('#lkpw', 'Kana26')
         pb.click('#lkpwgo')
         pb.wait_for_selector('#lkpaidlist', timeout=8000)
@@ -462,9 +503,13 @@ try:
         C, pc = phone('/#lk-home')
         pc.wait_for_selector('#lklogin', timeout=8000)
         pc.click('#lklogin')
-        pc.wait_for_selector('#lkscorernames', timeout=8000)
+        pc.wait_for_selector('#lkloginpage', timeout=8000)
         pc.locator('#lknight').select_option('1')
+        pc.fill('#lkpw', 'Kana26')
+        pc.locator('#lkshowall').click()
+        pc.locator('#lkscorernames .lk-namebtn', has_text='Sync Ada').wait_for(timeout=4000)
         pc.locator('#lkscorernames .lk-namebtn', has_text='Sync Ada').click()
+        pc.fill('#lkpin', '1357')
         pc.fill('#lkpw', 'Kana26')
         pc.click('#lkpwgo')
         pc.wait_for_selector('#lkassigned', timeout=8000)

@@ -29,6 +29,10 @@ const LK_PASSCODE='Kana26';
 const LK_PW_SALT='c16go1a2';
 const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aacee1';
 const LK_REG_KEY='scoretool.lk.reg';
+const LK_MINE_KEY='scoretool.lk.mine'; /* reg ids this phone has registered or logged in as */
+const LK_LOCK_KEY='scoretool.lk.pinlock'; /* wrong-PIN lockout, this phone only, never synced */
+const LK_PIN_MAX=5;
+const LK_PIN_LOCK_MS=60*1000;
 const LK_FEE=10; /* entry fee used later by the pot display; the $25 range fee is separate and excluded */
 /* One-time live wipe: drop test sign-ups and claims from before this moment so all 660 nights start empty for 18 Nov. Do not bump — other archers' later registrations must be kept. */
 const LK_FRESH=1794881040000; /* 2026-11-17 10:04 Australia/Perth: wipe Ada Archer and the other test sign-ups. Do not bump again. */
@@ -376,6 +380,170 @@ function lkShootDates(lg){
   const src=(lg&&Array.isArray(lg.weeks)&&lg.weeks.filter(Boolean).length)?lg.weeks:LK_DATES;
   return src.filter(d=>LK_DATES.indexOf(d)>=0&&LK_DATES.indexOf(d)<6).slice(0,6);
 }
+function lkMineIds(){
+  try{
+    const v=JSON.parse(localStorage.getItem(LK_MINE_KEY)||'[]');
+    if(!Array.isArray(v))return [];
+    return [...new Set(v.map(x=>String((x&&x.id)||x||'')).filter(Boolean))];
+  }catch(e){return []}
+}
+function lkRememberArcher(id){
+  const who=String(id||'').trim();
+  if(!who||who==='nathe')return;
+  const ids=lkMineIds();
+  if(ids.includes(who))return;
+  ids.push(who);
+  try{localStorage.setItem(LK_MINE_KEY,JSON.stringify(ids))}catch(e){}
+}
+function lkHostPhone(lg){
+  const me=typeof h2hMe==='function'?h2hMe():'';
+  if(me&&(me==='nathe'||me===LK_HOST||(lg&&me===lg.host)))return true;
+  if(typeof lkCoHostOn==='function'&&lkCoHostOn())return true;
+  return false;
+}
+function lkPinSalt(){
+  const L='abcdefghjkmnpqrstuvwxyz23456789';
+  try{return Array.from(crypto.getRandomValues(new Uint8Array(8)),x=>L[x%L.length]).join('')}
+  catch(e){return Math.random().toString(36).slice(2,10)}
+}
+/* Salted hash only. The plain PIN is never written to the registration, the inbox, or the relay. */
+async function lkPinHash(name,pin,salt){
+  const enc=new TextEncoder();
+  const raw=lkCleanName(name).toLowerCase()+'\0'+String(pin)+'\0'+String(salt||'');
+  const buf=await crypto.subtle.digest('SHA-256',enc.encode(raw));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function lkPinOk(name,pin,salt,hash){
+  if(!hash||!salt||!/^\d{4}$/.test(String(pin||'')))return false;
+  return (await lkPinHash(name,pin,salt))===hash;
+}
+function lkPinLockBag(){
+  try{const v=JSON.parse(localStorage.getItem(LK_LOCK_KEY)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return{}}
+}
+function lkPinSaveLock(bag){try{localStorage.setItem(LK_LOCK_KEY,JSON.stringify(bag))}catch(e){}}
+function lkPinLocked(id){
+  const bag=lkPinLockBag(),row=bag[id];
+  if(!row||!row.until)return 0;
+  const left=+row.until-Date.now();
+  if(left<=0){delete bag[id];lkPinSaveLock(bag);return 0}
+  return left;
+}
+function lkPinFail(id){
+  const bag=lkPinLockBag();
+  const row=bag[id]||{fails:0,until:0};
+  if(row.until&&row.until<=Date.now()){row.fails=0;row.until=0}
+  row.fails=(+row.fails||0)+1;
+  let until=0;
+  if(row.fails>=LK_PIN_MAX){until=Date.now()+LK_PIN_LOCK_MS;row.until=until;row.fails=0}
+  bag[id]=row;lkPinSaveLock(bag);
+  return until;
+}
+function lkPinClearFails(id){
+  const bag=lkPinLockBag();
+  if(!bag[id])return;
+  delete bag[id];lkPinSaveLock(bag);
+}
+function lkPinOf(lg,id){
+  let best=null;
+  const take=(rec,name)=>{
+    if(!rec)return;
+    const at=+rec.pinAt||0;
+    if(best&&at<best.pinAt)return;
+    best={pinHash:rec.pinHash||'',pinSalt:rec.pinSalt||'',pinAt:at,name:name||rec.name||''};
+  };
+  const reg=(lg&&lg.reg)||{};
+  for(const night of Object.keys(reg)){
+    for(const r of reg[night]||[]){
+      if(!r||String(r.id)!==String(id))continue;
+      take(r,r.name);
+    }
+  }
+  if(lg&&lg.pins&&lg.pins[id])take(lg.pins[id],(lg.pins[id].name)||'');
+  return best;
+}
+function lkCopyPin(row,rec){
+  if(!row||!rec)return;
+  if('pin' in row)delete row.pin;
+  if(!('pinHash' in rec)&&!rec.pinAt)return;
+  const inc=+rec.pinAt||0, cur=+row.pinAt||0;
+  if(inc&&inc<cur)return;
+  if(!inc&&row.pinHash)return;
+  if(rec.pinHash){row.pinHash=String(rec.pinHash);row.pinSalt=String(rec.pinSalt||'');row.pinAt=inc||Date.now()}
+  else if(inc){delete row.pinHash;delete row.pinSalt;row.pinAt=inc}
+}
+function lkPublicReg(reg){
+  const out={};
+  for(const night of Object.keys(reg||{})){
+    out[night]=(reg[night]||[]).map(r=>{
+      if(!r||typeof r!=='object')return r;
+      const c=Object.assign({},r);
+      delete c.pin;
+      return c;
+    });
+  }
+  return out;
+}
+function lkSetPin(lg,id,name,hash,salt){
+  lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
+  if(!lg)return 0;
+  const at=Date.now();
+  const pinHash=hash?String(hash):'';
+  const pinSalt=pinHash?String(salt||''):'';
+  const who=String(id||'');
+  let touched=false;
+  for(const night of Object.keys(lg.reg||{})){
+    for(const r of lg.reg[night]||[]){
+      if(!r)continue;
+      const same=who&&String(r.id)===who||(name&&lkCleanName(r.name).toLowerCase()===lkCleanName(name).toLowerCase());
+      if(!same)continue;
+      if(pinHash){r.pinHash=pinHash;r.pinSalt=pinSalt}else{delete r.pinHash;delete r.pinSalt}
+      if('pin' in r)delete r.pin;
+      r.pinAt=at;touched=true;
+    }
+  }
+  if(!touched&&who){
+    lg.pins=lg.pins||{};
+    lg.pins[who]={pinHash,pinSalt,pinAt:at,name:lkCleanName(name)||''};
+  }
+  lg.dirty=1;
+  if(typeof save==='function')save();
+  try{
+    const box=lkRegInbox();
+    let ch=false;
+    box.forEach(r=>{
+      if(!r)return;
+      if((who&&String(r.id)===who)||(name&&lkCleanName(r.name).toLowerCase()===lkCleanName(name).toLowerCase())){
+        if(pinHash){r.pinHash=pinHash;r.pinSalt=pinSalt}else{delete r.pinHash;delete r.pinSalt}
+        if('pin' in r)delete r.pin;
+        r.pinAt=at;ch=true;
+      }
+    });
+    if(ch)localStorage.setItem(LK_REG_KEY,JSON.stringify(box));
+  }catch(e){}
+  try{
+    if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
+      const rec={name:lkCleanName(name)||'',id:who||null,at,pinHash,pinSalt,pinAt:at,allNights:1};
+      Promise.resolve(h2hPost(lgTopic(lg.code),{k:'lkreg',code:lg.code||LK_CODE,rec,t:at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+    }
+  }catch(e){}
+  return at;
+}
+function lkResetPin(id){
+  const lg=typeof lkEnsure==='function'?lkEnsure():null;
+  if(!lg)return 'The league is not on this phone yet.';
+  if(!lkHostPhone(lg))return 'Only a host phone can reset a PIN.';
+  const who=String(id||'');
+  if(!who)return 'Pick an archer.';
+  let name='';
+  for(const night of Object.keys(lg.reg||{})){
+    const row=(lg.reg[night]||[]).find(r=>r&&String(r.id)===who);
+    if(row&&row.name){name=row.name;break}
+  }
+  if(!name&&lg.gn&&lg.gn[who])name=lg.gn[who].n||'';
+  if(!name&&lg.pins&&lg.pins[who])name=lg.pins[who].name||'';
+  lkSetPin(lg,who,name,'','');
+  return '';
+}
 function lkApplyReg(rec,lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);if(!lg||!rec)return {ok:false,msg:'The league is not on this phone yet.'};
   const name=lkCleanName(rec.name);if(name.length<2)return{ok:false,msg:'Type a name (at least 2 characters).'};
@@ -411,8 +579,8 @@ function lkApplyReg(rec,lg){
   nights.forEach(night=>{
     lg.reg[night]=lg.reg[night]||[];
     const row=lg.reg[night].find(r=>r&&(r.id===id||lkCleanName(r.name).toLowerCase()===nameKey));
-    if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;id=row.id||id}
-    else{lg.reg[night].push({id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''});alreadyAll=false}
+    if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;lkCopyPin(row,rec);id=row.id||id}
+    else{const fresh={id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''};lkCopyPin(fresh,rec);lg.reg[night].push(fresh);alreadyAll=false}
   });
   lg.dirty=1;if(typeof save==='function')save();
   return{ok:true,id,first:first&&!alreadyAll?1:0,night:nights[0],nights,already:alreadyAll,name};
@@ -503,16 +671,21 @@ function lkRegister(opts){
   if(closed)return closed;
   /* One registration covers every shoot night. The night is chosen later, on the login page. */
   const rec={name,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,allNights:1,poster:1};
+  if(opts.pinHash){rec.pinHash=String(opts.pinHash);rec.pinSalt=String(opts.pinSalt||'');rec.pinAt=+opts.pinAt||rec.at}
   const put=lkRegPush(rec);
   if(typeof S!=='undefined'&&S){
     const r=lkApplyReg(rec);
     if(!r.ok)return r.msg||'Could not add that registration.';
     put.stored.id=r.id;put.stored._applied=1;rec.id=r.id;
+    if(rec.pinHash){put.stored.pinHash=rec.pinHash;put.stored.pinSalt=rec.pinSalt;put.stored.pinAt=rec.pinAt}
     try{localStorage.setItem(LK_REG_KEY,JSON.stringify(put.box))}catch(e){}
+    lkRememberArcher(r.id);
   }
   try{
     if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
-      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:{name:rec.name,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,allNights:1,poster:1},t:rec.at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+      const posted={name:rec.name,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,allNights:1,poster:1};
+      if(rec.pinHash){posted.pinHash=rec.pinHash;posted.pinSalt=rec.pinSalt||'';posted.pinAt=rec.pinAt||rec.at}
+      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:posted,t:rec.at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
     }
   }catch(e){}
   return '';
@@ -546,9 +719,10 @@ function lkDefaultNight(){
   return pick;
 }
 function lkBootHome(){
+  if(window._lkLeftHome)return false;
   if(!lkIsHomeHash()||lkIsRegHash())return false;
   const homeHash=window.LK_HOME_HASH||LK_HOME_HASH||'#lk-home';
-  const stay=()=>{try{if(location.hash!==homeHash)history.replaceState(null,'',location.pathname+location.search+homeHash)}catch(e){}};
+  const stay=()=>{if(window._lkLeftHome)return;try{if(location.hash!==homeHash)history.replaceState(null,'',location.pathname+location.search+homeHash)}catch(e){}};
   stay();
   setTimeout(stay,0);
   try{if($('#tabs'))$('#tabs').hidden=true}catch(e){}
@@ -637,6 +811,10 @@ function lkRegisterView(){
       <input id="lkregemail" name="email" type="email" maxlength="80" autocomplete="email">
       <label for="lkregphone">Phone <span class="muted">(optional)</span></label>
       <input id="lkregphone" name="phone" maxlength="24" autocomplete="tel">
+      <label for="lkregpin">4-digit PIN</label>
+      <input id="lkregpin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
+      <label for="lkregpin2">PIN again</label>
+      <input id="lkregpin2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
       <button class="btn lk-go" type="submit" id="lkreggo" style="margin-top:10px">Register</button>
       <p class="small lk-err" id="lkregmsg" role="alert"></p>
     </form>
@@ -695,11 +873,18 @@ function lkRegisterView(){
     const bow=(appEl.querySelector('#lkregbow')||{}).value;
     const email=(appEl.querySelector('#lkregemail')||{}).value;
     const phone=(appEl.querySelector('#lkregphone')||{}).value;
-    const last=lkRegister({name,bow,email,phone});
-    if(last){fail(last);return}
-    window._lkRetPick=null;
-    window._lkRegOk="You're registered for the Lingkana League.";
-    lkRegisterView();
+    const pin=(appEl.querySelector('#lkregpin')||{}).value||'';
+    const pin2=(appEl.querySelector('#lkregpin2')||{}).value||'';
+    if(!/^\d{4}$/.test(pin)){fail('Enter a 4-digit PIN.');return}
+    if(pin!==pin2){fail('Those PINs do not match.');return}
+    const salt=lkPinSalt();
+    lkPinHash(name,pin,salt).then(pinHash=>{
+      const last=lkRegister({name,bow,email,phone,pinHash,pinSalt:salt,pinAt:Date.now()});
+      if(last){fail(last);return}
+      window._lkRetPick=null;
+      window._lkRegOk="You're registered for the Lingkana League.";
+      lkRegisterView();
+    }).catch(()=>{fail('Could not save that PIN on this phone.');});
   };
   const back=appEl.querySelector('#lkregback');
   if(back)back.onclick=()=>{window._lkRetPick=null;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}if(typeof lkFlowHome==='function')lkFlowHome(LK_CODE);else if(typeof lkView==='function'&&lkGet())lkView(LK_CODE);else if(typeof nav==='function')nav('lab_leagues')};
@@ -1409,6 +1594,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });
 })();
