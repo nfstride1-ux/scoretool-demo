@@ -84,9 +84,11 @@ try:
 
         # Event Registration without Nathe
         rtxt = page.inner_text('#lkregpage')
-        chk('live register form is name, night and optional bow, email and phone, with no invite code',
-            page.locator('#lkregname, #lkregnight, #lkregbow, #lkregemail, #lkregphone').count()==5
+        chk('live register form is name and optional bow, email and phone, with no invite code or shoot night',
+            page.locator('#lkregname, #lkregbow, #lkregemail, #lkregphone').count()==4
+            and page.locator('#lkregnight').count()==0
             and page.locator('#lkregcode').count()==0
+            and 'register for the lingkana league' in rtxt.lower()
             and 'nathe' not in rtxt.lower() and 'nathaniel' not in rtxt.lower()
             and 'get scoretool' in rtxt.lower()
             and page.locator('#lkqrsvg svg').count()==1,
@@ -95,8 +97,6 @@ try:
         page.fill('#lkregname', 'Sam Archer')
         if page.locator('#lkregemail').count():
             page.fill('#lkregemail', 'sam@example.com')
-        if page.locator('#lkregnight').count():
-            page.locator('#lkregnight').select_option(index=0)
         page.locator('#lkreggo').click()
         page.wait_for_timeout(800)
         page.wait_for_selector('#lkregok', timeout=4000)

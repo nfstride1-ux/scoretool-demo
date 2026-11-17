@@ -185,6 +185,9 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(d.inviteOnly!=null&&!!d.inviteOnly!==!!lg.inviteOnly){lg.inviteOnly=!!d.inviteOnly;ch=true}
   if(d.pwHash&&(d.pwt||0)>=(lg.pwt||0)&&(d.pwHash!==lg.pwHash||d.pwSalt!==lg.pwSalt)){lg.pwHash=d.pwHash;lg.pwSalt=d.pwSalt||'';lg.pwt=d.pwt||0;ch=true}
   if(!staleFresh&&d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
+ /* Nate Evans uses the same passcode and publishes paid ticks with by/cohost nate. Scorer phones do not. */
+ const lkPaidByNate=d&&(d.by==='nate'||d.cohost==='nate');
+ if(!staleFresh&&lkPaidByNate&&d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}
  if(!staleFresh&&(fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
   if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
  if(!staleFresh){lg.order=lg.order||[];const alsoBy=lkFreshCut?[]:[d.by];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),...alsoBy])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}

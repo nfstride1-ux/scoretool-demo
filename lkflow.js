@@ -200,6 +200,7 @@
     if(isOnion()){if(typeof lgSeed==='function')lgSeed()}
     else if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
+    if(!isOnion()&&typeof lkSyncStart==='function')lkSyncStart();
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
@@ -233,12 +234,15 @@
   }
 
 
-  function login(){
+  async function login(){
     if(isOnion())return osLogin();
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const el=appEl();if(!el)return;
-    const w=nightOf(lg||{});
+    let w=nightOf(lg||{});
+    if(w>6)w=1;
     const ev=lg?lg.name:(typeof LK_NAME==='string'?LK_NAME:'Lingkana League');
     const rows=(nightSignups(lg,w)||[]).filter(r=>r&&r.id);
     const seen=new Set();
@@ -402,7 +406,10 @@
         return`<option value="${n}" ${n===w?'selected':''}>${esc(lab)}${d?' · '+esc(d):''}</option>`;
       }).join('');
     }
-    return (LK_DATES||[]).map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('');
+    return (typeof LK_DATES!=='undefined'?LK_DATES:[]).slice(0,6).map((d,i)=>{
+      const when=typeof lkFmtD==='function'?lkFmtD(d).replace(/,?\s*\d{4}/,''):d;
+      return`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(when)}</option>`;
+    }).join('');
   }
   function archerTarget(lg,w,id){
     const rec=(nightSignups(lg,w)||[]).find(r=>r&&r.id===id);
@@ -470,7 +477,8 @@
     return list.filter(r=>r&&r.id&&paid.has(String(r.id)));
   }
 
-  function showAssigned(){
+  async function showAssigned(){
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=eventLg();
     if(!lg){home();return}
     if(isOnion()){selectArchersOnion();return}
@@ -1001,8 +1009,10 @@
     entryScreen();
   }
 
-  function review(){
+  async function review(){
     if(isOnion())return osReview();
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const w=nightOf(lg||{});
@@ -1048,6 +1058,8 @@
   function regEntry(){
     if(isOnion())return osRegister();
     hideChrome(true);
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function')lkSyncOnce();
     try{history.replaceState(null,'',location.pathname+location.search+(window.LK_REGISTER_HASH||(typeof LK_REGISTER_HASH==='string'&&LK_REGISTER_HASH)||'#lk-register'))}catch(e){}
     if(typeof lkRegisterView==='function')lkRegisterView();
     const back=document.getElementById('lkregback');

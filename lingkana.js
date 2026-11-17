@@ -354,11 +354,15 @@ function lkRegClosed(lg,name,id){
   if(exists||known.length<LK_REG_CAP)return '';
   return 'This league already has 52 archers. Registration is closed.';
 }
+function lkShootDates(lg){
+  const src=(lg&&Array.isArray(lg.weeks)&&lg.weeks.filter(Boolean).length)?lg.weeks:LK_DATES;
+  return src.filter(d=>LK_DATES.indexOf(d)>=0&&LK_DATES.indexOf(d)<6).slice(0,6);
+}
 function lkApplyReg(rec,lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);if(!lg||!rec)return {ok:false,msg:'The league is not on this phone yet.'};
   const name=lkCleanName(rec.name);if(name.length<2)return{ok:false,msg:'Type a name (at least 2 characters).'};
-  const night=String(rec.night||'');
-  if(!LK_DATES.includes(night)&&(lg.weeks||[]).indexOf(night)<0)return{ok:false,msg:'Pick a shoot night.'};
+  const nights=lkShootDates(lg);
+  if(!nights.length)return{ok:false,msg:'The league has no shoot nights yet.'};
   const closed=lkRegClosed(lg,name,rec.id||lkFindArcher(lg,name));
   if(closed)return{ok:false,msg:closed};
   lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];
@@ -381,14 +385,16 @@ function lkApplyReg(rec,lg){
       lg.gn[id]={n:name,j:rec.jr?1:0,t:rec.at||Date.now(),by:'register'};
     }
   }
-  lg.reg[night]=lg.reg[night]||[];
   const nameKey=name.toLowerCase();
-  const row=lg.reg[night].find(r=>r&&(r.id===id||lkCleanName(r.name).toLowerCase()===nameKey));
-  const already=!!row;
-  if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;id=row.id||id}
-  else lg.reg[night].push({id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''});
+  let alreadyAll=true;
+  nights.forEach(night=>{
+    lg.reg[night]=lg.reg[night]||[];
+    const row=lg.reg[night].find(r=>r&&(r.id===id||lkCleanName(r.name).toLowerCase()===nameKey));
+    if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;id=row.id||id}
+    else{lg.reg[night].push({id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''});alreadyAll=false}
+  });
   lg.dirty=1;if(typeof save==='function')save();
-  return{ok:true,id,first:first&&!already?1:0,night,already,name};
+  return{ok:true,id,first:first&&!alreadyAll?1:0,night:nights[0],nights,already:alreadyAll,name};
 }
 function lkPullReg(lg){
   lg=lg||lkGet();if(!lg)return 0;
@@ -404,13 +410,11 @@ function lkRegister(opts){
   opts=opts||{};
   const name=lkCleanName(opts.name);if(name.length<2)return'Type a name (at least 2 characters).';
   if(typeof nmRude==='function'&&nmRude(name))return'Please use a different name.';
-  const night=String(opts.night||'');
-  if(!LK_DATES.includes(night))return'Pick a shoot night.';
   const lgNow=typeof lkEnsure==='function'?lkEnsure():lkGet();
   const closed=lgNow&&lkRegClosed(lgNow,name,opts.id||lkFindArcher(lgNow,name));
   if(closed)return closed;
-  /* No registration deadline: a sign-up on the night, or after it has started, is accepted. */
-  const rec={name,night,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,poster:1};
+  /* One registration covers every shoot night. The night is chosen later, on the login page. */
+  const rec={name,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,allNights:1,poster:1};
   const put=lkRegPush(rec);
   if(typeof S!=='undefined'&&S){
     const r=lkApplyReg(rec);
@@ -420,7 +424,7 @@ function lkRegister(opts){
   }
   try{
     if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
-      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:{name:rec.name,night:rec.night,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,poster:1},t:rec.at,by:(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:{name:rec.name,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,allNights:1,poster:1},t:rec.at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
     }
   }catch(e){}
   return '';
@@ -515,27 +519,21 @@ function lkRegisterView(){
   if(!appEl)return;
   if(typeof lkEnsure==='function')lkEnsure();
   const lg=lkGet();
-  const nights=LK_DATES.map(d=>{
-    const i=LK_DATES.indexOf(d),lab=lkLabel(i+1);
-    return`<option value="${h(d)}">${h(lkFmtD(d))} · Night ${i+1} · ${h(lab)}</option>`;
-  }).join('');
   const def=lkDefaultNight();
   const okMsg=window._lkRegOk||'';window._lkRegOk='';
   const qrUrl=lkRegisterUrl();
   const regCount=lkKnownRegistrants(lg).length;
   const leagueFull=regCount>=LK_REG_CAP;
   appEl.innerHTML=`<div class="card" id="lkregpage"><span class="kicker">Lingkana League</span>
-    <h1>Register for a shoot night</h1>
+    <h1>Register for the Lingkana League</h1>
     ${okMsg?`<p class="lk-ok" id="lkregok" role="status">${h(okMsg)}</p>`:''}
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
-    <p>Put your name down to compete. There is no deadline — you can register on the night.</p>
-    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p><p class="small muted">If your name is already on the list, you can still sign up for another night.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers in the league. Print the QR for walk-ins at the venue.</p>'}
+    <p>Put your name down once. It stays on the list for every shoot night. You choose the night when you log in to score.</p>
+    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers. Print the QR for walk-ins at the venue.</p>'}
     <form id="lkregform" autocomplete="on">
       <label for="lkregname">Name</label>
       <input id="lkregname" name="name" required maxlength="24" autocomplete="name" placeholder="Your name">
-      <label for="lkregnight">Shoot night</label>
-      <select id="lkregnight" name="night">${nights}</select>
       <label for="lkregbow">Bow type <span class="muted">(optional)</span></label>
       <input id="lkregbow" name="bow" maxlength="24" placeholder="e.g. Compound">
       <label for="lkregemail">Email <span class="muted">(optional)</span></label>
@@ -583,14 +581,12 @@ function lkRegisterView(){
     const fail=t=>{if(box)box.textContent=t;if(go)go.disabled=false};
     const name=(appEl.querySelector('#lkregname')||{}).value;
     const bow=(appEl.querySelector('#lkregbow')||{}).value;
-    const night=(appEl.querySelector('#lkregnight')||{}).value;
     const email=(appEl.querySelector('#lkregemail')||{}).value;
     const phone=(appEl.querySelector('#lkregphone')||{}).value;
-    if(!night){fail('Pick a shoot night.');return}
-    const last=lkRegister({name,night,bow,email,phone});
+    const last=lkRegister({name,bow,email,phone});
     if(last){fail(last);return}
     window._lkRetPick=null;
-    window._lkRegOk=lkRegOkText([night]);
+    window._lkRegOk="You're registered for the Lingkana League.";
     lkRegisterView();
   };
   const back=appEl.querySelector('#lkregback');
@@ -833,6 +829,60 @@ function lkPot(lg){
   const entries=nights.reduce((n,x)=>n+x.paid,0), pot=entries*LK_ENTRY_FEE, owed=nights.reduce((n,x)=>n+x.owed,0);
   return {entries,pot,owed,nights,first:Math.round(pot*LK_SPLIT[0]),second:Math.round(pot*LK_SPLIT[1]),third:Math.round(pot*LK_SPLIT[2]),currency:'AUD',whole:true};
 }
+function lkPaidAuthority(){
+  if(typeof lkCoHostOn==='function'&&lkCoHostOn())return 'nate';
+  const me=typeof h2hMe==='function'?h2hMe():'';
+  const lg=typeof lkGet==='function'?lkGet():null;
+  if(me&&(me==='nathe'||(lg&&me===lg.host)))return me;
+  return '';
+}
+function lkPublishPaid(lg){
+  lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
+  const who=lkPaidAuthority();
+  if(!lg||!who||typeof h2hPost!=='function'||typeof lgTopic!=='function')return Promise.resolve(false);
+  return h2hPost(lgTopic(lg.code),{k:'ls',code:lg.code,by:who,cohost:who==='nate'?'nate':'',host:lg.host||LK_HOST,format:'lingkana',paid:lg.paid||{},paidt:lg.paidt||Date.now(),fresh:lg.fresh||0,t:Date.now(),part:1,np:1});
+}
+async function lkSyncOnce(){
+  if(window._lkSyncBusy)return false;
+  if(typeof h2hPoll!=='function'||typeof lgTopic!=='function')return false;
+  window._lkSyncBusy=true;
+  let ch=false;
+  try{
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    if(!lg)return false;
+    const L=await h2hPoll(lgTopic(lg.code), lg.since);
+    if(L&&L.length){
+      for(const d of L){
+        if(!d)continue;
+        lg.since=d._id;
+        if(typeof lgMerge==='function'&&lgMerge(lg,d))ch=true;
+        else if(d.k==='lkreg'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)){
+          const r=lkApplyReg(d.rec||d,lg);
+          if(r&&r.ok&&!r.already)ch=true;
+        }
+      }
+      if(typeof save==='function')save();
+    }
+  }catch(e){}
+  finally{window._lkSyncBusy=false}
+  if(ch&&!window._lkSyncRedraw){
+    window._lkSyncRedraw=1;
+    setTimeout(()=>{window._lkSyncRedraw=0},800);
+    try{
+      if(document.getElementById('lkloginpage')&&typeof window.lkFlowLogin==='function')window.lkFlowLogin();
+      else if((document.getElementById('lkpaidlist')||document.getElementById('lkpot'))&&typeof window.lkFlowReview==='function')window.lkFlowReview();
+    }catch(e){}
+  }
+  return ch;
+}
+function lkSyncStart(){
+  if(window._lkSyncTimer)return;
+  window._lkSyncTimer=setInterval(()=>{
+    if(document.hidden)return;
+    const on=document.getElementById('lkregpage')||document.getElementById('lkloginpage')||document.getElementById('lkpaidlist')||document.getElementById('lkhome')||document.getElementById('lkassigned')||document.body.classList.contains('lk-flow');
+    if(on)lkSyncOnce();
+  },10000);
+}
 function lkSetPaid(id,night,on){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
   if(!lkCanHost(lg))return 'Only the host can tick who paid.';
@@ -842,6 +892,7 @@ function lkSetPaid(id,night,on){
   lg.paid=lg.paid||{};lg.paid[k]=lg.paid[k]||{};
   if(on)lg.paid[k][who]=1;else delete lg.paid[k][who];
   lg.paidt=Date.now();lg.dirty=1;if(typeof save==='function')save();
+  try{lkPublishPaid(lg)}catch(e){}
   return '';
 }
 function lkPotHTML(lg){
@@ -866,7 +917,7 @@ function lkPotHTML(lg){
     <p class="small muted">The $${LK_RANGE_FEE} range fee is paid to the venue and is not in this pot. Night 7 also puts $${LK_ENTRY_FEE} into the pot.</p>
     <div class="lg-wrap"><table class="ad-tab" id="lkpotnights"><thead><tr><th></th><th>Night</th><th>Paid</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>${nightRows}</tbody></table></div>
     <label for="lkpotnight" style="margin-top:8px">Tick who paid on</label>
-    <select id="lkpotnight">${LK_DATES.map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>Night ${i+1} · ${h(lkFmtD(d))}${i===6?' · shoot-up':''}</option>`).join('')}</select>
+    <select id="lkpotnight">${LK_DATES.slice(0,6).map((d,i)=>`<option value="${i+1}" ${i+1===Math.min(w,6)?'selected':''}>${h(lkFmtD(d).replace(/,?\s*\d{4}/,''))}</option>`).join('')}</select>
     <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them.</p>
     <div id="lkpaidlist">${rows}</div>
     </div>`;
@@ -1242,6 +1293,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority
 });
 })();

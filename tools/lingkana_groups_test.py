@@ -32,10 +32,12 @@ try:
         page.goto(f'{BASE}/#lk-register', wait_until='networkidle')
         page.wait_for_selector('#lkregpage', timeout=8000)
         reg = page.inner_text('#lkregpage')
-        chk('register page has name, night, optional bow, email and phone',
-            page.locator('#lkregname').count()==1 and page.locator('#lkregnight').count()==1
+        chk('register page has name and optional bow, email and phone, and no shoot night',
+            page.locator('#lkregname').count()==1 and page.locator('#lkregnight').count()==0
             and page.locator('#lkregbow').count()==1 and page.locator('#lkregemail').count()==1
-            and page.locator('#lkregphone').count()==1)
+            and page.locator('#lkregphone').count()==1
+            and 'register for the lingkana league' in reg.lower(),
+            reg[:180])
         chk('register page has no invite-code field',
             page.locator('#lkregcode').count()==0 and 'invite code' not in reg.lower() and 'poster' not in reg.lower(),
             reg[:240])
@@ -60,17 +62,19 @@ try:
         page.fill('#lkregbow', 'Recurve')
         page.fill('#lkregemail', 'sam@example.com')
         page.fill('#lkregphone', '0400111222')
-        page.locator('#lkregnight').select_option('2026-11-18')
         page.locator('#lkreggo').click()
         page.wait_for_selector('#lkregok', timeout=4000)
         saved = page.evaluate("""() => {
           const lg = lkEnsure();
           const row = ((lg.reg||{})['2026-11-18']||[]).find(r => r && r.name==='Sam Archer');
+          const dec = ((lg.reg||{})['2026-12-02']||[]).some(r => r && r.name==='Sam Archer');
+          const jan = ((lg.reg||{})['2027-01-27']||[]).some(r => r && r.name==='Sam Archer');
           return {msg: (document.querySelector('#lkregok')||{}).textContent||'',
-                  id: row && row.id, bow: row && row.bow, email: row && row.email};
+                  id: row && row.id, bow: row && row.bow, email: row && row.email, dec, jan};
         }""")
-        chk('a name can be registered with no invite code',
-            'Night 1' in saved['msg'] and saved.get('id') and saved.get('bow')=='Recurve' and saved.get('email')=='sam@example.com',
+        chk('a name can be registered once for every shoot night, with no invite code',
+            'Lingkana League' in saved['msg'] and saved.get('id') and saved.get('bow')=='Recurve'
+            and saved.get('email')=='sam@example.com' and saved['dec'] and saved['jan'],
             str(saved))
 
         seeded = page.evaluate("""() => {
@@ -107,8 +111,9 @@ try:
         labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
         chk('login lists registered names and has no free-text name box',
             page.locator('input#lkscorer').count()==0
+            and page.locator('#lknight option').count()==6
             and labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
-            str(labels))
+            str(labels)+' nights='+str(page.locator('#lknight option').count()))
         page.screenshot(path=str(SHOT / 'lingkana-login-names-390.png'), full_page=False)
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
         page.fill('#lkpw', 'kana26')
@@ -171,7 +176,10 @@ try:
         chk('Nate ticking paid saves on the same paid list',
             ticked['host'] is True and ticked['on'] is True and bool(ticked['id']),
             str(ticked))
-        page.locator('#lkpot').screenshot(path=str(SHOT / 'lingkana-nate-paid-390.png'))
+        page.wait_for_timeout(900)
+        page.evaluate("() => { const el=document.getElementById('lkpaidlist'); if(el) el.scrollIntoView({block:'center'}); }")
+        page.wait_for_timeout(200)
+        page.screenshot(path=str(SHOT / 'lingkana-nate-paid-390.png'), full_page=False)
         page.evaluate("() => { lkMarkCoHost(false); }")
         chk('clearing Nate Evans login removes the paid-tick permission on this phone',
             page.evaluate("() => lkCanHost(lkEnsure())") is False)
@@ -256,6 +264,116 @@ try:
         page.wait_for_selector('#lkloginpage', timeout=4000)
         chk('Onion Shed login still has a typed name',
             onion and page.locator('input#lkscorer').count()==1 and page.locator('#lkscorernames').count()==0)
+
+        # Cross-phone sync on a local stand-in for ntfy. Nothing is posted to the live topic.
+        import json as _json, threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        box={'msgs':[], 'n':0}
+        class Relay(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+            def do_POST(self):
+                n=int(self.headers.get('Content-Length') or 0)
+                body=self.rfile.read(n)
+                box['n']+=1
+                box['msgs'].append(('s%d'%box['n'], body.decode()))
+                self.send_response(200); self.end_headers(); self.wfile.write(b'ok')
+            def do_GET(self):
+                q=self.path.split('since=',1)[-1] if 'since=' in self.path else 'all'
+                since=q.split('&')[0]
+                use=list(box['msgs'])
+                if since not in ('all','','None'):
+                    seen=False; use=[]
+                    for mid,body in box['msgs']:
+                        if seen: use.append((mid,body))
+                        if mid==since: seen=True
+                    if not seen: use=list(box['msgs'])
+                data=''.join(_json.dumps({'id':mid,'event':'message','message':body})+'\n' for mid,body in use).encode()
+                self.send_response(200)
+                self.send_header('content-type','application/x-ndjson')
+                self.send_header('access-control-allow-origin','*')
+                self.end_headers(); self.wfile.write(data)
+        relay=ThreadingHTTPServer(('127.0.0.1', 8821), Relay)
+        threading.Thread(target=relay.serve_forever, daemon=True).start()
+        def arm(ctx):
+            def handle(route):
+                import urllib.request
+                url=route.request.url.replace('https://ntfy.sh','http://127.0.0.1:8821')
+                req=urllib.request.Request(url, data=(route.request.post_data or '').encode() if route.request.method=='POST' else None, method=route.request.method)
+                try:
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        route.fulfill(status=resp.status, body=resp.read(), headers={'content-type':'application/x-ndjson','access-control-allow-origin':'*'})
+                except Exception as e:
+                    route.fulfill(status=599, body=str(e))
+            ctx.route('https://ntfy.sh/**', handle)
+        def phone(url):
+            ctx=b.new_context(viewport={'width':390,'height':844})
+            arm(ctx)
+            pg=ctx.new_page()
+            pg.goto(BASE+url, wait_until='domcontentloaded')
+            return ctx, pg
+        A, pa = phone('/#lk-register')
+        pa.wait_for_selector('#lkregname', timeout=8000)
+        for nm in ('Sync Ada','Sync Bea'):
+            pa.fill('#lkregname', nm)
+            pa.click('#lkreggo')
+            pa.wait_for_selector('#lkregok', timeout=4000)
+            pa.wait_for_timeout(300)
+        for _ in range(40):
+            if sum('Sync Bea' in body for _,body in box['msgs']):
+                break
+            time.sleep(0.1)
+        B, pb = phone('/#lk-home')
+        pb.wait_for_selector('#lklogin', timeout=8000)
+        pb.click('#lklogin')
+        pb.wait_for_selector('#lkscorernames', timeout=8000)
+        bnames=pb.locator('#lkscorernames .lk-namebtn').all_inner_texts()
+        chk('a registration on phone A shows on phone B with no ScoreTool profile',
+            'Sync Ada' in bnames and 'Sync Bea' in bnames and pb.evaluate('() => (typeof TESTER!=="undefined" && TESTER && TESTER.id) || null') is None,
+            str(bnames))
+        pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
+        pb.fill('#lkpw', 'Kana26')
+        pb.click('#lkpwgo')
+        pb.wait_for_selector('#lkpaidlist', timeout=8000)
+        for nm in ('Sync Ada','Sync Bea'):
+            pb.locator('#lkpaidlist .lk-paidrow', has_text=nm).locator('input').check()
+            pb.wait_for_selector('#lkpaidlist', timeout=4000)
+        for _ in range(40):
+            if any('"cohost":"nate"' in body or '"by":"nate"' in body for _,body in box['msgs']):
+                break
+            time.sleep(0.1)
+        N, pn = phone('/?tester=nathe')
+        pn.wait_for_timeout(800)
+        nathe=pn.evaluate('''async () => {
+          lkEnsure(); await lkSyncOnce();
+          const lg=lkEnsure();
+          const rows=((lg.reg||{})["2026-11-18"]||[]);
+          const paid=lg.paid&&lg.paid["2026-11-18"]||{};
+          return {names: rows.map(r=>r.name), ada: rows.filter(r=>r.name==="Sync Ada"||r.name==="Sync Bea").every(r=>!!paid[r.id])};
+        }''')
+        chk("Nate's paid ticks show on Nathe's phone",
+            nathe.get('ada') is True and 'Sync Ada' in nathe.get('names') and 'Sync Bea' in nathe.get('names'),
+            str(nathe))
+        C, pc = phone('/#lk-home')
+        pc.wait_for_selector('#lklogin', timeout=8000)
+        pc.click('#lklogin')
+        pc.wait_for_selector('#lkscorernames', timeout=8000)
+        pc.locator('#lknight').select_option('1')
+        pc.locator('#lkscorernames .lk-namebtn', has_text='Sync Ada').click()
+        pc.fill('#lkpw', 'Kana26')
+        pc.click('#lkpwgo')
+        pc.wait_for_selector('#lkassigned', timeout=8000)
+        cgroup=pc.inner_text('#lkassigned')
+        chk('a scorer phone with no profile sees the paid group',
+            pc.get_attribute('#lkassigned','data-target')=='1'
+            and 'Sync Ada' in cgroup and 'Sync Bea' in cgroup
+            and pc.locator('#lkpaidlist input').count()==0,
+            cgroup[:240])
+        chk('a scorer login cannot tick paid',
+            pc.evaluate('() => lkCanHost(lkEnsure())') is False)
+        for ctx in (A,B,N,C):
+            ctx.close()
+        relay.shutdown()
         b.close()
 finally:
     srv.terminate()
