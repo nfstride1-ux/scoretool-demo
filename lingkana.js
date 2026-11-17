@@ -613,7 +613,8 @@ function lkRegisterView(){
       <p class="small">This is the same registration link. It is drawn on this phone.</p>
       <div id="lkqrsvg" role="img" aria-label="QR code for the registration link"></div>
       <p class="small"><a id="lkreglink" href="${h(qrUrl)}">${h(qrUrl)}</a></p>
-      <button class="btn ghost" type="button" id="lkqrprint">Print QR</button>
+      <button class="btn ghost" type="button" id="lkqrshare">Share link</button>
+      <p class="small" id="lkqrsharemsg" role="status"></p>
     </div>
     <p class="small muted">Scoring on the night is separate and uses the shared passcode. This page does not take payments.</p>
     <div id="lkgetbox" style="margin:16px 0 8px">
@@ -628,14 +629,28 @@ function lkRegisterView(){
     const svg=lkQrSvg(qrUrl);
     slot.innerHTML=svg||'<p class="small">The QR could not be drawn on this phone. Use the link above.</p>';
   }
-  const printBtn=appEl.querySelector('#lkqrprint');
-  if(printBtn)printBtn.onclick=()=>{
-    const b=document.body;
-    b.classList.add('lk-print-qr');
-    const done=()=>{if(!b.classList.contains('lk-print-qr'))return;b.classList.remove('lk-print-qr');window.removeEventListener('afterprint',done)};
-    window.addEventListener('afterprint',done);
-    window.print();
-    setTimeout(done,60000);
+  const shareBtn=appEl.querySelector('#lkqrshare');
+  if(shareBtn)shareBtn.onclick=async()=>{
+    const url=qrUrl;
+    const msg=appEl.querySelector('#lkqrsharemsg');
+    if(msg)msg.textContent='';
+    const nav=navigator;
+    const copy=async()=>{
+      let done=false;
+      try{if(nav.clipboard&&nav.clipboard.writeText){await nav.clipboard.writeText(url);done=true}}catch(e){}
+      if(!done){
+        try{
+          const t=document.createElement('textarea');
+          t.value=url;t.setAttribute('readonly','');t.style.position='fixed';t.style.left='-9999px';
+          document.body.appendChild(t);t.select();done=!!document.execCommand('copy');t.remove();
+        }catch(e){}
+      }
+      if(done&&msg)msg.textContent='Link copied';
+    };
+    if(typeof nav.share==='function'){
+      try{await nav.share({title:'Register for the Lingkana League',text:'Register for the Lingkana League',url});return}catch(e){}
+    }
+    await copy();
   };
   const form=appEl.querySelector('#lkregform');
   if(form)form.onsubmit=e=>{

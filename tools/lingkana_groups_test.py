@@ -57,6 +57,59 @@ try:
         }""", REG)
         chk('QR is drawn on this phone for the registration link',
             qr.get('data')==REG and qr.get('same') and qr.get('svg') and not qr.get('external'), str(qr))
+        chk('the registration link text is unchanged',
+            (page.locator('#lkreglink').inner_text() or '').strip()==REG
+            and (page.get_attribute('#lkreglink','href') or '')==REG)
+        chk('Print QR is gone and Share link is on the card',
+            page.locator('#lkqrprint').count()==0 and page.locator('#lkqrshare').count()==1
+            and (page.locator('#lkqrshare').inner_text() or '').strip()=='Share link'
+            and 'Print QR' not in page.inner_text('#lkregqr'))
+        page.locator('#lkregqr').screenshot(path=str(SHOT / 'lingkana-share-link-390.png'))
+        page.evaluate("""(url) => {
+          window.__shares = [];
+          window.__copies = [];
+          window.__printed = 0;
+          window.print = () => { window.__printed += 1; };
+          const share = async (d) => { window.__shares.push({title:d.title, text:d.text, url:d.url}); };
+          const writeText = async (t) => { window.__copies.push(t); };
+          try { Object.defineProperty(navigator, 'share', {configurable:true, writable:true, value:share}); }
+          catch(e) { navigator.share = share; }
+          try { Object.defineProperty(navigator, 'clipboard', {configurable:true, writable:true, value:{writeText}}); }
+          catch(e) { navigator.clipboard = {writeText}; }
+        }""", REG)
+        page.locator('#lkqrshare').click()
+        page.wait_for_timeout(150)
+        shared = page.evaluate("() => ({shares:window.__shares, copies:window.__copies.slice(), msg:(document.querySelector('#lkqrsharemsg')||{}).textContent||'', printed:window.__printed})")
+        chk('Share link calls navigator.share with the register link',
+            shared['shares']==[{'title':'Register for the Lingkana League','text':'Register for the Lingkana League','url':REG}]
+            and shared['copies']==[] and shared['msg']!='Link copied' and shared['printed']==0,
+            str(shared))
+        page.evaluate("""() => {
+          window.__shares = [];
+          window.__copies = [];
+          const fail = async () => { const e = new Error('cancelled'); e.name = 'AbortError'; throw e; };
+          try { Object.defineProperty(navigator, 'share', {configurable:true, writable:true, value:fail}); }
+          catch(e) { navigator.share = fail; }
+          const msg = document.querySelector('#lkqrsharemsg'); if (msg) msg.textContent = '';
+        }""")
+        page.locator('#lkqrshare').click()
+        page.wait_for_function("() => (document.querySelector('#lkqrsharemsg')||{}).textContent==='Link copied'")
+        cancelled = page.evaluate("() => ({copies:window.__copies.slice(), msg:document.querySelector('#lkqrsharemsg').textContent, shown:document.querySelector('#lkqrsharemsg').getClientRects().length>0})")
+        chk('a cancelled share copies the link and shows Link copied',
+            cancelled['copies']==[REG] and cancelled['msg']=='Link copied' and cancelled['shown'],
+            str(cancelled))
+        page.evaluate("""() => {
+          window.__copies = [];
+          try { Object.defineProperty(navigator, 'share', {configurable:true, writable:true, value:undefined}); }
+          catch(e) { navigator.share = undefined; }
+          const msg = document.querySelector('#lkqrsharemsg'); if (msg) msg.textContent = '';
+        }""")
+        page.locator('#lkqrshare').click()
+        page.wait_for_function("() => (document.querySelector('#lkqrsharemsg')||{}).textContent==='Link copied'")
+        missing = page.evaluate("() => ({copies:window.__copies.slice(), msg:document.querySelector('#lkqrsharemsg').textContent, shown:document.querySelector('#lkqrsharemsg').getClientRects().length>0})")
+        chk('without share the link is copied and Link copied is visible',
+            missing['copies']==[REG] and missing['msg']=='Link copied' and missing['shown'],
+            str(missing))
         page.locator('#lkregpage').screenshot(path=str(SHOT / 'lingkana-register-390.png'))
         page.fill('#lkregname', 'Sam Archer')
         page.fill('#lkregbow', 'Recurve')

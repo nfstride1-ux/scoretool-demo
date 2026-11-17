@@ -307,6 +307,42 @@
     if($id('lkpw'))$id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
   }
 
+  /* jsQR fallback when this phone has no BarcodeDetector (iOS Safari). Large photos are scaled down and tried upright and on each side. */
+  function readQrSource(src,opt){
+    opt=opt||{};
+    if(typeof jsQR!=='function')return '';
+    const iw=src.videoWidth||src.naturalWidth||src.width||0;
+    const ih=src.videoHeight||src.naturalHeight||src.height||0;
+    if(!iw||!ih)return '';
+    const maxes=opt.maxes||[1200,800,480];
+    const angles=opt.angles||[0,90,180,270];
+    const canvas=document.createElement('canvas');
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    if(!ctx)return '';
+    for(let mi=0;mi<maxes.length;mi++){
+      const scale=Math.min(1,maxes[mi]/Math.max(iw,ih));
+      const w=Math.max(1,Math.round(iw*scale)), h=Math.max(1,Math.round(ih*scale));
+      for(let ai=0;ai<angles.length;ai++){
+        const angle=angles[ai], turn=angle%180!==0;
+        const cw=turn?h:w, ch=turn?w:h;
+        canvas.width=cw;canvas.height=ch;
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0,0,cw,ch);
+        ctx.save();
+        ctx.translate(cw/2,ch/2);
+        ctx.rotate(angle*Math.PI/180);
+        try{ctx.drawImage(src,-w/2,-h/2,w,h)}catch(e){ctx.restore();continue}
+        ctx.restore();
+        let pixels=null, code=null;
+        try{pixels=ctx.getImageData(0,0,cw,ch)}catch(e){pixels=null}
+        if(!pixels)continue;
+        try{code=jsQR(pixels.data,cw,ch,{inversionAttempts:'attemptBoth'})}catch(e){code=null}
+        if(code&&code.data)return String(code.data);
+      }
+    }
+    return '';
+  }
+
   function qrLogin(){
     hideChrome(true);
     const el=appEl();if(!el)return;
@@ -315,13 +351,14 @@
       <div class="lk-qrbox">
         <p>Point the camera at the event QR, or choose a photo of it.</p>
         <input id="lkqrfile" type="file" accept="image/*" capture="environment">
-        <video id="lkqrcam" playsinline style="display:none;width:100%;border-radius:10px;margin-top:10px"></video>
+        <video id="lkqrcam" playsinline muted style="display:none;width:100%;border-radius:10px;margin-top:10px"></video>
       </div>
+      <label for="lkqrpaste">Paste event link or code</label>
+      <input id="lkqrpaste" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
       <p class="lk-msg" id="lkqrmsg" role="alert"></p>
       ${bar(btn('lkqrback','Back','grey'),btn('lkqrgo','Continue','green'))}
     </div>`;
     $id('lkqrback').onclick=()=>home(evCode());
-    $id('lkqrgo').onclick=()=>login();
     const msg=$id('lkqrmsg');
     const accept=text=>{
       const s=String(text||'');
@@ -331,27 +368,69 @@
       if(msg)msg.textContent='That code is not for this event.';
       return false;
     };
+    const usePaste=()=>{
+      const v=($id('lkqrpaste')&&$id('lkqrpaste').value||'').trim();
+      if(!v)return false;
+      accept(v);
+      return true;
+    };
+    $id('lkqrgo').onclick=()=>{if(!usePaste())login()};
+    const paste=$id('lkqrpaste');
+    if(paste)paste.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();usePaste()}};
     const file=$id('lkqrfile');
+    const decodePhoto=f=>{
+      if(typeof jsQR!=='function'){if(msg)msg.textContent='This phone cannot read a QR here. Use Login to Event.';return}
+      const url=URL.createObjectURL(f);
+      const img=new Image();
+      img.onload=()=>{
+        URL.revokeObjectURL(url);
+        const text=readQrSource(img);
+        if(text)accept(text);
+        else if(msg)msg.textContent='No QR code found in that photo.';
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);if(msg)msg.textContent='Could not read that photo.'};
+      img.src=url;
+    };
     if(file)file.onchange=()=>{
       const f=file.files&&file.files[0];if(!f)return;
       if(window.BarcodeDetector){
         const det=new BarcodeDetector({formats:['qr_code']});
-        createImageBitmap(f).then(bmp=>det.detect(bmp)).then(c=>{
+        createImageBitmap(f).then(bmp=>det.detect(bmp).then(c=>({bmp,c}))).then(({bmp,c})=>{
+          try{if(bmp.close)bmp.close()}catch(e){}
           if(c&&c[0]&&c[0].rawValue)accept(c[0].rawValue);
           else if(msg)msg.textContent='No QR code found in that photo.';
-        }).catch(()=>{if(msg)msg.textContent='Could not read that photo.'});
-      }else if(msg)msg.textContent='This phone cannot read a QR here. Use Login to Event.';
+        }).catch(()=>decodePhoto(f));
+      }else decodePhoto(f);
     };
     const vid=$id('lkqrcam');
-    if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.BarcodeDetector&&vid){
+    const canCam=navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&vid;
+    if(canCam&&(window.BarcodeDetector||typeof jsQR==='function')){
       navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
-        vid.srcObject=stream;vid.style.display='block';vid.play();
-        const det=new BarcodeDetector({formats:['qr_code']});
-        const tick=()=>{
-          if(!document.body.contains(vid)){stream.getTracks().forEach(t=>t.stop());return}
-          det.detect(vid).then(c=>{if(c&&c[0]&&c[0].rawValue){stream.getTracks().forEach(t=>t.stop());accept(c[0].rawValue)}else requestAnimationFrame(tick)}).catch(()=>requestAnimationFrame(tick));
-        };
-        requestAnimationFrame(tick);
+        vid.srcObject=stream;vid.style.display='block';
+        const play=vid.play();if(play&&play.catch)play.catch(()=>{});
+        const stop=()=>stream.getTracks().forEach(t=>t.stop());
+        if(window.BarcodeDetector){
+          const det=new BarcodeDetector({formats:['qr_code']});
+          const tick=()=>{
+            if(!document.body.contains(vid)){stop();return}
+            det.detect(vid).then(c=>{if(c&&c[0]&&c[0].rawValue){stop();accept(c[0].rawValue)}else requestAnimationFrame(tick)}).catch(()=>requestAnimationFrame(tick));
+          };
+          requestAnimationFrame(tick);
+        }else{
+          let ang=0, busy=false;
+          const tick=()=>{
+            if(!document.body.contains(vid)){stop();return}
+            if(busy||vid.readyState<2){requestAnimationFrame(tick);return}
+            busy=true;
+            let text='';
+            try{text=readQrSource(vid,{maxes:[640],angles:[ang]})}catch(e){text=''}
+            busy=false;
+            ang=(ang+90)%360;
+            if(text){stop();accept(text);return}
+            requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
       }).catch(()=>{});
     }
   }
