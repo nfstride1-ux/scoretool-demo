@@ -421,6 +421,14 @@
       <select id="lkevent"><option value="${esc(typeof LK_CODE==='string'?LK_CODE:'LINGKN26')}" selected>${esc(ev)}</option></select>
       <label for="lknight">Shoot night</label>
       <select id="lknight">${nightChoices(lg,w)}</select>
+      <div id="lkcred">
+        <div id="lkpinbox"></div>
+        <div id="lkpassbox">
+          <label for="lkpw">Enter the Passcode</label>
+          <input id="lkpw" type="password" autocomplete="current-password">
+        </div>
+        <p class="lk-msg" id="lkpwmsg" role="alert"></p>
+      </div>
       <p class="small" id="lkscorerlabel">Your name</p>
       ${empty}
       <div class="lk-namelist" id="lkscorernames" role="listbox" aria-label="Your name">${buttons}</div>
@@ -428,13 +436,7 @@
       <input id="lkfind" type="search" autocomplete="off" placeholder="Search all names">
       <p class="small" id="lkfindnone" hidden>No name matches.</p>
       ${reveal}
-      <div id="lkpinbox"></div>
       ${reset}
-      <div id="lkpassbox">
-        <label for="lkpw">Enter the Passcode</label>
-        <input id="lkpw" type="password" autocomplete="current-password">
-      </div>
-      <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
     </div>`;
     const paintPass=id=>{
@@ -463,12 +465,41 @@
       bindEnter();
     };
     let go=async()=>{};
+    const liftField=n=>{
+      if(!n)return;
+      const sc=document.getElementById('scroller');
+      const bar=el.querySelector('.lk-bar');
+      if(!sc||!bar)return;
+      const gap=12;
+      const label=n.previousElementSibling&&n.previousElementSibling.tagName==='LABEL'?n.previousElementSibling:n;
+      const r=n.getBoundingClientRect();
+      const top=label.getBoundingClientRect().top;
+      const topLimit=(window.visualViewport?visualViewport.offsetTop:0)+8;
+      const botLimit=Math.min(bar.getBoundingClientRect().top, window.visualViewport?visualViewport.offsetTop+visualViewport.height:window.innerHeight)-gap;
+      if(r.bottom>botLimit)sc.scrollTop+=r.bottom-botLimit;
+      else if(top<topLimit)sc.scrollTop-=topLimit-top;
+    };
     const bindEnter=()=>{
       ['lkpin','lkpin2','lkpw'].forEach(i=>{
         const n=$id(i);if(!n)return;
         n.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+        n.onfocus=()=>{setTimeout(()=>liftField(n),60);setTimeout(()=>liftField(n),320)};
       });
     };
+    if(!window._lkLoginLift){
+      window._lkLoginLift=1;
+      const again=()=>{
+        const n=document.activeElement;
+        if(!n||!n.closest||!n.closest('#lkloginpage'))return;
+        const sc=document.getElementById('scroller');
+        const bar=document.querySelector('#lkloginpage .lk-bar');
+        if(!sc||!bar)return;
+        const r=n.getBoundingClientRect();
+        const bot=Math.min(bar.getBoundingClientRect().top, window.visualViewport?visualViewport.offsetTop+visualViewport.height:window.innerHeight)-12;
+        if(r.bottom>bot)sc.scrollTop+=r.bottom-bot;
+      };
+      if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(again,40));
+    }
     paintPin(pick);
     if($id('lkloginback'))$id('lkloginback').onclick=()=>home(evCode());
     if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
@@ -481,6 +512,7 @@
           x.setAttribute('aria-pressed',on?'true':'false');
         });
         paintPin(window._lkLoginId);
+        fitList();
       });
     };
     const drawNames=q=>{
@@ -493,7 +525,15 @@
       const note=$id('lknonames');if(note)note.hidden=!!list.length;
       const none=$id('lkfindnone');if(none)none.hidden=!query||!!list.length;
     };
+    const fitList=()=>{
+      const list=$id('lkscorernames');
+      const bar=el.querySelector('.lk-bar');
+      if(!list||!bar)return;
+      const room=bar.getBoundingClientRect().top-list.getBoundingClientRect().top-8;
+      if(room>72)list.style.maxHeight=Math.min(320, Math.floor(room))+'px';
+    };
     wireNames();
+    fitList();
     if($id('lkfind'))$id('lkfind').oninput=()=>drawNames($id('lkfind').value);
     if($id('lkshowall'))$id('lkshowall').onclick=()=>{
       window._lkNamesOpen=1;

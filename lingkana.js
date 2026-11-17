@@ -86,6 +86,14 @@ function lkEnsure(){
   lkDropHostIfUnregistered(lg);
   return lg;
 }
+/* A phone that has already cleared ignores a sign-up whose own time is before the cut.
+   A message sent after the cut still counts when the registration itself was made after the cut.
+   A row with no time is left for the message-time check. */
+function lkRegKept(lg, at){
+  if(!lg||(+lg.clear||0)<LK_CLEAR)return true;
+  if(!(+at))return true;
+  return +at>=LK_CLEAR;
+}
 function lkClearLive(lg){
   if(!lg||!lkIs(lg)||(+lg.clear||0)>=LK_CLEAR)return false;
   lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
@@ -1326,7 +1334,7 @@ async function lkSyncOnce(){
         if(!d)continue;
         lg.since=d._id;
         if(typeof lgMerge==='function'&&lgMerge(lg,d))ch=true;
-        else if(d.k==='lkreg'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)){
+        else if(d.k==='lkreg'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)&&lkRegKept(lg,(d.rec&&d.rec.at)||0)){
           const r=lkApplyReg(d.rec||d,lg);
           if(r&&r.ok&&!r.already)ch=true;
         }else if(d.k==='lkdrop'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){
@@ -1772,7 +1780,7 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
   lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });
