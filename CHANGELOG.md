@@ -2,6 +2,14 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1130-live
+
+Nathaniel Stride's registration shows on the Lingkana login list. Cache version is `v2026-11-17-1130-live`, newer than `v2026-11-17-1115-live`, so phones load this copy. The Share link and iPhone QR reader from that earlier cache stay.
+
+- A registration in the name Nathaniel Stride was saved and posted, then removed on every phone. The host account id `nathe` was treated as the same person as anyone with that name, and the login list is built from the register after that removal. The co-host Nate Evans is still added on the login screen. The host's own registration now keeps a normal archer id and stays on the list for every shoot night.
+- A snapshot whose `fresh` is older than `LK_FRESH` is still ignored. A snapshot with an older weeks time (`wt`) no longer replaces the register, and it cannot put a pre-cutoff sign-up back. `LK_FRESH` is unchanged, so the 17 Nov 10:04 wipe of test names still stands.
+- A sign-up kept on this phone is applied again if the register row is missing, including when it was already marked applied.
+
 ## v2026-11-17-1030-live
 
 Indoor scoring follows the WA and AA keys. Cache version is `v2026-11-17-1030-live`, newer than `v2026-11-17-1004-live`, so phones load this copy.
