@@ -293,6 +293,7 @@ try:
           lg.paid[n2] = {};
           Object.values(ids).forEach(id => { if(id) lg.paid[n2][id]=1; });
           delete lg.paid[n2][ids['Morgan Blake']];
+          delete lg.paid[n2][ids['Nate Evans']];
           const built = lkAssignGroups(lg, 2);
           return {mode: built.mode, flat: (built.groups||[]).map(g => g.names), prior: lkHasPriorResult(lg, 2)};
         }""")
@@ -379,7 +380,9 @@ try:
           return {after, oldSnap, kept, msg, snap, back, fresh: lg.fresh};
         }""")
         chk('the fresh cut wipes Ada Archer and an older snapshot cannot put the name back',
-            wiped['after']['names']==[] and wiped['after']['order']==[] and wiped['after']['inbox'] in (None,'null','[]')
+            wiped['after']['names']==['Nate Evans'] and wiped['after']['order']==['lkhost:nate']
+            and 'Ada Archer' not in wiped['after']['names']
+            and wiped['after']['inbox'] in (None,'null','[]')
             and wiped['after']['fresh']==1794881040000 and wiped['oldSnap'] is False and wiped['kept'] is False,
             str(wiped)[:400])
         chk('a host Remove tombstone survives a later snapshot that still lists the archer',
@@ -475,6 +478,8 @@ try:
         pb.locator('#lkshowall').click()
         pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').wait_for(timeout=4000)
         pb.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
+        chk('Nate Evans is a host, so a scorer phone does not ask him for a PIN before the paid list',
+            pb.locator('#lkpin').count()==0 and pb.locator('#lkpin2').count()==0)
         if pb.locator('#lkpin2').count():
             pb.fill('#lkpin', '1111')
             pb.fill('#lkpin2', '1111')

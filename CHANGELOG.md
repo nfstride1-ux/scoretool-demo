@@ -2,17 +2,26 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
-## v2026-11-17-1900-triangle
+## v2026-11-17-2030-triangle
 
-The triangular indoor 3-spot is drawn with one spot on top and two below. Cache version is `v2026-11-17-1900-triangle` (`?v=202611171900`). Not merged. PR #1 was not touched.
+The triangular indoor 3-spot used for practice is drawn with one spot on top and two below. Cache version is `v2026-11-17-2030-triangle` (`?v=202611172030`), newer than `v2026-11-17-1900-live` on main. League scoring and the league face are unchanged from main. Not merged. PR #1 was not touched.
 
-- Spot index is unchanged: Spot 1 is the left of the pair, Spot 2 the right, Spot 3 the single spot. The single spot is now on top.
-- Just me, Casual and a one-archer league week all use this face drawing. A league 300 stays on the vertical 3-spot. Lancaster scoring stays values only.
+- Spot index is unchanged: Spot 1 is the left of the pair, Spot 2 the right, Spot 3 the single spot. The single spot is now on top. Just me and Casual use this drawing.
+- A practice Vegas or Lancaster triangle round scores X as 10 and has no 12 dot. The standalone Lancaster matchplay shoot-up still has the 12 dot, as it already did.
+- A league 300 stays on the vertical 3-spot, X = 10, with no 12 dot. Lancaster 660 stays values only, X = 11.
 - A plot saved before this change has no `g` flag. It is drawn by the same offset from the spot with the same index. New plots are stored in the new centres with `g:1`. Arrow values already saved are not rewritten.
-- The vertical 3-spot and single faces are unchanged. Ring scoring is unchanged.
+- The vertical 3-spot and single faces are unchanged.
 
 ### Files
 app.js, shotview.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, tools/plot3spot_test.py, tools/shotview_test.py, tools/grouppattern_test.py, tools/h2h_test.py, tools/ausindoor_test.py.
+
+## v2026-11-17-1900-live
+
+Hosts can open Lingkana scoring when they are the only archers paid, and Nate Evans stays on the register. Rebased onto main after the PIN login release. Cache version is `v2026-11-17-1900-live` (`?v=202611171900`), newer than `v2026-11-17-1830-live`. Back to ScoreTool, the shared theme, Resume scoring, the phone-only name list, per-archer PINs, host bypass, and Reset PIN stay.
+
+- A group still needs at least two archers. That rule is lifted only when everyone paid for the night is an organiser: Nathaniel Stride (host id `nathe`, or his registration, for example `g7wbux6`) and Nate Evans. One of them, or just the two of them, is given a target so the scoring screen opens. Group sizes for any other paid list stay 4, then 3, then 2.
+- Nate Evans is registered on every shoot night, the same way the login list adds the co-host. The 17 Nov 10:04 wipe and a later snapshot cannot remove him, so he shows on Tick who paid, can be ticked, and is included when groups are built. If he also registers under the name Nate Evans, that row is kept and a second one is not added. He is a host, so a scorer phone does not ask him for a PIN before those ticks.
+>>>>>>> origin/main
 
 ## v2026-11-17-1830-live
 

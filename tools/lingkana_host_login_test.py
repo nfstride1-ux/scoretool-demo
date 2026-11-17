@@ -154,8 +154,11 @@ try:
             page.wait_for_timeout(200)
         result = page.evaluate(REPLAY, msgs)
         listed = result['listed']
-        chk('real topic puts Nathaniel Stride on every shoot night, once',
-            len(listed)==6 and all(row['names']==['Nathaniel Stride'] and row['ids']==['g7wbux6'] for row in listed),
+        chk('real topic puts Nathaniel Stride on every shoot night, once, and keeps organiser Nate Evans',
+            len(listed)==6 and all(
+                row['names'].count('Nathaniel Stride')==1 and row['ids'].count('g7wbux6')==1
+                and row['names'].count('Nate Evans')==1 and len(row['names'])==2
+                for row in listed),
             str(listed))
         chk('Ada Archer from before the fresh cut is not on the login register',
             all('Ada Archer' not in row['names'] for row in listed))
@@ -182,8 +185,10 @@ try:
         chk('an older tombstone for the host account does not block a later registration',
             result['olderOk'] is True)
         show = result['show']
-        chk('the phone that draws the login list kept Nathaniel on every night',
-            len(show)==6 and all(row['names']==['Nathaniel Stride'] for row in show),
+        chk('the phone that draws the login list kept Nathaniel and organiser Nate Evans on every night',
+            len(show)==6 and all(
+                row['names'].count('Nathaniel Stride')==1 and row['names'].count('Nate Evans')==1 and len(row['names'])==2
+                for row in show),
             str(show))
 
         page.evaluate("() => { window._lkFlowNight = 1; lkFlowHome('LINGKN26'); }")

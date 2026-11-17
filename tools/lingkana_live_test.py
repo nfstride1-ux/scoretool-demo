@@ -101,7 +101,9 @@ try:
           return {order: lg.order.slice(), gn: Object.keys(lg.gn||{}), sc: Object.keys(lg.sc||{}), reg: Object.keys(lg.reg||{}), fresh: lg.fresh, n: (lg.order||[]).length};
         }""")
         chk('fresh wipe removes test sign-up slime and any test scores',
-            wiped['order']==[] and wiped['gn']==[] and wiped['sc']==[] and wiped['reg']==[] and wiped['fresh']>=1794401520000)
+            wiped['order']==['lkhost:nate'] and wiped['gn']==['lkhost:nate'] and wiped['sc']==[]
+            and len(wiped['reg'])==6 and wiped['fresh']>=1794401520000
+            and 'slime' not in str(wiped) and 'gkv6txy' not in wiped['order'])
 
         # Host can still use the app; registering Nathaniel Stride is not blocked as a duplicate.
         added = page.evaluate("""() => {
@@ -131,7 +133,7 @@ try:
         chk('host has a Registered archers button', page.locator('#lkarchgo').count()==1)
         chk('fresh league lists no registered archers and empty nights',
             'No scores yet' in text or page.locator('#lktab tbody tr').count()<=1)
-        chk('in the league count is zero archers', 'In the league: 0 archers' in text)
+        chk('in the league count is the organiser Nate Evans', 'In the league: 1 archer' in text)
 
         page.click('#lkarchgo')
         page.wait_for_selector('#lkarchpage', timeout=5000)
