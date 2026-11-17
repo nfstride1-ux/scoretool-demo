@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-2420-movegroup
+
+Hosts can move an unscored archer to another Lingkana target. Cache version is `v2026-11-17-2420-movegroup` (`?v=202611172420`), newer than `v2026-11-17-2405-loginfit`. Not merged.
+
+- Nathe and Nate Evans open Move archers from the target screen or the paid list. Each archer who has not scored has a Move button and a target picker. The archer is placed at the end of the chosen target, or on a new target.
+- Once that archer has an arrow for the night, Move is hidden and the move is refused. Their scores are not copied or removed.
+- The new groups are posted on the league relay. Another phone applies the newer target list, and an open score card follows the scorer's group.
+- A non-host does not see Move archers, and the move is refused. `LK_CLEAR` is unchanged, so the Wednesday clear does not run again.
+
+### Files
+lingkana.js, league.js, lkflow.js, lkflow.css, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, qa/run_regression.py, tools/lk_move_test.py, tools/lk_qr_login_test.py, tools/live_go_live_test.py, tools/paid_picker_test.py, test/event_home_test.py.
+
 ## v2026-11-17-2405-loginfit
 
 The Lingkana login PIN and passcode stay above the fixed Back and Login bar. Cache version is `v2026-11-17-2405-loginfit` (`?v=202611172405`), newer than `v2026-11-17-2350-clearnight`. Not merged.

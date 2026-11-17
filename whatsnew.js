@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-2420-movegroup',d:'2026-11-17',items:[
+   ['people',"Hosts can move an archer before they score","Nathe and Nate Evans can move a registered archer to the end of another target, until that archer has an arrow for the night. The other phones pick up the new group. An archer who has already scored stays on their target."]]},
   {v:'v2026-11-17-2405-loginfit',d:'2026-11-17',items:[
    ['lock',"The passcode stays above the buttons","On the Lingkana login, the PIN and the passcode sit above the name list. The Back and Login bar no longer covers the box, including on a short phone and when the keyboard is open.",'35a2571']]},
   {v:'v2026-11-17-2350-clearnight',d:'2026-11-17',items:[
