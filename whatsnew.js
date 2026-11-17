@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-1900-triangle',d:'2026-11-17',items:[
+   ['target',"Triangular 3-spot, one spot on top","The triangular indoor 3-spot (Vegas, Indoor WA, Australian Indoor and Lancaster) now has one spot on top and two below. Spot 1 is still the left spot, Spot 2 the right spot and Spot 3 the single spot. The vertical 3-spot and the single face are unchanged, and the score for each ring is the same. A plot saved earlier is drawn on the same spot.",'0000000']]},
   {v:'v2026-11-17-1830-live',d:'2026-11-17',items:[
    ['lock',"Back to ScoreTool, and a PIN on your name","Lingkana league home has Back to ScoreTool, which opens the app home and leaves your league and login as they are. The light and dark control uses the same setting as the rest of ScoreTool. If you are already logged in to a night that is not finished, Resume scoring opens that score screen, and opening the league from the app does the same. Login lists only the archers this phone has registered or logged in, until you enter the event passcode and tap Show all names. A host phone still sees every name. Registering asks for a 4-digit PIN, saved only as a salted hash. Login asks for that PIN. Five wrong tries lock the name on this phone for a minute. A host can reset a forgotten PIN.",'0da42bd']]},
   {v:'v2026-11-17-1645-savedarrows',d:'2026-11-17',items:[

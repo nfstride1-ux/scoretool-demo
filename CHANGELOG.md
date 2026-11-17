@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1900-triangle
+
+The triangular indoor 3-spot is drawn with one spot on top and two below. Cache version is `v2026-11-17-1900-triangle` (`?v=202611171900`). Not merged. PR #1 was not touched.
+
+- Spot index is unchanged: Spot 1 is the left of the pair, Spot 2 the right, Spot 3 the single spot. The single spot is now on top.
+- Just me, Casual and a one-archer league week all use this face drawing. A league 300 stays on the vertical 3-spot. Lancaster scoring stays values only.
+- A plot saved before this change has no `g` flag. It is drawn by the same offset from the spot with the same index. New plots are stored in the new centres with `g:1`. Arrow values already saved are not rewritten.
+- The vertical 3-spot and single faces are unchanged. Ring scoring is unchanged.
+
+### Files
+app.js, shotview.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, tools/plot3spot_test.py, tools/shotview_test.py, tools/grouppattern_test.py, tools/h2h_test.py, tools/ausindoor_test.py.
+
 ## v2026-11-17-1830-live
 
 Lingkana league home can return to ScoreTool, follow the app's light or dark setting, resume an open night, and login asks for a per-archer PIN. Cache version is `v2026-11-17-1830-live` (`?v=202611171830`), newer than `v2026-11-17-1645-savedarrows` on main and not the same name as open PR #13 (`v2026-11-17-1700-live`) or PR #9. Not merged. PR #1 was not touched.

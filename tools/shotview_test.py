@@ -13,7 +13,7 @@ PORT=8827
 srv=subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 SEED=r"""(()=>{let r=7;const rnd=()=>{r=(r*16807)%2147483647;return r/2147483647},gs=()=>{let u=0;for(let i=0;i<6;i++)u+=rnd();return u-3};
  const mk=(id,date,cx,cy,sd)=>{const R=ROUNDS['Vegas 300'],s={id,date,round:'Vegas 300',ends:[],pos:[],face3:'vegas',finished:true,note:''},F=face3R(faceR(R,0),s);
-  for(let e=0;e<10;e++){const E=[],P=[];for(let j=0;j<3;j++){const lx=cx+gs()*sd*0.6,ly=cy+gs()*sd*0.6,c=TRIC[j],x=+(c[0]+lx*0.6).toFixed(3),y=+(c[1]+ly*0.6).toFixed(3);E.push(plotScore(x,y,F));P.push({x,y})}
+  for(let e=0;e<10;e++){const E=[],P=[];for(let j=0;j<3;j++){const lx=cx+gs()*sd*0.6,ly=cy+gs()*sd*0.6,c=TRIC[j],x=+(c[0]+lx*0.6).toFixed(3),y=+(c[1]+ly*0.6).toFixed(3);E.push(plotScore(x,y,F));P.push({x,y,g:1})}
    const pr=E.map((a,k)=>[a,P[k]]).sort((a,b)=>val(b[0])-val(a[0]));s.ends.push(pr.map(x=>x[0]));s.pos.push(pr.map(x=>x[1]))}return s};
  S.sessions=(S.sessions||[]).filter(s=>!/^sv/.test(s.id));
  S.sessions.push(mk('sv1','2026-10-02',0.02,0.0,0.2),mk('sv2','2026-10-09',-0.01,0.03,0.18),mk('sv3','2026-10-16',0.03,0.01,0.19),mk('sv4',today(),0.1,0.07,0.15));save()})()"""
