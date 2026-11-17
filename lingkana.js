@@ -13,6 +13,10 @@ const LK_CAP=0; /* no hard cap on entries; shoot-up stays the top 12 */
 const LK_LANES=13; /* shooting targets on the range */
 const LK_REG_CAP=LK_LANES*4; /* test phase: 52 archers in the whole league, not per night */
 const LK_HOST='nathe';
+/* Co-host for this trial. Same passcode as scorers. Not stripped from the archer list. */
+const LK_COHOST_NAME='Nate Evans';
+const LK_COHOST_ID='lkhost:nate';
+const LK_COHOST_KEY='scoretool.lk.cohost';
 /* Test URL on GitHub Pages. The live root app at /scoretool-demo/ is unchanged. */
 const LK_PUBLIC_BASE='https://nfstride1-ux.github.io/scoretool-demo/';
 const LK_REGISTER_HASH='#lk-register';
@@ -154,7 +158,17 @@ function lkJoinGuard(code,me){
   if(lkIsMember(lg,me))return null; /* already invited or in; existing join flow may open the view */
   return 'This league is invite only. Ask the host to invite you, or use the register page with the invite code printed on the poster.';
 }
+function lkIsCoHostName(name){
+  return lkCleanName(name).toLowerCase()===LK_COHOST_NAME.toLowerCase();
+}
+function lkCoHostOn(){
+  try{return sessionStorage.getItem(LK_COHOST_KEY)==='nate'}catch(e){return false}
+}
+function lkMarkCoHost(on){
+  try{if(on)sessionStorage.setItem(LK_COHOST_KEY,'nate');else sessionStorage.removeItem(LK_COHOST_KEY)}catch(e){}
+}
 function lkCanHost(lg){
+  if(lg&&lkCoHostOn())return true;
   const me=typeof h2hMe==='function'?h2hMe():'';
   return!!(lg&&(lg.host===me||me==='nathe'||(typeof lgCanEd==='function'&&lgCanEd(lg))));
 }
@@ -1226,8 +1240,8 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
-  lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkCanHost,LK_RULES,lkRulesHTML,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
+  lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
   lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores
 });
 })();

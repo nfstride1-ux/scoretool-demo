@@ -249,6 +249,9 @@
       seen.add(id);
       names.push({id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||id)});
     });
+    if(typeof lkIsCoHostName!=='function'||!names.some(n=>lkIsCoHostName(n.name))){
+      names.push({id:(typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate', name:(typeof LK_COHOST_NAME==='string'&&LK_COHOST_NAME)||'Nate Evans'});
+    }
     names.sort((a,b)=>String(a.name).localeCompare(String(b.name),'en'));
     let pick=String(window._lkLoginId||myId()||'');
     if(pick&&!names.some(n=>n.id===pick))pick='';
@@ -285,11 +288,14 @@
       const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
       if(!rec){if(msg)msg.textContent='Tap your name.';return}
+      const cohost=rec.id===((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate')||(typeof lkIsCoHostName==='function'&&lkIsCoHostName(rec.name));
       setMyName(rec.name);
       setMyId(rec.id);
       setNight(+($id('lknight')&&$id('lknight').value)||w);
       (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('Scoring is not available on this phone.')).then(m=>{
         if(m){if(msg)msg.textContent=m;return}
+        if(typeof lkMarkCoHost==='function')lkMarkCoHost(cohost);
+        if(cohost){review();return}
         showAssigned();
       });
     };

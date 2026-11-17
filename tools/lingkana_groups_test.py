@@ -107,7 +107,7 @@ try:
         labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
         chk('login lists registered names and has no free-text name box',
             page.locator('input#lkscorer').count()==0
-            and labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Riley Chen','Sam Archer'],
+            and labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
             str(labels))
         page.screenshot(path=str(SHOT / 'lingkana-login-names-390.png'), full_page=False)
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
@@ -140,6 +140,41 @@ try:
         chk('an unpaid name is told they are not in a group',
             page.get_attribute('#lkassigned','data-target')=='0' and 'paid list' in unpaid.lower(),
             unpaid[:200])
+
+        page.evaluate("""() => { if (typeof lkMarkCoHost==='function') lkMarkCoHost(false); lkFlowHome('LINGKN26'); }""")
+        page.wait_for_selector('#lklogin', timeout=4000)
+        chk('before Nate logs in, this phone cannot tick paid',
+            page.evaluate("() => lkCanHost(lkEnsure())") is False)
+        page.locator('#lklogin').click()
+        page.wait_for_selector('#lkscorernames', timeout=4000)
+        page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
+        page.fill('#lkpw', 'Kana26')
+        page.locator('#lkpwgo').click()
+        page.wait_for_selector('#lkpaidlist input[data-lkpaid]', timeout=5000)
+        nate = page.inner_text('#lkpot')
+        chk('Nate Evans login opens the host paid list',
+            page.locator('#lkpot').count()==1 and page.locator('#lkpaidlist').count()==1)
+        chk('Nate sees who is registered and can tick paid',
+            page.locator('#lkpaidlist .lk-paidrow').count()>=5
+            and page.locator('#lkpaidlist input[data-lkpaid]').count()>=5
+            and 'Tick who paid' in nate
+            and 'Morgan Blake' in page.inner_text('#lkpaidlist'),
+            nate[:240])
+        page.locator('#lkpaidlist .lk-paidrow', has_text='Morgan Blake').locator('input').check()
+        page.wait_for_selector('#lkpaidlist input[data-lkpaid]', timeout=4000)
+        ticked = page.evaluate("""() => {
+          const lg = lkEnsure();
+          const night = '2026-11-18';
+          const id = ((lg.reg[night]||[]).find(r => r.name==='Morgan Blake')||{}).id;
+          return {id, on: !!(lg.paid && lg.paid[night] && lg.paid[night][id]), host: lkCanHost(lg)};
+        }""")
+        chk('Nate ticking paid saves on the same paid list',
+            ticked['host'] is True and ticked['on'] is True and bool(ticked['id']),
+            str(ticked))
+        page.locator('#lkpot').screenshot(path=str(SHOT / 'lingkana-nate-paid-390.png'))
+        page.evaluate("() => { lkMarkCoHost(false); }")
+        chk('clearing Nate Evans login removes the paid-tick permission on this phone',
+            page.evaluate("() => lkCanHost(lkEnsure())") is False)
 
         ranked = page.evaluate("""() => {
           const lg = lkEnsure();
