@@ -1,4 +1,4 @@
-/* ScoreTool demo v1. Static, localStorage only. No real payments. */
+/* ScoreTool demo v1. Static, localStorage only. Stripe Checkout runs on the entitlement function, not on this page. */
 const $=s=>document.querySelector(s), app=$('#app');
 /* one plural rule app-wide: '1 adult', '2 adults', '1.0 points' */
 const plN=(n,s,p)=>n+' '+(String(n)==='1'?s:p);window.plN=plN;
@@ -203,21 +203,18 @@ function targetSVG(pts){const rings=[['#fff','#333'],['#fff','#333'],['#111','#f
 let view=/^#plot/.test(location.hash)?'score':'home',cur=null;
 function nav(v){if(v=='plot')v='score';view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
-/* No Lemon Squeezy store and no server on this static site. Empty means the check is off:
-   entitlementVerify calls nothing and never grants access. It does not read or write S.unlocked.
-   See docs/lemonsqueezy-entitlement.md. */
-const SCORETOOL_ENTITLEMENT_URL='';
-async function entitlementVerify(){const base=String(SCORETOOL_ENTITLEMENT_URL||'').trim();
+/* Stripe Checkout and the entitlement table live on the Archery Calendar Supabase project.
+   This URL is public. The secret key is not in this file. See docs/stripe-entitlement.md.
+   entitlementVerify does not read or write S.unlocked. A phone that already has unlocked:true stays that way. */
+const SCORETOOL_ENTITLEMENT_URL='https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/stripe-entitlement';
+async function entitlementVerify(){
+ if(typeof scoretoolEntitlementVerify==='function')return scoretoolEntitlementVerify();
+ const base=String(SCORETOOL_ENTITLEMENT_URL||'').trim();
  if(!base)return {ok:false,reason:'no-server'};
- try{const r=await fetch(base.replace(/\/$/,'')+'/entitlement/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'});
-  if(!r.ok)return {ok:false,reason:'rejected'};
-  const j=await r.json();
-  /* A valid reply is recorded only as this return value. Nothing here sets S.unlocked. */
-  if(j&&j.valid===true&&j.server===true)return {ok:true,exp:j.exp||0};
-  return {ok:false,reason:'rejected'}}
- catch(e){return {ok:false,reason:'unreachable'}}}
+ return {ok:false,reason:'signed-out'}}
 window.entitlementVerify=entitlementVerify;
-function gate(){return`<div class="card dark gate" id="gate"><span class="kicker">ScoreTool</span><h1>Not open yet</h1><p>Payment is not connected. This phone cannot turn the app on. Scores already saved on this phone are left as they are.</p></div>`}
+/* Full access is a founding/tester grant or a paid plan. The free score card does not need either. */
+function accessOpen(){return !!(S&&S.unlocked)||(typeof scoretoolPaidOpen==='function'&&scoretoolPaidOpen())}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their past competition results.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> competition results loaded.</p>`:
@@ -226,8 +223,7 @@ function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
- /* unlocked:true already on this phone is left as it is. There is no button that can set it. */
- if(!S.unlocked){app.innerHTML=gate();$('#tabs').hidden=true;return}
+ /* The score card is free. unlocked:true is left as it is and is not required to open the app. */
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
  if(typeof ifaaFromHash=='function'&&/^#score(\?|$)/.test(location.hash)){if(ifaaFromHash())return}

@@ -35,6 +35,9 @@ label{font-weight:700;display:block;margin:10px 0 4px}
 svg text{font-family:var(--body)}
 .list-item{padding:10px 0;border-bottom:1px solid var(--line)}.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
 .gate{text-align:center}.gate ul{text-align:left}
+.planprice{font-size:28px;font-weight:800;margin:4px 0 8px}
+#plans{text-align:left}
+#plans h1{margin:0 0 8px}
 .target-wrap{touch-action:manipulation;max-width:360px;margin:0 auto}
 a{color:var(--blue)}.dark a{color:var(--gold)}
 [hidden]{display:none!important}

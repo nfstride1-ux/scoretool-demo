@@ -2,6 +2,15 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1200-free
+
+Free tier, then Plus and Pro. Cache version is `v2026-11-17-1200-free`, newer than `v2026-11-17-1130-live`. Not deployed. Details: `docs/stripe-entitlement.md`. Do not merge this pull request from the agent.
+
+- An unpaid phone opens on the score card. All rounds, plotting and saving scores stay free, as do totals, averages, past sessions, and league and Lingkana scoring. There is no paywall on the first screen.
+- Plus is analysis, diary, photos, squads and group scoring. Pro adds bows, arrows and the Tune helper. A locked screen has See plans. Plans is also in Me.
+- Checkout is still a Stripe subscription on the Archery Calendar Supabase function. The secret key is not in the static site. Refunds are not automatic.
+- A payment does not write `S.unlocked`. Founding members and phones that already have that flag keep full access. A non-Nathe tester's first run still sets it.
+
 ## v2026-11-17-1130-live
 
 Nathaniel Stride's registration shows on the Lingkana login list. Cache version is `v2026-11-17-1130-live`, newer than `v2026-11-17-1115-live`, so phones load this copy. The Share link and iPhone QR reader from that earlier cache stay.

@@ -3,10 +3,12 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-1200-free',d:'2026-11-17',items:[
+   ['lock',"Free score card, Plus and Pro","The score card, totals, averages, past sessions and league scoring are free. Plus adds analysis, diary, photos, squads and group scoring. Pro adds bows, arrows and the Tune helper. Plans is an upgrade, not a lock on the first screen."]]},
   {v:'v2026-11-17-1130-live',d:'2026-11-17',items:[
-   ['people',"Your name stays on the Lingkana login list","Registering for the Lingkana League puts your name on the login list for every shoot night, including when the host registers himself. An older saved copy of the league cannot wipe a newer sign-up."]]},
+   ['people',"Your name stays on the Lingkana login list","Registering for the Lingkana League puts your name on the login list for every shoot night, including when the host registers himself. An older saved copy of the league cannot wipe a newer sign-up.",'a2320ba']]},
   {v:'v2026-11-17-1030-live',d:'2026-11-17',items:[
-   ['target',"Indoor scores 10 to 6","Indoor WA 18 m, 25 m and the combined round use 10, 9, 8, 7, 6 and M. There is no X. On a compound, only the small inner ring is a 10, and the face labels that ring 10 and the rest of the gold 9. Australian Indoor still has an X, which scores 10."]]},
+   ['target',"Indoor scores 10 to 6","Indoor WA 18 m, 25 m and the combined round use 10, 9, 8, 7, 6 and M. There is no X. On a compound, only the small inner ring is a 10, and the face labels that ring 10 and the rest of the gold 9. Australian Indoor still has an X, which scores 10.",'e12b9a2']]},
   {v:'v2026-11-11-2216-live',d:'2026-11-11',items:[
    ['people',"Tick-box group picker is back","On the Lingkana league, Pick a group opens the earlier tick-box list: tonight's sign-ups first, then the rest of the league, full names, up to 4 ticks, and a lock on anyone already in another group. Start opens scoring.",'941ee0d']]},
   {v:'v2026-11-11-2208-live',d:'2026-11-11',items:[
