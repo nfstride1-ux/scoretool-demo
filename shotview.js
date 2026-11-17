@@ -21,7 +21,7 @@ function shotPts(s){const R0=s&&ROUNDS[s.round];const out={target:[],field:[]};i
    Older shoots: the old fixed line-cutter allowance they were scored with. Scores are never recomputed from it. */
   if(bugsOn(s)){const c=BUGC.reduce((b,q)=>Math.hypot(p.x-q[0],p.y-q[1])<Math.hypot(p.x-b[0],p.y-b[1])?q:b,BUGC[0]);x=(p.x-c[0])/0.3;y=(p.y-c[1])/0.3;k='bugs';r=0.023/0.3}
   else if(isFld(F)){const e=(s.ff||[])[i];mm=e&&e.f?e.f*5:null;k='field'}/* 20cm column: stored per spot already */
-  else{if(use3(s,R0,F)){const L=s.face3=='vegas'?TRIC:BUGC,q=to1spot(p,L);x=q.x;y=q.y;k='spot';r=0.035;lay=s.face3=='vegas'?'vegas':'vert';sp=L.reduce((b,c,n)=>Math.hypot(p.x-c[0],p.y-c[1])<Math.hypot(p.x-L[b][0],p.y-L[b][1])?n:b,0);rx=p.x;ry=p.y}else k=isSix(F)?'six':isSpot(F)?'spot':'full';
+  else{if(use3(s,R0,F)){const vegas=s.face3=='vegas',src=vegas&&window.triPt?triPt(p):p,L=vegas?TRIC:BUGC,q=to1spot(src,L);x=q.x;y=q.y;k='spot';r=0.035;lay=vegas?'vegas':'vert';sp=L.reduce((b,c,n)=>Math.hypot(src.x-c[0],src.y-c[1])<Math.hypot(src.x-L[b][0],src.y-L[b][1])?n:b,0);rx=src.x;ry=src.y}else k=isSix(F)?'six':isSpot(F)?'spot':'full';
    const cm=+(((F.face||'').match(/^(\d+)cm/)||[])[1]||0);mm=cm?cm*5:null}
   let t=0;if(mm&&AD>0&&k!='bugs'){r=AD/2/mm;t=1}out[k=='field'||k=='bugs'?'field':'target'].push({x,y,mm,k,r,t,sp,lay,rx,ry,e:i,j,sn:p.sn,a:(s.ends[i]||[])[j]})}));
  return out}
@@ -106,8 +106,8 @@ function cleanSvg(fam,P,label,U){const G=group(P,fam),UG=U&&U.length>=3?group(U,
  return{svg:g+'</svg>',G,UG}}
 /* The three spots as they are on the target (Vegas triangle) or side by side (vertical 3-spot), each arrow on the spot it was shot at, own rings, same ring colours.
    Each arrow is drawn at its true place with its own radius, so the ring it scored is the ring its edge touches. Read only. */
-const SPW={vegas:[[-0.34,-0.2],[0.34,-0.2],[0,0.39]],vert:[[-0.66,0],[0,0],[0.66,0]]};
-function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some(p=>p.lay!=S[0].lay))return'';const lay=S[0].lay,C=SPW[lay],vb=lay=='vegas'?'-0.66 -0.56 1.32 1.3':'-0.99 -0.34 1.98 0.68';
+const SPW={vegas:TRIC,vert:[[-0.66,0],[0,0],[0.66,0]]};
+function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some(p=>p.lay!=S[0].lay))return'';const lay=S[0].lay,C=SPW[lay],vb=lay=='vegas'?'-0.66 -0.75 1.32 1.3':'-0.99 -0.34 1.98 0.68';
  const Cc=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k],orig=lay=='vegas'?TRIC:BUGC;let g='';
  C.forEach((c,n)=>{for(let i=5;i<10;i++)g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${((1-i*0.1)*0.6).toFixed(3)}" fill="${Cc[i]}" stroke="${L[i]}" stroke-width="0.004"/>`;
   g+=`<text x="${c[0]}" y="${(c[1]-0.315).toFixed(3)}" text-anchor="middle" font-size="0.07" font-weight="700" fill="#cfe0ff">Spot ${n+1}</text>`});
@@ -115,7 +115,7 @@ function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some
   const r=p.r*0.6,w=p.t?Math.min(0.003,r*0.3):0.003,d=p.t?Math.min(0.0075,r*0.35):0.0075;
   g+=`<circle cx="${x}" cy="${y}" r="${(p.t?r-w/2:r).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${NAVY}" stroke-opacity=".6" stroke-width="${w.toFixed(4)}"/><circle cx="${x}" cy="${y}" r="${d.toFixed(4)}" fill="#fff" stroke="${NAVY}" stroke-width="${(p.t?d*0.6:0.0045).toFixed(4)}"/>`});
  const n=[0,0,0];S.forEach(p=>n[p.sp]++);
- return`<div class="shwrap shspots"><svg class="shspotsvg" viewBox="${vb}" role="img" aria-label="${S.length} plotted arrows on the three spots (${n.join(', ')})">${g}</svg></div><p class="small muted shkey">The three spots${lay=='vegas'?' as on the Vegas target':' side by side, Spot 1 at the top of the target'} · arrows per spot: ${n.join(', ')}</p>`}
+ return`<div class="shwrap shspots"><svg class="shspotsvg" viewBox="${vb}" role="img" aria-label="${S.length} plotted arrows on the three spots (${n.join(', ')})">${g}</svg></div><p class="small muted shkey">The three spots${lay=='vegas'?' · Spot 1 on top, Spot 2 bottom left, Spot 3 bottom right':' side by side, Spot 1 at the top of the target'} · arrows per spot: ${n.join(', ')}</p>`}
 const famName={target:'target face',field:'field face'};
 /* one card per face family that has plotted arrows */
 function plotCards(sessions,o={}){const A={target:[],field:[]};sessions.forEach(s=>{const q=shotPts(s);A.target.push(...q.target);A.field.push(...q.field)});
@@ -148,7 +148,7 @@ function evNum(x,y,r,n,s,o){/* number badge just above and right of the arrow, k
  const b=0.03*s,a=Math.PI/4,d=r+b*0.9;let bx=x+d*Math.cos(a),by=y-d*Math.sin(a);if(o){bx=Math.min(o[2]-b,Math.max(o[0]+b,bx));by=Math.min(o[3]-b,Math.max(o[1]+b,by))}
  return`<circle cx="${bx.toFixed(4)}" cy="${by.toFixed(4)}" r="${b.toFixed(4)}" fill="${NAVY}" stroke="${GOLD}" stroke-width="${(b*0.16).toFixed(4)}"/><text x="${bx.toFixed(4)}" y="${(by+b*0.42).toFixed(4)}" text-anchor="middle" font-size="${(b*1.2).toFixed(4)}" font-weight="700" fill="#fff">${n}</text>`}
 function evArrow(x,y,p,r,w,d,K){return`<circle cx="${x.toFixed(4)}" cy="${y.toFixed(4)}" r="${(p.t?r-w/2:r).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${K}" stroke-opacity=".6" stroke-width="${w.toFixed(4)}"/><circle cx="${x.toFixed(4)}" cy="${y.toFixed(4)}" r="${d.toFixed(4)}" fill="#fff" stroke="${K}" stroke-width="${(p.t?d*0.6:0.0075).toFixed(4)}"/>`}
-function evSpots(P,lay,lab){const C=SPW[lay],orig=lay=='vegas'?TRIC:BUGC,V=lay=='vegas'?[-0.66,-0.64,0.66,0.74]:[-0.99,-0.41,0.99,0.34];/* a little taller than the shot plot, so the spot labels are not cut off */
+function evSpots(P,lay,lab){const C=SPW[lay],orig=lay=='vegas'?TRIC:BUGC,V=lay=='vegas'?[-0.66,-0.83,0.66,0.55]:[-0.99,-0.41,0.99,0.34];/* a little taller than the shot plot, so the spot labels are not cut off */
  const Cc=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k];let g='',n='';
  C.forEach((c,k)=>{for(let i=5;i<10;i++)g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${((1-i*0.1)*0.6).toFixed(3)}" fill="${Cc[i]}" stroke="${L[i]}" stroke-width="0.004"/>`;
   g+=`<text x="${c[0]}" y="${(c[1]-0.315).toFixed(3)}" text-anchor="middle" font-size="0.07" font-weight="700" fill="#cfe0ff">Spot ${k+1}</text>`});

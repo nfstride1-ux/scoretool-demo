@@ -65,7 +65,7 @@ try:
     to_score(pg);pg.select_option('#rd',AUS);pg.wait_for_timeout(200);pg.click(f'#f3row [data-f3={f}]');pg.wait_for_timeout(200);pg.click('#st');pg.wait_for_timeout(800)
     chk(f'{f}: session face',pg.evaluate("cur.face3")==f);chk(f'{f}: button label',pg.inner_text('#face3').strip()==want)
     chk(f'{f}: keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('.ad-pad [data-k]')].map(b=>b.dataset.k)")==['X','10','9','8','7','6','M'])
-    pts=[(-0.34,-0.2),(0.34+0.05,-0.2),(0,0.39+0.1)] if spot else [(0,0),(0.1,0.05),(-0.55,0.4)]
+    pts=[(-0.34,0.2),(0.34+0.05,0.2),(0,-0.39+0.1)] if spot else [(0,0),(0.1,0.05),(-0.55,0.4)]
     plot(pg,pts);rows=pg.evaluate(CHECK);print(f,pg.evaluate("cur.ends[0]"),rows)
     chk(f'{f}: mapped as {"spot" if spot else "full face"}',all(r[0]==('spot' if spot else 'full') for r in rows) and len(rows)==3)
     chk(f'{f}: plotted == scored',all(r[1]==r[2] for r in rows))
