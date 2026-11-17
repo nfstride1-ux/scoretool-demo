@@ -49,7 +49,7 @@ try:
   chk('casual is on the vertical 3-spot',pg.evaluate(f"csGet('{CODE}').face3")=='vert')
   chk('Just me look: End and Prog boxes',pg.locator('#csad .ad-num').count()==2 and pg.locator('#csad .ad-head').count()==1)
   chk('face is the vertical 3-spot (3 spots, plotting face)',pg.locator('#cspface').count()==1 and pg.evaluate("document.querySelectorAll('#csad .zbar [data-csspot]').length")==4)
-  chk('score keys X 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk)")==['X','9','8','7','6','M'])
+  chk('score keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk)")==['X','10','9','8','7','6','M'])
   vis=pg.evaluate("(()=>{const q=s=>document.querySelector(s).getBoundingClientRect(),nv=document.querySelector('nav').getBoundingClientRect();return{face:q('#cspface').bottom<=innerHeight,pad:q('#csad .ad-pad').bottom<=nv.top+1,top:q('#csad .ad-head').top>=0}})()")
   chk('phone: face, End/Prog and the score keys are all on the screen at once',vis['face'] and vis['pad'] and vis['top'])
   pg.screenshot(path='/tmp/lgx_ind_casual0.png')
@@ -104,7 +104,7 @@ try:
   lg=pg.evaluate(f"csGet('{CODE}').sc[csMe()]");print('record keys',sorted(lg));chk('saved record keeps e (ends) and adds p',{'e','p'}<=set(lg))
   S=pg.evaluate(f"S.sessions.find(x=>x.id=='cs-{CODE}')")
   chk('own session saved, vertical 3-spot tag, same scores',bool(S) and S['face3']=='vert' and S['ends']==J['ends'] and close(S['pos'],J['pos']))
-  rows=pg.evaluate("""CODE=>{const s=S.sessions.find(x=>x.id=='cs-'+CODE),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e);let v;if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035,no10=s.round==='Australian Indoor 18m'&&s.face3!=='vegas'&&s.face3!=='single';v=d>0.5?'M':(no10?d<=0.1:d<=0.05)?'X':String(Math.min(no10?9:10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false});return[p.k,p.a,v]})}""",CODE)
+  rows=pg.evaluate("""CODE=>{const s=S.sessions.find(x=>x.id=='cs-'+CODE),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e);let v;if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035;v=d>0.5?'M':d<=0.05?'X':String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false});return[p.k,p.a,v]})}""",CODE)
   chk('heatmap points: 30, each measured on its own spot, plotted == scored',len(rows)==30 and all(r[0]=='spot' and r[1]==r[2] for r in rows))
   chk('nothing sent to the relay carries plot positions (a solo casual sends nothing)',not any('"x"' in x or '"p"' in x for x in POSTS))
   # undo after finishing still works, session follows

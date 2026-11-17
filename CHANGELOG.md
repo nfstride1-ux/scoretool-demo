@@ -6,7 +6,8 @@ Newest first. Each entry names the version tag shown in Settings.
 
 Version tag stays `v2026-11-12-0804-live`. Not deployed.
 
-- Australian Indoor 18m on the vertical 3-spot (traffic light) scores X, 9, 8, 7, 6, M. The X is the inner gold, scores 10, and counts as an X. There is no separate 10 button. The triangular face, the single face, Vegas, league, and the other indoor rounds still have a 10.
+- Indoor WA 18m (60 arrows, max 600), on the single face and on either 3-spot, scores 10, 9, 8, 7, 6, M. There is no X key and no X count. Ties are 10s, then 9s. A sighted compound's 10 is only the 2 cm inner ring; the rest of that gold scores 9. Recurve, Barebow, Barebow Compound and W1 score the whole 4 cm ring as 10 (WA Book 2 7.2.2, Book 3 12.5.1; AA rule 10.1).
+- Australian Indoor 18m (30 arrows, max 300) scores X, 10, 9, 8, 7, 6, M on the single face and on the triangle. A ring below 6 scores M. X scores 10 and is only the second tie-break, after 10s. The vertical 3-spot is still offered, with the same keys. AA rules list single and triangle only, so that vertical choice is kept and flagged, not removed.
 - Just me uses the Casual shoot discipline row (Target, Indoor, Field, Clout, 3D). The Round list shows that discipline only. The last discipline is remembered. Casual shoot uses the same row, so it gains Clout. There is no standard clout round in the list yet.
 - Past sessions is back on the Score screen, under Just me. It had been left off the page. Any saved score, including an unfinished one, can be deleted from Home, Past sessions, Scorecards, or the score sheet. The confirm is "Delete this score? This can't be undone." Lists and totals refresh straight away.
 - A custom shoot can be deleted from My rounds or the edit screen. Scores already shot stay, under the saved name, and can still be opened.

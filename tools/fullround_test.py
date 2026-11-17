@@ -56,7 +56,11 @@ def target_round(pg,rd,seed):
     fp(pg)
     sh=pg.evaluate(SHEET);rows_ok(f'{tag} finished sheet',sh['rows'],exp)
     field='6' in keys and 'X' not in keys and '10' not in keys
+    wa18=pg.evaluate("r=>!!(ROUNDS[r]&&ROUNDS[r].wa18)",rd)
+    aus=rd=='Australian Indoor 18m'
     if field:want=f"6's: {fl.count('6')} 5's: {fl.count('5')}"
+    elif wa18:want=f"10's: {fl.count('10')} 9's: {fl.count('9')}"
+    elif aus:want=f"10's: {fl.count('X')+fl.count('10')} X's: {fl.count('X')}"
     else:want=f"X's: {fl.count('X')} 10's/X's: {fl.count('X')+fl.count('10')}"
     chk(f'{tag} finished: {want} and total {tot}',sh['sum'].startswith(want) and sh['big']==tot,sh['sum'])
     sc=pg.evaluate("(()=>{const r=[...document.querySelectorAll('.ad-kv tr')].find(t=>t.querySelector('th')?.textContent=='Score');return r?+r.querySelector('td').textContent:null})()")
