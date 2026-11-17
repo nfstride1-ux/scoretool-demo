@@ -387,6 +387,8 @@
     }
     names.sort((a,b)=>String(a.name).localeCompare(String(b.name),'en'));
     const hostPhone=typeof lkHostPhone==='function'&&lkHostPhone(lg);
+    /* Nate Evans is a host. A scorer phone does not ask him for a PIN before the paid ticks. */
+    const cohostRec=rec=>!!rec&&(String(rec.id)===((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate')||(typeof lkIsCoHostName==='function'&&lkIsCoHostName(rec.name)));
     const showAll=!!window._lkNamesOpen||hostPhone;
     const mine=new Set((typeof lkMineIds==='function'?lkMineIds():[]).map(String));
     const shown=showAll?names:names.filter(n=>mine.has(String(n.id)));
@@ -420,7 +422,7 @@
     const paintPin=id=>{
       const box=$id('lkpinbox');if(!box)return;
       const rec=shown.find(n=>n.id===id);
-      if(hostPhone||!rec){box.hidden=true;box.innerHTML='';return}
+      if(hostPhone||cohostRec(rec)||!rec){box.hidden=true;box.innerHTML='';return}
       const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
       if(left){
         box.hidden=false;
@@ -472,7 +474,7 @@
       const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
       if(!rec){if(msg)msg.textContent='Tap your name.';return}
-      if(!hostPhone){
+      if(!hostPhone&&!cohostRec(rec)){
         const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
         if(left){if(msg)msg.textContent='Too many wrong PINs. This name is locked on this phone for a minute.';return}
         const info=typeof lkPinOf==='function'?lkPinOf(lg,rec.id):null;
@@ -819,7 +821,8 @@
     const mode=built.mode==='rank'
       ?'Order is the best 4 scores from nights already shot: highest total, then 11s, then 10s. Names with no score yet follow, A to Z.'
       :'Order is A to Z. This night has no earlier result to rank by.';
-    const rem=group.ids.length<4?`<p class="small">This target has ${group.ids.length} archers.</p>`:'';
+    const nArch=group.ids.length;
+    const rem=nArch<4?`<p class="small">This target has ${nArch} ${nArch===1?'archer':'archers'}.</p>`:'';
     el.innerHTML=`<div class="lkf" id="lkassigned" data-target="${group.target}" data-mode="${esc(built.mode||'')}">
       <h1>${title}</h1>
       <p class="lk-tgt" id="lktgtlabel">Target ${group.target}</p>

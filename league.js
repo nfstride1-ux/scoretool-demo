@@ -217,6 +217,8 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(d.pins&&typeof d.pins==='object'){lg.pins=lg.pins||{};for(const id in d.pins){const p=d.pins[id]||{};const cur=lg.pins[id];if(!cur||(+p.pinAt||0)>(+cur.pinAt||0)){const pinHash=p.pinHash?String(p.pinHash):'';lg.pins[id]={pinHash,pinSalt:pinHash?String(p.pinSalt||''):'',pinAt:+p.pinAt||0,name:typeof p.name==='string'?p.name:''};ch=true}}}
   if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
+ /* The co-host row belongs on this phone. A snapshot replace or a tombstone cannot wipe it. */
+ if(typeof lkSeedCoHost==='function'&&((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')&&lkSeedCoHost(lg))ch=true;
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */

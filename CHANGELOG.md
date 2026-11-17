@@ -2,6 +2,13 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1900-live
+
+Hosts can open Lingkana scoring when they are the only archers paid, and Nate Evans stays on the register. Rebased onto main after the PIN login release. Cache version is `v2026-11-17-1900-live` (`?v=202611171900`), newer than `v2026-11-17-1830-live`. Back to ScoreTool, the shared theme, Resume scoring, the phone-only name list, per-archer PINs, host bypass, and Reset PIN stay.
+
+- A group still needs at least two archers. That rule is lifted only when everyone paid for the night is an organiser: Nathaniel Stride (host id `nathe`, or his registration, for example `g7wbux6`) and Nate Evans. One of them, or just the two of them, is given a target so the scoring screen opens. Group sizes for any other paid list stay 4, then 3, then 2.
+- Nate Evans is registered on every shoot night, the same way the login list adds the co-host. The 17 Nov 10:04 wipe and a later snapshot cannot remove him, so he shows on Tick who paid, can be ticked, and is included when groups are built. If he also registers under the name Nate Evans, that row is kept and a second one is not added. He is a host, so a scorer phone does not ask him for a PIN before those ticks.
+
 ## v2026-11-17-1830-live
 
 Lingkana league home can return to ScoreTool, follow the app's light or dark setting, resume an open night, and login asks for a per-archer PIN. Cache version is `v2026-11-17-1830-live` (`?v=202611171830`), newer than `v2026-11-17-1645-savedarrows` on main and not the same name as open PR #13 (`v2026-11-17-1700-live`) or PR #9. Not merged. PR #1 was not touched.
