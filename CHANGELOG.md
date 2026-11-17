@@ -2,6 +2,19 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1830-live
+
+Lingkana league home can return to ScoreTool, follow the app's light or dark setting, resume an open night, and login asks for a per-archer PIN. Cache version is `v2026-11-17-1830-live` (`?v=202611171830`), newer than `v2026-11-17-1645-savedarrows` on main and not the same name as open PR #13 (`v2026-11-17-1700-live`) or PR #9. Not merged. PR #1 was not touched.
+
+- League home has Back to ScoreTool. It opens the app home with replaceState, so a `#lk-home` link with an empty history still leaves. League rows, the scorer session, and the remembered archers stay.
+- A light/dark control on the league screens writes `scoretool.theme`, the same key as the target-face button in the main app. Lingkana flow screens keep readable text in both themes.
+- If this phone is logged in to the current night and that group is not finished, league home shows Resume scoring. Opening the league from the app goes straight to Score End (or the score sheet if ends are already in). Switch archer clears the session and leaves the scores.
+- Login lists only archers whose registration id is stored on this phone. Not you? Show all names reveals the rest after the event passcode. A phone signed in as nathe, or already in as Nate Evans, still sees every name. A phone with no remembered archer asks you to register or show all names.
+- Registration asks for a 4-digit PIN twice. Only a SHA-256 of the name, PIN, and salt is stored and posted on the relay. The plain PIN is not saved. Login asks for that PIN, including after Show all names. A wrong PIN is named. Five wrong tries lock that name on this phone for one minute. A correct PIN starts the session, and resume does not ask again until Switch archer. Host phones log in as any archer without the PIN, and Reset PIN clears it so the archer sets a new one next time. A registration with no PIN is asked to set one at the next login.
+
+### Files
+lingkana.js, lkflow.js, lkflow.css, league.js, index.html, sw.js, version.json, whatsnew.js, tools/lk_return_pin_test.py, tools/lingkana_groups_test.py, tools/lingkana_live_test.py, tools/live_go_live_test.py, qa/run_regression.py, qa/regression.md, CHANGELOG.md.
+
 ## v2026-11-17-1645-savedarrows
 
 Arrow size on every plotting screen lists only the archer's saved arrows. Rebased onto main after the Lingkana login list and the Share link / iPhone QR reader. Cache version is `v2026-11-17-1645-savedarrows`, newer than `v2026-11-17-1130-live`. Not merged.

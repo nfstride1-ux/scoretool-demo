@@ -169,9 +169,11 @@ try:
 
         # local registration save only: h2hPost is replaced, and guard stubs any ntfy.sh call
         page.evaluate("() => { window._lkPosts=[]; window.h2hPost=function(){window._lkPosts.push([].slice.call(arguments));return Promise.resolve()}; }")
-        page.fill('#lkregcode', 'LK-TEST26')
         page.fill('#lkregname', 'Local Test Archer')
         page.fill('#lkregbow', 'Recurve')
+        if page.locator('#lkregpin').count():
+            page.fill('#lkregpin', '1234')
+            page.fill('#lkregpin2', '1234')
         page.click('#lkreggo')
         page.wait_for_timeout(400)
         saved = page.evaluate("""() => {

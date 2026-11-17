@@ -159,6 +159,7 @@ function lgSnapParts(lg){
    }
    flush()}
   pack('reg',(typeof lkPublicReg==='function'?lkPublicReg(lg.reg||{}):(lg.reg||{})));pack('paid',lg.paid||{});pack('claim',lg.claim||{});
+  if(lg.pins&&Object.keys(lg.pins).length)parts.push({...meta,pins:lg.pins});
   if(lg.claimt)meta.claimt=lg.claimt;
  }
  const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
@@ -209,7 +210,11 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
    for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(staleWt&&freshCut&&(+rec.at||0)<freshCut)continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;
     const rk=String(rec.name||'').trim().replace(/\s+/g,' ').toLowerCase();
     const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(rk&&String(r.name||'').trim().replace(/\s+/g,' ').toLowerCase()===rk)));
-    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){const prev=lg.reg[night][i];lg.reg[night][i]=Object.assign({},prev,rec,{id:prev.id||rec.id});ch=true}}}}
+    if(rec.pin)delete rec.pin;
+    if(i<0){lg.reg[night].push(rec);ch=true}
+    else if((rec.at||0)>(lg.reg[night][i].at||0)){const prev=lg.reg[night][i];const next=Object.assign({},prev,rec,{id:prev.id||rec.id});if(next.pin)delete next.pin;lg.reg[night][i]=next;ch=true}
+    else if((rec.pinAt||0)>((lg.reg[night][i].pinAt)||0)){const prev=lg.reg[night][i];if(rec.pinHash){prev.pinHash=rec.pinHash;prev.pinSalt=rec.pinSalt||''}else{delete prev.pinHash;delete prev.pinSalt}prev.pinAt=rec.pinAt;if(prev.pin)delete prev.pin;ch=true}}}}
+  if(d.pins&&typeof d.pins==='object'){lg.pins=lg.pins||{};for(const id in d.pins){const p=d.pins[id]||{};const cur=lg.pins[id];if(!cur||(+p.pinAt||0)>(+cur.pinAt||0)){const pinHash=p.pinHash?String(p.pinHash):'';lg.pins[id]={pinHash,pinSalt:pinHash?String(p.pinSalt||''):'',pinAt:+p.pinAt||0,name:typeof p.name==='string'?p.name:''};ch=true}}}
   if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  return ch}
@@ -327,7 +332,7 @@ function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().filter
  <button class="btn alt full" id="lggo" style="margin-top:8px">Create league</button></details>
  <div class="row" style="gap:6px;margin-top:8px"><input id="lgjc" placeholder="League code" maxlength="8" autocapitalize="characters" style="flex:1"><button class="btn ghost" id="lgjgo">Join</button></div><p class="small" id="lgjmsg" role="alert"></p></div>`}
 function lgBindCard(){const c=$('#lgcard');if(!c)return;
- c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
+ c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowEnter==='function')lkFlowEnter(code);else if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
  c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code)});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});

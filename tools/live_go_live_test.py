@@ -97,6 +97,9 @@ try:
         page.fill('#lkregname', 'Sam Archer')
         if page.locator('#lkregemail').count():
             page.fill('#lkregemail', 'sam@example.com')
+        if page.locator('#lkregpin').count():
+            page.fill('#lkregpin', '1234')
+            page.fill('#lkregpin2', '1234')
         page.locator('#lkreggo').click()
         page.wait_for_timeout(800)
         page.wait_for_selector('#lkregok', timeout=4000)
