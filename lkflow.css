@@ -153,6 +153,12 @@ body.lk-flow #sbar{display:none!important}
 #lkregqr p,#lkregqr a{color:#111}
 #lkqrsvg svg{width:min(220px,70vw);height:auto;display:block;margin:8px auto}
 .lk-namelist{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.lk-move{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px 4px;margin:0 0 12px}
+.lk-moverow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid #eee}
+.lk-moverow .nm{font-weight:700;min-width:0}
+.lk-moverow .btn{min-height:40px;padding:8px 14px;flex:0 0 auto}
+[data-theme=dark] .lk-move{background:#131a26;border-color:#243042}
+[data-theme=dark] .lk-moverow{border-top-color:#243042}
 /* The name list scrolls on its own. The PIN and passcode sit above it, and the page keeps
    a gap under them equal to the fixed Back/Login bar plus the iPhone home indicator. */
 #lkloginpage{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}

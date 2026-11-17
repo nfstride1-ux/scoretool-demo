@@ -1522,7 +1522,8 @@ function lkAssignGroups(lg,w){
   if(w>=7)return {ok:false,msg:'Night 7 scoring is not open yet.'};
   const existing=(lg.grp||{})[w]||{};
   const paid=lkPaidTonight(lg,w);
-  if(lkNightStarted(lg,w)&&Array.isArray(existing.g)&&existing.g.length){
+  /* A host move is kept, including before the first arrow. Otherwise the next open would rebuild the groups and undo it. */
+  if((existing.host||lkNightStarted(lg,w))&&Array.isArray(existing.g)&&existing.g.length){
     const inG=new Set(existing.g.flat().map(String));
     const waiting=paid.filter(p=>!inG.has(String(p.id)));
     const lockedOut=lkGroupsFrom(existing.g,paid,existing.mode||'locked',true,waiting);
@@ -1560,6 +1561,57 @@ function lkSetGroups(w,G){
   lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};
   lg.dirty=1;if(typeof save==='function')save();
   return '';
+}
+function lkArcherHasScores(lg,w,id){
+  const e=lg&&lg.sc&&lg.sc[id]&&lg.sc[id][w];
+  return !!((e&&e.e)||[]).some(x=>x&&x.length);
+}
+/* Hosts only, and only before this archer has an arrow on this night. Scores stay where they are. */
+function lkMoveArcher(w,id,toIndex){
+  const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(!lkCanHost(lg))return 'Only the host can move an archer.';
+  w=+w||1;
+  if(!(w>=1&&w<=6))return 'Pick a shoot night.';
+  const who=String(id||'');if(!who)return 'Pick an archer.';
+  const signed=(lkNightSignups(lg,w)||[]).some(r=>r&&String(r.id)===who);
+  if(!signed)return 'That archer is not registered for this night.';
+  if(lkArcherHasScores(lg,w,who))return 'That archer already has scores for this night, so they stay on this target.';
+  const cur=(((lg.grp||{})[w]||{}).g||[]).map(g=>(g||[]).slice().map(String));
+  let from=-1;
+  cur.forEach((g,i)=>{if(g.includes(who))from=i});
+  let to=+toIndex;
+  if(to===-1){
+    if(cur.filter(g=>g.length).length>=LK_LANES)return 'There are only 13 targets.';
+    cur.push([]);
+    to=cur.length-1;
+  }
+  if(!(to>=0&&to<cur.length))return 'Pick a target.';
+  if(from===to)return '';
+  if((cur[to]||[]).length>=4)return 'A group can have at most 4 archers.';
+  cur.forEach((g,i)=>{if(i!==to){const n=g.indexOf(who);if(n>=0)g.splice(n,1)}});
+  if(!cur[to].includes(who))cur[to].push(who);
+  const kept=cur.filter(g=>g.length);
+  if(kept.length>LK_LANES)return 'There are only 13 targets.';
+  lg.grp=lg.grp||{};
+  const prev=lg.grp[w]||{};
+  lg.grp[w]={t:Date.now(),g:kept,mode:prev.mode||'host',host:1};
+  const targetOf={};
+  kept.forEach((g,i)=>g.forEach(aid=>{targetOf[aid]=i+1}));
+  const k=lkNightKey(lg,w);
+  ((lg.reg||{})[k]||[]).forEach(r=>{
+    if(!r||!r.id)return;
+    if(targetOf[r.id])r.target=targetOf[r.id];
+  });
+  lg.dirty=1;
+  if(typeof save==='function')save();
+  try{lkPublishGroups(lg)}catch(e){}
+  return '';
+}
+function lkPublishGroups(lg){
+  lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
+  if(!lg||typeof h2hPost!=='function'||typeof lgTopic!=='function')return Promise.resolve(false);
+  const me=(typeof h2hMe==='function'&&h2hMe())||lg.host||LK_HOST;
+  return h2hPost(lgTopic(lg.code),{k:'ls',code:lg.code,by:me,cohost:me==='nate'?'nate':'',host:lg.host||LK_HOST,format:'lingkana',grp:lg.grp||{},fresh:lg.fresh||0,clear:lg.clear||0,t:Date.now(),part:1,np:1});
 }
 function lkAddToGroup(w,gi,id){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
@@ -1780,7 +1832,7 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,lkArcherHasScores,lkMoveArcher,lkPublishGroups,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
   lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });

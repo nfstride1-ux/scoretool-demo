@@ -868,7 +868,17 @@
     const el=appEl();if(!el)return;
     const title=esc(lg.name||evName());
     const backBar=bar(btn('lkbacklogin','Back','grey'),'')+switchLink();
-    const wireBack=()=>{if($id('lkbacklogin'))$id('lkbacklogin').onclick=()=>login();wireSwitch()};
+    const wireBack=()=>{
+      if(typeof lkCanHost==='function'&&lkCanHost(lg)&&!$id('lkhostmove')){
+        const p=document.createElement('p');
+        p.innerHTML='<button type="button" class="lk-host" id="lkhostmove">Move archers</button>';
+        const barEl=el.querySelector('.lk-bar');
+        if(barEl&&barEl.parentNode)barEl.parentNode.insertBefore(p,barEl);
+      }
+      if($id('lkhostmove'))$id('lkhostmove').onclick=()=>{window._lkMoveBack='assigned';hostMove()};
+      if($id('lkbacklogin'))$id('lkbacklogin').onclick=()=>login();
+      wireSwitch();
+    };
     if(+w>=7){
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>Night 7 scoring is not open yet.</p>${backBar}</div>`;
       wireBack();return;
@@ -1227,11 +1237,29 @@
     window._lkScoreMode=null;window._csFx=null;window._lgHold=null;
     home();
   }
+  function liveGroupIds(lg,w){
+    const cur=(window._lkScoreIds||window._lkPicked||[]).map(String);
+    const G=((((lg&&lg.grp||{})[w]||{}).g)||[]);
+    if(!G.length||!cur.length)return cur;
+    const me=String(myId()||'');
+    const inGroup=id=>G.some(g=>(g||[]).map(String).includes(String(id)));
+    const anchor=(me&&cur.includes(me)&&inGroup(me))?me:cur.find(inGroup);
+    if(!anchor)return cur;
+    let ids=null,target=0;
+    G.forEach((g,i)=>{const row=(g||[]).map(String);if(row.includes(String(anchor))){ids=row;target=i+1}});
+    if(!ids||!ids.length)return cur;
+    window._lkScoreIds=ids.slice();
+    window._lkPicked=ids.slice();
+    window._lkTarget=target;
+    window._lgE={code:lg.code,w:+w,ids:ids.slice()};
+    if(!window._lgAct||ids.indexOf(window._lgAct)<0)window._lgAct=ids[0];
+    return ids;
+  }
   function groupSheet(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
     const w=nightOf(lg);
-    const ids=window._lkScoreIds||window._lkPicked||[];
+    const ids=liveGroupIds(lg,w);
     if(!ids.length){selectArchers();return}
     hideChrome(true);
     window._lkScoreMode='sheet';
@@ -1291,7 +1319,7 @@
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
     const w=nightOf(lg);
-    const ids=window._lkScoreIds||window._lkPicked||[];
+    const ids=liveGroupIds(lg,w);
     if(!ids.length){selectArchers();return}
     const id=pickEntryId(lg,w,ids);
     window._lgAct=id;
@@ -1404,7 +1432,7 @@
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
     const w=nightOf(lg);
-    const ids=window._lkScoreIds||window._lkPicked||[];
+    const ids=liveGroupIds(lg,w);
     if(!ids.length){selectArchers();return}
     if(window._lkScoreMode==='sheet'){groupSheet();return}
     if(window._lkScoreMode!=='entry'&&endsAligned(lg,w,ids)&&(allDone(lg,w,ids)||ids.some(id=>nEndsOf((typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]})>0))){groupSheet();return}
@@ -1445,18 +1473,28 @@
           review();
         });
         document.querySelectorAll('[data-lkdropcancel]').forEach(btn=>btn.onclick=()=>{window._lkDropAsk=null;review()});
+        const moveAt=document.getElementById('lkpot')||card;
+        if(moveAt&&moveAt.parentNode&&!document.getElementById('lkhostmove')){
+          const p=document.createElement('p');
+          p.innerHTML='<button type="button" class="lk-host" id="lkhostmove">Move archers</button>';
+          moveAt.parentNode.insertBefore(p,moveAt.nextSibling);
+          p.querySelector('#lkhostmove').onclick=()=>{window._lkMoveBack='review';hostMove()};
+        }
       }
       return;
     }
     const el=appEl();if(!el)return;
     const stand=typeof lkTableHTML==='function'&&lg?lkTableHTML(lg):'<p>No scores yet.</p>';
     const pot=(typeof lkPotHTML==='function'&&lg)?lkPotHTML(lg):'';
+    const moveBtn=(lg&&typeof lkCanHost==='function'&&lkCanHost(lg))?'<p><button type="button" class="lk-host" id="lkhostmove">Move archers</button></p>':'';
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
       <h1>Review Scoresheet</h1>
       ${stand}${pot}
+      ${moveBtn}
       ${bar(btn('lkrevback','Back','grey'),'')}
     </div>`;
     $id('lkrevback').onclick=()=>home(evCode());
+    if($id('lkhostmove'))$id('lkhostmove').onclick=()=>{window._lkMoveBack='review';hostMove()};
     if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
     document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
       const nw=+(window._lkPotNight||w);
@@ -1464,6 +1502,57 @@
       review();
     });
     if(typeof lkBindStandUI==='function')lkBindStandUI(lg);
+  }
+
+  function hostMove(){
+    const lg=eventLg()||(typeof lkEnsure==='function'?lkEnsure():null);
+    if(!lg||typeof lkCanHost!=='function'||!lkCanHost(lg)){home(evCode());return}
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    let w=+(window._lkMoveNight||nightOf(lg)||1);
+    if(!(w>=1&&w<=6))w=1;
+    window._lkMoveNight=w;
+    if(typeof lkAssignGroups==='function')lkAssignGroups(lg,w);
+    const groups=((((lg.grp||{})[w]||{}).g)||[]);
+    const nameOf=id=>{
+      const raw=(typeof lgName==='function'&&lgName(id))||id;
+      return esc(raw);
+    };
+    const scored=id=>typeof lkArcherHasScores==='function'&&lkArcherHasScores(lg,w,id);
+    const blocks=groups.map((g,i)=>{
+      const rows=(g||[]).map(id=>{
+        const has=scored(id);
+        const n=has?((((lg.sc[id]||{})[w]||{}).e)||[]).filter(z=>z&&z.length).length:0;
+        const act=has?`<span class="small muted">${n} ${n===1?'end':'ends'} scored</span>`:`<button type="button" class="btn alt" data-lkmove="${esc(id)}">Move</button>`;
+        return `<div class="lk-moverow"><span class="nm">${nameOf(id)}</span>${act}</div>`;
+      }).join('')||'<p class="small muted">No archers on this target.</p>';
+      return `<div class="lk-move" data-lktarget="${i+1}"><p class="lk-tgt">Target ${i+1}</p>${rows}</div>`;
+    }).join('')||'<p>No groups for this night yet.</p>';
+    const pick=String(window._lkMoveId||'');
+    const from=groups.findIndex(g=>(g||[]).map(String).includes(pick));
+    const opts=groups.map((g,i)=>i===from?'':`<option value="${i}">Target ${i+1} (${(g||[]).length}/4)</option>`).join('');
+    const neu=groups.filter(g=>(g||[]).length).length<(typeof LK_LANES==='number'?LK_LANES:13)?'<option value="-1">New target</option>':'';
+    const picker=pick&&from>=0&&!scored(pick)?`<div class="lk-move" id="lkmovepick"><p>Move <b>${nameOf(pick)}</b> to the end of</p><label for="lkmoveto">Target</label><select id="lkmoveto">${opts}${neu}</select><div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn alt" id="lkmovego">Move</button><button type="button" class="btn ghost" id="lkmovecancel">Cancel</button></div><p class="lk-msg" id="lkmovemsg" role="alert"></p></div>`:'';
+    el.innerHTML=`<div class="lkf" id="lkhostmove">
+      <h1>Move archers</h1>
+      <p class="small">A host can move an archer to the end of another target before that archer has a score. After the first arrow, they stay put.</p>
+      <label for="lkmovenight">Shoot night</label>
+      <select id="lkmovenight">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===w?'selected':''}>Night ${n}</option>`).join('')}</select>
+      <div id="lkmovegroups">${blocks}</div>
+      ${picker}
+      ${bar(btn('lkmoveback','Back','grey'),'')}
+    </div>`;
+    $id('lkmoveback').onclick=()=>{window._lkMoveId=null;if(window._lkMoveBack==='review')review();else showAssigned()};
+    $id('lkmovenight').onchange=()=>{window._lkMoveNight=+$id('lkmovenight').value;window._lkMoveId=null;hostMove()};
+    el.querySelectorAll('[data-lkmove]').forEach(b=>b.onclick=()=>{window._lkMoveId=b.getAttribute('data-lkmove');hostMove()});
+    if($id('lkmovecancel'))$id('lkmovecancel').onclick=()=>{window._lkMoveId=null;hostMove()};
+    if($id('lkmovego'))$id('lkmovego').onclick=()=>{
+      const err=typeof lkMoveArcher==='function'?lkMoveArcher(w,pick,+$id('lkmoveto').value):'Moving is not available on this phone.';
+      const msg=$id('lkmovemsg');
+      if(err){if(msg)msg.textContent=err;return}
+      window._lkMoveId=null;
+      hostMove();
+    };
   }
 
   function regEntry(){
