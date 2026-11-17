@@ -1034,6 +1034,15 @@
           if(m){box.checked=!box.checked;return}
           review();
         });
+        document.querySelectorAll('[data-lkdrop]').forEach(btn=>btn.onclick=()=>{
+          const id=btn.getAttribute('data-lkdrop');
+          if(btn.getAttribute('data-go')!=='1'){window._lkDropAsk=id;review();return}
+          const m=typeof lkDropArcher==='function'?lkDropArcher(id):'';
+          window._lkDropAsk=null;
+          if(m)return;
+          review();
+        });
+        document.querySelectorAll('[data-lkdropcancel]').forEach(btn=>btn.onclick=()=>{window._lkDropAsk=null;review()});
       }
       return;
     }

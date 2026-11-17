@@ -31,7 +31,7 @@ const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aace
 const LK_REG_KEY='scoretool.lk.reg';
 const LK_FEE=10; /* entry fee used later by the pot display; the $25 range fee is separate and excluded */
 /* One-time live wipe: drop test sign-ups and claims from before this moment so all 660 nights start empty for 18 Nov. Do not bump — other archers' later registrations must be kept. */
-const LK_FRESH=1794401520000; /* 2026-11-11 20:52 Australia/Perth: wipe slime and drop the host from the registered list */
+const LK_FRESH=1794881040000; /* 2026-11-17 10:04 Australia/Perth: wipe Ada Archer and the other test sign-ups. Do not bump again. */
 
 /* Locked by Nathe 12 Nov 2026. Do not invent extras. Shown on the Lingkana rules page only. */
 const LK_RULES=[
@@ -82,8 +82,9 @@ function lkFresh(lg){
   if(!lg||!lkIs(lg))return lg;
   if((lg.fresh||0)<LK_FRESH){
     lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
-    lg.order=[];
+    lg.order=[];lg.drop={};
     lg.fresh=LK_FRESH;lg.dirty=1;lg.since=null;lg.posted=0;
+    try{localStorage.removeItem(LK_REG_KEY)}catch(e){}
     if(typeof save==='function')save();
   }
   lkDropHostIfUnregistered(lg);
@@ -365,6 +366,9 @@ function lkApplyReg(rec,lg){
   if(!nights.length)return{ok:false,msg:'The league has no shoot nights yet.'};
   const closed=lkRegClosed(lg,name,rec.id||lkFindArcher(lg,name));
   if(closed)return{ok:false,msg:closed};
+  const dropId=lkDropHit(lg,rec.id,name);
+  if(dropId&&(lg.drop[dropId].t||0)>=(+rec.at||0))return{ok:false,msg:'That archer was removed from the league.',dropped:1};
+  if(dropId)delete lg.drop[dropId];
   lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];
   const me=(typeof h2hMe==='function'&&h2hMe())||'';
   let id=rec.id||null;
@@ -395,6 +399,67 @@ function lkApplyReg(rec,lg){
   });
   lg.dirty=1;if(typeof save==='function')save();
   return{ok:true,id,first:first&&!alreadyAll?1:0,night:nights[0],nights,already:alreadyAll,name};
+}
+function lkDropHit(lg,id,name){
+  const bag=(lg&&lg.drop)||{};
+  if(id&&bag[id])return id;
+  const key=lkCleanName(name).toLowerCase();
+  if(!key)return '';
+  for(const k of Object.keys(bag)){
+    if(lkCleanName(bag[k]&&bag[k].n).toLowerCase()===key)return k;
+  }
+  return '';
+}
+function lkApplyDrop(lg,id,name,at){
+  lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
+  if(!lg)return false;
+  const who=String(id||lkDropHit(lg,'',name)||'');
+  if(!who)return false;
+  const t=+at||Date.now();
+  lg.drop=lg.drop||{};
+  const prev=lg.drop[who];
+  if(prev&&(prev.t||0)>=t)return false;
+  lg.drop[who]={n:lkCleanName(name||(prev&&prev.n)||''),t};
+  return lkStripDropped(lg)||true;
+}
+function lkStripDropped(lg){
+  if(!lg||!lg.drop)return false;
+  let ch=false;
+  const gone=id=>!!(lg.drop[id]);
+  const order=(lg.order||[]).filter(id=>!gone(id));
+  if(order.length!==(lg.order||[]).length){lg.order=order;ch=true}
+  if(lg.gn){for(const id of Object.keys(lg.gn)){if(gone(id)){delete lg.gn[id];ch=true}}}
+  if(lg.reg){for(const night of Object.keys(lg.reg)){
+    const next=(lg.reg[night]||[]).filter(r=>r&&!gone(r.id)&&!(lg.drop[lkDropHit(lg,'',r.name)]&&(lg.drop[lkDropHit(lg,'',r.name)].t||0)>=(r.at||0)));
+    if(next.length!==(lg.reg[night]||[]).length){lg.reg[night]=next;ch=true}
+  }}
+  if(lg.paid){for(const night of Object.keys(lg.paid)){for(const id of Object.keys(lg.paid[night]||{})){if(gone(id)){delete lg.paid[night][id];ch=true}}}}
+  if(lg.grp){for(const w of Object.keys(lg.grp)){
+    const g=lg.grp[w]&&lg.grp[w].g;
+    if(!Array.isArray(g))continue;
+    const next=g.map(ids=>(ids||[]).filter(id=>!gone(id))).filter(ids=>ids.length);
+    if(JSON.stringify(next)!==JSON.stringify(g)){lg.grp[w].g=next;ch=true}
+  }}
+  if(lg.claim){for(const night of Object.keys(lg.claim)){for(const id of Object.keys(lg.claim[night]||{})){if(gone(id)){delete lg.claim[night][id];ch=true}}}}
+  if(ch){lg.dirty=1;if(typeof save==='function')save()}
+  return ch;
+}
+function lkDropArcher(id){
+  const lg=typeof lkEnsure==='function'?lkEnsure():null;
+  if(!lg)return 'The league is not on this phone yet.';
+  if(!lkCanHost(lg))return 'Only the host can remove an archer.';
+  const who=String(id||'');if(!who)return 'Pick an archer.';
+  const name=(lg.gn&&lg.gn[who]&&lg.gn[who].n)||(typeof lgName==='function'&&lgName(who))||'';
+  const at=Date.now();
+  lkApplyDrop(lg,who,name,at);
+  const whoBy=lkPaidAuthority()||'nathe';
+  try{
+    if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
+      h2hPost(lgTopic(lg.code),{k:'lkdrop',code:lg.code,id:who,name,at,by:whoBy,cohost:whoBy==='nate'?'nate':'',t:at,fresh:lg.fresh||LK_FRESH});
+    }
+  }catch(e){}
+  try{lkPublishPaid(lg)}catch(e){}
+  return '';
 }
 function lkPullReg(lg){
   lg=lg||lkGet();if(!lg)return 0;
@@ -840,7 +905,7 @@ function lkPublishPaid(lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
   const who=lkPaidAuthority();
   if(!lg||!who||typeof h2hPost!=='function'||typeof lgTopic!=='function')return Promise.resolve(false);
-  return h2hPost(lgTopic(lg.code),{k:'ls',code:lg.code,by:who,cohost:who==='nate'?'nate':'',host:lg.host||LK_HOST,format:'lingkana',paid:lg.paid||{},paidt:lg.paidt||Date.now(),fresh:lg.fresh||0,t:Date.now(),part:1,np:1});
+  return h2hPost(lgTopic(lg.code),{k:'ls',code:lg.code,by:who,cohost:who==='nate'?'nate':'',host:lg.host||LK_HOST,format:'lingkana',paid:lg.paid||{},paidt:lg.paidt||Date.now(),drop:lg.drop||{},fresh:lg.fresh||0,t:Date.now(),part:1,np:1});
 }
 async function lkSyncOnce(){
   if(window._lkSyncBusy)return false;
@@ -859,6 +924,8 @@ async function lkSyncOnce(){
         else if(d.k==='lkreg'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)){
           const r=lkApplyReg(d.rec||d,lg);
           if(r&&r.ok&&!r.already)ch=true;
+        }else if(d.k==='lkdrop'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){
+          if(lkApplyDrop(lg,d.id,d.name,d.at||d.t))ch=true;
         }
       }
       if(typeof save==='function')save();
@@ -906,7 +973,9 @@ function lkPotHTML(lg){
     const nm=h((typeof lgName==='function'&&lgName(id))||id);
     const on=!!paid[id];
     const box=host?`<input type="checkbox" data-lkpaid="${h(id)}" ${on?'checked':''}>`:(on?'Paid':'—');
-    return`<label class="lk-paidrow"><span class="nm">${nm}</span>${box}</label>`;
+    const ask=host&&window._lkDropAsk===id;
+    const drop=host?(ask?`<span class="lk-dropask">Remove ${nm}?<button type="button" class="lk-remove" data-lkdrop="${h(id)}" data-go="1">Remove</button><button type="button" class="lk-cancel" data-lkdropcancel="1">Cancel</button></span>`:`<button type="button" class="lk-remove" data-lkdrop="${h(id)}">Remove</button>`):'';
+    return`<div class="lk-paidrow"><label><span class="nm">${nm}</span>${box}</label>${drop}</div>`;
   }).join('')||'<p class="small muted">No one on the list yet.</p>';
   const nightRows=p.nights.map(n=>`<tr data-lkpn="${n.w}"${n.w===w?' class="on"':''}><td>N${n.w}</td><td>${h(lkFmtD(n.date))}</td><td>${n.paid}</td><td>$${n.total}</td><td>${n.out?('$'+n.owed):'—'}</td></tr>`).join('');
   return`<div class="card" id="lkpot"><span class="kicker">Club pot · display only</span>
@@ -1293,6 +1362,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority
 });
 })();

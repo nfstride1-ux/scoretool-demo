@@ -9,8 +9,8 @@ Version tag stays `v2026-11-12-0804-live`. Not deployed.
 - Register for a shoot night no longer asks for an invite code. The form is name, shoot night, and optional bow, email and phone. `lk-register.html` opens that form. The page draws a QR of `https://nfstride1-ux.github.io/scoretool-demo/lk-register.html` with the bundled `vendor/qrcode.js` (no third-party QR service).
 - Lingkana login lists the names registered for the selected night. The scorer taps their name. The passcode is exactly `Kana26`. The old password hash is not checked, and the host cannot change it.
 - The 13-target bubble picker is gone for Lingkana. Paid archers (the existing host paid ticks) are grouped 4, then 3, then 2 so nobody is left alone. One paid archer is not given a target. The league closes registration at 52 archers in total. Night 1, or any night with no earlier score, is A to Z. Later nights use the best-4 total from nights already shot (then 11s, then 10s). Onion Shed still uses its target picker.
-- Register for the Lingkana League is once per archer: name, plus optional bow, email and phone. The name stays on every shoot night. The night is chosen on the login page. The league still closes at 52 archers.
-- Lingkana register, login and the host paid list poll the existing ntfy topic without a ScoreTool profile. Nate Evans' paid ticks are published and accepted the same way as Nathe's. A scorer login cannot change paid ticks.
+- Phones wipe Lingkana test sign-ups from before 10:04 Australia/Perth on 17 Nov, including Ada Archer, and ignore older relay messages. The host paid list has a Remove button for Nathe and Nate Evans. Removing an archer confirms first and sends a tombstone on the existing ntfy topic so a later snapshot cannot put the name back.
+- The app cache version is v2026-11-17-1004-live so phones load this register page instead of a saved copy.
 
 ## Entitlement note and Lingkana register buttons (not a version bump, not deployed)
 
