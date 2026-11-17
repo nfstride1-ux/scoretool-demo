@@ -61,6 +61,7 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
  if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
  const lkVals=typeof lkIs==='function'&&lkIs(lg);
+ if(!lkVals&&window.arrowApply)arrowApply(e,'lg|'+code+'|'+w+'|'+id);
  /* Lingkana is values only (no plots). Other leagues still store a plot when the archer taps the face. */
  const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,lkVals?null:xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
  if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
@@ -86,7 +87,8 @@ function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=nu
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
- if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
+ if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}
+ if(e&&e.lcT&&e.arrowD){s.lcT=1;s.arrowD=e.arrowD}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}

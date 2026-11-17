@@ -2,6 +2,21 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1645-savedarrows
+
+Arrow size on every plotting screen lists only the archer's saved arrows. Rebased onto main after the Lingkana login list and the Share link / iPhone QR reader. Cache version is `v2026-11-17-1645-savedarrows`, newer than `v2026-11-17-1130-live`. Not merged.
+
+- Score End (Just me, solo, a custom round, a one-archer league week, and a one-archer casual shoot) shows Arrow size as the arrows from My arrows: the name and the diameter. The plot dot and the line cutter use that diameter, the same way a chosen millimetre value was used before.
+- It starts on the arrow set chosen for the current bow, or the set used on the last shoot.
+- With no saved arrows, the control is one line, "No saved arrows - add one in My arrows", with a link to My arrows. Plotting stays on the usual 23 (9.13 mm).
+- Lingkana Score End does not draw a target, so it has no Arrow size control.
+- The shaft-size tables (64ths and Easton outside diameters) stay in the app for My arrows, where a set is still added by name and shaft. Shoots already saved keep their scores and their stored size.
+- `vendor/jsQR.js` from the merged Share link change stays in the page and in the service-worker precache.
+### Files
+app.js, casual.js, league.js, help.js, style.css, whatsnew.js, index.html, sw.js, version.json, tools/savedarrows_test.py, tools/arrowsize_test.py, tools/linecut_test.py, tools/endview_test.py, tools/field_round_test.py, qa/run_regression.py, qa/regression.md, CHANGELOG.md.
+### Tests
+Rerun after the rebase onto main: savedarrows 18 passed, arrowsize 59, linecut 14, field round 22, endview 40, whatsnew 33. All 0 failed.
+
 ## v2026-11-17-1130-live
 
 Nathaniel Stride's registration shows on the Lingkana login list. Cache version is `v2026-11-17-1130-live`, newer than `v2026-11-17-1115-live`, so phones load this copy. The Share link and iPhone QR reader from that earlier cache stay.
