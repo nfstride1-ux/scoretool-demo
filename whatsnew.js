@@ -4,7 +4,7 @@
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
   {v:'v2026-11-17-2405-loginfit',d:'2026-11-17',items:[
-   ['lock',"The passcode stays above the buttons","On the Lingkana login, the PIN and the passcode sit above the name list. The Back and Login bar no longer covers the box, including on a short phone and when the keyboard is open."]]},
+   ['lock',"The passcode stays above the buttons","On the Lingkana login, the PIN and the passcode sit above the name list. The Back and Login bar no longer covers the box, including on a short phone and when the keyboard is open.",'35a2571']]},
   {v:'v2026-11-17-2350-clearnight',d:'2026-11-17',items:[
    ['target',"Casual scores with buttons","Casual scoring no longer draws a target face. There is no spot picker, Hide target or zoom. Tap X, 10, 9 and the rest. Just me still plots on the face, and a one-archer league card still does too.",'308c56a'],
    ['target',"Lancaster X scores 11","In a casual Lancaster 660, an X scores 11 on the end, the running total and the saved score. A normal practice Vegas round still scores an X as 10. The league Lancaster already used 11.",'308c56a'],
