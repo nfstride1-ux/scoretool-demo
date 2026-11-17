@@ -176,10 +176,25 @@ try:
         chk('Nate ticking paid saves on the same paid list',
             ticked['host'] is True and ticked['on'] is True and bool(ticked['id']),
             str(ticked))
-        page.wait_for_timeout(900)
+        chk('the host paid list has a Remove button', page.locator('#lkpaidlist .lk-remove').count()>=5)
+        page.wait_for_timeout(400)
         page.evaluate("() => { const el=document.getElementById('lkpaidlist'); if(el) el.scrollIntoView({block:'center'}); }")
         page.wait_for_timeout(200)
         page.screenshot(path=str(SHOT / 'lingkana-nate-paid-390.png'), full_page=False)
+        page.locator('#lkpaidlist .lk-paidrow', has_text='Morgan Blake').locator('.lk-remove').click()
+        page.wait_for_selector('.lk-dropask', timeout=4000)
+        chk('Remove asks before it deletes', 'Morgan Blake' in (page.inner_text('.lk-dropask') or ''))
+        page.locator('.lk-dropask .lk-remove').click()
+        page.wait_for_timeout(500)
+        gone=page.evaluate("""() => {
+          const lg=lkEnsure();
+          const names=[];
+          for (const night of Object.keys(lg.reg||{})) for (const r of (lg.reg[night]||[])) names.push(r.name);
+          return {listed: (document.getElementById('lkpaidlist')||{}).innerText||'', names, drop: Object.keys(lg.drop||{})};
+        }""")
+        chk('confirmed Remove drops that archer from the league',
+            'Morgan Blake' not in gone['listed'] and 'Morgan Blake' not in gone['names'] and len(gone['drop'])>=1,
+            str(gone)[:300])
         page.evaluate("() => { lkMarkCoHost(false); }")
         chk('clearing Nate Evans login removes the paid-tick permission on this phone',
             page.evaluate("() => lkCanHost(lkEnsure())") is False)
@@ -254,6 +269,43 @@ try:
             and cap['extraMsg']=='This league already has 52 archers. Registration is closed.'
             and cap['again'] is True and cap['onNight2'] is True,
             str(cap))
+
+        wiped = page.evaluate("""() => {
+          const lg = lkEnsure();
+          lg.fresh = 1;
+          lg.order = ['gvv8rr3'];
+          lg.gn = {gvv8rr3:{n:'Ada Archer', t:1}};
+          lg.reg = {'2026-11-18':[{id:'gvv8rr3', name:'Ada Archer', at:1}]};
+          lg.paid = {'2026-11-18':{gvv8rr3:1}};
+          lg.grp = {1:{t:1,g:[['gvv8rr3']]}};
+          try { localStorage.setItem('scoretool.lk.reg', JSON.stringify([{name:'Ada Archer', at:1}])); } catch(e) {}
+          lkFresh(lg);
+          const after = {
+            names: ((lg.reg||{})['2026-11-18']||[]).map(r=>r.name),
+            order: (lg.order||[]).slice(),
+            fresh: lg.fresh,
+            inbox: localStorage.getItem('scoretool.lk.reg')
+          };
+          const oldSnap = lgMerge(lg, {k:'ls', code:lg.code, by:'steven', fresh:1794401520000, t:Date.now(), format:'lingkana',
+            reg:{'2026-11-18':[{id:'gvv8rr3', name:'Ada Archer', at:1}]},
+            order:['gvv8rr3'], gn:{gvv8rr3:{n:'Ada Archer', t:1}}});
+          const kept = ((lg.reg||{})['2026-11-18']||[]).some(r=>r.name==='Ada Archer');
+          const r = lkApplyReg({name:'Ada Archer', id:'gvv8rr3', at:Date.now()}, lg);
+          const id = r && r.id;
+          lkMarkCoHost(true);
+          const msg = lkDropArcher(id);
+          const snap = lgMerge(lg, {k:'ls', code:lg.code, by:'nathe', fresh:LK_FRESH, t:Date.now()+5, format:'lingkana',
+            reg:{'2026-11-18':[{id:id, name:'Ada Archer', at:1}]}, order:[id]});
+          const back = ((lg.reg||{})['2026-11-18']||[]).some(r=>r&&r.name==='Ada Archer');
+          return {after, oldSnap, kept, msg, snap, back, fresh: lg.fresh};
+        }""")
+        chk('the fresh cut wipes Ada Archer and an older snapshot cannot put the name back',
+            wiped['after']['names']==[] and wiped['after']['order']==[] and wiped['after']['inbox'] in (None,'null','[]')
+            and wiped['after']['fresh']==1794881040000 and wiped['oldSnap'] is False and wiped['kept'] is False,
+            str(wiped)[:400])
+        chk('a host Remove tombstone survives a later snapshot that still lists the archer',
+            wiped['msg']=='' and wiped['back'] is False,
+            str(wiped)[:400])
 
         onion = page.evaluate("""() => {
           if (typeof lkFlowHome==='function') lkFlowHome('ONIONSH2');

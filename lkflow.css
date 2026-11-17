@@ -140,7 +140,12 @@ body.lk-flow #sbar{display:none!important}
 .lk-known-btn.on{background:var(--lk-green,#2e7d32);color:#fff;border-color:var(--lk-green,#2e7d32)}
 .lkf .lk-tick{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500}
 .lkf .lk-tick input{width:18px;height:18px;accent-color:var(--lk-green,#2e7d32)}
-#lkretnote,#ospicked{margin:8px 0 10px}
+#lkpaidlist .lk-paidrow{cursor:default}
+#lkpaidlist .lk-paidrow label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
+.lk-remove,.lk-cancel{border:0;background:transparent;font:700 14px var(--body,system-ui,sans-serif);padding:6px 4px;cursor:pointer}
+.lk-remove{color:#8f1d1d}
+.lk-cancel{color:#111827}
+.lk-dropask{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
 #lkregqr{margin:16px 0;padding:12px;background:#fff;color:#111;border:1px solid #d1d5db;border-radius:12px;text-align:center}
 #lkregqr h2{font-size:16px;margin:0 0 6px;color:#111}
 #lkregqr p,#lkregqr a{color:#111}
