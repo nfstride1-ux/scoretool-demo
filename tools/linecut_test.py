@@ -48,7 +48,7 @@ try:
   pg.evaluate("cur=null;sv='sheet';nav('score')");pg.wait_for_timeout(500);pg.select_option('#rd',RD);pg.wait_for_timeout(300)
   if pg.locator('#f3row [data-f3=vert]').count():pg.click('#f3row [data-f3=vert]')
   pg.click('#st');pg.wait_for_timeout(800)
-  chk('new shoot is scored at the true size (lcT=1, 23 locked)',pg.evaluate("cur.lcT===1&&cur.arrowD.k=='s23'"))
+  chk('new shoot is scored at the true size (lcT=1, 23 mm locked)',pg.evaluate("cur.lcT===1&&Math.abs(cur.arrowD.mm-9.128)<0.001"))
   pg.click('#zcycle');pg.wait_for_timeout(200);pg.click('#zcycle');pg.wait_for_timeout(400)
   c=pg.evaluate("BUGC[1]")
   tap(pg,c[0]+0.6*DB,c[1]);tap(pg,c[0]+0.6*DI,c[1])

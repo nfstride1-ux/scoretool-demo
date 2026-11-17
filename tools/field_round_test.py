@@ -34,14 +34,15 @@ with sync_playwright() as p:
     # indoor chooser is unchanged
     start('Australian Indoor 18m')
     indoor=pg.locator('select[data-arrowsz] option').all_inner_texts()
-    chk('indoor chooser still lists 27s, thin shafts and custom',any(t.startswith('27/64') for t in indoor) and any('X10 Parallel Pro 4mm' in t for t in indoor) and any(t.startswith('Custom') for t in indoor))
+    def generic(opts):
+        return any('/64' in t or 'spine' in t or t.startswith('Custom') or t in [f'{n} mm' for n in range(4,10)] for t in opts)
+    chk('indoor chooser lists saved arrows only',bool(indoor) and not generic(indoor) and all('(' in t and t.endswith('mm)') for t in indoor))
     chk('indoor still has one End line',pg.locator('#endno').count()==1 and pg.locator('#endno').inner_text().startswith('End 1 of'))
     # field
     start('WA Field 24 Marked')
     opts=pg.locator('select[data-arrowsz] option').all_inner_texts()
-    chk('field chooser is 4mm through 9mm only',opts==[f'{n} mm' for n in range(4,10)])
-    chk('field chooser has no 27, no X10 and no custom',not any('27' in t or 'X10' in t or 'Custom' in t or '/64' in t for t in opts))
-    chk('rule cap is 9mm (9.3mm shaft limit)',E('arrowFldMaxMM')==9 and E('arrowFldOpts().length')==6)
+    chk('field chooser is the same saved arrows, not 4mm to 9mm',opts==indoor and not generic(opts))
+    chk('catalogue sizes and the field millimetre cap stay in the app',E('arrowFldMaxMM')==9 and E('arrowFldOpts().length')==6 and E("arrowOpts().some(o=>o[0]=='s27')") and E("arrowOpts().some(o=>String(o[1]).indexOf('X10 Parallel Pro')==0)"))
     en=pg.locator('#endno')
     top=E("""()=>{const e=document.querySelector('#endno'),h=document.querySelector('header.top');return {e:e.getBoundingClientRect().top,h:h.getBoundingClientRect().bottom,t:document.querySelector('.ad-title').getBoundingClientRect().top,n:document.querySelectorAll('#endno').length}}""")
     chk('one End number on the field entry header',top['n']==1 and en.inner_text()=='End 1 of 24')

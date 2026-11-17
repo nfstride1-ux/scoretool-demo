@@ -1,8 +1,8 @@
 # End by end plot viewer (31 Oct 2026, Nathe via Archery Coach). Throwaway test profile in a test browser only.
 # WebKit (the iPhone engine) at 390 x 844 with touch, emulating the installed home-screen app (navigator.standalone, display-mode standalone).
 # Checks:
-#  - the live scoring screen is unchanged: no viewer while scoring, and its HTML at three points (before the first arrow, mid end,
-#    end just completed) matches the 7b8b2ed snapshot (GOLD below; regenerate with CAPTURE=1 ROOT=<origin/main tree> only on purpose);
+#  - no viewer while scoring, and the scoring-screen HTML at three points (before the first arrow, mid end,
+#    end just completed) matches GOLD. Regenerated on purpose when Arrow size became the saved-arrow list.
 #  - a new shoot scored by touch to the end: the end-of-shoot summary has the viewer, End 1 of 10, end total, three spots,
 #    arrows numbered in shot order (not the saved highest-first order) at the true 23 size;
 #  - swipe left / right (touch events), the arrow buttons (real touch taps), keyboard arrows; the edges stop; no jump to the top;
@@ -21,7 +21,7 @@ def chk(n,c):(ok if c else bad).append(n);print(('PASS ' if c else 'FAIL ')+n)
 PORT=int(os.environ.get("PORT","8975"))
 BASE=os.environ.get('BASE') or f"http://localhost:{PORT}/"
 srv=None if os.environ.get('BASE') else subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
-GOLD={'start':'0468cb225030','mid':'37f159c755b4','done':'3baceebc97b5','sheet':'0908b6b574ce'}
+GOLD={'start':'e2f1a6fb11fb','mid':'f543c263b098','done':'aa8a8dd856d5','sheet':'eed6f37c4820'}
 RD='Australian Indoor 18m';IN=25.4;r23=23/64*IN/2/200
 UA='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
 STANDALONE="""Object.defineProperty(navigator,'standalone',{get:()=>true});(()=>{const m=window.matchMedia.bind(window);window.matchMedia=q=>/display-mode:\\s*standalone/.test(q)?{matches:true,media:q,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){},onchange:null,dispatchEvent(){return false}}:m(q)})()"""
@@ -76,9 +76,9 @@ try:
     if i<9:pg.locator('#addsc').tap();pg.wait_for_timeout(400)
   print('scoring screen snapshots',H)
   if CAP:print('CAPTURE',json.dumps(H));raise SystemExit
-  for k in GOLD:chk(f'live scoring screen unchanged from 7b8b2ed ({k}: {H.get(k)})',H.get(k)==GOLD[k])
-  s=pg.evaluate("JSON.stringify({id:cur.id,ends:cur.ends,pos:cur.pos,lcT:cur.lcT,k:cur.arrowD&&cur.arrowD.k})");s=json.loads(s);print('new shoot ends',s['ends'][:2])
-  chk('new shoot finished with 10 ends of 3 at the true 23 size',len(s['ends'])==10 and all(len(e)==3 for e in s['ends']) and s['lcT']==1 and s['k']=='s23')
+  for k in GOLD:chk(f'live scoring screen matches the saved-arrow snapshot ({k}: {H.get(k)})',H.get(k)==GOLD[k])
+  s=pg.evaluate("JSON.stringify({id:cur.id,ends:cur.ends,pos:cur.pos,lcT:cur.lcT,k:cur.arrowD&&cur.arrowD.k,mm:cur.arrowD&&cur.arrowD.mm})");s=json.loads(s);print('new shoot ends',s['ends'][:2])
+  chk('new shoot finished with 10 ends of 3 at the true 23 size',len(s['ends'])==10 and all(len(e)==3 for e in s['ends']) and s['lcT']==1 and abs((s.get('mm') or 0)-9.128)<0.001)
   chk('saved order is highest first (X, 10, 9), each plotted arrow keeps its shot number',s['ends'][0]==['X','10','9'] and [q['sn'] for q in s['pos'][0]]==[2,3,1])
   # ---------- end-of-shoot summary ----------
   if pg.locator('.evcard').count()==0 and pg.locator('#sheet,#finsess').count()==0:pg.evaluate("sv='sheet';score()");pg.wait_for_timeout(700)
