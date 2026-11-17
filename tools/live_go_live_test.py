@@ -73,63 +73,75 @@ try:
         chk('lkEventHomeUrl is the live event-home URL', ev_url == QR_URL, ev_url)
         page.screenshot(path=str(SHOT / 'live-event-home.png'), full_page=False)
 
-        # old register URL
+        # registration link opens the form, not the event home
         page.goto(f'{BASE}/lk-register.html', wait_until='networkidle')
         page.wait_for_timeout(800)
-        page.wait_for_selector('#lkhome', timeout=8000)
-        chk('live lk-register.html redirects to the event home',
-            page.locator('#lkhome').count()==1 and page.locator('#lkregpage').count()==0,
+        page.wait_for_selector('#lkregpage', timeout=8000)
+        chk('live lk-register.html opens the register form',
+            page.locator('#lkregpage').count()==1 and page.locator('#lkhome').count()==0
+            and page.locator('#lkregcode').count()==0,
             page.evaluate('() => location.href'))
 
         # Event Registration without Nathe
-        page.locator('#lkereg').click()
-        page.wait_for_selector('#lkregpage, #lkregform', timeout=5000)
-        rtxt = page.inner_text('#lkregpage') if page.locator('#lkregpage').count() else page.inner_text('body')
-        chk('live first-time register asks for lk-onion26 and does not list Nathe',
-            page.locator('#lkregcode').count()==1
+        rtxt = page.inner_text('#lkregpage')
+        chk('live register form is name and optional bow, email and phone, with no invite code or shoot night',
+            page.locator('#lkregname, #lkregbow, #lkregemail, #lkregphone').count()==4
+            and page.locator('#lkregnight').count()==0
+            and page.locator('#lkregcode').count()==0
+            and 'register for the lingkana league' in rtxt.lower()
             and 'nathe' not in rtxt.lower() and 'nathaniel' not in rtxt.lower()
-            and 'get scoretool' in rtxt.lower(),
+            and 'get scoretool' in rtxt.lower()
+            and page.locator('#lkqrsvg svg').count()==1,
             rtxt[:300])
         page.screenshot(path=str(SHOT / 'live-register-without-nathe.png'), full_page=False)
-        page.fill('#lkregcode', 'lk-onion26')
         page.fill('#lkregname', 'Sam Archer')
         if page.locator('#lkregemail').count():
             page.fill('#lkregemail', 'sam@example.com')
-        if page.locator('#lkregnight').count():
-            page.locator('#lkregnight').select_option(index=0)
         page.locator('#lkreggo').click()
         page.wait_for_timeout(800)
-        page.wait_for_selector('.lk-known-btn, [data-lkret]', timeout=4000)
-        page.locator('.lk-known-btn, [data-lkret]', has_text='Sam Archer').first.click()
-        page.wait_for_timeout(300)
-        chk('live returning archer needs no invite code',
-            page.locator('#lkregcode').count()==0 and page.locator('#lkregemail').count()==0,
+        page.wait_for_selector('#lkregok', timeout=4000)
+        chk('live register saves with no invite code and keeps the same fields',
+            'registered' in (page.inner_text('#lkregok') or '').lower()
+            and page.locator('#lkregcode').count()==0
+            and page.locator('#lkregemail').count()==1,
             page.inner_text('#lkregpage')[:240] if page.locator('#lkregpage').count() else '')
         page.screenshot(path=str(SHOT / 'live-register-tap-name.png'), full_page=False)
 
-        # 13-target picker
-        page.evaluate("""() => {
+        # Paid archers are grouped. There is no 13-bubble target picker.
+        placed = page.evaluate("""() => {
           try { sessionStorage.setItem('scoretool.lk.auth','LINGKN26'); } catch(e) {}
           window._lkAuthed = 'LINGKN26';
           const lg = (typeof lkEnsure==='function'&&lkEnsure())||null;
-          if (!lg) return 'no league';
+          if (!lg) return {err:'no league'};
           const night = (typeof LK_DATES!=='undefined'&&LK_DATES[0]) || '2026-11-18';
           const names = ['Sam Archer','Alex River','Kim Brook','Pat Reed','Jo West'];
-          lg.reg = lg.reg || {}; lg.order = lg.order || []; lg.gn = lg.gn || {};
+          lg.reg = lg.reg || {}; lg.order = lg.order || []; lg.gn = lg.gn || {}; lg.paid = lg.paid || {};
           lg.reg[night] = names.map((name,i) => {
             const id = 'demo'+(i+1);
             if (!lg.order.includes(id)) lg.order.push(id);
             lg.gn[id] = {n:name, t:Date.now()};
             return {id, name, at:Date.now()};
           });
+          lg.paid[night] = {};
+          names.forEach((name,i)=>{ lg.paid[night]['demo'+(i+1)] = 1; });
           if (typeof save==='function') save();
+          try { sessionStorage.setItem('scoretool.lk.scorerId','demo1'); sessionStorage.setItem('scoretool.lk.scorer','Sam Archer'); } catch(e) {}
+          window._lkFlowNight = 1;
           window._lkTarget = 0; window._lkPicked = [];
-          if (typeof lkFlowSelect==='function') lkFlowSelect();
-          return 'ok';
+          if (typeof lkFlowAssigned==='function') lkFlowAssigned();
+          const built = (typeof lkAssignGroups==='function') ? lkAssignGroups(lg, 1) : null;
+          return {bubbles: document.querySelectorAll('#lktargets .lk-tbtn, button[data-lktgt]').length,
+                  target: (document.getElementById('lkassigned')||{}).getAttribute&&document.getElementById('lkassigned').getAttribute('data-target'),
+                  groups: built && built.groups && built.groups.length,
+                  first: built && built.groups && built.groups[0] && built.groups[0].names};
         }""")
-        page.wait_for_selector('#lktargets, #lkselect', timeout=5000)
-        btns = page.locator('#lktargets .lk-tbtn, button[data-lktgt]')
-        chk('live target page shows 13 target numbers', btns.count()==13, str(btns.count()))
+        page.wait_for_selector('#lkassigned', timeout=5000)
+        chk('live scoring opens the assigned group and does not show target bubbles',
+            placed.get('bubbles')==0 and page.locator('#lktargets').count()==0
+            and page.locator('#lkassigned').count()==1
+            and placed.get('groups')==2
+            and placed.get('first')==['Alex River','Jo West','Kim Brook'],
+            str(placed))
         page.screenshot(path=str(SHOT / 'live-thirteen-targets.png'), full_page=False)
 
         # Onion Shed blank login

@@ -11,6 +11,8 @@
   const me=()=>(typeof h2hMe==='function'&&h2hMe())||(typeof TESTER!=='undefined'&&TESTER&&TESTER.id)||'';
   const myName=()=>{try{return sessionStorage.getItem('scoretool.lk.scorer')||''}catch(e){return''}};
   const setMyName=n=>{try{sessionStorage.setItem('scoretool.lk.scorer',n)}catch(e){}};
+  const myId=()=>{try{return sessionStorage.getItem('scoretool.lk.scorerId')||''}catch(e){return''}};
+  const setMyId=id=>{try{if(id)sessionStorage.setItem('scoretool.lk.scorerId',id);else sessionStorage.removeItem('scoretool.lk.scorerId')}catch(e){}};
   const appEl=()=>typeof app!=='undefined'?app:document.getElementById('app');
 
   function hideChrome(on){
@@ -198,6 +200,7 @@
     if(isOnion()){if(typeof lgSeed==='function')lgSeed()}
     else if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
+    if(!isOnion()&&typeof lkSyncStart==='function')lkSyncStart();
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
@@ -231,40 +234,77 @@
   }
 
 
-  function login(){
+  async function login(){
     if(isOnion())return osLogin();
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const el=appEl();if(!el)return;
-    const name=myName()||'';
-    const ev=lg?lg.name:LK_NAME;
+    let w=nightOf(lg||{});
+    if(w>6)w=1;
+    const ev=lg?lg.name:(typeof LK_NAME==='string'?LK_NAME:'Lingkana League');
+    const rows=(nightSignups(lg,w)||[]).filter(r=>r&&r.id);
+    const seen=new Set();
+    const names=[];
+    rows.forEach(r=>{
+      const id=String(r.id);
+      if(seen.has(id))return;
+      seen.add(id);
+      names.push({id,name:r.name||((typeof lgName==='function'&&lgName(r.id))||id)});
+    });
+    if(typeof lkIsCoHostName!=='function'||!names.some(n=>lkIsCoHostName(n.name))){
+      names.push({id:(typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate', name:(typeof LK_COHOST_NAME==='string'&&LK_COHOST_NAME)||'Nate Evans'});
+    }
+    names.sort((a,b)=>String(a.name).localeCompare(String(b.name),'en'));
+    let pick=String(window._lkLoginId||myId()||'');
+    if(pick&&!names.some(n=>n.id===pick))pick='';
+    window._lkLoginId=pick;
+    const list=names.length
+      ?`<div class="lk-namelist" id="lkscorernames" role="listbox" aria-label="Your name">${names.map(n=>`<button type="button" class="lk-namebtn${pick===n.id?' on':''}" data-lkscorer="${esc(n.id)}" aria-pressed="${pick===n.id?'true':'false'}">${esc(n.name)}</button>`).join('')}</div>`
+      :`<p id="lknonames">No one has registered for this night yet.</p>`;
     el.innerHTML=`<div class="lkf" id="lkloginpage">
       <h1>Login</h1>
       <label for="lkevent">Select Event</label>
-      <select id="lkevent"><option value="${esc(LK_CODE)}" selected>${esc(ev)}</option></select>
-      <label for="lkscorer">Scorer Full Name</label>
-      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(name)}">
+      <select id="lkevent"><option value="${esc(typeof LK_CODE==='string'?LK_CODE:'LINGKN26')}" selected>${esc(ev)}</option></select>
+      <label for="lknight">Shoot night</label>
+      <select id="lknight">${nightChoices(lg,w)}</select>
+      <p class="small" id="lkscorerlabel">Your name</p>
+      ${list}
       <label for="lkpw">Enter the Passcode</label>
       <input id="lkpw" type="password" autocomplete="current-password">
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
-      ${typeof lkCanHost==='function'&&lg&&lkCanHost(lg)?`<button type="button" class="lk-host" id="lkhostpw">Host: change scoring password</button>`:''}
       ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
     </div>`;
     if($id('lkloginback'))$id('lkloginback').onclick=()=>home(evCode());
+    if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
+    el.querySelectorAll('[data-lkscorer]').forEach(b=>b.onclick=()=>{
+      window._lkLoginId=b.getAttribute('data-lkscorer');
+      el.querySelectorAll('[data-lkscorer]').forEach(x=>{
+        const on=x===b;
+        x.classList.toggle('on',on);
+        x.setAttribute('aria-pressed',on?'true':'false');
+      });
+    });
     const go=()=>{
-      const n=($id('lkscorer').value||'').trim();
-      const pw=$id('lkpw').value||'';
+      const id=String(window._lkLoginId||'');
+      const rec=names.find(n=>n.id===id);
+      const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
-      if(n.length<2){if(msg)msg.textContent='Type the scorer\'s full name.';return}
-      setMyName(n);
-      (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('')).then(m=>{
+      if(!rec){if(msg)msg.textContent='Tap your name.';return}
+      const cohost=rec.id===((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate')||(typeof lkIsCoHostName==='function'&&lkIsCoHostName(rec.name));
+      setMyName(rec.name);
+      setMyId(rec.id);
+      setNight(+($id('lknight')&&$id('lknight').value)||w);
+      (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('Scoring is not available on this phone.')).then(m=>{
         if(m){if(msg)msg.textContent=m;return}
-        selectArchers();
+        if(typeof lkMarkCoHost==='function')lkMarkCoHost(cohost);
+        if(cohost){review();return}
+        showAssigned();
       });
     };
     $id('lkpwgo').onclick=go;
-    $id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
-    if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
+    if($id('lkpw'))$id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
   }
 
   function qrLogin(){
@@ -366,7 +406,10 @@
         return`<option value="${n}" ${n===w?'selected':''}>${esc(lab)}${d?' · '+esc(d):''}</option>`;
       }).join('');
     }
-    return (LK_DATES||[]).map((d,i)=>`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(nightLabel(i))}</option>`).join('');
+    return (typeof LK_DATES!=='undefined'?LK_DATES:[]).slice(0,6).map((d,i)=>{
+      const when=typeof lkFmtD==='function'?lkFmtD(d).replace(/,?\s*\d{4}/,''):d;
+      return`<option value="${i+1}" ${i+1===w?'selected':''}>${esc(when)}</option>`;
+    }).join('');
   }
   function archerTarget(lg,w,id){
     const rec=(nightSignups(lg,w)||[]).find(r=>r&&r.id===id);
@@ -434,10 +477,88 @@
     return list.filter(r=>r&&r.id&&paid.has(String(r.id)));
   }
 
-  function selectArchers(){
+  async function showAssigned(){
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=eventLg();
     if(!lg){home();return}
-    if(!isOnion()&&typeof lkAuthed==='function'&&lg.pwHash&&!lkAuthed(lg)){login();return}
+    if(isOnion()){selectArchersOnion();return}
+    if(typeof lkAuthed==='function'&&!lkAuthed(lg)){login();return}
+    const id=myId();
+    if(!id){login();return}
+    const w=nightOf(lg);
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    const title=esc(lg.name||evName());
+    const backBar=bar(btn('lkbacklogin','Back','grey'),'');
+    const wireBack=()=>{if($id('lkbacklogin'))$id('lkbacklogin').onclick=()=>login()};
+    if(+w>=7){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>Night 7 scoring is not open yet.</p>${backBar}</div>`;
+      wireBack();return;
+    }
+    const built=typeof lkAssignGroups==='function'?lkAssignGroups(lg,w):{ok:false,msg:'Groups are not available on this phone.'};
+    if(!built||built.ok===false){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>${esc((built&&built.msg)||'Could not build groups.')}</p>${backBar}</div>`;
+      wireBack();return;
+    }
+    const signed=(nightSignups(lg,w)||[]).find(r=>r&&String(r.id)===String(id));
+    const group=(built.groups||[]).find(g=>(g.ids||[]).map(String).includes(String(id)));
+    const solo=(built.solo||[]).some(p=>String(p.id)===String(id));
+    const who=esc((signed&&signed.name)||myName()||'');
+    if(!signed){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>No target yet</h1><p>Your name is not registered for this night.</p>${backBar}</div>`;
+      wireBack();return;
+    }
+    if(!group&&solo){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0" data-solo="1">
+        <h1>No target yet</h1>
+        <p>${who}, you are the only archer paid for this night.</p>
+        <p class="small muted">A group needs at least two archers, so there is no target yet.</p>
+        ${backBar}
+      </div>`;
+      wireBack();return;
+    }
+    if(!group){
+      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0">
+        <h1>No target yet</h1>
+        <p>${who}, you are registered for this night, but you are not on the host's paid list, so you are not in a group.</p>
+        <p class="small muted">The host ticks who has paid on the paid list. Unpaid names stay out of the groups. This app does not take the entry fee.</p>
+        ${backBar}
+      </div>`;
+      wireBack();return;
+    }
+    const lis=(group.names||[]).map((n,i)=>{
+      const mine=String(group.ids[i])===String(id);
+      return`<li class="${mine?'you':''}">${esc(n)}${mine?' (you)':''}</li>`;
+    }).join('');
+    const mode=built.mode==='rank'
+      ?'Order is the best 4 scores from nights already shot: highest total, then 11s, then 10s. Names with no score yet follow, A to Z.'
+      :'Order is A to Z. This night has no earlier result to rank by.';
+    const rem=group.ids.length<4?`<p class="small">This target has ${group.ids.length} archers.</p>`:'';
+    el.innerHTML=`<div class="lkf" id="lkassigned" data-target="${group.target}" data-mode="${esc(built.mode||'')}">
+      <h1>${title}</h1>
+      <p class="lk-tgt" id="lktgtlabel">Target ${group.target}</p>
+      <p>You are scoring this group.</p>
+      <ol class="lk-group" id="lkgroupnames">${lis}</ol>
+      <p class="small muted">${esc(mode)}</p>
+      ${rem}
+      ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart','Start scoring','green'))}
+    </div>`;
+    wireBack();
+    if($id('lkstart'))$id('lkstart').onclick=()=>{
+      window._lkTarget=group.target;
+      window._lkScoreIds=group.ids.slice();
+      window._lkPicked=group.ids.slice();
+      startScoring(lg,w,group.ids.slice());
+    };
+  }
+
+  function selectArchers(){
+    if(!isOnion()){showAssigned();return}
+    selectArchersOnion();
+  }
+  function selectArchersOnion(){
+    const lg=eventLg();
+    if(!lg){home();return}
     hideChrome(true);
     const w=nightOf(lg);
     const target=+(window._lkTarget||0);
@@ -888,8 +1009,10 @@
     entryScreen();
   }
 
-  function review(){
+  async function review(){
     if(isOnion())return osReview();
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     hideChrome(true);
     const w=nightOf(lg||{});
@@ -898,6 +1021,20 @@
       lkResultsView(w);
       const back=$id('lkresback');
       if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
+      if(lg&&typeof lkCanHost==='function'&&lkCanHost(lg)&&typeof lkPotHTML==='function'){
+        const card=document.getElementById('lkresults');
+        const wrap=document.createElement('div');
+        wrap.innerHTML=lkPotHTML(lg);
+        const pot=wrap.firstElementChild;
+        if(pot&&card&&card.parentNode)card.parentNode.insertBefore(pot,card.nextSibling);
+        if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
+        document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
+          const nw=+(window._lkPotNight||w);
+          const m=typeof lkSetPaid==='function'?lkSetPaid(box.getAttribute('data-lkpaid'),typeof lkNightKey==='function'?lkNightKey(lg,nw):'',box.checked):'';
+          if(m){box.checked=!box.checked;return}
+          review();
+        });
+      }
       return;
     }
     const el=appEl();if(!el)return;
@@ -921,10 +1058,12 @@
   function regEntry(){
     if(isOnion())return osRegister();
     hideChrome(true);
-    try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function')lkSyncOnce();
+    try{history.replaceState(null,'',location.pathname+location.search+(window.LK_REGISTER_HASH||(typeof LK_REGISTER_HASH==='string'&&LK_REGISTER_HASH)||'#lk-register'))}catch(e){}
     if(typeof lkRegisterView==='function')lkRegisterView();
     const back=document.getElementById('lkregback');
-    if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
+    if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||'#lk-home'))}catch(e){}home(evCode())};
   }
 
   function rules(){
@@ -1148,11 +1287,14 @@
     const path=String(location.pathname||'');
     /* The /test/ page still opens the public event list. The live ScoreTool app at the root stays the normal app unless the URL is an event-home or old register link. */
     if(/\/test(\/|$)/.test(path))return true;
-    return wantsEventHome();
+    return wantsEventHome()||wantsRegister();
+  }
+  function wantsRegister(){
+    return typeof lkIsRegHash==='function'&&lkIsRegHash();
   }
   function wantsEventHome(){
+    if(wantsRegister())return false;
     if(typeof lkIsHomeHash==='function'&&lkIsHomeHash())return true;
-    if(typeof lkIsRegHash==='function'&&lkIsRegHash())return true;
     return false;
   }
 
@@ -1161,6 +1303,7 @@
   window.lkFlowList=list;
   window.lkFlowLogin=login;
   window.lkFlowSelect=selectArchers;
+  window.lkFlowAssigned=showAssigned;
   window.lkFlowReview=review;
   window.lkFlowScore=scoreScreen;
   window.lkFlowEnter=enter;
@@ -1187,6 +1330,7 @@
     if(window._lkFlowStarted)return;
     window._lkFlowStarted=1;
     hideChrome(true);
+    if(wantsRegister()){regEntry();return}
     if(wantsEventHome()){
       const code=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
       try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
@@ -1198,6 +1342,7 @@
   addEventListener('hashchange',()=>{
     if(!pathIsPublicEvent())return;
     if(typeof lkIsResHash==='function'&&lkIsResHash())return;
+    if(wantsRegister()){regEntry();return}
     if(wantsEventHome()){
       const code=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
       try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||(typeof LK_HOME_HASH==='string'&&LK_HOME_HASH)||'#lk-home'))}catch(e){}
