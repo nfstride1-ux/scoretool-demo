@@ -101,7 +101,7 @@ try:
           return {order: lg.order.slice(), gn: Object.keys(lg.gn||{}), sc: Object.keys(lg.sc||{}), reg: Object.keys(lg.reg||{}), fresh: lg.fresh, n: (lg.order||[]).length};
         }""")
         chk('fresh wipe removes test sign-up slime and any test scores',
-            wiped['order']==['lkhost:nate'] and wiped['gn']==['lkhost:nate'] and wiped['sc']==[]
+            wiped['order']==['lkhost:nathe','lkhost:nate'] and wiped['gn']==['lkhost:nathe','lkhost:nate'] and wiped['sc']==[]
             and len(wiped['reg'])==6 and wiped['fresh']>=1794401520000
             and 'slime' not in str(wiped) and 'gkv6txy' not in wiped['order'])
 

@@ -141,21 +141,32 @@ try:
             not cleared.get('auth') and not cleared.get('id') and cleared.get('ends')==[['10']], str(cleared))
         names = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
         chk('login lists only the archer this phone remembers', names==['Sam Archer'], str(names))
-        page.locator('#lkshowall').click()
-        chk('Show all names asks for the event passcode first',
-            'event passcode' in (page.inner_text('#lkpwmsg') or '').lower()
-            and page.locator('#lkscorernames .lk-namebtn').all_inner_texts()==['Sam Archer'])
-        page.fill('#lkpw', 'Kana26')
+        chk('a return login is night, name and PIN, with no event passcode',
+            page.locator('#lknight').is_visible() and page.locator('#lkpin').is_visible()
+            and not page.locator('#lkpassbox').is_visible()
+            and 'Enter the Passcode' not in page.locator('#lkloginpage').inner_text())
+        page.evaluate("""() => {
+          localStorage.setItem('scoretool.theme','light');
+          document.documentElement.setAttribute('data-theme','light');
+          const b=document.getElementById('lktheme');
+          if(b){b.textContent='Dark'; b.title='Switch to dark mode';}
+          const s=document.getElementById('scroller'); if(s)s.scrollTop=0;
+        }""")
+        page.screenshot(path=str(SHOT/'lingkana-return-login-390.png'))
+        page.screenshot(path=str(SHOT/'lingkana-login-pin-390.png'))
+        page.fill('#lkfind', 'Alex')
+        page.wait_for_timeout(80)
+        chk('a name search finds an archer this phone has not saved, without the passcode',
+            page.locator('#lkscorernames .lk-namebtn').all_inner_texts()==['Alex River'])
+        page.fill('#lkfind', '')
         page.locator('#lkshowall').click()
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').wait_for(timeout=4000)
         shown = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
-        chk('the event passcode reveals the other names', 'Alex River' in shown and 'Sam Archer' in shown, str(shown))
+        chk('Show all names lists the other archers without the event passcode', 'Alex River' in shown and 'Sam Archer' in shown, str(shown))
         page.locator('#lkscorernames .lk-namebtn', has_text='Sam Archer').click()
         page.wait_for_selector('#lkpin', timeout=3000)
-        page.locator('#lkpin').scroll_into_view_if_needed()
-        page.screenshot(path=str(SHOT/'lingkana-login-pin-390.png'))
+        chk('choosing the saved archer again hides the passcode', not page.locator('#lkpassbox').is_visible())
         page.fill('#lkpin', '0000')
-        page.fill('#lkpw', 'Kana26')
         page.locator('#lkpwgo').click()
         page.wait_for_timeout(250)
         chk('a wrong PIN is refused', 'not right' in (page.inner_text('#lkpwmsg') or '').lower() and page.locator('#lgentry').count()==0)
@@ -168,7 +179,6 @@ try:
         page.evaluate("""() => { const b=JSON.parse(localStorage.getItem('scoretool.lk.pinlock')||'{}'); const id=Object.keys(b)[0]; if(id){b[id].until=Date.now()-1000; localStorage.setItem('scoretool.lk.pinlock', JSON.stringify(b));} }""")
         page.locator('#lkscorernames .lk-namebtn', has_text='Sam Archer').click()
         page.fill('#lkpin', '1234')
-        page.fill('#lkpw', 'Kana26')
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkassigned, #lgentry', timeout=5000)
         chk('the right PIN after the lock opens scoring again',
@@ -278,6 +288,26 @@ try:
         pg.wait_for_selector('#lkpinset', timeout=4000)
         chk('a registration with no PIN asks for one at the next login',
             'no PIN yet' in pg.inner_text('#lkpinset'))
+        chk('setting that first PIN still asks for the event passcode once',
+            pg.locator('#lkpassbox').is_visible() and pg.locator('#lkpin2').is_visible())
+        pg.fill('#lkpin', '2468')
+        pg.fill('#lkpin2', '2468')
+        pg.fill('#lkpw', 'nope')
+        pg.locator('#lkpwgo').click()
+        pg.wait_for_timeout(200)
+        still = pg.evaluate("""() => {
+          const row = Object.values(lkEnsure().reg||{}).flat().find(r => r && r.name==='No Pin')||{};
+          return {hash: !!row.pinHash, msg: (document.querySelector('#lkpwmsg')||{}).textContent||''};
+        }""")
+        chk('a wrong passcode does not save the new PIN',
+            not still.get('hash') and 'not right' in still.get('msg','').lower(), str(still))
+        pg.fill('#lkpin', '2468')
+        pg.fill('#lkpin2', '2468')
+        pg.fill('#lkpw', 'Kana26')
+        pg.locator('#lkpwgo').click()
+        pg.wait_for_selector('#lkassigned, #lgentry', timeout=5000)
+        chk('the right passcode sets the PIN and logs in',
+            pg.locator('#lkassigned').count()+pg.locator('#lgentry').count()>=1)
         b.close()
 finally:
     srv.terminate()

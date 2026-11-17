@@ -36,6 +36,10 @@ const LK_PIN_LOCK_MS=60*1000;
 const LK_FEE=10; /* entry fee used later by the pot display; the $25 range fee is separate and excluded */
 /* One-time live wipe: drop test sign-ups and claims from before this moment so all 660 nights start empty for 18 Nov. Do not bump — other archers' later registrations must be kept. */
 const LK_FRESH=1794881040000; /* 2026-11-17 10:04 Australia/Perth: wipe Ada Archer and the other test sign-ups. Do not bump again. */
+/* One-time go-live clear for the first real night (Wed 18 Nov). A new key, so phones that already ran LK_FRESH run this once and then never again. Do not bump. */
+const LK_CLEAR=1794903600000; /* 2026-11-17 16:20 Australia/Perth. Do not bump. A later key would drop sign-ups made after this version loads. */
+const LK_HOST_REG_ID='lkhost:nathe';
+const LK_HOST_REG_NAME='Nathaniel Stride';
 
 /* Locked by Nathe 12 Nov 2026. Do not invent extras. Shown on the Lingkana rules page only. */
 const LK_RULES=[
@@ -82,8 +86,27 @@ function lkEnsure(){
   lkDropHostIfUnregistered(lg);
   return lg;
 }
+function lkClearLive(lg){
+  if(!lg||!lkIs(lg)||(+lg.clear||0)>=LK_CLEAR)return false;
+  lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
+  lg.drop={};lg.pins={};lg.order=[];lg.fin=null;lg.fint=0;
+  lg.clear=LK_CLEAR;lg.fresh=Math.max(+lg.fresh||0,LK_CLEAR);lg.dirty=1;lg.since=null;lg.posted=0;lg.wt=Date.now();
+  try{
+    localStorage.removeItem(LK_REG_KEY);
+    localStorage.removeItem(LK_MINE_KEY);
+    localStorage.removeItem(LK_LOCK_KEY);
+  }catch(e){}
+  try{
+    if(typeof S!=='undefined'&&S&&Array.isArray(S.sessions)){
+      S.sessions=S.sessions.filter(s=>!(s&&(s.league===LK_CODE||String(s.id||'').indexOf('lg-'+LK_CODE)===0)));
+    }
+  }catch(e){}
+  if(typeof save==='function')save();
+  return true;
+}
 function lkFresh(lg){
   if(!lg||!lkIs(lg))return lg;
+  lkClearLive(lg);
   if((lg.fresh||0)<LK_FRESH){
     /* Test sign-ups from before the cutoff go. A registration made after it stays, including the host signing himself up. */
     const keep={};
@@ -106,9 +129,64 @@ function lkFresh(lg){
     }catch(e){}
     if(typeof save==='function')save();
   }
+  lkSeedHost(lg);
   lkSeedCoHost(lg);
   lkDropHostIfUnregistered(lg);
   return lg;
+}
+function lkIsHostRegName(name){
+  const n=lkCleanName(name||'').toLowerCase();
+  return n==='nathaniel stride'||n==='nathe';
+}
+function lkHostRegRow(r){
+  if(!r||lkIsHostAccount(r.id))return false;
+  if(String(r.id||'')===LK_HOST_REG_ID)return true;
+  return lkIsHostRegName(r.name||'');
+}
+/* Nathaniel Stride stays on every shoot night, the same way Nate Evans does. The go-live clear cannot drop him. */
+function lkSeedHost(lg){
+  if(!lg||!lkIs(lg))return false;
+  let ch=false;
+  lg.reg=lg.reg||{};lg.gn=lg.gn||{};lg.order=lg.order||[];lg.drop=lg.drop||{};
+  const nights=LK_DATES.slice(0,6);
+  for(const id of Object.keys(lg.drop)){
+    const n=(lg.drop[id]&&lg.drop[id].n)||'';
+    if(id===LK_HOST_REG_ID||lkIsHostRegName(n)){delete lg.drop[id];ch=true}
+  }
+  const seen=[];
+  nights.forEach(night=>{(lg.reg[night]||[]).forEach(r=>{if(lkHostRegRow(r))seen.push(r)})});
+  let canon=LK_HOST_REG_ID, at=LK_CLEAR, bow='', email='', phone='';
+  const self=seen.filter(r=>r.id&&String(r.id)!==LK_HOST_REG_ID&&lkIsHostRegName(r.name||''));
+  const pick=self.slice().sort((a,b)=>(+b.at||0)-(+a.at||0))[0]||seen.slice().sort((a,b)=>(+b.at||0)-(+a.at||0))[0];
+  if(pick&&pick.id&&lkIsHostRegName(pick.name||'')&&!lkIsHostAccount(pick.id))canon=String(pick.id);
+  if(pick){at=+pick.at||at;bow=pick.bow||'';email=pick.email||'';phone=pick.phone||''}
+  if(lkIsHostAccount(canon))canon=LK_HOST_REG_ID;
+  if(!lg.order.includes(canon)){lg.order.push(canon);ch=true}
+  const dropIds=new Set(seen.map(r=>String(r.id||'')).filter(id=>id&&id!==canon));
+  dropIds.forEach(id=>{
+    if(lg.order.includes(id)){lg.order=lg.order.filter(x=>x!==id);ch=true}
+    if(lg.gn[id]){delete lg.gn[id];ch=true}
+  });
+  if(!lg.gn[canon]||lg.gn[canon].n!==LK_HOST_REG_NAME){
+    const prev=lg.gn[canon]||{};
+    lg.gn[canon]={n:LK_HOST_REG_NAME,j:prev.j?1:0,t:prev.t||at,by:prev.by||'organiser'};
+    ch=true;
+  }
+  nights.forEach(night=>{
+    const rows=(lg.reg[night]||[]).slice();
+    const mine=rows.filter(lkHostRegRow);
+    const rest=rows.filter(r=>!lkHostRegRow(r));
+    const keep=mine.find(r=>String(r.id)===canon)||mine[0]||null;
+    if(mine.length===1&&keep&&String(keep.id)===canon&&keep.name===LK_HOST_REG_NAME){
+      if(!keep.organiser){keep.organiser=1;ch=true}
+      return;
+    }
+    const row={id:canon,name:LK_HOST_REG_NAME,at:(keep&&+keep.at)||at||LK_CLEAR,bow:(keep&&keep.bow)||bow||'',email:(keep&&keep.email)||email||'',phone:(keep&&keep.phone)||phone||'',organiser:1};
+    lg.reg[night]=rest.concat([row]);
+    ch=true;
+  });
+  if(ch){lg.dirty=1;if(typeof save==='function')save()}
+  return ch;
 }
 /* Nathe (account id nathe, or the archer registered as Nathaniel Stride) and co-host Nate Evans.
    The minimum of two archers does not apply when the paid list is only these organisers. */
@@ -729,6 +807,7 @@ function lkDropArcher(id){
   const who=String(id||'');if(!who)return 'Pick an archer.';
   const name=(lg.gn&&lg.gn[who]&&lg.gn[who].n)||(typeof lgName==='function'&&lgName(who))||'';
   if(who===LK_COHOST_ID||who==='lkhost:nate'||lkIsCoHostName(name))return 'Nate Evans is an organiser for every night, so he stays on the list.';
+  if(who===LK_HOST_REG_ID||lkIsHostRegName(name))return 'Nathaniel Stride is the host for every night, so he stays on the list.';
   const at=Date.now();
   lkApplyDrop(lg,who,name,at);
   const whoBy=lkPaidAuthority()||'nathe';
@@ -1693,8 +1772,8 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_REG_KEY,LK_FEE,LK_FRESH,lkFresh,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });
 })();

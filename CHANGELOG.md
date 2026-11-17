@@ -2,6 +2,31 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-2350-clearnight
+
+Casual scoring is buttons only, a casual Lancaster X scores 11, the Just me round list follows the discipline, and the Lingkana test data is cleared once for Wednesday 18 Nov. Cache version is `v2026-11-17-2350-clearnight` (`?v=202611172350`), newer than `v2026-11-17-2230-pinorder`. Not merged. PR #1 was not touched.
+
+- Casual no longer draws a target face, spot picker, Hide target or zoom Reset. The score buttons remain, including the end total and the running total. Just me still plots. A one-archer league that is not Lingkana still uses the shared face card.
+- A casual Lancaster 660 scores X as 11 on the end, the running total, the ends list and the score table. Vegas 300 in casual still scores X as 10. The league Lancaster path was already 11.
+- The Just me discipline row refills the round list. Chrome was showing every round because a hidden option is still listed. Each discipline now contains only its own rounds. Clout has no built-in rounds, so that list is the create-your-own line.
+- Loading this version runs one new clear, `LK_CLEAR` (2026-11-17 16:20 Perth). It wipes Lingkana registrations, scores, groups, ends, PINs, payment ticks, tombstones, claims and league sessions on the phone, then registers Nathaniel Stride and Nate Evans on all six shoot nights. Their existing login bypass is unchanged: the host phone skips the PIN, and Nate Evans skips the PIN on a scorer phone. The clear stores its key on the league, so it does not run again and does not remove scores entered after it.
+- The shared store is the ntfy relay. Old messages cannot be deleted. After this phone has cleared, a snapshot stamped with an earlier fresh or clear value is ignored, and a registration, removal or claim from before the cut is ignored. This version posts a new snapshot that contains the two organisers and no scores. A phone still on an older build can post a new registration after the cut, and a cleared phone will accept that message. Phones need this version before the first real night.
+
+### Files
+casual.js, lingkana.js, league.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, tools/guard.py, tools/casual_fixes_test.py, tools/lk_clear_test.py, tools/casual_indoor_test.py, tools/undozoom_test.py, tools/zoompersist_test.py, tools/mixedface_test.py, tools/pickers_test.py, tools/lingkana_groups_test.py, qa/run_regression.py, tools/lk_qr_login_test.py, tools/live_go_live_test.py, tools/paid_picker_test.py, test/event_home_test.py.
+
+## v2026-11-17-2230-pinorder
+
+A Lingkana PIN replaces the event passcode on later logins, and a group score card starts every end with the first archer. Cache version is `v2026-11-17-2230-pinorder` (`?v=202611172230`), newer than `v2026-11-17-2115-spot1`. Not merged. PR #1 was not touched.
+
+- Confirmed: the login page always showed Enter the Passcode, and Login always called `lkUnlock` with that field. Show all names also required the passcode before it listed anyone else. A name that already had a PIN was still stopped until the passcode was typed again.
+- A return login is the shoot night, the archer's name and their PIN. The passcode box stays hidden. Search and Show all names find an archer on a new phone without the passcode, and that archer then enters their PIN. A name with no PIN still has to enter the passcode once, and the PIN is saved only after that passcode is right. Host phones (nathe, and Nate Evans) still skip the PIN and use the passcode. Reset PIN is unchanged. Five wrong PINs still lock that name on the phone for a minute.
+- Confirmed: Lingkana `pickEntryId` kept `window._lgAct`, the archer who had just finished, whenever they were not finished for the whole night. Add Scores for the next end therefore opened on the last scorer. The shared-phone league card and casual scoring already moved on, and wrapped to archer 1 when the end was finished, but a reload with no archer held picked the first person who was not finished for the round, even if someone later in the order was behind.
+- Every new end now starts at the first archer in the scorecard order. Within an end the card still moves to the next archer who has fewer complete ends. A reload mid-arrow stays on that arrow. A reload between archers opens the one who is behind. Peel already picks the archer on the lowest target, so that card was left as it is.
+
+### Files
+lkflow.js, lingkana.js, league.js, casual.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, qa/run_regression.py, tools/lk_return_pin_test.py, tools/lingkana_groups_test.py, tools/lk_group_order_test.py, tools/lk_qr_login_test.py, tools/live_go_live_test.py, tools/paid_picker_test.py.
+
 ## v2026-11-17-2115-spot1
 
 On the triangular indoor 3-spot, Spot 1 is the single spot on top, Spot 2 is the bottom left and Spot 3 is the bottom right. Cache version is `v2026-11-17-2115-spot1` (`?v=202611172115`). League scoring and the vertical face are unchanged. Not merged.

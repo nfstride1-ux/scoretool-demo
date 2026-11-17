@@ -3,6 +3,14 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-2350-clearnight',d:'2026-11-17',items:[
+   ['target',"Casual scores with buttons","Casual scoring no longer draws a target face. There is no spot picker, Hide target or zoom. Tap X, 10, 9 and the rest. Just me still plots on the face, and a one-archer league card still does too.",'308c56a'],
+   ['target',"Lancaster X scores 11","In a casual Lancaster 660, an X scores 11 on the end, the running total and the saved score. A normal practice Vegas round still scores an X as 10. The league Lancaster already used 11.",'308c56a'],
+   ['people',"Each discipline lists its own rounds","Just me asks for the discipline first. Target, Indoor, Field, Clout and 3D each show only the rounds for that discipline.",'308c56a'],
+   ['people',"Lingkana is clear for Wednesday","Loading this version clears the test sign-ups, scores, groups, PINs, payment ticks and removals once. Nathaniel Stride and Nate Evans stay registered for every shoot night. Scores entered after that stay, including the first real night.",'308c56a']]},
+  {v:'v2026-11-17-2230-pinorder',d:'2026-11-17',items:[
+   ['lock',"Your PIN is enough to log back in","After your Lingkana PIN is set, logging in is the night, your name and your PIN. The event passcode is not asked again. On a new phone, search for your name or tap Show all names, then enter your PIN. A name with no PIN still uses the passcode once, to set one. Five wrong PINs still lock that name for a minute.",'67837b7'],
+   ['people',"Each end starts with the first archer","On a group score card, every end starts with the first archer on the card, then the next, in that same order. The archer who finished the previous end does not jump to the front of the next one.",'67837b7']]},
   {v:'v2026-11-17-2115-spot1',d:'2026-11-17',items:[
    ['target',"Spot 1 is the top spot","On the triangular indoor 3-spot, Spot 1 is the single spot on top, Spot 2 is the bottom left and Spot 3 is the bottom right. An arrow saved earlier stays on the same spot. The vertical 3-spot is unchanged.",'514bdcc']]},
   {v:'v2026-11-17-2030-triangle',d:'2026-11-17',items:[

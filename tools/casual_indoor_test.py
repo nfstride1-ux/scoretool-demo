@@ -40,77 +40,49 @@ try:
   jm.screenshot(path='/tmp/lgx_ind_just.png',full_page=True)
   J=jm.evaluate("(()=>{const s=S.sessions[S.sessions.length-1];return{ends:s.ends,pos:s.pos,face3:s.face3}})()")
   chk('Just me scored all 30 arrows',sum(len(e) for e in J['ends'])==30)
-  # ---------- Casual ----------
+  # ---------- Casual: same arrow values, buttons only, no face ----------
   c2,pg,e2=phone(b)
   KEY=pg.evaluate("KEY");before=snap(pg)
   pg.evaluate("nav('score')");pg.wait_for_timeout(500)
   CODE=pg.evaluate("csCreate({name:'Indoor test',round:'Australian Indoor 18m',face3:'vert',self:true,ppl:[]}).code");ME=pg.evaluate('csMe()')
   pg.evaluate(f"csView('{CODE}')");pg.wait_for_timeout(600)
-  chk('casual is on the vertical 3-spot',pg.evaluate(f"csGet('{CODE}').face3")=='vert')
-  chk('Just me look: End and Prog boxes',pg.locator('#csad .ad-num').count()==2 and pg.locator('#csad .ad-head').count()==1)
-  chk('face is the vertical 3-spot (3 spots, plotting face)',pg.locator('#cspface').count()==1 and pg.evaluate("document.querySelectorAll('#csad .zbar [data-csspot]').length")==4)
-  chk('score keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk)")==['X','10','9','8','7','6','M'])
-  vis=pg.evaluate("(()=>{const q=s=>document.querySelector(s).getBoundingClientRect(),nv=document.querySelector('nav').getBoundingClientRect();return{face:q('#cspface').bottom<=innerHeight,pad:q('#csad .ad-pad').bottom<=nv.top+1,top:q('#csad .ad-head').top>=0}})()")
-  chk('phone: face, End/Prog and the score keys are all on the screen at once',vis['face'] and vis['pad'] and vis['top'])
+  chk('casual is on the vertical 3-spot setting',pg.evaluate(f"csGet('{CODE}').face3")=='vert')
+  chk('casual has End and Running totals and no plotting face',pg.locator('#csendtot').count()==1 and pg.locator('#csrun').count()==1 and pg.locator('#cspface').count()==0 and pg.locator('#cshide').count()==0 and pg.locator('[data-csspot]').count()==0)
+  chk('score keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csentry [data-csk]')].map(b=>b.dataset.csk)")==['X','10','9','8','7','6','M'])
   pg.screenshot(path='/tmp/lgx_ind_casual0.png')
-  def L():return pg.evaluate(f"(()=>{{const e=csGet('{CODE}').sc[csMe()];return{{e:e.e,p:e.p||[]}}}})()")
-  # end 1: three taps, one per spot
-  for x,y,v in PTS[:3]:click_face(pg,'cspface',x,y)
-  d=L();exp=sorted([v for _,_,v in PTS[:3]],key=lambda a:(-(10 if a=='X' else 0 if a=='M' else int(a)),a!='X'))
-  chk('end 1 scored from each arrow\'s own spot, put in order',d['e'][0]==exp==J['ends'][0])
-  chk('end 1 plots saved in step with the scores',len(d['p'][0])==3 and all(d['p'][0]))
-  tot=sum(pg.evaluate(f"({VAL})('{a}')") for a in d['e'][0])
-  chk('End box shows 0 for the new end, Prog the running total',pg.evaluate("[...document.querySelectorAll('#csad .ad-num b')].map(b=>b.textContent)")==['0',str(tot)])
-  chk('table row 1 matches the end',pg.evaluate("document.querySelector('#csadtab tbody tr td:nth-child(3)').textContent")==str(tot))
-  # undo mid-end
-  for x,y,v in PTS[3:5]:click_face(pg,'cspface',x,y)
-  chk('two arrows in end 2',len(L()['e'][1])==2 and len(L()['p'][1])==2)
-  pg.click('#csundo');pg.wait_for_timeout(300)
-  chk('undo takes the last arrow and its plot',len(L()['e'][1])==1 and len(L()['p'][1])==1)
-  # fix the arrow: tap its chip, then tap the face at the next arrow's position
-  pg.click('#csad .ad-chips [data-csfix]');pg.wait_for_timeout(300)
-  chk('fix mode on',pg.locator('#csfxdone').count()==1 and pg.locator('#csdelarrow').count()==1)
-  x,y,v=PTS[4];click_face(pg,'cspface',x,y)
-  d=L();chk('arrow fixed in place (value and plot replaced), fix mode off',d['e'][1]==[v] and d['p'][1][0]['x']==x or abs(d['p'][1][0]['x']-x)<0.01)
-  chk('fix mode closed',pg.locator('#csfxdone').count()==0)
-  pg.click('#csad .ad-chips [data-csfix]');pg.wait_for_timeout(200);pg.click('#csdelarrow');pg.wait_for_timeout(300)
-  d=L();chk('delete arrow removes it (and the empty end) with its plot',len(d['e'])==1 and len(d['p'])==1)
-  # the rest, exactly as Just me
-  for x,y,v in PTS[3:]:click_face(pg,'cspface',x,y)
+  def tap(a):pg.click(f'#csentry [data-csk="{a}"]');pg.wait_for_timeout(30)
+  def L():return pg.evaluate(f"(()=>{{const e=csGet('{CODE}').sc[csMe()];return{{e:e.e,p:e.p||null}}}})()")
+  for a in J['ends'][0]:tap(a)
   d=L()
-  chk('casual ends equal Just me ends (same taps)',d['e']==J['ends'])
-  def close(a,b):return len(a)==len(b) and all(len(r)==len(s) and all(abs(u['x']-w['x'])<0.012 and abs(u['y']-w['y'])<0.012 for u,w in zip(r,s)) for r,s in zip(a,b))
-  chk('casual plot positions equal Just me positions',close(d['p'],J['pos']))
+  chk('end 1 matches the Just me values and stores no plot',d['e'][0]==J['ends'][0] and not d['p'])
+  tot=sum(pg.evaluate(f"({VAL})('{a}')") for a in d['e'][0])
+  chk('running total moves on and the next end starts at 0',pg.locator('#csrun').inner_text()==str(tot) and pg.locator('#csendtot').inner_text()=='0')
+  for a in J['ends'][1][:2]:tap(a)
+  chk('two arrows in end 2',len(L()['e'][1])==2)
+  pg.click('#csundo');pg.wait_for_timeout(200)
+  chk('undo takes the last button score',len(L()['e'][1])==1)
+  for end in J['ends'][1:]:
+    have=len((L()['e']+[None])[len(L()['e'])-1] or []) if L()['e'] else 0
+    # finish whatever is open, then the rest of this end and later ends
+  # score every remaining arrow from the Just me card
+  flat=[a for end in J['ends'] for a in end]
+  got=[a for end in L()['e'] for a in end]
+  for a in flat[len(got):]:tap(a)
+  d=L()
+  chk('casual ends equal Just me ends',d['e']==J['ends'] and not d['p'])
   tots=[sum(pg.evaluate(f"({VAL})('{a}')") for a in e) for e in d['e']]
   exp_ends=' · '.join(f"E{i+1} {' '.join(e)} ({tots[i]})" for i,e in enumerate(d['e']))
-  chk('per-end totals (ends for each archer) and the total add up',exp_ends in pg.evaluate("document.querySelector('#csends').textContent") and pg.evaluate("document.querySelector('.cs-tab tbody tr td:nth-child(3)').textContent")==str(sum(tots)))
-  chk('finished: face and keys gone, table and total shown',pg.locator('#cspface').count()==0)
-  chk('analysis directly under the score card',pg.evaluate("(()=>{const a=document.querySelector('#csan'),c=a&&a.previousElementSibling;return !!c&&!!c.querySelector('h3')&&c.querySelector('h3').textContent=='Scores'})()"))
-  LT=pg.evaluate("document.querySelector('#csan').innerText");M='WHERE THIS SHOOT LANDED'
-  chk('analysis has the round summary (score, personal best) and the plotted group',pg.locator('#csan .shcard').count()==1 and 'Score' in LT and str(sum(tots)) in LT and 'Round Name' in LT)
-  def _group(t):
-    out=[]
-    lines=t.splitlines()
-    for i,ln in enumerate(lines):
-      s=ln.strip()
-      if s.startswith('Left / right') or s.startswith('Up / down') or s.startswith('Average spread'):
-        out.append(s)
-        if i+1<len(lines):out.append(lines[i+1].strip())
-    return out
-  chk('analysis text equals Just me\'s (group centre, spread, sight move)',M in LT and M in JT and _group(LT)==_group(JT) and len(_group(LT))>=4)
-  chk('arrow plot shows one dot per arrow',pg.evaluate("document.querySelectorAll('#csan .shcard .shplot > circle[fill=\"#fff\"][stroke=\"#0b1f4d\"]').length")==30)
-  pg.screenshot(path='/tmp/lgx_ind_casual1.png',full_page=True)
-  # saved record: old format kept, session added with plots + face for groups and heatmaps
-  lg=pg.evaluate(f"csGet('{CODE}').sc[csMe()]");print('record keys',sorted(lg));chk('saved record keeps e (ends) and adds p',{'e','p'}<=set(lg))
+  pg.evaluate("document.querySelector('#csends').open=true")
+  chk('per-end totals and the score add up',exp_ends in pg.evaluate("document.querySelector('#csends').textContent") and pg.evaluate("document.querySelector('.cs-tab tbody tr td:nth-child(3)').textContent")==str(sum(tots)))
+  chk('finished: still no face, table and total shown',pg.locator('#cspface').count()==0 and pg.locator('#csentry [data-csk]').count()==0)
+  chk('analysis is the score, with no plotted group',pg.locator('#csan').count()==1 and str(sum(tots)) in pg.inner_text('#csan') and pg.locator('#csan .shplot').count()==0)
+  lg=pg.evaluate(f"csGet('{CODE}').sc[csMe()]");chk('saved record keeps the ends and has no plots', 'e' in lg and not lg.get('p'))
   S=pg.evaluate(f"S.sessions.find(x=>x.id=='cs-{CODE}')")
-  chk('own session saved, vertical 3-spot tag, same scores',bool(S) and S['face3']=='vert' and S['ends']==J['ends'] and close(S['pos'],J['pos']))
-  rows=pg.evaluate("""CODE=>{const s=S.sessions.find(x=>x.id=='cs-'+CODE),R=ROUNDS[s.round],P=shotPts(s);return P.target.map(p=>{const Fi=faceR(R,p.e);let v;if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035;v=d>0.5?'M':d<=0.05?'X':String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else v=plotScore(p.x,p.y,{...Fi,col:false});return[p.k,p.a,v]})}""",CODE)
-  chk('heatmap points: 30, each measured on its own spot, plotted == scored',len(rows)==30 and all(r[0]=='spot' and r[1]==r[2] for r in rows))
-  chk('nothing sent to the relay carries plot positions (a solo casual sends nothing)',not any('"x"' in x or '"p"' in x for x in POSTS))
-  # undo after finishing still works, session follows
-  pg.evaluate("document.querySelector('#csfix').open=true");pg.click('#csundo');pg.wait_for_timeout(400)
-  chk('undo after finishing takes the last arrow back (face returns)',pg.locator('#cspface').count()==1 and len(L()['e'][9])==2)
-  x,y,v=PTS[29];click_face(pg,'cspface',x,y)
+  chk('own session saved with the same scores and no plot positions',bool(S) and S['ends']==J['ends'] and not any((S.get('pos') or [])))
+  chk('nothing sent to the relay carries plot positions',not any('"p":' in x for x in POSTS))
+  pg.evaluate("document.querySelector('#csfix').open=true");pg.click('#csundo');pg.wait_for_timeout(300)
+  chk('undo after finishing takes the last arrow back and the face stays hidden',pg.locator('#cspface').count()==0 and len(L()['e'][-1])==2)
+  tap(J['ends'][-1][-1])
   chk('re-scored, finished again',L()['e']==J['ends'])
   # only this tester's own key was written
   after=snap(pg);chg=sorted(k for k in set(before)|set(after) if before.get(k)!=after.get(k))

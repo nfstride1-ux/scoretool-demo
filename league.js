@@ -79,7 +79,15 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
 /* the line that confirms the end just saved when the card has moved on by itself */
 function lgLastLine(lg,w,ids){const L=window._lgLast;if(S.lgNextBtn||!L||L.code!=lg.code||L.w!=w||!ids.includes(L.id)||ids.length<2)return'';return`<p class="small" id="lglast" style="margin:0 0 4px">Saved: ${esc(lgName(L.id))}, end ${L.n}: ${L.E.map(esc).join(' ')}.</p>`}
 const lgNextPref=(lg,ids)=>ids.length>1?`<label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0 0"><input type="checkbox" id="lgnextpref" ${S.lgNextBtn?'checked':''}> Stay on each archer after the 3rd arrow and tap Next to move on</label>`:'';
-function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
+function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;
+ /* Move to the next archer who still has fewer complete ends (the rest of this end). When this end is finished for everyone, start the next end at archer 1 in the scorecard order. */
+ const mine=((lgEnt(lg,id,w)||{e:[]}).e||[]).filter(z=>z&&z.length==3).length;
+ for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];const e=lgEnt(lg,n,w)||{e:[]};if(lgDoneE(e))continue;const last=(e.e||[])[e.e.length-1],part=!!(last&&last.length&&last.length<3),nEnds=(e.e||[]).filter(z=>z&&z.length==3).length;if(part||nEnds<mine){window._lgAct=n;return}}
+ window._lgAct=lgWavePick(lg,w,G)}
+/* Who is up when no archer is held on screen: a partial end first, otherwise the first scorecard archer with the fewest complete ends. */
+function lgWavePick(lg,w,ids){
+ const part=(ids||[]).find(id=>{if(lgLockedBy(lg,w,id))return false;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return false;const last=(e.e||[])[e.e.length-1];return !!(last&&last.length&&last.length<3)});
+ if(part)return part;let best=null,bn=1e9;(ids||[]).forEach(id=>{if(lgLockedBy(lg,w,id))return;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return;const n=(e.e||[]).filter(z=>z&&z.length==3).length;if(n<bn){bn=n;best=id}});return best||(ids&&ids[0])||null}
 function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
@@ -116,6 +124,7 @@ function lgSnapParts(lg){
   if(lg.paidt)meta.paidt=lg.paidt;
   if(lg.claimt)meta.claimt=lg.claimt;
   if(lg.fresh)meta.fresh=lg.fresh;
+  if(lg.clear)meta.clear=lg.clear;
  }
  const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
  const fat={...meta,...roster};
@@ -168,6 +177,8 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  const lkFreshCut=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26';
  const freshCut=lkFreshCut?+((typeof LK_FRESH!=='undefined'&&LK_FRESH)||(typeof window!=='undefined'&&window.LK_FRESH)||0):0;
  if(freshCut&&+(d.fresh||0)<freshCut)return false;
+ const clearCut=lkFreshCut?+((typeof LK_CLEAR!=='undefined'&&LK_CLEAR)||(typeof window!=='undefined'&&window.LK_CLEAR)||0):0;
+ if(clearCut&&+(lg.clear||0)>=clearCut&&+(lg.fresh||0)>=clearCut&&+(d.clear||d.fresh||0)<clearCut)return false;
  const incFresh=lkFreshCut?+(d.fresh||0):0, locFresh=lkFreshCut?+(lg.fresh||0):0;
  /* A cached snapshot can carry the new fresh stamp and an older weeks time. That copy must not replace newer sign-ups. */
  const incomingWt=+(d.wt||0), localWt=+(lg.wt||0);
@@ -218,7 +229,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  /* The co-host row belongs on this phone. A snapshot replace or a tombstone cannot wipe it. */
- if(typeof lkSeedCoHost==='function'&&((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')&&lkSeedCoHost(lg))ch=true;
+ if(((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')){if(typeof lkSeedHost==='function'&&lkSeedHost(lg))ch=true;if(typeof lkSeedCoHost==='function'&&lkSeedCoHost(lg))ch=true}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
@@ -347,7 +358,7 @@ const _lgH2H=window.h2hCard;window.h2hCard=function(){return _lgH2H.apply(this,a
 const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try{lgBindCard()}catch(e){console.error(e)}return o};
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
-  open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
+  a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:lgWavePick(lg,w,ids);
  const I=lgInfo(lg,w),NE=I.ends,e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(NE,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
  /* Lingkana is values only. Other leagues: one archer on this phone gets the Just me face (Hide target still works). Shared phones stay buttons only. */
  const lkVals=typeof lkIs==='function'&&lkIs(lg),

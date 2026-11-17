@@ -92,14 +92,14 @@ try:
   chk('match night: scoring a head-to-head session',pg.evaluate("!!(cur&&cur.h2h)"))
   run(pg,'Match night','pface','#zcycle','data-spot',jm_plot,jm_next)
   chk('page errors (match night): none',not e4)
-  # ---- Casual ----
+  # ---- Casual: no plotting face, so no zoom to keep ----
   c2,pg,e2=phone(b)
   pg.evaluate("zkSet(1);nav('score')");pg.wait_for_timeout(500)
   CODE=pg.evaluate("csCreate({name:'Zoom keep',round:'Australian Indoor 18m',face3:'vert',self:true,ppl:[]}).code")
   pg.evaluate(f"csView('{CODE}')");pg.wait_for_timeout(600)
-  def cs_plot(i):click_face(pg,'cspface',0,{'Spot 1':-0.62,'Spot 2':0,'Spot 3':0.62}[pg.evaluate(TAB)])
-  run(pg,'Casual','cspface','#cszcycle','data-csspot',cs_plot,lambda:pg.wait_for_timeout(300))
+  chk('Casual: score buttons only, no face to zoom',pg.locator('#cspface').count()==0 and pg.locator('#cszcycle').count()==0 and pg.locator('#csentry [data-csk]').count()>=6)
   chk('page errors (Casual): none',not e2)
+  def cs_plot(i):click_face(pg,'cspface',0,{'Spot 1':-0.62,'Spot 2':0,'Spot 3':0.62}[pg.evaluate(TAB)])
   # ---- League ----
   c3,pg,e3=phone(b)
   pg.evaluate("zkSet(1);nav('score')");pg.wait_for_timeout(500);pg.evaluate("(()=>{if(!lgGet('ONIONSHD')){S.leagues.push(lgPresetRecord());save()}lgView('ONIONSHD')})()");pg.wait_for_timeout(500)
