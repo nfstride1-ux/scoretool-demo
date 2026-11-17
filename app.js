@@ -329,14 +329,20 @@ function noteInsights(){const items=[];const rel=(list,sc)=>{const g={};list.for
 let fix=null;
 const isBug=R=>!!(R&&R.bugs);const BUGC=[[0,-0.62],[0,0],[0,0.62]];
 /* WA indoor 3-spot faces (40cm 18m / 60cm 25m): vertical column (same spot centres as the old Bugs Eyes layout, so old plotted arrows still land on a spot) or the triangular face.
-   Triangular face (Vegas, WA indoor, Australian Indoor, Lancaster): one spot on top, two below. Spot index is unchanged from the earlier two-on-top layout:
-   0 is the left of the pair, 1 the right, 2 the single spot. TRIC0 is that earlier layout. A saved point with no g is still in TRIC0; drawing and plots move it onto the same index in TRIC.
-   A point saved after this change has g:1 and is already in TRIC. Scores are not rewritten. Vertical 3-spot and single faces are not part of this.
+   Triangular face (Vegas, WA indoor, Australian Indoor, Lancaster): one spot on top, two below.
+   Spot 1 is the top spot, Spot 2 the bottom left, Spot 3 the bottom right (TRIC index 0, 1, 2).
+   TRIC0 is the older two-on-top layout (index 0 left, 1 right, 2 the single spot below). TRIC1 is the one-on-top layout with the previous numbers
+   (0 bottom left, 1 bottom right, 2 top). A saved point is never rewritten. Drawing maps it onto TRIC:
+   no g is still in TRIC0 and moves onto the same physical spot (old 0 -> Spot 2, old 1 -> Spot 3, old 2 -> Spot 1);
+   g:1 is already on that physical spot in TRIC1, so its coordinates stay and the nearest TRIC centre supplies the new number;
+   g:2 was saved with these numbers and is already in TRIC. Vertical 3-spot and single faces are not part of this.
    10-zone faces scored X,10-6 + M: gold 10/9, red 8/7, blue 6. Bugs Eyes is field-only (20 Oct 2026). */
 const TRIC0=[[-0.34,-0.2],[0.34,-0.2],[0,0.39]];
-const TRIC=[[-0.34,0.2],[0.34,0.2],[0,-0.39]];
+const TRIC1=[[-0.34,0.2],[0.34,0.2],[0,-0.39]];
+const TRIC=[[0,-0.39],[-0.34,0.2],[0.34,0.2]];
+const TRI_OLD=[1,2,0];
 const triNear=(p,L)=>L.reduce((b,c,n)=>Math.hypot(p.x-c[0],p.y-c[1])<Math.hypot(p.x-L[b][0],p.y-L[b][1])?n:b,0);
-function triPt(p){if(!p||p.g===1||!isFinite(p.x)||!isFinite(p.y))return p;const i=triNear(p,TRIC0),o=TRIC0[i],n=TRIC[i];return {...p,x:n[0]+(p.x-o[0]),y:n[1]+(p.y-o[1])}}
+function triPt(p){if(!p||p.g===1||p.g===2||!isFinite(p.x)||!isFinite(p.y))return p;const i=triNear(p,TRIC0),o=TRIC0[i],n=TRIC[TRI_OLD[i]];return {...p,x:n[0]+(p.x-o[0]),y:n[1]+(p.y-o[1])}}
 window.triPt=triPt;
 const spots3=R=>R&&R.tri?TRIC:R&&R.vert?BUGC:null;
 const indoor3=(R,F)=>!!(R&&F&&R.ape==3&&!R.aba&&!/field/.test(F.face||'')&&/^(40|60)cm( full| 3-spot)?$/.test(F.face||''));
@@ -385,7 +391,7 @@ const fldMarked=F=>!/unmarked/i.test((F&&F.dist)||'');
 function fldFor(s,ei,F0){if(!s.peg)s.peg=defaultPeg();s.ff=s.ff||[];let e=s.ff[ei];const L0=b=>fldDists(s.peg,b.f,fldMarked(F0));if(!e){let pv=null;for(let j=ei-1;j>=0;j--)if(s.ff[j]){pv=s.ff[j];break}const f=pv?pv.f:80;e={p:s.peg,f,d:snapDist(L0({f}),pv?pv.d:null)};s.ff[ei]=e}else{const L=L0(e);if(!L.includes(e.d))e.d=snapDist(L,e.d)}return e}
 const fldFR=e=>({face:`${e.f}cm field`,dist:e.d+'m',fld:e.f,col:e.f==20});
 /* score a tap on the face; the 20 cm column stores each arrow relative to its own spot, in face units */
-function tapScore(q,FR,R,lc){if(FR&&FR.col){let i=0,b=9;COL20.forEach(([cx,cy],k)=>{const d=Math.hypot(q.x-cx,q.y-cy);if(d<b){b=d;i=k}});const x=(q.x-COL20[i][0])/0.3,y=(q.y-COL20[i][1])/0.3;return{k:plotScore(x,y,FR,lc),xy:{x:+x.toFixed(3),y:+y.toFixed(3),s:i}}}const xy={x:+q.x.toFixed(3),y:+q.y.toFixed(3)};if(FR&&FR.tri)xy.g=1;return{k:plotScore(q.x,q.y,Object.assign({xs:R&&R.xs},FR),lc),xy}}
+function tapScore(q,FR,R,lc){if(FR&&FR.col){let i=0,b=9;COL20.forEach(([cx,cy],k)=>{const d=Math.hypot(q.x-cx,q.y-cy);if(d<b){b=d;i=k}});const x=(q.x-COL20[i][0])/0.3,y=(q.y-COL20[i][1])/0.3;return{k:plotScore(x,y,FR,lc),xy:{x:+x.toFixed(3),y:+y.toFixed(3),s:i}}}const xy={x:+q.x.toFixed(3),y:+q.y.toFixed(3)};if(FR&&FR.tri)xy.g=2;return{k:plotScore(q.x,q.y,Object.assign({xs:R&&R.xs},FR),lc),xy}}
 const faceVB=R=>R&&R.col?'-0.33 -0.95 0.66 1.9':R&&R.tri?'-0.67 -0.72 1.34 1.25':isBug(R)||(R&&R.vert)?'-0.31 -0.93 0.62 1.86':isSpot(R)?'-0.54 -0.54 1.08 1.08':isSix(R)?'-0.64 -0.64 1.28 1.28':'-1.04 -1.04 2.08 2.08';
 /* face for a given end: custom rounds have distance blocks, each with its own face */
 function faceR(R,ei){if(!R.blocks)return R;let k=0;for(const b of R.blocks){k+=+b.ends;if(ei<k)return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}const b=R.blocks[R.blocks.length-1];return{face:`${b.size}cm ${b.type}`,dist:b.dist+b.unit}}

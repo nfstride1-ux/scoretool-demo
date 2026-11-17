@@ -106,7 +106,7 @@ function cleanSvg(fam,P,label,U){const G=group(P,fam),UG=U&&U.length>=3?group(U,
  return{svg:g+'</svg>',G,UG}}
 /* The three spots as they are on the target (Vegas triangle) or side by side (vertical 3-spot), each arrow on the spot it was shot at, own rings, same ring colours.
    Each arrow is drawn at its true place with its own radius, so the ring it scored is the ring its edge touches. Read only. */
-const SPW={vegas:[[-0.34,0.2],[0.34,0.2],[0,-0.39]],vert:[[-0.66,0],[0,0],[0.66,0]]};
+const SPW={vegas:TRIC,vert:[[-0.66,0],[0,0],[0.66,0]]};
 function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some(p=>p.lay!=S[0].lay))return'';const lay=S[0].lay,C=SPW[lay],vb=lay=='vegas'?'-0.66 -0.75 1.32 1.3':'-0.99 -0.34 1.98 0.68';
  const Cc=[WA.w,WA.w,WA.k,WA.k,WA.b,WA.b,WA.r,WA.r,WA.g,WA.g],L=[WA.k,WA.k,WA.w,WA.w,WA.k,WA.k,WA.k,WA.k,WA.k,WA.k],orig=lay=='vegas'?TRIC:BUGC;let g='';
  C.forEach((c,n)=>{for(let i=5;i<10;i++)g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${((1-i*0.1)*0.6).toFixed(3)}" fill="${Cc[i]}" stroke="${L[i]}" stroke-width="0.004"/>`;
@@ -115,7 +115,7 @@ function spotsSvg(P){const S=P.filter(p=>p.sp!=null&&p.lay);if(!S.length||S.some
   const r=p.r*0.6,w=p.t?Math.min(0.003,r*0.3):0.003,d=p.t?Math.min(0.0075,r*0.35):0.0075;
   g+=`<circle cx="${x}" cy="${y}" r="${(p.t?r-w/2:r).toFixed(4)}" fill="#fefefe" fill-opacity=".3" stroke="${NAVY}" stroke-opacity=".6" stroke-width="${w.toFixed(4)}"/><circle cx="${x}" cy="${y}" r="${d.toFixed(4)}" fill="#fff" stroke="${NAVY}" stroke-width="${(p.t?d*0.6:0.0045).toFixed(4)}"/>`});
  const n=[0,0,0];S.forEach(p=>n[p.sp]++);
- return`<div class="shwrap shspots"><svg class="shspotsvg" viewBox="${vb}" role="img" aria-label="${S.length} plotted arrows on the three spots (${n.join(', ')})">${g}</svg></div><p class="small muted shkey">The three spots${lay=='vegas'?' with one on top and two below':' side by side, Spot 1 at the top of the target'} · arrows per spot: ${n.join(', ')}</p>`}
+ return`<div class="shwrap shspots"><svg class="shspotsvg" viewBox="${vb}" role="img" aria-label="${S.length} plotted arrows on the three spots (${n.join(', ')})">${g}</svg></div><p class="small muted shkey">The three spots${lay=='vegas'?' · Spot 1 on top, Spot 2 bottom left, Spot 3 bottom right':' side by side, Spot 1 at the top of the target'} · arrows per spot: ${n.join(', ')}</p>`}
 const famName={target:'target face',field:'field face'};
 /* one card per face family that has plotted arrows */
 function plotCards(sessions,o={}){const A={target:[],field:[]};sessions.forEach(s=>{const q=shotPts(s);A.target.push(...q.target);A.field.push(...q.field)});

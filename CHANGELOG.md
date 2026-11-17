@@ -2,6 +2,17 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-2115-spot1
+
+On the triangular indoor 3-spot, Spot 1 is the single spot on top, Spot 2 is the bottom left and Spot 3 is the bottom right. Cache version is `v2026-11-17-2115-spot1` (`?v=202611172115`). League scoring and the vertical face are unchanged. Not merged.
+
+- Spot buttons, the zoom on a spot, spot-group stats and the three-spot plot use this order.
+- A plot saved with the previous numbers (`g:1`, bottom left was Spot 1) is drawn on the same physical spot. The top spot is now Spot 1. Saved coordinates are not rewritten. A new plot is stored with `g:2`.
+- A plot from the older two-on-top face (no `g`) still moves onto the flipped face at the same physical spot, then takes the new number.
+
+### Files
+app.js, shotview.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, tools/plot3spot_test.py.
+
 ## v2026-11-17-2030-triangle
 
 The triangular indoor 3-spot used for practice is drawn with one spot on top and two below. Cache version is `v2026-11-17-2030-triangle` (`?v=202611172030`), newer than `v2026-11-17-1900-live` on main. League scoring and the league face are unchanged from main. Not merged. PR #1 was not touched.

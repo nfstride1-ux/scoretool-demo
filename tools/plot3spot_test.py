@@ -59,9 +59,17 @@ try:
    const cen=rings.map(c=>[+c.getAttribute('cx'),+c.getAttribute('cy')]);const per=[0,0,0];let outside=0;
    dots.forEach(d=>{const x=+d.getAttribute('cx'),y=+d.getAttribute('cy');let b=0,bd=9;cen.forEach((c,i)=>{const dd=Math.hypot(x-c[0],y-c[1]);if(dd<bd){bd=dd;b=i}});per[b]++;if(bd>0.3)outside++});
    return{n:dots.length,cen,per,outside,txt:sv.textContent,w:sv.getBoundingClientRect().width}}""")
-  chk(f'Vegas three-spot view: 30 arrows, triangle layout {m["cen"]}',m['n']==30 and m['cen']==[[-0.34,0.2],[0.34,0.2],[0,-0.39]])
+  chk(f'Vegas three-spot view: 30 arrows, triangle layout {m["cen"]}',m['n']==30 and m['cen']==[[0,-0.39],[-0.34,0.2],[0.34,0.2]])
   chk(f'Vegas three-spot view: every arrow inside its spot, 10 per spot {m["per"]}',m['outside']==0 and m['per']==[10,10,10])
   chk('Vegas three-spot view: labelled Spot 1, 2, 3',all(f'Spot {i}' in m['txt'] for i in (1,2,3)))
+  chk('Vegas three-spot view: Spot 1 is the top spot',m['cen'][0][1]<m['cen'][1][1] and m['cen'][0][0]==0)
+  mig=pg.evaluate("""()=>{const sp=p=>{const q=triPt(p);return TRIC.reduce((b,c,n)=>Math.hypot(q.x-c[0],q.y-c[1])<Math.hypot(q.x-TRIC[b][0],q.y-TRIC[b][1])?n:b,0)};
+   const top={x:0,y:-0.39,g:1},bl={x:-0.34,y:0.2,g:1},br={x:0.34,y:0.2,g:1},pre={x:-0.34,y:-0.2},q=triPt(pre);
+   return {top:sp(top),bl:sp(bl),br:sp(br),pre:[+q.x.toFixed(2),+q.y.toFixed(2)],preSp:sp(pre),g:tapScore({x:0,y:-0.39},{tri:1,face:'40cm 3-spot'},{}).xy.g,same:top.x===0&&bl.x===-0.34}}""")
+  chk('older top spot (old Spot 3, g:1) is Spot 1 and is not moved',mig['top']==0 and mig['same'])
+  chk('older bottom-left (old Spot 1) is Spot 2, bottom-right (old Spot 2) is Spot 3',mig['bl']==1 and mig['br']==2)
+  chk('pre-flip left spot still draws on the bottom left, as Spot 2',mig['pre']==[-0.34,0.2] and mig['preSp']==1)
+  chk('a new triangle plot is saved with g:2',mig['g']==2)
   t=pg.locator('#app').inner_text();chk('key line says arrows per spot',re.search(r'arrows per spot: 10, 10, 10',t) is not None)
   chk('no overflow at 390',pg.evaluate('document.documentElement.scrollWidth<=innerWidth'))
   top(pg,'.shcmp .shcard');pg.screenshot(path=f'{SH}/01-vegas-landed-card.png')
