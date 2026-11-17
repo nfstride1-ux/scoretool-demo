@@ -149,9 +149,9 @@ function view(){
  <p class="small" id="ofnote" style="margin:6px 0 0">${h(offMsg)}</p>
  </div>
  ${(typeof tierHas!='function'||tierHas('plus'))?`<div class="card" id="rssyncard"><span class="kicker">Sync</span><h2 style="margin:2px 0 8px">Sync now</h2>
- <p class="small" id="rssyncnote" style="margin:0 0 8px">${syncOn()?'No organisation has approved a pull, so nothing is fetched.':'Coming once your national body approves.'}</p>
- <button class="btn" id="rssync" type="button">Sync now</button>
- <button class="btn ghost" id="rssyncpaste" type="button">Paste a table or a CSV</button>
+ <button class="btn" id="rssync" type="button" disabled aria-disabled="true" style="background:#4b5563;color:#d1d5db;cursor:not-allowed;opacity:1">Sync now</button>
+ <p class="small" id="rssyncnote" style="margin:8px 0 0">Coming once Archery Australia, World Archery or ianseo approve data sharing. Nothing is fetched until then.</p>
+ <button class="btn ghost" id="rssyncpaste" type="button" style="margin-top:8px">Paste a table or a CSV</button>
  </div>`:''}`;
  $('#rsback').onclick=()=>nav('tools');
  const grab=()=>{const b=$('#rsbody').value,known=bodyOf(b);return {body:b,url:b==='other'?$('#rsurl').value.trim():known[2],member:$('#rsmem').value.trim()}};
@@ -217,7 +217,6 @@ function view(){
   say('Saved on this phone as an official result. The picture was not kept.');
   pbLine();
  };
- const sy=$('#rssync');if(sy)sy.onclick=()=>{const n=$('#rssyncnote');if(n)n.textContent=syncOn()?'No organisation has approved a pull, so nothing is fetched.':'Coming once your national body approves.'};
  const sp=$('#rssyncpaste');if(sp)sp.onclick=()=>{const box=$('#rsimport');if(box)box.scrollIntoView({block:'start'})};
 }
 E.lab_results=view;

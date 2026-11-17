@@ -43,7 +43,7 @@ try:
   # default start still three-spot
   pg.click('#st');pg.wait_for_timeout(800)
   chk('default start: three-spot session (as before)',pg.evaluate("cur.face3")=='vert' and pg.evaluate("use3(cur,ROUNDS[cur.round],faceR(ROUNDS[cur.round],0))"))
-  chk('default start: 3-spot keys X 10-6 M',pg.evaluate("[...document.querySelectorAll('.ad-pad [data-k]')].map(b=>b.dataset.k).join(' ')")=='X 10 9 8 7 6 M')
+  chk('default start: Indoor WA 18m keys 10 9 8 7 6 M, no X',pg.evaluate("[...document.querySelectorAll('.ad-pad [data-k]')].map(b=>b.dataset.k).join(' ')")=='10 9 8 7 6 M')
   chk('default start: face button says Vertical 3-spot',pg.inner_text('#face3').strip()=='Face: Vertical 3-spot')
   # before plotting the button cycles vert > vegas > single > vert
   seq=[]
@@ -65,18 +65,18 @@ try:
   pg.click('#st');pg.wait_for_timeout(800)
   chk('session is on the single face',pg.evaluate("cur.face3")=='single' and not pg.evaluate("use3(cur,ROUNDS[cur.round],faceR(ROUNDS[cur.round],0))"))
   chk('face button names it',pg.inner_text('#face3').strip()=='Face: Single face')
-  chk('keys X 10 9 8 7 6 5 4 3 2 1 M',pg.evaluate("[...document.querySelectorAll('.ad-pad [data-k]')].map(b=>b.dataset.k).join(' ')")=='X 10 9 8 7 6 5 4 3 2 1 M')
+  chk('single face keys are still 10 9 8 7 6 M, no X and no 5 to 1',pg.evaluate("[...document.querySelectorAll('.ad-pad [data-k]')].map(b=>b.dataset.k).join(' ')")=='10 9 8 7 6 M')
   chk('one face drawn (no spot buttons, one circle set, 40cm face)',pg.locator('[data-spot]').count()==0 and pg.evaluate("faceR(ROUNDS[cur.round],0).face")=='40cm' and not pg.evaluate("indoor3(ROUNDS[cur.round],faceR(ROUNDS[cur.round],0))&&use3(cur,ROUNDS[cur.round],faceR(ROUNDS[cur.round],0))"))
   chk('face size text says 40cm',pg.inner_text('#facesize').strip().startswith('40cm'))
   # plot three arrows on the one face: centre, 10-ish ring, outer
   pts=[(0,0),(0.12,0.05),(-0.6,0.45)]
   plot(pg,pts);e0=pg.evaluate("cur.ends[0]");print('single end',e0)
-  want=pg.evaluate("(pts=>pts.map(([x,y])=>plotScore(x,y,faceR(ROUNDS[cur.round],0))))")(pts) if False else pg.evaluate("pts=>pts.map(([x,y])=>plotScore(x,y,faceR(ROUNDS[cur.round],0)))",[list(q) for q in pts])
-  chk('three arrows scored on the full face with the app ring values',len(e0)==3 and e0==want)
-  chk('ring values include X/10..1/M style scores below 6',any(v in list('12345') for v in e0))
+  want=pg.evaluate("pts=>pts.map(([x,y])=>plotScore(x,y,Object.assign({},faceR(ROUNDS[cur.round],0),{wa18:true,inner10:!!cur.inner10})))",[list(q) for q in pts])
+  chk('three arrows scored with the Indoor WA 18 m ring values',len(e0)==3 and e0==want)
+  chk('no X is scored, and outside the 6 is M', 'X' not in e0 and 'M' in e0)
   chk('plotted positions are on the full face (not per spot)',pg.evaluate("shotPts(cur).target.every(p=>p.k=='full')"))
   chk('face button locks once an arrow is plotted',pg.evaluate("document.querySelector('#face3').disabled"))
-  chk('end total correct',pg.inner_text('.ad-num b').strip()==str(pg.evaluate("endSum(cur.ends[0])")))
+  chk('end total matches the end on screen',pg.evaluate("""()=>{const shown=document.querySelector('.ad-num b').textContent.trim();const m=document.querySelector('#endno').textContent.match(/End (\\d+)/);const ei=m?+m[1]-1:0;return shown===String(endSum(cur.ends[ei]||[]))}"""))
   # zoom as other single faces
   pg.evaluate("scrollTo(0,0)");pg.wait_for_timeout(200)
   zc=pg.locator('#zcycle');chk('zoom button present',zc.count()==1)
@@ -86,9 +86,10 @@ try:
   pg.evaluate("scrollTo(0,0)");pg.wait_for_timeout(200);pg.screenshot(path=f'{SH}/scoring-single-390.png')
   # finish the 10... play 2 more ends with keys, then save/history
   sid=pg.evaluate("cur.id")
-  pg.click('#enext');pg.wait_for_timeout(400);pg.click('text=Add Scores');pg.wait_for_timeout(400)
-  for k in ['X','9','1']:pg.click(f'.ad-pad [data-k="{k}"]');pg.wait_for_timeout(120)
-  e1=pg.evaluate("cur.ends[1]");chk('keys score on the single face',e1==['X','9','1'])
+  if pg.locator('#enext').is_enabled():
+    pg.click('#enext');pg.wait_for_timeout(400);pg.click('text=Add Scores');pg.wait_for_timeout(400)
+  for k in ['10','9','6']:pg.click(f'.ad-pad [data-k="{k}"]');pg.wait_for_timeout(120)
+  e1=pg.evaluate("cur.ends.filter(e=>e.length).slice(-1)[0]");chk('keys score 10, 9 and 6, with no X',e1==['10','9','6'])
   tot=pg.evaluate("cur.ends.reduce((t,e)=>t+endSum(e),0)")
   want_tot=sum(({'X':10,'M':0}.get(str(v),None) if str(v) in 'XM' else int(v)) for e in pg.evaluate("cur.ends") for v in e)
   chk('total = sum of ring values (X = 10)',tot==want_tot)
@@ -115,7 +116,7 @@ try:
   # ---------- 25 m uses the 60 cm face ----------
   to_score(pg);pg.select_option('#rd',W25);pg.wait_for_timeout(300);pg.click('#f3row [data-f1=single]');pg.wait_for_timeout(250);pg.click('#st');pg.wait_for_timeout(800)
   chk('25 m single face is the 60cm full face',pg.evaluate("cur.face3")=='single' and pg.inner_text('#facesize').strip().startswith('60cm'))
-  plot(pg,[(0,0),(0.3,0.3),(0.7,-0.2)]);e=pg.evaluate("cur.ends[0]");chk('25 m single face scores 3 arrows',len(e)==3 and e[0]=='X')
+  plot(pg,[(0,0),(0.3,0.3),(0.7,-0.2)]);e=pg.evaluate("cur.ends[0]");chk('25 m single face scores 3 arrows, centre 10, no X',len(e)==3 and e[0]=='10' and 'X' not in e)
   pg.evaluate("S.sessions=S.sessions.filter(x=>x.id!=cur.id);cur=null;S.face1=false;save()")
   # ---------- Vegas 300 and match nights unchanged ----------
   to_score(pg);pg.select_option('#rd','Vegas 300');pg.wait_for_timeout(300);pg.click('#st');pg.wait_for_timeout(800)

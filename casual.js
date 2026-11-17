@@ -24,8 +24,8 @@ const csAll=()=>S.casual=S.casual||[],csGet=c=>csAll().find(x=>x.code==c);
 const csTopic=c=>H2H_NS+'-cs-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
 const csStd=()=>Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return R&&!R.custom&&!R.legacy&&!R.aba&&!R.league});
 /* discipline of a round, from the app's own face helpers */
-function csDisc(r){const R=ROUNDS[r];if(!R)return null;if(R.d3)return'3d';const F=faceR(R,0);if(isFld(F))return'field';if(R.vegas||indoor3(R,F))return'indoor';return'target'}
-const CS_DISC={target:'Target',indoor:'Indoor',field:'Field','3d':'3D'};
+function csDisc(r){const R=ROUNDS[r];if(!R)return null;const c=(S.customRounds||[]).find(x=>x&&x.name===r);if(c){const d=c.kind==='3d'?'3d':(c.disc||'target');return CS_DISC[d]?d:'target'}if(R.retired&&R.disc&&CS_DISC[R.disc])return R.disc;if(R.d3||R.aba||R.kind==='3d')return'3d';if(R.clout||/clout/i.test(r))return'clout';const F=faceR(R,0);if(isFld(F))return'field';if(R.vegas||indoor3(R,F))return'indoor';return'target'}
+const CS_DISC={target:'Target',indoor:'Indoor',field:'Field',clout:'Clout','3d':'3D'};
 const csRounds=d=>csStd().filter(r=>csDisc(r)==d);
 /* ---------- 3D (23 Oct 2026, Nathe via Archery Coach). Points from the app's own Rules page (lab.js RULES):
    ABA National 3D: 1st arrow A/B/C 20/18/16, 2nd 14/12/10, 3rd 8/6/4; only the first arrow to score counts; 3-, 2- or 1-arrow round
@@ -68,9 +68,9 @@ const csBase=cs=>cs.face3=='single'&&cs.round==AUSI?'single':cs.face3=='vegas'?'
 /* one archer's face: 'single', 'vegas' or 'vert' (the three-spot layout comes from the shoot) */
 function csAF(cs,id){const b=csBase(cs);if(id==null||!csSplit(cs))return b;const v=((cs.sc||{})[id]||{}).f||(cs.fa||{})[id];return v=='single'?'single':v=='three'&&b=='single'?'vert':b}
 const csMixed=cs=>{try{return csSplit(cs)&&(cs.ppl||[]).length>1&&new Set(cs.ppl.map(p=>csAF(cs,p.id)=='single')).size>1}catch(e){return false}};
-function csFace(cs,ei,id){const R=ROUNDS[cs.round];if(!R)return{face:''};const F=faceR(R,ei);if(isFld(F))return F;if(R.vegas)return face3R(F,{face3:'vegas'});if(indoor3(R,F)){const a=csAF(cs,id);return a=='single'?F:face3R(F,{face3:a=='vegas'?'vegas':'vert'})}return F}
-/* score keys: the main scorer's rule (app.js score()), highest first */
-function csKeys(cs,ei,id){const R=ROUNDS[cs.round]||{};if(R.d3)return cs3dK(cs,ei||0);const FR=csFace(cs,ei||0,id);if(isFld(FR))return['6','5','4','3','2','1','M'];const xk=R.xs===false?[]:['X'];
+function csFace(cs,ei,id){const R=ROUNDS[cs.round];if(!R)return{face:''};const F0=faceR(R,ei);let F;if(isFld(F0))F=F0;else if(R.vegas)F=face3R(F0,{face3:'vegas'});else if(indoor3(R,F0)){const a=csAF(cs,id);F=a=='single'?F0:face3R(F0,{face3:a=='vegas'?'vegas':'vert'})}else F=F0;if(R.wa18||R.ausi){if(F===R)F={...F}}if(R.wa18){F.wa18=true;F.inner10=typeof sightedCompound==='function'&&sightedCompound()}if(R.ausi)F.ausi=true;return F}
+/* score keys: the main scorer's rule (app.js faceKeys), highest first. Indoor WA 18 m is 10 to 6 and M, with no X. */
+function csKeys(cs,ei,id){const R=ROUNDS[cs.round]||{};if(R.d3)return cs3dK(cs,ei||0);const FR=csFace(cs,ei||0,id);if(typeof faceKeys==='function')return faceKeys(R,FR);if(R.wa18)return['10','9','8','7','6','M'];if(R.ausi)return['X','10','9','8','7','6','M'];if(isFld(FR))return['6','5','4','3','2','1','M'];const xk=R.xs===false?[]:['X'];
  return[...xk,...(isSpot(FR)?['10','9','8','7','6']:isSix(FR)?['10','9','8','7','6','5']:['10','9','8','7','6','5','4','3','2','1']),'M']}
 const csKcol=(cs,k)=>cs3d(cs)?cs3dCol(cs,k):cs.disc=='field'||isFld(csFace(cs,0))?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k);
 const csFaceTxt=cs=>{const R=ROUNDS[cs.round];if(!R)return'';if(R.d3){const T=CS3D[R.d3];return T.o+' 3D animal'+(T.half?', '+R.d3n+' targets 3-arrow then '+R.d3n+' targets 1-arrow':'')+(T.o=='ABA'?', first arrow to score counts':'')}if(R.vegas)return'Vegas 3-spot';const F=faceR(R,0);if(isFld(F))return'Field face, gold 6 and 5, black 4 to 1';if(indoor3(R,F)){if(cs.round==AUSI&&!(cs.ppl||[]).length)return f3Name(AUSI,cs.face3);const A=csSplit(cs)&&(cs.ppl||[]).length?[...new Set(cs.ppl.map(p=>csAF(cs,p.id)))]:[csBase(cs)];return A.map(a=>f3Name(cs.round,a)).join(' + ')}
@@ -90,8 +90,8 @@ const csDoneP=(cs,id)=>{const R=csR(cs),E=csEnds(cs,id);return E.length>=R.ends&
 const csTotal=E=>E.flat().reduce((t,a)=>t+csV(a),0);
 /* t10/x = the tie-break counts: 10s (incl. X) and Xs; on a field face 6s and 5s */
 const csFldS=cs=>cs.disc=='field'||isFld(csFace(cs,0));
-const csTB=cs=>cs3d(cs)?cs3d(cs).k.slice(0,2):csFldS(cs)?['6','5']:['10','X'];
-const csRow=(cs,id)=>{const E=csEnds(cs,id),R=csR(cs),A=E.flat(),f=csFldS(cs),d=cs3d(cs)&&cs3d(cs).k;return{id,nm:csNm(cs,id),E,tot:csTotal(E),n:E.filter(e=>e.length==R.ape).length,arrows:A.length,t10:A.filter(a=>d?a==d[0]:f?a=='6':(a=='X'||a=='10')).length,x:A.filter(a=>d?a==d[1]:f?a=='5':a=='X').length,done:csDoneP(cs,id)}};
+const csTB=cs=>cs3d(cs)?cs3d(cs).k.slice(0,2):csFldS(cs)?['6','5']:ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?['10','9']:['10','X'];
+const csRow=(cs,id)=>{const E=csEnds(cs,id),R=csR(cs),A=E.flat(),f=csFldS(cs),d=cs3d(cs)&&cs3d(cs).k,w=ROUNDS[cs.round]&&ROUNDS[cs.round].wa18;return{id,nm:csNm(cs,id),E,tot:csTotal(E),n:E.filter(e=>e.length==R.ape).length,arrows:A.length,t10:A.filter(a=>d?a==d[0]:f?a=='6':w?a=='10':(a=='X'||a=='10')).length,x:A.filter(a=>d?a==d[1]:f?a=='5':w?a=='9':a=='X').length,done:csDoneP(cs,id)}};
 const csAllDone=cs=>(cs.ppl||[]).length>=1&&cs.ppl.every(p=>csDoneP(cs,p.id));
 const csFin=cs=>!!(cs.fin||csAllDone(cs));
 /* match play seeds: archers who finished the round (CS_SEED_FINISHED_ONLY; otherwise everyone who has shot), highest score first,
@@ -208,20 +208,28 @@ window.csInvite=function(d){const me=csMe();cs3dReg(d.round);if(d.to!=me||d.from
 const csQTxt=cs=>cs.qfail?'Offline: saved on this phone, it will send when you are back online.':cs.dirty?'Sending...':'Saved and sent.';
 window.csCreate=csCreate;window.csSetFace=csSetFace;window.csAF=csAF;window.csMixed=csMixed;window.csAdd=csAdd;window.csRemove=csRemove;window.csUnlink=csUnlink;window.csKey=csKey;window.csUndo=csUndo;window.csFinish=csFinish;window.csSeeds=csSeeds;window.csMatch=csMatch;window.csNameCheck=csNameCheck;
 window.csMpStart=csMpStart;window.csMpOff=csMpOff;window.csMpSetup=csMpSetup;window.csTick=csTick;window.csMerge=csMerge;window.csSnapParts=csSnapParts;window.csKeys=csKeys;window.cs3dName=cs3dName;window.cs3dReg=cs3dReg;window.csRounds=csRounds;window.csDisc=csDisc;window.csFaceTxt=csFaceTxt;
+/* Just me uses this same discipline row and the same round classification. The dropdown lists only the selected discipline.
+   Other disciplines stay as hidden options so a stored round can still be chosen by name. The last discipline is remembered. */
+function jmDisc(){if(S.lastDisc&&CS_DISC[S.lastDisc])return S.lastDisc;const d=S.lastRound&&csDisc(S.lastRound);return d&&CS_DISC[d]?d:'target'}
+function jmPickerHTML(){const disc=jmDisc(),names=Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return R&&!R.legacy&&!R.retired}),vis=names.filter(r=>csDisc(r)===disc),sel=vis.includes(S.lastRound)?S.lastRound:(vis[0]||'');
+ const empty=vis.length?'':`<option value="" selected>No rounds in this list yet</option>`;
+ return `<div id="jmpick"><label>Discipline</label><div id="jmdisc">${csSeg('jdisc',Object.entries(CS_DISC),disc)}</div><label for="rd">Round</label><select id="rd">${names.map(r=>`<option value="${esc(r)}" ${csDisc(r)===disc?'':'hidden'} ${r===sel?'selected':''}>${esc(typeof rdPick==='function'?rdPick(r):r)}</option>`).join('')}${empty}<option value="__new">+ Create my own practice round</option></select></div>`}
+function jmBindDisc(){const box=$('#jmdisc');if(!box)return;box.querySelectorAll('[data-jdisc]').forEach(b=>b.onclick=()=>{const d=b.dataset.jdisc;if(!CS_DISC[d])return;S.lastDisc=d;save();const rd=$('#rd');if(!rd)return;let first='';[...rd.options].forEach(o=>{if(!o.value||o.value==='__new')return;const on=csDisc(o.value)===d;o.hidden=!on;if(on&&!first)first=o.value});let empty=[...rd.options].find(o=>o.value==='');if(!first){if(!empty){empty=document.createElement('option');empty.value='';empty.textContent='No rounds in this list yet';const nw=rd.querySelector('option[value="__new"]');rd.insertBefore(empty,nw)}empty.hidden=false;rd.value=''}else{if(empty)empty.remove();rd.value=first}box.querySelectorAll('[data-jdisc]').forEach(x=>{const on=x.dataset.jdisc===d;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');x.innerHTML=(on?'&#10003; ':'')+CS_DISC[x.dataset.jdisc]});rd.dispatchEvent(new Event('change'))})}
+window.jmPickerHTML=jmPickerHTML;window.jmBindDisc=jmBindDisc;window.jmDisc=jmDisc;
 /* ---------- screens ---------- */
 const csSeg=(name,opts,val,dis)=>`<span class="lg-segs cs-segs" role="group">${opts.map(([v,l])=>`<button type="button" class="lg-seg${v==val?' on':''}" data-${name}="${v}" aria-pressed="${v==val}" ${dis?'disabled':''}>${v==val?'&#10003; ':''}${l}</button>`).join('')}</span>`;
 /* setup draft survives re-renders (relay ticks redraw the Score tab) */
 const csDraft=()=>window._csD=window._csD||{d3t:'aba3',d3n:20,disc:'target',round:null,face3:'vert',self:true,ppl:[],mp:false,name:'',typed:'',msg:''};
-function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.disc);if(is3){D.round=cs3dName(D.d3t,D.d3n);cs3dReg(D.round)}else if(!R0.includes(D.round))D.round=R0.includes(S.lastRound)?S.lastRound:R0[0];
+function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.disc);if(is3){D.round=cs3dName(D.d3t,D.d3n);cs3dReg(D.round)}else if(!R0.length)D.round='';else if(!R0.includes(D.round))D.round=R0.includes(S.lastRound)?S.lastRound:R0[0];
  const n=(D.self?1:0)+D.ppl.length,tmp={round:D.round,face3:D.face3,disc:D.disc},ind=D.disc=='indoor'&&!(ROUNDS[D.round]||{}).vegas,sp=csSplitR(D.round,D.disc),dfv=D.round==AUSI&&D.face3=='single'?'single':'three',fseg=(w,v)=>`<div class="row cs-face" style="gap:8px;justify-content:flex-start;align-items:center;flex-wrap:wrap;margin:4px 0 6px"><span class="small"><b>Face</b></span>${csFSeg('data-csfs="'+w+'"',v||dfv)}</div>`,taken=D.ppl.filter(p=>p.tid).map(p=>p.tid),sug=n<CS_MAX?csMatch(D.typed,taken):[];
  return`<div id="cssetup"><h2 style="margin:6px 0 2px">Casual shoot</h2><p class="small muted" style="margin:0 0 8px">A one-off shoot with friends. Not part of any league. 1 to ${CS_MAX} people.</p>
  <label for="csname">Name (optional)</label><input id="csname" maxlength="40" placeholder="Casual shoot" value="${esc(D.name)}">
  <label>Discipline</label>${csSeg('csdisc',Object.entries(CS_DISC),D.disc)}
  ${is3?`<label for="cs3t">Round</label><select id="cs3t">${Object.entries(CS3D).map(([k,T])=>`<option value="${k}" ${k==D.d3t?'selected':''}>${esc(T.l+' ('+(T.half?'3 + 1 arrows':plN(cs3dPer(k),'arrow','arrows'))+' a target)')}</option>`).join('')}</select>
  <label for="cs3n">${CS3D[D.d3t].half?'Targets each half':'Number of targets'}</label><input id="cs3n" type="number" inputmode="numeric" min="1" max="${CS3D_MAX}" value="${esc(D.d3n)}" style="max-width:120px">`
- :`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option value="${esc(r)}" ${r==D.round?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>`}
+ :R0.length?`<label for="csrd">Round</label><select id="csrd">${R0.map(r=>`<option value="${esc(r)}" ${r==D.round?'selected':''}>${esc(window.rdPick?rdPick(r):r)}</option>`).join('')}</select>`:`<p class="small" id="csempty">No rounds in ${esc(CS_DISC[D.disc]||'this list')} yet. A practice round you create under Just me, in this discipline, shows here.</p>`}
  ${ind?`<label>${sp&&D.round!=AUSI?'3-spot layout':'Face'}</label>${D.round==AUSI?csSeg('csf3',F3AUS,D.face3):csSeg('csf3',[['vert','Vertical 3-spot'],['vegas','Vegas 3-spot']],D.face3=='single'?'vert':D.face3)}`:''}
- <p class="small" id="csfacetxt" style="margin:6px 0">${esc(csFaceTxt(tmp))} · keys ${csKeys(tmp,0).join(' ')}</p>
+ <p class="small" id="csfacetxt" style="margin:6px 0">${D.round?esc(csFaceTxt(tmp))+' · keys '+csKeys(tmp,0).join(' '):''}</p>
  <label for="csdt">Date</label><input id="csdt" type="date" value="${esc(D.date||today())}">
  <fieldset class="h2hops"><legend>Who's shooting (${n} of ${CS_MAX})</legend>
  <label class="h2htk"><input type="checkbox" id="csself" ${D.self?'checked':''}> I'm shooting too</label>
@@ -234,7 +242,7 @@ function csSetupHtml(){const D=csDraft(),is3=D.disc=='3d',R0=is3?[]:csRounds(D.d
  <p class="small muted" style="margin:4px 0">You can switch match play on or off later too.</p>
  <button type="button" class="btn ghost full" id="csh2h" style="margin-top:8px">Head-to-head or match night</button>
  <p class="small muted" style="margin:4px 0 0">Two phones, or a match night, lives here with Casual. Same rounds and the same saved scores.</p>
- <button class="btn alt full" id="csgo" style="margin-top:10px" ${n<1?'disabled':''}>Start casual shoot</button></div>`}
+ <button class="btn alt full" id="csgo" style="margin-top:10px" ${n<1||(!is3&&!D.round)?'disabled':''}>Start casual shoot</button></div>`}
 function csBindSetup(root){const D=csDraft(),q=s=>root.querySelector(s),re=()=>score();
  const keep=()=>{const a=q('#csname'),b=q('#csdt'),c=q('#cstype'),n3=q('#cs3n');if(n3)D.d3n=Math.max(1,Math.min(CS3D_MAX,Math.round(+n3.value)||20));if(a)D.name=a.value;if(b)D.date=b.value;if(c)D.typed=c.value};
  root.querySelectorAll('[data-csdisc]').forEach(b=>b.onclick=()=>{keep();D.disc=b.dataset.csdisc;D.round=null;re()});
@@ -368,8 +376,8 @@ function csView(code){const cs=csGet(code);if(!cs)return;window._csv=code;cur=nu
  if(cs.status=='invite'){app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot</span><h1>${esc(cs.name)}</h1><p class="small">${esc(testerName(cs.host))} added you. Tap Join on your Score tab.</p></div></div>`;return}
  const mpOk=cs.ppl.length>=2,seedsN=csSeeds(cs).length,lad=m&&window.suLadder?suLadder(m):[],mpDone=lad.length&&lad[lad.length-1].res.winner;
  const ask=host&&fin&&mpOk&&!(cs.mp&&cs.mp.on)&&!(cs.mp&&cs.mp.ask)&&seedsN>=2;
- const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':'X'}</th></tr></thead><tbody>${rows.map(r=>{const p=csP(cs,r.id);return`<tr data-csrow="${esc(r.id)}"><td>${esc(r.nm)}${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${csMixed(cs)?` <span class="small muted">${csAF(cs,r.id)=='single'?'single face':'3-spot'}</span>`:''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
- ${csMixed(cs)?`<p class="small muted" id="csfacenote" style="margin:4px 0 0">Different faces: each archer shoots their own, scored on the same X, 10 to M scale.</p>`:''}
+ const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr><th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'9s':'X'}</th></tr></thead><tbody>${rows.map(r=>{const p=csP(cs,r.id);return`<tr data-csrow="${esc(r.id)}"><td>${esc(r.nm)}${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${csMixed(cs)?` <span class="small muted">${csAF(cs,r.id)=='single'?'single face':'3-spot'}</span>`:''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
+ ${csMixed(cs)?`<p class="small muted" id="csfacenote" style="margin:4px 0 0">Different faces: each archer shoots their own, scored on the same ${ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'10 to M':'X, 10 to M'} scale.</p>`:''}
  <p class="small muted" style="margin:4px 0 0">This shoot's scores only, in the order people were added. Not counted in any league.</p>`;
  const ends=`<details id="csends"><summary class="small">${R.d3?'Targets':'Ends'} for each archer</summary>${rows.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(r.nm)}</b>: ${r.E.length?r.E.map((e,i)=>`${R.d3?'T':'E'}${i+1} ${esc(e.join(' '))} (${csTotal(e)})`).join(' · '):'no ends yet'}</div>`).join('')}</details>`;
  const mpCard=!mpOk?`<div class="card" id="csmp"><p class="small muted" style="margin:0">Match play needs 2 or more archers.</p></div>`

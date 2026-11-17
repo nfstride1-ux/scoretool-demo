@@ -50,7 +50,7 @@ try:
   L.evaluate("(()=>{S.sessions.push({id:'old1',date:'2026-10-01',round:'WA 720 (70m)',ends:[['X','10','9']],pos:[[]]});save()})()")
   before=L.evaluate("JSON.stringify(S.sessions.filter(s=>s.id=='old1'))")
   to_score(L);L.click('[data-cstp="casual"]');L.wait_for_timeout(300)
-  chk('Discipline row: Target, Indoor, Field, 3D',L.evaluate("[...document.querySelectorAll('[data-csdisc]')].map(b=>b.textContent.replace('✓','').trim())")==['Target','Indoor','Field','3D'])
+  chk('Discipline row: Target, Indoor, Field, Clout, 3D',L.evaluate("[...document.querySelectorAll('[data-csdisc]')].map(b=>b.textContent.replace('✓','').trim())")==['Target','Indoor','Field','Clout','3D'])
   L.click('[data-csdisc="3d"]');L.wait_for_timeout(250)
   chk('3D rounds: ABA 3/2/1-arrow, ABA 3+1, IBO, ASA',L.evaluate("[...document.querySelectorAll('#cs3t option')].map(o=>o.textContent.replace(/ \(.*a target\)$/,''))")==['ABA 3-arrow','ABA 2-arrow','ABA 1-arrow','ABA 3-arrow + 1-arrow','IBO','ASA'])
   chk('ABA 3-arrow keys 20 18 16 14 12 10 8 6 4 M','keys 20 18 16 14 12 10 8 6 4 M' in L.inner_text('#csfacetxt'))

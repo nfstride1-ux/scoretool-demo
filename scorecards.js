@@ -1,6 +1,6 @@
 /* Scorecards (13 Nov 2026, Nathe). Practice scores grouped as Target, Indoor, Field, Clout and 3D,
    with official personal bests on the same page. Tapping a shoot opens the finished scorecard.
-   Classification is in memory only. Sessions are never rewritten, deleted or migrated. */
+   Classification is in memory only. Opening a card does not rewrite the session. Delete removes that saved score when the archer confirms. */
 (function(){
 const CATS=['Target','Indoor','Field','Clout','3D'];
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -20,6 +20,8 @@ function practiceCat(round){
  try{
   const c=(S.customRounds||[]).find(x=>x&&x.name===name);
   if(c){const d=c.kind==='3d'?'3d':(c.disc||'target');return {target:'Target',indoor:'Indoor',field:'Field',clout:'Clout','3d':'3D'}[d]||'Target'}
+  const ret=(S.retiredRounds||{})[name];
+  if(ret){const d=ret.kind==='3d'?'3d':(ret.disc||'target');return {target:'Target',indoor:'Indoor',field:'Field',clout:'Clout','3d':'3D'}[d]||'Target'}
  }catch(e){}
  if(R.aba||R.kind==='3d'||/\b3d\b|3-d/i.test(name))return '3D';
  if(R.clout||/clout/i.test(name))return 'Clout';
@@ -57,10 +59,11 @@ function shootButton(s){
  if(String(s.src||'').toLowerCase()==='paper')bits.push('<span class="real">competition · paper sheet</span>');
  if(typeof isIncS==='function'&&isIncS(s))bits.push('<span class="sample inc-tag">Incomplete</span>'+(typeof incProg==='function'?incProg(s):''));
  const line=`<b>${shootTotal(s)}</b> · ${esc(s.round)}<span class="small muted" style="display:block;font-weight:600">${bits.join(' ')}</span>`;
- const btn=open?`<button type="button" class="btn ghost sc-open" data-open="${esc(s.id)}">${line}</button>`:`<div class="sc-open">${line}<p class="small muted" style="margin:4px 0 0">This round is kept. It cannot be opened because that round is no longer in the app.</p></div>`;
+ const btn=open?`<button type="button" class="btn ghost sc-open" data-open="${esc(s.id)}">${line}</button>`:`<div class="sc-open">${line}<p class="small muted" style="margin:4px 0 0">This round is kept under ${esc(s.round)}.</p></div>`;
+ const del=s.sample?'':`<button type="button" class="btn ghost" data-drop="${esc(s.id)}" style="margin-top:6px">Delete</button>`;
  const extra=`${typeof noteBox==='function'?noteBox(s):''}${window.calRowHtml?calRowHtml(s):''}${window.phBoxHtml&&s.id?phBoxHtml(s.id,'row'):''}`;
  const more=extra.trim()?`<details class="sc-more"><summary class="small">Notes, photo and calendar</summary>${extra}</details>`:'';
- return `<div class="list-item" data-scrow="${esc(s.id)}">${btn}${more}</div>`;
+ return `<div class="list-item" data-scrow="${esc(s.id)}">${btn}${del}${more}</div>`;
 }
 
 function practiceHTML(){
@@ -95,6 +98,7 @@ function scorecardsView(){
  if(window.calRowBind)calRowBind(app);
  app.querySelectorAll('[data-scbow]').forEach(b=>b.onclick=()=>{window._scBow=b.dataset.scbow;scorecardsView()});
  app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openScorecard(b.dataset.open,'scorecards'));
+ app.querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{if(typeof dropScore==='function'&&dropScore(b.dataset.drop))scorecardsView()});
 }
 
 function openScorecard(id,back){

@@ -2,7 +2,7 @@
 const SIGHT_DISTS=['18m','20m','30m','40m','50m','60m','70m','90m'];
 function seedBows(){S.bows=S.bows||[];S.bowSel=S.bowSel||{}}
 const myBows=()=>(S.bows||[]).filter(b=>b.archer==S.profile);
-function curBow(){const L=myBows();return L.find(b=>b.id==S.bowSel[S.profile])||L[0]}
+function curBow(){const L=myBows();const id=S.bowSel&&S.bowSel[S.profile];return L.find(b=>b.id==id)||L[0]}
 /* redraw after a change: inside My archery > Setups & sight marks, redraw that screen (keeps its back button and layout),
    otherwise the Diary as before; scroll position kept */
 function gearRedraw(){const y=scrollY;if(typeof view!='undefined'&&String(view).startsWith('lab_')&&typeof render=='function')render();else diary();scrollTo(0,y)}
@@ -15,7 +15,7 @@ function bowDists(b,M){const all=[...new Set([...SIGHT_DISTS,...(b.extra||[]),..
    marks in the new b.setMarks[setId]. Sets themselves (name, shaft, spine, length, point) are per archer in the new S.arrowSets;
    "Arrows 1" is only written there once it is renamed or given details. */
 const AS1='arrows1';
-function mySets(){const L=(S.arrowSets||[]).filter(a=>a.archer==S.profile);return L.some(a=>a.id==AS1)?L:[{id:AS1,archer:S.profile,name:'Arrows 1'},...L]}
+function mySets(){const gone=!!(S.arrowGone&&S.arrowGone[S.profile]&&S.arrowGone[S.profile][AS1]);const L=(S.arrowSets||[]).filter(a=>a.archer==S.profile);return L.some(a=>a.id==AS1)||gone?L:[{id:AS1,archer:S.profile,name:'Arrows 1'},...L]}
 function curSet(){const L=mySets();return L.find(a=>a.id==((S.arrowSel||{})[S.profile]))||L[0]}
 function setRec(a){S.arrowSets=S.arrowSets||[];let r=S.arrowSets.find(x=>x.id==a.id&&x.archer==S.profile);if(!r){r={...a};S.arrowSets.push(r)}return r}
 function marksOf(b,a){if(!b)return{};if(!a||a.id==AS1)return b.marks=b.marks||{};b.setMarks=b.setMarks||{};return b.setMarks[a.id]=b.setMarks[a.id]||{}}
@@ -29,7 +29,7 @@ function renderGear(){seedBows();const L=myBows(),b=curBow(),AL=mySets(),a=curSe
  el.innerHTML=`<span class="kicker">Gear</span><h2>Sight marks</h2>
  ${L.length?`<label for="bsel">Bow setup</label><select id="bsel">${L.map(x=>`<option value="${x.id}" ${x==b?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:'<p class="small muted">Add a bow setup to save its sight marks.</p>'}
  <div class="row" style="gap:6px;margin-top:6px"><button class="btn ghost" id="bnew" style="padding:6px 10px">+ New bow setup</button>${b?'<button class="btn ghost" id="bren" style="padding:6px 10px">Rename</button>':''}</div>
- ${b?`<label for="asel" style="margin-top:10px">Arrow set</label><select id="asel">${AL.map(x=>`<option value="${esc(x.id)}" ${x.id==a.id?'selected':''}>${esc(x.name)}${setDesc(x)?' ('+esc(setDesc(x))+')':''}</option>`).join('')}</select>
+ ${b&&a?`<label for="asel" style="margin-top:10px">Arrow set</label><select id="asel">${AL.map(x=>`<option value="${esc(x.id)}" ${x.id==a.id?'selected':''}>${esc(x.name)}${setDesc(x)?' ('+esc(setDesc(x))+')':''}</option>`).join('')}</select>
  <div class="row" style="gap:6px;margin-top:6px"><button class="btn ghost" id="anew" style="padding:6px 10px">+ New arrow set</button><button class="btn ghost" id="aren" style="padding:6px 10px">Rename</button></div>
  <details id="adet" style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">Arrow details <span class="small muted">(optional)</span></summary>
  <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${[['shaft','Shaft','e.g. X10','text'],['spine','Spine','e.g. 600','decimal'],['len','Length (in)','e.g. 28','decimal'],['pt','Point (gr)','e.g. 110','decimal'],['wt','Total weight (gr)','e.g. 405','decimal'],['fps','Speed (fps)','e.g. 290','decimal'],['sh','Sight height (in)','e.g. 3.93','decimal'],['sr','Sight radius (in)','e.g. 31.3','decimal'],['si','Sighted in at','e.g. 30m, 90m','text']].map(([k,l,ph,im])=>`<label style="flex:1 1 40%;margin:0">${l}<input class="asf" data-k="${k}" value="${esc(a[k]||'')}" inputmode="${im}" placeholder="${ph}" style="min-height:48px"></label>`).join('')}</div>

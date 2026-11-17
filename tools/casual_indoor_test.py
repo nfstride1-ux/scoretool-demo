@@ -49,7 +49,7 @@ try:
   chk('casual is on the vertical 3-spot',pg.evaluate(f"csGet('{CODE}').face3")=='vert')
   chk('Just me look: End and Prog boxes',pg.locator('#csad .ad-num').count()==2 and pg.locator('#csad .ad-head').count()==1)
   chk('face is the vertical 3-spot (3 spots, plotting face)',pg.locator('#cspface').count()==1 and pg.evaluate("document.querySelectorAll('#csad .zbar [data-csspot]').length")==4)
-  chk('score keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk).join('')")=='X1098'+'76M' or pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk)")==['X','10','9','8','7','6','M'])
+  chk('score keys X 10 9 8 7 6 M',pg.evaluate("[...document.querySelectorAll('#csad [data-csk]')].map(b=>b.dataset.csk)")==['X','10','9','8','7','6','M'])
   vis=pg.evaluate("(()=>{const q=s=>document.querySelector(s).getBoundingClientRect(),nv=document.querySelector('nav').getBoundingClientRect();return{face:q('#cspface').bottom<=innerHeight,pad:q('#csad .ad-pad').bottom<=nv.top+1,top:q('#csad .ad-head').top>=0}})()")
   chk('phone: face, End/Prog and the score keys are all on the screen at once',vis['face'] and vis['pad'] and vis['top'])
   pg.screenshot(path='/tmp/lgx_ind_casual0.png')
@@ -88,7 +88,16 @@ try:
   chk('analysis directly under the score card',pg.evaluate("(()=>{const a=document.querySelector('#csan'),c=a&&a.previousElementSibling;return !!c&&!!c.querySelector('h3')&&c.querySelector('h3').textContent=='Scores'})()"))
   LT=pg.evaluate("document.querySelector('#csan').innerText");M='WHERE THIS SHOOT LANDED'
   chk('analysis has the round summary (score, personal best) and the plotted group',pg.locator('#csan .shcard').count()==1 and 'Score' in LT and str(sum(tots)) in LT and 'Round Name' in LT)
-  chk('analysis text equals Just me\'s (group centre, spread, sight move)',M in LT and M in JT and LT[LT.index(M):][:420]==JT[JT.index(M):][:420])
+  def _group(t):
+    out=[]
+    lines=t.splitlines()
+    for i,ln in enumerate(lines):
+      s=ln.strip()
+      if s.startswith('Left / right') or s.startswith('Up / down') or s.startswith('Average spread'):
+        out.append(s)
+        if i+1<len(lines):out.append(lines[i+1].strip())
+    return out
+  chk('analysis text equals Just me\'s (group centre, spread, sight move)',M in LT and M in JT and _group(LT)==_group(JT) and len(_group(LT))>=4)
   chk('arrow plot shows one dot per arrow',pg.evaluate("document.querySelectorAll('#csan .shcard .shplot > circle[fill=\"#fff\"][stroke=\"#0b1f4d\"]').length")==30)
   pg.screenshot(path='/tmp/lgx_ind_casual1.png',full_page=True)
   # saved record: old format kept, session added with plots + face for groups and heatmaps

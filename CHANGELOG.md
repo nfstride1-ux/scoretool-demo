@@ -2,6 +2,20 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-1030-live
+
+Indoor scoring follows the WA and AA keys. Cache version is `v2026-11-17-1030-live`, newer than `v2026-11-17-1004-live`, so phones load this copy.
+
+- Indoor WA 18m, Indoor WA 25m and Indoor WA Combined (60 cm at 25 m, then 40 cm at 18 m) score 10, 9, 8, 7, 6, M on the single face and on either 3-spot. There is no X. Outside the 6 is M. Ties are 10s, then 9s.
+- A sighted compound's 10 is only the inner ring (2 cm on a 40 cm face, 3 cm on a 60 cm face). The rest of that gold scores 9. The plotting face labels the inner ring 10 and that outer gold 9, and a plotted arrow there is stored as 9. Recurve, Barebow, Barebow Compound and W1 still score the whole 10 ring as 10, and their face drawing is unchanged (WA Book 2 7.2.2, Book 3 12.5.1).
+- Australian Indoor 18m stays X, 10, 9, 8, 7, 6, M. X scores 10 and is only the second tie-break. The vertical 3-spot stays, for practice.
+- The rules page no longer says those indoor faces score 5 to 1. It lists the keys above.
+- Just me uses the Casual shoot discipline row (Target, Indoor, Field, Clout, 3D). The Round list shows that discipline only. The last discipline is remembered. Casual shoot uses the same row, so it gains Clout. There is no standard clout round in the list yet.
+- Past sessions is back on the Score screen, under Just me. Any saved score, including an unfinished one, can be deleted from Home, Past sessions, Scorecards, or the score sheet. The confirm is "Delete this score? This can't be undone."
+- A custom shoot can be deleted from My rounds or the edit screen. Scores already shot stay, under the saved name, and can still be opened.
+- My bows and My arrows each have Delete. The confirm says a bow's sight marks go with the bow, and an arrow set's sight marks go with the set, on each bow.
+- My results source: Sync now is switched off, with the approval line under it. Nothing is fetched. Paste a table or a CSV is unchanged.
+
 ## Lingkana registration, passcode and groups (not a version bump, not deployed)
 
 Version tag stays `v2026-11-12-0804-live`. Not deployed.

@@ -24,12 +24,12 @@ AUDIT=r"""(()=>{let r=5;const rnd=()=>{r=(r*16807)%2147483647;return r/214748364
   for(const f3 of [null,'vegas','vert','bugs','single']){if(f3=='single'&&name!=AUSI)continue;/* Australian Indoor single 40cm face */const s={id:'au',round:name,date:'2026-10-23',ends:[],pos:[],ff:[]};const F0=faceR(R,0);
    if(f3=='bugs'){if(!/field/.test(F0.face||''))continue;s.bugs=true}else if(f3){if(!indoor3(R,F0))continue;s.face3=f3}
    const n=R.ends||(R.blocks||[]).reduce((t,b)=>t+(b.ends||0),0)||1;let bad=0,cnt=0,mmBad=0;
-   for(let i=0;i<Math.min(n,40);i++){let F=faceR(R,i);if(!F)break;if(use3({...s,pos:f3?[]:[[{x:0,y:0}]]},R,F))F=face3R(F,s);if(bugsOn(s))F={...F,bugs:true};const fs=isFld(F)?[80,60,40,20][i%4]:0;s.ff[i]=fs?{f:fs}:null;
+   for(let i=0;i<Math.min(n,40);i++){let F=faceR(R,i);if(!F)break;if(use3({...s,pos:f3?[]:[[{x:0,y:0}]]},R,F))F=face3R(F,s);if(bugsOn(s))F={...F,bugs:true};if(R.wa18)F={...F,wa18:true,xs:false,inner10:!!sightedCompound()};if(R.ausi)F={...F,ausi:true};const fs=isFld(F)?[80,60,40,20][i%4]:0;s.ff[i]=fs?{f:fs}:null;
     const L=spots3(F)||(isBug(F)?BUGC:null),E=[],P=[];for(let j=0;j<(R.ape||3);j++){const c=L?L[j%L.length]:[0,0],sc=L?(isBug(F)?0.3:0.6):1,a=rnd()*6.283,d=rnd()*(L?0.5:1)*0.98;
      const x=c[0]+Math.cos(a)*d*sc,y=c[1]+Math.sin(a)*d*sc;E.push(plotScore(x,y,F));P.push({x,y})}s.ends.push(E);s.pos.push(P)}
    const before=JSON.stringify(s);const P=shotPts(s);[...P.target,...P.field].forEach(p=>{cnt++;
-    const Fi=faceR(R,p.e),one=p.k=='spot'?{...Fi,face:(Fi.face.match(/^\d+/)||['40'])[0]+'cm 3-spot',tri:false,vert:false}:p.k=='bugs'?null:{...Fi,col:false};
-    let v;if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035;/* 3-spot line cutter, as plotScore */v=d>0.5?'M':d<=0.05?(Fi.xs===false||R.xs===false?'10':'X'):String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else if(p.k=='bugs'){const d=Math.hypot(p.x,p.y)*0.3-0.023;v=d>0.3?'M':String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}else v=plotScore(p.x,p.y,one);
+    const Fi=faceR(R,p.e),one=p.k=='spot'?{...Fi,face:(Fi.face.match(/^\d+/)||['40'])[0]+'cm 3-spot',tri:false,vert:false}:p.k=='bugs'?null:{...Fi,col:false,ausi:!!R.ausi,wa18:!!R.wa18,inner10:!!(R.wa18&&sightedCompound()),xs:R.xs};
+    let v;if(p.k=='spot'){const d=Math.hypot(p.x,p.y)-0.035;/* 3-spot line cutter, as plotScore */v=R.wa18?wa18Score(d,!!sightedCompound()):d>0.5?'M':d<=0.05?(Fi.xs===false||R.xs===false?'10':'X'):String(Math.min(10,10-Math.floor(Math.max(0,d)*10)))}else if(p.k=='bugs'){const d=Math.hypot(p.x,p.y)*0.3-0.023;v=d>0.3?'M':String(Math.min(6,6-Math.floor(Math.max(0,d)/0.05)))}else v=plotScore(p.x,p.y,one);
     if(v!=p.a){bad++;if(!window._mm)window._mm=[name,f3,p.k,p.x,p.y,v,p.a,JSON.stringify(s.pos[p.e][p.j])]}if(p.k!='bugs'&&!p.mm&&/\d+cm/.test(Fi.face||''))mmBad++});
    if(JSON.stringify(s)!=before)bad+=1000;out.push([name+(f3?' ['+f3+']':''),cnt,bad,mmBad,[...new Set([...P.target,...P.field].map(p=>p.k))].join('/')])}}
  return out})()"""

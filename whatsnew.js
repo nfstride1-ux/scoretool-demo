@@ -3,12 +3,14 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-1030-live',d:'2026-11-17',items:[
+   ['target',"Indoor scores 10 to 6","Indoor WA 18 m, 25 m and the combined round use 10, 9, 8, 7, 6 and M. There is no X. On a compound, only the small inner ring is a 10, and the face labels that ring 10 and the rest of the gold 9. Australian Indoor still has an X, which scores 10."]]},
   {v:'v2026-11-11-2216-live',d:'2026-11-11',items:[
-   ['people',"Tick-box group picker is back","On the Lingkana league, Pick a group opens the earlier tick-box list: tonight's sign-ups first, then the rest of the league, full names, up to 4 ticks, and a lock on anyone already in another group. Start opens scoring."]]},
+   ['people',"Tick-box group picker is back","On the Lingkana league, Pick a group opens the earlier tick-box list: tonight's sign-ups first, then the rest of the league, full names, up to 4 ticks, and a lock on anyone already in another group. Start opens scoring.",'941ee0d']]},
   {v:'v2026-11-11-2208-live',d:'2026-11-11',items:[
-   ['people',"Get ScoreTool from the register page","The Lingkana register page now has a Get ScoreTool button that opens the app in your browser, with a short note on how to keep it on your phone."]]},
+   ['people',"Get ScoreTool from the register page","The Lingkana register page now has a Get ScoreTool button that opens the app in your browser, with a short note on how to keep it on your phone.",'5fb0084']]},
   {v:'v2026-11-11-2054-live',d:'2026-11-11',items:[
-   ['people',"Lingkana League list cleared for a fresh sign-up","The registered archer list on the live Lingkana League is empty again. The test slime sign-up is gone, and Nathe is host only until he signs up on the register page. Host tools and the scoring password still work."]]},
+   ['people',"Lingkana League list cleared for a fresh sign-up","The registered archer list on the live Lingkana League is empty again. The test slime sign-up is gone, and Nathe is host only until he signs up on the register page. Host tools and the scoring password still work.",'858c12b']]},
   {v:'v2026-11-11-1908-live',d:'2026-11-11',items:[
    ['people',"Lingkana League, ready for 18 Nov","The poster register link is now the live register page, with a Share button. The host has a Registered archers page to tick who has paid for each 660 night (a record only — the app does not take payment). Invite a tester is gone from the live league. Standings, Share and Print show each archer's full name, with no email or phone. A small Beta label sits on the league screen. Test scores have been cleared so the nights start empty.",'d330bf1']]},
   {v:'v2026-11-11-1824-live',d:'2026-11-11',items:[
