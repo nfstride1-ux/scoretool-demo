@@ -124,6 +124,7 @@ function lgSnapParts(lg){
   if(lg.paidt)meta.paidt=lg.paidt;
   if(lg.claimt)meta.claimt=lg.claimt;
   if(lg.fresh)meta.fresh=lg.fresh;
+  if(lg.clear)meta.clear=lg.clear;
  }
  const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
  const fat={...meta,...roster};
@@ -176,6 +177,8 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  const lkFreshCut=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26';
  const freshCut=lkFreshCut?+((typeof LK_FRESH!=='undefined'&&LK_FRESH)||(typeof window!=='undefined'&&window.LK_FRESH)||0):0;
  if(freshCut&&+(d.fresh||0)<freshCut)return false;
+ const clearCut=lkFreshCut?+((typeof LK_CLEAR!=='undefined'&&LK_CLEAR)||(typeof window!=='undefined'&&window.LK_CLEAR)||0):0;
+ if(clearCut&&+(lg.clear||0)>=clearCut&&+(lg.fresh||0)>=clearCut&&+(d.clear||d.fresh||0)<clearCut)return false;
  const incFresh=lkFreshCut?+(d.fresh||0):0, locFresh=lkFreshCut?+(lg.fresh||0):0;
  /* A cached snapshot can carry the new fresh stamp and an older weeks time. That copy must not replace newer sign-ups. */
  const incomingWt=+(d.wt||0), localWt=+(lg.wt||0);
@@ -226,7 +229,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  /* The co-host row belongs on this phone. A snapshot replace or a tombstone cannot wipe it. */
- if(typeof lkSeedCoHost==='function'&&((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')&&lkSeedCoHost(lg))ch=true;
+ if(((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')){if(typeof lkSeedHost==='function'&&lkSeedHost(lg))ch=true;if(typeof lkSeedCoHost==='function'&&lkSeedCoHost(lg))ch=true}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */

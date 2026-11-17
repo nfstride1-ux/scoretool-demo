@@ -38,11 +38,16 @@ def shoot_lk(page):
     page.locator('#enext').click()
     page.wait_for_timeout(120)
 
+def card_name(name):
+    # The host's registration is stored as Nathaniel Stride. A score card shows that name.
+    return 'Nathaniel Stride' if name == 'Nathe' else name
+
 def expect_turn(page, names, e, i, tag):
     page.wait_for_selector('#endno', timeout=5000)
     got, hdr = archer(page), end_label(page)
-    chk('%s end %d archer %d is %s' % (tag, e, i + 1, names[i]),
-        got == names[i] and hdr.startswith('End %d ' % e), '%s / %s' % (got, hdr))
+    want = card_name(names[i])
+    chk('%s end %d archer %d is %s' % (tag, e, i + 1, want),
+        got == want and hdr.startswith('End %d ' % e), '%s / %s' % (got, hdr))
     return got, hdr
 
 def seed_lk(page, names):
@@ -144,8 +149,8 @@ try:
         expect_turn(page, two, 2, 1, 'live')
         resume_lk(page)
         page.wait_for_selector('#endno', timeout=5000)
-        chk('reload before the second archer of the end opens Nathe',
-            archer(page) == 'Nathe' and end_label(page).startswith('End 2'))
+        chk('reload before the second archer of the end opens Nathaniel Stride',
+            archer(page) == 'Nathaniel Stride' and end_label(page).startswith('End 2'))
         shoot_lk(page)
         page.wait_for_selector('#addsc', timeout=4000)
         page.locator('#addsc').click()

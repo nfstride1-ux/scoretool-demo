@@ -183,7 +183,7 @@ try:
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').wait_for(timeout=8000)
         labels = page.locator('#lkscorernames .lk-namebtn').all_inner_texts()
         chk('Show all names lists every registered archer without the event passcode',
-            labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Riley Chen','Sam Archer'],
+            labels==['Alex River','Casey Ng','Jordan Lee','Morgan Blake','Nate Evans','Nathaniel Stride','Riley Chen','Sam Archer'],
             str(labels))
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
         page.fill('#lkpin', '4321')
@@ -295,6 +295,7 @@ try:
           Object.values(ids).forEach(id => { if(id) lg.paid[n2][id]=1; });
           delete lg.paid[n2][ids['Morgan Blake']];
           delete lg.paid[n2][ids['Nate Evans']];
+          delete lg.paid[n2][ids['Nathaniel Stride']];
           const built = lkAssignGroups(lg, 2);
           return {mode: built.mode, flat: (built.groups||[]).map(g => g.names), prior: lkHasPriorResult(lg, 2)};
         }""")
@@ -381,7 +382,7 @@ try:
           return {after, oldSnap, kept, msg, snap, back, fresh: lg.fresh};
         }""")
         chk('the fresh cut wipes Ada Archer and an older snapshot cannot put the name back',
-            wiped['after']['names']==['Nate Evans'] and wiped['after']['order']==['lkhost:nate']
+            wiped['after']['names']==['Nathaniel Stride','Nate Evans'] and wiped['after']['order']==['lkhost:nathe','lkhost:nate']
             and 'Ada Archer' not in wiped['after']['names']
             and wiped['after']['inbox'] in (None,'null','[]')
             and wiped['after']['fresh']==1794881040000 and wiped['oldSnap'] is False and wiped['kept'] is False,

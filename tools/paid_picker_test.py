@@ -103,7 +103,7 @@ try:
     fresh = (ROOT / 'lingkana.js').read_text()
     chk('LK_FRESH is the 17 Nov wipe of test sign-ups', 'const LK_FRESH=1794881040000' in fresh)
     ver = (ROOT / 'version.json').read_text()
-    chk('live version.json is v2026-11-17-2230-pinorder', 'v2026-11-17-2230-pinorder' in ver)
+    chk('live version.json is v2026-11-17-2350-clearnight', 'v2026-11-17-2350-clearnight' in ver)
 
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path='/usr/bin/google-chrome',

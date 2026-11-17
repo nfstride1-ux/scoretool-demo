@@ -96,31 +96,16 @@ try:
   pg.evaluate("sv='end';score()");pg.wait_for_timeout(300)
   chk('coming back from the sheet keeps the zoom',abs(pg.evaluate(VW,'pface')-0.62/pg.evaluate('window._zk'))<0.01)
   chk('page errors (Just me): none',not e1)
-  # ================= Casual =================
+  # ================= Casual: buttons only, no face =================
   c2,pg,e2=phone(b)
   pg.evaluate("nav('score')");pg.wait_for_timeout(500)
   CODE=pg.evaluate("csCreate({name:'Undo test',round:'Australian Indoor 18m',face3:'vert',self:true,ppl:[]}).code")
   pg.evaluate(f"csView('{CODE}')");pg.wait_for_timeout(600)
-  st,mk,plot,un,agree=kit(pg,'cspface','#csundo','#csad .ad-chips .adb:not(.adb-empty)')
-  VWC=VW;BOXC="[...document.querySelectorAll('#csad .ad-num b')].map(b=>b.textContent)"
-  v1=pg.evaluate("plotScore(0,-0.45,face3R(faceR(ROUNDS['Australian Indoor 18m'],0),{face3:'vert'}))")
-  plot(0,-0.45);plot(0,0)
-  pg.click('[data-csspot="3"]');pg.wait_for_timeout(250);zset(pg,'#cszcycle',3);pg.wait_for_timeout(200)
-  chk('Casual: zoomed on spot 3 (3x)',abs(pg.evaluate(VWC,'cspface')-0.62/3)<0.01)
-  plot(0,0.62)
-  # the end is complete: the next end opens on the full face, End box 0, Prog = the end just shot
-  tot=pg.evaluate(f"csGet('{CODE}').sc[csMe()].e[0].reduce((t,a)=>t+(a=='X'?10:+a),0)")
-  chk('Casual: after the end completes the next end keeps the zoom (3x)',abs(pg.evaluate(VWC,'cspface')-0.62/3)<0.01)
-  chk('Casual: End 2 of 10, End box 0, Prog = end 1 total',pg.evaluate("document.querySelector('#csad .ad-line').textContent").find('End 2 of 10')>=0 and pg.evaluate(BOXC)==['0',str(tot)])
-  plot(0,-0.62);pg.wait_for_timeout(200);chk('Casual: partly filled end: End 10, Prog = total + 10',pg.evaluate(BOXC)==['10',str(tot+10)])
-  un();chk('Casual: Undo from the partly filled end: End 0',pg.evaluate(BOXC)==['0',str(tot)])
-  # undo back into the finished end: takes the spot 3 arrow (shot last), not the lowest score
-  st[:]=[[]]
-  pg.click('#csundo');pg.wait_for_timeout(300)
-  m=pg.evaluate(MK,'cspface');chk('Casual: Undo into the finished end removes the spot 3 arrow and plot',len(m)==2 and all(y<0.3 for x,y in m) and pg.evaluate(f"csGet('{CODE}').sc[csMe()].e[0].length")==2)
-  chk('Casual: saved plots match the arrows (2 and 2)',pg.evaluate(f"(()=>{{const e=csGet('{CODE}').sc[csMe()];return e.p[0].filter(Boolean).length==e.e[0].length&&e.e[0].length==2}})()"))
-  pg.click('[data-csspot="3"]');zset(pg,'#cszcycle',2);pg.click('[data-csspot="2"]');pg.wait_for_timeout(300)
-  chk('Casual: Spot 2 keeps the zoom',abs(pg.evaluate(VWC,'cspface')-0.62/pg.evaluate('window._zk'))<0.01)
+  chk('Casual: no target face, spot picker, Hide target or zoom Reset',pg.locator('#cspface').count()==0 and pg.locator('[data-csspot]').count()==0 and pg.locator('#cshide').count()==0 and pg.locator('#cszcycle').count()==0)
+  for k in ['10','9','8']:pg.click(f'#csentry [data-csk="{k}"]');pg.wait_for_timeout(80)
+  chk('Casual: end total is the button scores',pg.locator('#csendtot').inner_text()=='27')
+  pg.click('#csundo');pg.wait_for_timeout(200)
+  chk('Casual: Undo removes the last button score',pg.evaluate(f"csGet('{CODE}').sc[csMe()].e[0].join()")=='10,9' and pg.locator('#csendtot').inner_text()=='19')
   chk('page errors (Casual): none',not e2)
   # ================= League =================
   c3,pg,e3=phone(b)

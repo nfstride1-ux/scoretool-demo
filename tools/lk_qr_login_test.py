@@ -49,9 +49,9 @@ try:
     sw = (ROOT / 'sw.js').read_text()
     html = (ROOT / 'index.html').read_text()
     chk('service worker cache is newer than v2026-11-17-1045-live and lists jsQR',
-        "const V='v2026-11-17-2230-pinorder'" in sw and 'vendor/jsQR.js' in sw and 'v2026-11-17-1830-live' not in sw.split('PRE=',1)[0])
+        "const V='v2026-11-17-2350-clearnight'" in sw and 'vendor/jsQR.js' in sw and 'v2026-11-17-1830-live' not in sw.split('PRE=',1)[0])
     chk('index.html loads the vendored jsQR with the new cache query',
-        'vendor/jsQR.js?v=202611172230' in html and '202611171830' not in html and 'https://' not in html.split('vendor/jsQR.js',1)[0][-80:])
+        'vendor/jsQR.js?v=202611172350' in html and '202611171830' not in html and 'https://' not in html.split('vendor/jsQR.js',1)[0][-80:])
     chk('sample QR photos are in the repo', UPRIGHT.is_file() and TURNED.is_file() and UPRIGHT.stat().st_size > 1000)
 
     with sync_playwright() as p:
