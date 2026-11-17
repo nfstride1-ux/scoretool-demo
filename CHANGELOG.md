@@ -2,6 +2,17 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-17-2405-loginfit
+
+The Lingkana login PIN and passcode stay above the fixed Back and Login bar. Cache version is `v2026-11-17-2405-loginfit` (`?v=202611172405`), newer than `v2026-11-17-2350-clearnight`. Not merged.
+
+- The login page had 24px of space under the last field. The bar is about 76px, plus the iPhone home indicator, so the passcode box sat underneath it.
+- The PIN and passcode now sit under the shoot night and above the name list. The name list scrolls in the space left above the bar. Focusing a field scrolls it clear of the bar, including when the keyboard changes the visible height.
+- A registration whose own signup time is before the Wednesday clear is not applied again if an older copy is sent after the cut. Registrations made after 16:20 Perth on 17 Nov stay. The names on the live relay at 21:17 Perth were all registered after that cut, so none of them were removed.
+
+### Files
+lkflow.js, lkflow.css, lingkana.js, league.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md, qa/run_regression.py, tools/lk_login_bar_test.py, tools/lk_qr_login_test.py, tools/live_go_live_test.py, tools/paid_picker_test.py, test/event_home_test.py.
+
 ## v2026-11-17-2350-clearnight
 
 Casual scoring is buttons only, a casual Lancaster X scores 11, the Just me round list follows the discipline, and the Lingkana test data is cleared once for Wednesday 18 Nov. Cache version is `v2026-11-17-2350-clearnight` (`?v=202611172350`), newer than `v2026-11-17-2230-pinorder`. Not merged. PR #1 was not touched.

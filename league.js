@@ -218,7 +218,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  if(!staleFresh&&((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26')){
   if(d.drop&&typeof d.drop==='object'){lg.drop=lg.drop||{};for(const id in d.drop){const v=d.drop[id]||{};const t=+v.t||0;if(!lg.drop[id]||t>(lg.drop[id].t||0)){lg.drop[id]={n:typeof v.n==='string'?v.n:'',t};ch=true}}}
   if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
-   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(staleWt&&freshCut&&(+rec.at||0)<freshCut)continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;
+   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(staleWt&&freshCut&&(+rec.at||0)<freshCut)continue;if(typeof lkRegKept==='function'&&!lkRegKept(lg, rec.at))continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;
     const rk=String(rec.name||'').trim().replace(/\s+/g,' ').toLowerCase();
     const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(rk&&String(r.name||'').trim().replace(/\s+/g,' ').toLowerCase()===rk)));
     if(rec.pin)delete rec.pin;
@@ -241,7 +241,7 @@ function lgRelayReady(lg){
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
   if(typeof lkFresh==='function'&&typeof lkIs==='function'&&lkIs(lg))lkFresh(lg);
-  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkdrop'&&d.code===lg.code&&typeof lkApplyDrop==='function'&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){if(lkApplyDrop(lg,d.id,d.name,d.at||d.t))ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'&&(!(lg.fresh)||+(d.t||d.at||0)>=lg.fresh)){if(lkApplyClaim(d,lg))ch=true}}save()}
+  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)&&(typeof lkRegKept!=='function'||lkRegKept(lg,(d.rec&&d.rec.at)||0))){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkdrop'&&d.code===lg.code&&typeof lkApplyDrop==='function'&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){if(lkApplyDrop(lg,d.id,d.name,d.at||d.t))ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'&&(!(lg.fresh)||+(d.t||d.at||0)>=lg.fresh)){if(lkApplyClaim(d,lg))ch=true}}save()}
   if(typeof lkDropHostIfUnregistered==='function'&&typeof lkIs==='function'&&lkIs(lg))lkDropHostIfUnregistered(lg);
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
