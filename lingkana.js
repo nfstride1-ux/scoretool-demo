@@ -81,19 +81,36 @@ function lkEnsure(){
 function lkFresh(lg){
   if(!lg||!lkIs(lg))return lg;
   if((lg.fresh||0)<LK_FRESH){
-    lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.gn={};lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
-    lg.order=[];lg.drop={};
+    /* Test sign-ups from before the cutoff go. A registration made after it stays, including the host signing himself up. */
+    const keep={};
+    for(const night of Object.keys(lg.reg||{})){
+      const rows=(lg.reg[night]||[]).filter(r=>r&&(+r.at||0)>=LK_FRESH&&!lkIsHostAccount(r.id));
+      if(rows.length)keep[night]=rows;
+    }
+    const ids=new Set();
+    Object.values(keep).forEach(list=>list.forEach(r=>{if(r&&r.id)ids.add(r.id)}));
+    const gn={};
+    ids.forEach(id=>{if(lg.gn&&lg.gn[id])gn[id]=lg.gn[id]});
+    lg.sc={};lg.reg=keep;lg.claim={};lg.claimt=0;lg.gn=gn;lg.paid={};lg.paidt=0;lg.grp={};lg.inv=[];
+    lg.order=(lg.order||[]).filter(id=>ids.has(id));
+    lg.drop={};
     lg.fresh=LK_FRESH;lg.dirty=1;lg.since=null;lg.posted=0;
-    try{localStorage.removeItem(LK_REG_KEY)}catch(e){}
+    try{
+      const box=lkRegInbox().filter(r=>r&&(+r.at||0)>=LK_FRESH&&!lkIsHostAccount(r.id));
+      if(box.length)localStorage.setItem(LK_REG_KEY,JSON.stringify(box));
+      else localStorage.removeItem(LK_REG_KEY);
+    }catch(e){}
     if(typeof save==='function')save();
   }
   lkDropHostIfUnregistered(lg);
   return lg;
 }
+/* The host account id is not an archer row. The name Nathaniel Stride is a real registration when he signs himself up. */
+function lkIsHostAccount(id){
+  return !!(id&&(id===LK_HOST||id==='nathe'));
+}
 function lkIsHostPerson(id,name){
-  if(id&&(id===LK_HOST||id==='nathe'))return true;
-  const n=lkCleanName(name||'').toLowerCase();
-  return n==='nathe'||n==='nathaniel stride';
+  return lkIsHostAccount(id);
 }
 /* The host stays host (password, host tools) even when not on the registered list. Drop them from order unless they have a non-host sign-up or a score. */
 function lkDropHostIfUnregistered(lg){
@@ -463,12 +480,18 @@ function lkDropArcher(id){
 }
 function lkPullReg(lg){
   lg=lg||lkGet();if(!lg)return 0;
-  let n=0;for(const rec of lkRegInbox()){
-    if(!rec||rec._applied)continue;
+  let n=0;const box=lkRegInbox();
+  const nights=lkShootDates(lg);
+  for(const rec of box){
+    if(!rec)continue;
+    const name=lkCleanName(rec.name).toLowerCase();
+    const onAll=nights.length&&nights.every(night=>((lg.reg||{})[night]||[]).some(r=>r&&((rec.id&&r.id===rec.id)||lkCleanName(r.name).toLowerCase()===name)));
+    /* A row marked applied can still be missing after a strip or a stale snapshot. Put it back. */
+    if(rec._applied&&onAll)continue;
     const r=lkApplyReg(rec,lg);
     if(r&&r.ok){rec._applied=1;n++}
   }
-  if(n){try{localStorage.setItem(LK_REG_KEY,JSON.stringify(lkRegInbox()))}catch(e){}}
+  if(n){try{localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}catch(e){}}
   return n;
 }
 function lkRegister(opts){
@@ -497,7 +520,16 @@ function lkRegister(opts){
 function lkNightKey(lg,w){return lkDate(lg,w)||LK_DATES[(+w||1)-1]||''}
 function lkNightSignups(lg,w){
   const k=lkNightKey(lg,w);
-  return ((lg&&lg.reg)||{})[k]||[];
+  const rows=((lg&&lg.reg)||{})[k]||[];
+  const seen=new Set(),out=[];
+  for(const r of rows){
+    if(!r||lkIsHostAccount(r.id))continue;
+    const key=lkCleanName(r.name).toLowerCase()||r.id;
+    if(!key||seen.has(key))continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
 }
 function lkPickerOrder(lg,w){
   const night=lkNightSignups(lg,w).map(r=>r.id);

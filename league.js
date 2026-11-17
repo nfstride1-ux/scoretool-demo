@@ -166,8 +166,12 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  const freshCut=lkFreshCut?+((typeof LK_FRESH!=='undefined'&&LK_FRESH)||(typeof window!=='undefined'&&window.LK_FRESH)||0):0;
  if(freshCut&&+(d.fresh||0)<freshCut)return false;
  const incFresh=lkFreshCut?+(d.fresh||0):0, locFresh=lkFreshCut?+(lg.fresh||0):0;
+ /* A cached snapshot can carry the new fresh stamp and an older weeks time. That copy must not replace newer sign-ups. */
+ const incomingWt=+(d.wt||0), localWt=+(lg.wt||0);
+ const staleWt=!!(localWt&&incomingWt&&incomingWt<localWt);
  if(lkFreshCut&&fromHost&&incFresh>locFresh){
   lg.fresh=incFresh;ch=true;
+  if(!staleWt){
   lg.order=[];lg.gn={};lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.paid={};lg.paidt=0;
   if(Array.isArray(d.order))lg.order=d.order.filter(id=>typeof id=='string'&&!LG_EXCL.includes(id)).slice(0,h2hCap(lg));
   if(d.gn&&typeof d.gn=='object'){lg.gn={};for(const id in d.gn){const g=d.gn[id];if(lgIsG(id)&&g&&typeof g.n=='string')lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''}}}
@@ -175,6 +179,7 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
   if(d.reg&&typeof d.reg==='object')lg.reg=d.reg;
   if(d.claim&&typeof d.claim==='object')lg.claim=d.claim;
   if(d.paid&&typeof d.paid==='object'){lg.paid=d.paid;lg.paidt=d.paidt||0}
+  }
  }
  const staleFresh=lkFreshCut&&locFresh&&incFresh<locFresh;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
@@ -199,8 +204,10 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  if(!staleFresh&&((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26')){
   if(d.drop&&typeof d.drop==='object'){lg.drop=lg.drop||{};for(const id in d.drop){const v=d.drop[id]||{};const t=+v.t||0;if(!lg.drop[id]||t>(lg.drop[id].t||0)){lg.drop[id]={n:typeof v.n==='string'?v.n:'',t};ch=true}}}
   if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
-   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(!rec.id&&r.name===rec.name)));
-    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}
+   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(staleWt&&freshCut&&(+rec.at||0)<freshCut)continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;
+    const rk=String(rec.name||'').trim().replace(/\s+/g,' ').toLowerCase();
+    const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(rk&&String(r.name||'').trim().replace(/\s+/g,' ').toLowerCase()===rk)));
+    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){const prev=lg.reg[night][i];lg.reg[night][i]=Object.assign({},prev,rec,{id:prev.id||rec.id});ch=true}}}}
   if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
  return ch}

@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-17-1130-live',d:'2026-11-17',items:[
+   ['people',"Your name stays on the Lingkana login list","Registering for the Lingkana League puts your name on the login list for every shoot night, including when the host registers himself. An older saved copy of the league cannot wipe a newer sign-up."]]},
   {v:'v2026-11-17-1030-live',d:'2026-11-17',items:[
    ['target',"Indoor scores 10 to 6","Indoor WA 18 m, 25 m and the combined round use 10, 9, 8, 7, 6 and M. There is no X. On a compound, only the small inner ring is a 10, and the face labels that ring 10 and the rest of the gold 9. Australian Indoor still has an X, which scores 10."]]},
   {v:'v2026-11-11-2216-live',d:'2026-11-11',items:[
