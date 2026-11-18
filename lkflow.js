@@ -363,7 +363,11 @@
   }
 
 
-  async function login(){
+  /* The full name-search + personal PIN + event passcode sign-in. Kept for the host and the Nate
+     Evans co-host session flag (lkMarkCoHost), and for anyone who wants their own PIN-protected
+     identity (e.g. to review their own past sessions). Ordinary scoring on the night does not need
+     this any more: see login() below, which is the scorer-facing entry point. */
+  async function lkFullLogin(){
     if(isOnion())return osLogin();
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
@@ -502,7 +506,7 @@
     }
     paintPin(pick);
     if($id('lkloginback'))$id('lkloginback').onclick=()=>home(evCode());
-    if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
+    if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);lkFullLogin()};
     const wireNames=()=>{
       el.querySelectorAll('[data-lkscorer]').forEach(b=>b.onclick=()=>{
         window._lkLoginId=b.getAttribute('data-lkscorer');
@@ -537,7 +541,7 @@
     if($id('lkfind'))$id('lkfind').oninput=()=>drawNames($id('lkfind').value);
     if($id('lkshowall'))$id('lkshowall').onclick=()=>{
       window._lkNamesOpen=1;
-      login();
+      lkFullLogin();
     };
     if($id('lkpinreset'))$id('lkpinreset').onclick=()=>{
       const id=String(window._lkLoginId||'');
@@ -604,6 +608,49 @@
     };
     $id('lkpwgo').onclick=go;
     bindEnter();
+  }
+
+  /* Scorer-facing sign-in: pick a lane, see who is already on it, tick who you are scoring with.
+     No roster search and no personal PIN for ordinary scoring, the same way Onion Shed's osLogin
+     already works, just with a Lingkana night picker. This is now the entry point from the home
+     screen's Login to Event button. lkFullLogin() (above) is kept for the host, for Nate Evans'
+     co-host session, and for anyone who wants their own PIN-protected identity; it is reachable
+     from the link on this screen. */
+  async function login(){
+    if(isOnion())return osLogin();
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    hideChrome(true);
+    const el=appEl();if(!el)return;
+    let w=nightOf(lg||{});
+    if(w>6)w=1;
+    const ev=lg?lg.name:(typeof LK_NAME==='string'?LK_NAME:'Lingkana League');
+    el.innerHTML=`<div class="lkf" id="lkliteloginpage">
+      <h1>Score tonight</h1>
+      <label for="lkevent">Select Event</label>
+      <select id="lkevent"><option value="${esc(typeof LK_CODE==='string'?LK_CODE:'LINGKN26')}" selected>${esc(ev)}</option></select>
+      <label for="lknight">Shoot night</label>
+      <select id="lknight">${nightChoices(lg,w)}</select>
+      <label for="lkscorer">Your name (optional, shown to the group)</label>
+      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(myName()||'')}">
+      <p class="small muted">Next, pick your target and tick who you are scoring with on it.</p>
+      <p class="lk-msg" id="lkpwmsg" role="alert"></p>
+      <p><button type="button" class="lk-host" id="lkfulllogin">Host or returning archer? Sign in with a PIN</button></p>
+      ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Pick a target','green'))}
+    </div>`;
+    $id('lkloginback').onclick=()=>home(evCode());
+    $id('lkfulllogin').onclick=()=>lkFullLogin();
+    const go=()=>{
+      const n=($id('lkscorer')&&$id('lkscorer').value||'').trim();
+      if(n)setMyName(n);
+      setNight(+($id('lknight')&&$id('lknight').value)||w);
+      window._lkTarget=0;window._lkPicked=[];
+      selectArchersOnion();
+    };
+    $id('lkpwgo').onclick=go;
+    $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+    if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
   }
 
   /* jsQR fallback when this phone has no BarcodeDetector (iOS Safari). Large photos are scaled down and tried upright and on each side. */
@@ -855,6 +902,14 @@
     return list.filter(r=>r&&r.id&&paid.has(String(r.id)));
   }
 
+  /* Lingkana target/group assignment is self-service: an archer picks their own lane (the same
+     target grid Onion Shed already uses), then ticks who else they are scoring with on it. This
+     replaces the old auto-chunk-by-registration-order assignment, which gave no choice of lane or
+     scoring group. lkAssignGroups (the old auto-chunker) is left in lingkana.js, unused here, as a
+     host convenience that could still be wired to a button later; it is not called automatically
+     any more. Existing targets already set tonight (by the old auto-chunk, before this change) are
+     read the same way as new self-picked ones, via archerTarget()/rec.target — no migration of
+     past registrations, PINs or targets is needed. */
   async function showAssigned(){
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=eventLg();
@@ -873,29 +928,14 @@
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>Night 7 scoring is not open yet.</p>${backBar}</div>`;
       wireBack();return;
     }
-    const built=typeof lkAssignGroups==='function'?lkAssignGroups(lg,w):{ok:false,msg:'Groups are not available on this phone.'};
-    if(!built||built.ok===false){
-      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>${esc((built&&built.msg)||'Could not build groups.')}</p>${backBar}</div>`;
-      wireBack();return;
-    }
     const signed=(nightSignups(lg,w)||[]).find(r=>r&&String(r.id)===String(id));
-    const group=(built.groups||[]).find(g=>(g.ids||[]).map(String).includes(String(id)));
-    const solo=(built.solo||[]).some(p=>String(p.id)===String(id));
     const who=esc((signed&&signed.name)||myName()||'');
     if(!signed){
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>No target yet</h1><p>Your name is not registered for this night.</p>${backBar}</div>`;
       wireBack();return;
     }
-    if(!group&&solo){
-      el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0" data-solo="1">
-        <h1>No target yet</h1>
-        <p>${who}, you are the only archer paid for this night.</p>
-        <p class="small muted">A group needs at least two archers, so there is no target yet.</p>
-        ${backBar}
-      </div>`;
-      wireBack();return;
-    }
-    if(!group){
+    const paidIds=typeof paidPickerIds==='function'?paidPickerIds(lg,w):null;
+    if(paidIds&&!paidIds.has(String(id))){
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0">
         <h1>No target yet</h1>
         <p>${who}, you are registered for this night, but you are not on the host's paid list, so you are not in a group.</p>
@@ -904,30 +944,40 @@
       </div>`;
       wireBack();return;
     }
-    const lis=(group.names||[]).map((n,i)=>{
-      const mine=String(group.ids[i])===String(id);
-      return`<li class="${mine?'you':''}">${esc(n)}${mine?' (you)':''}</li>`;
+    const already=typeof archerTarget==='function'?archerTarget(lg,w,id):0;
+    if(!(already>=1&&already<=LK_TARGETS)){
+      /* Not on a target yet tonight: pick a lane and who you are scoring with on it. */
+      window._lkTarget=0;window._lkPicked=[];
+      selectArchersOnion();
+      return;
+    }
+    const mates=(typeof pickerSignups==='function'?pickerSignups(lg,w):[]).filter(r=>r&&r.id&&(typeof archerTarget==='function'?archerTarget(lg,w,r.id):0)===already);
+    const lis=mates.map(r=>{
+      const mine=String(r.id)===String(id);
+      return`<li class="${mine?'you':''}">${esc(r.name)}${mine?' (you)':''}</li>`;
     }).join('');
-    const mode=built.mode==='rank'
-      ?'Order is the best 4 scores from nights already shot: highest total, then 11s, then 10s. Names with no score yet follow, A to Z.'
-      :'Order is A to Z. This night has no earlier result to rank by.';
-    const nArch=group.ids.length;
+    const nArch=mates.length;
     const rem=nArch<4?`<p class="small">This target has ${nArch} ${nArch===1?'archer':'archers'}.</p>`:'';
-    el.innerHTML=`<div class="lkf" id="lkassigned" data-target="${group.target}" data-mode="${esc(built.mode||'')}">
+    el.innerHTML=`<div class="lkf" id="lkassigned" data-target="${already}">
       <h1>${title}</h1>
-      <p class="lk-tgt" id="lktgtlabel">Target ${group.target}</p>
+      <p class="lk-tgt" id="lktgtlabel">Target ${already}</p>
       <p>You are scoring this group.</p>
       <ol class="lk-group" id="lkgroupnames">${lis}</ol>
-      <p class="small muted">${esc(mode)}</p>
       ${rem}
+      <p><button type="button" class="lk-host" id="lkchangetgt">Change lane</button></p>
       ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart','Start scoring','green'))}
     </div>`;
     wireBack();
+    const ids=mates.map(r=>r.id);
     if($id('lkstart'))$id('lkstart').onclick=()=>{
-      window._lkTarget=group.target;
-      window._lkScoreIds=group.ids.slice();
-      window._lkPicked=group.ids.slice();
-      startScoring(lg,w,group.ids.slice());
+      window._lkTarget=already;
+      window._lkScoreIds=ids.slice();
+      window._lkPicked=ids.slice();
+      startScoring(lg,w,ids);
+    };
+    if($id('lkchangetgt'))$id('lkchangetgt').onclick=()=>{
+      window._lkTarget=0;window._lkPicked=[];
+      selectArchersOnion();
     };
   }
 
@@ -1032,7 +1082,15 @@
       const put=setTargets(lg,w,target,ids);
       if(put){if(msg)msg.textContent=put;return}
       if(!isOnion()&&typeof lkSetGroups==='function'){
-        const add=lkSetGroups(w,[ids]);
+        /* Update only this target's slot. Every other target's group on lg.grp[w].g must survive —
+           lkSetGroups replaces the whole night's list, so the full list is rebuilt here first. */
+        const G=((((lg&&lg.grp)||{})[w])||{}).g||[];
+        const full=G.map(g=>(g||[]).slice());
+        const taken=new Set(ids.map(String));
+        for(let gi=0;gi<full.length;gi++)full[gi]=full[gi].filter(x=>!taken.has(String(x)));
+        while(full.length<target)full.push([]);
+        full[target-1]=ids.slice();
+        const add=lkSetGroups(w,full);
         if(add){if(msg)msg.textContent=add;return}
       }
       startScoring(lg,w,ids);
@@ -1714,7 +1772,10 @@
   window.lkFlowEnter=enterFromApp;
   window.lkFlowResume=resumeScoring;
   window.lkFlowList=list;
-  window.lkFlowLogin=login;
+  /* A relay update (a new PIN, a new registration) redraws whichever login screen is open, not
+     always the lite one: the full PIN sign-in (#lkloginpage) must not be swapped out from under
+     someone mid-login just because a message arrived. */
+  window.lkFlowLogin=()=>{if(document.getElementById('lkloginpage'))lkFullLogin();else login()};
   window.lkFlowSelect=selectArchers;
   window.lkFlowAssigned=showAssigned;
   window.lkFlowReview=review;
