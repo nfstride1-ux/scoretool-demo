@@ -1243,8 +1243,9 @@
     el.innerHTML=`<div class="ad" id="lksheet">
       <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score Sheet</div>
       ${switchLink()}
+      ${done?'':'<button type="button" class="ad-go" id="addsc" style="position:sticky;top:0;z-index:5;width:100%">Add Scores</button>'}
       ${ids.map(id=>oneSheet(id,lg,w,info)).join('')}
-      <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}${done?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div>
+      <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}</div>
       ${done?'':'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>'}
     </div>`;
     $id('labfl').onclick=()=>finishLater();
@@ -1398,6 +1399,10 @@
       }
     }
     window._lkScoreMode='sheet';
+    /* The whole group just finished this end (nobody left to catch up): push it to the relay right
+       now rather than waiting on lgTick's own periodic timer, so a spectator on the live leaderboard
+       (PR #20's 10s poll) picks it up as soon as possible after the actual event. */
+    if(typeof lgAfter==='function')lgAfter(lg);
     groupSheet();
   }
   function scoreScreen(){
