@@ -54,7 +54,10 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
  ['diary','setup','bows'].forEach(k=>{if(S[k])S[k]=S[k].filter(x=>!isS(x)&&!/^SAMPLE/i.test(x.text||'')&&!/\(SAMPLE\)/.test(x.name||''))});
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
-if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
+/* Payment isn't connected anywhere yet (entitlementVerify grants nothing, see below): every tester except
+   Nathe unlocked for free already, so a fresh device under his own name should not be the one profile
+   that hits the "Not open yet" paywall. Unlock everyone until a real payment flow ships. */
+if(TESTER&&!S.profile){S.profile=TESTER.name;S.unlocked=true;save()}
 /* a tester renamed to his name in the official results (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
 if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
 if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
