@@ -229,26 +229,6 @@
     if(typeof nav==='function')nav('home');
     else if(typeof render==='function')render();
   }
-  function switchArcher(){
-    setMyId('');
-    setMyName('');
-    try{sessionStorage.removeItem('scoretool.lk.auth')}catch(e){}
-    try{sessionStorage.removeItem('scoretool.lk.night')}catch(e){}
-    if(typeof lkMarkCoHost==='function')lkMarkCoHost(false);
-    window._lkAuthed=null;
-    window._lkScoreIds=null;
-    window._lkPicked=[];
-    window._lgE=null;
-    window._lgAct=null;
-    window._lkScoreMode=null;
-    window._csFx=null;
-    window._lgHold=null;
-    window._lkFlowNight=0;
-    window._lkNamesOpen=0;
-    login();
-  }
-  function wireSwitch(){const b=$id('lkswitch');if(b)b.onclick=()=>switchArcher()}
-  function switchLink(){return `<p><button type="button" class="lk-host" id="lkswitch">Switch archer</button></p>`}
   function activeSession(){
     if(isOnion())return null;
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -325,7 +305,6 @@
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const sess=!onion&&activeSession();
-    const logged=!onion&&!!(myId()||(typeof lkAuthed==='function'&&lkEnsure()&&lkAuthed(lkEnsure())));
     const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
     const alt=onion?'Onion Shed Championships':'Lingkana Indoor Archery';
     el.innerHTML=`<div class="lkf" id="lkhome" data-ev="${esc(evCode())}">
@@ -343,7 +322,6 @@
           ${btn('lkrules','Rules','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
         </div>
-        ${logged?switchLink():''}
         ${bar(btn('lkhomeback','Back to leagues','grey'),'')}
         ${onion?'':`<div id="lkgetbox" style="margin:16px 0 4px;text-align:center">
           <p><a class="lk-btn grey" id="lkgetapp" href="${esc((typeof LK_PUBLIC_BASE==='string'&&LK_PUBLIC_BASE)||'./')}">Get ScoreTool</a></p>
@@ -359,7 +337,6 @@
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();
     $id('lkhomeback').onclick=()=>backToList();
-    wireSwitch();
   }
 
 
@@ -922,8 +899,8 @@
     hideChrome(true);
     const el=appEl();if(!el)return;
     const title=esc(lg.name||evName());
-    const backBar=bar(btn('lkbacklogin','Back','grey'),'')+switchLink();
-    const wireBack=()=>{if($id('lkbacklogin'))$id('lkbacklogin').onclick=()=>login();wireSwitch()};
+    const backBar=bar(btn('lkbacklogin','Back','grey'),'');
+    const wireBack=()=>{if($id('lkbacklogin'))$id('lkbacklogin').onclick=()=>login()};
     if(+w>=7){
       el.innerHTML=`<div class="lkf" id="lkassigned" data-target="0"><h1>${title}</h1><p>Night 7 scoring is not open yet.</p>${backBar}</div>`;
       wireBack();return;
@@ -1329,13 +1306,11 @@
     const el=appEl();if(!el)return;
     el.innerHTML=`<div class="ad" id="lksheet">
       <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score Sheet</div>
-      ${switchLink()}
       ${ids.map(id=>oneSheet(id,lg,w,info)).join('')}
       <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}${done?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div>
       ${done?'':'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>'}
     </div>`;
     $id('labfl').onclick=()=>finishLater();
-    wireSwitch();
     $id('sback').onclick=()=>{window._lkScoreMode=null;selectArchers()};
     if($id('addsc'))$id('addsc').onclick=()=>{
       window._csFx=null;window._lgHold=null;
@@ -1412,7 +1387,6 @@
       :'Tap a score.';
     el.innerHTML=`<div class="ad" id="lgentry">
       <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score End</div>
-      ${switchLink()}
       <div class="ad-head"><div class="ad-left">
         <div class="ad-box ad-line" title="${esc((typeof lgName==='function'&&lgName(id))||id)}"><b>${esc((typeof lgName==='function'&&lgName(id))||id)}</b></div>
         <div class="ad-box ad-line"><b id="endno">${done?(info.done||'Finished'):`End ${Math.min(NE,ei+1)} of ${NE}`}</b> · <span id="roundname">${esc(info.title||'Lancaster 660')}</span>${info.dist?` · <b id="enddist">${esc(info.dist)}</b>`:''} · <span id="facesize">${esc(info.face||'triangular 40 cm 3-spot')}</span></div>
@@ -1427,7 +1401,6 @@
       <div class="ad-foot"><button class="ad-back" id="eback">‹ Back</button><button class="ad-go" id="enext" ${endDone&&!fx?'':'disabled'}>Next ›</button></div>
     </div>`;
     $id('labfl').onclick=()=>finishLater();
-    wireSwitch();
     $id('eback').onclick=()=>{window._csFx=null;window._lgHold=null;window._lkFixRet=null;window._lkScoreMode='sheet';groupSheet()};
     if($id('enext'))$id('enext').onclick=()=>goNext(lg,w,ids,id);
     const tapKey=k=>{
