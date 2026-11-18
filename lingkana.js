@@ -1351,6 +1351,7 @@ async function lkSyncOnce(){
     try{
       if(document.getElementById('lkloginpage')&&typeof window.lkFlowLogin==='function')window.lkFlowLogin();
       else if((document.getElementById('lkpaidlist')||document.getElementById('lkpot'))&&typeof window.lkFlowReview==='function')window.lkFlowReview();
+      else if(document.getElementById('lkresults'))lkResultsView(window._lkResNight);
     }catch(e){}
   }
   return ch;
@@ -1359,7 +1360,7 @@ function lkSyncStart(){
   if(window._lkSyncTimer)return;
   window._lkSyncTimer=setInterval(()=>{
     if(document.hidden)return;
-    const on=document.getElementById('lkregpage')||document.getElementById('lkloginpage')||document.getElementById('lkpaidlist')||document.getElementById('lkhome')||document.getElementById('lkassigned')||document.body.classList.contains('lk-flow');
+    const on=document.getElementById('lkregpage')||document.getElementById('lkloginpage')||document.getElementById('lkpaidlist')||document.getElementById('lkhome')||document.getElementById('lkassigned')||document.getElementById('lkresults')||document.body.classList.contains('lk-flow');
     if(on)lkSyncOnce();
   },10000);
 }
@@ -1684,6 +1685,12 @@ function lkNightScores(lg,w){
 function lkResultsView(w){
   const appEl=typeof app!=='undefined'?app:null;if(!appEl)return;
   const lg=lkEnsure();if(!lg)return;
+  /* Public, no login: open straight from a shared link. Starts the same 10s relay poll used
+     elsewhere so this redraws live while someone is watching it (lkSyncOnce redraws #lkresults
+     on a change); the first poll is kicked off here rather than waited on, so the page still
+     paints immediately from whatever is already on this phone. */
+  if(typeof lkSyncStart==='function')lkSyncStart();
+  if(typeof lkSyncOnce==='function')lkSyncOnce();
   const n=+w||lkResNightFromHash()||Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);
   const night=n>=1&&n<=6?n:1;
   window._lkResNight=night;
