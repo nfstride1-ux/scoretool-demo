@@ -324,7 +324,6 @@
         </div>
         ${bar(btn('lkhomeback','Back to leagues','grey'),'')}
         ${onion?'':`<div id="lkgetbox" style="margin:16px 0 4px;text-align:center">
-          <p><a class="lk-btn grey" id="lkgetapp" href="${esc((typeof LK_PUBLIC_BASE==='string'&&LK_PUBLIC_BASE)||'./')}">Get ScoreTool</a></p>
           <p class="small muted">To keep it: tap Share or the ⋮ menu, then Add to Home Screen.</p>
         </div>`}
       </div>
