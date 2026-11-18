@@ -390,11 +390,31 @@ function csWavePick(cs,ids){const R=csR(cs);const part=(ids||[]).find(id=>{if(cs
    -- differ enough that sharing code risked the already-working League flow for no real gain). */
 function csOneSheet(cs,id){
   const R=csR(cs),e=csEnt(cs,id)||{e:[]},ends=(e.e||[]).filter(z=>z&&z.length);
-  let run=0;
-  const rows=ends.map((z,i)=>{const es=csTotal([z],cs);run+=es;return`<tr><td>${i+1}</td><td>${z.map((a,j)=>`<span class="adb ${csKcol(cs,a)}" role="button" tabindex="0" data-cssfix="${esc(id)},${i},${j}" aria-label="fix arrow ${esc(a)}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`}).join('');
+  /* See app.js's halfRunStart comment: a round with R.halfEnds (Lancaster 660) restarts Prog at the
+     start of each half; the saved total (r.tot, via csTotal/csRow) is unaffected, a flat sum either
+     way. */
+  const half=R.halfEnds||0;
+  const esOf=i=>csTotal([ends[i]],cs);
+  const rows=ends.map((z,i)=>{
+    const es=esOf(i);
+    const start=typeof halfRunStart==='function'?halfRunStart(i,half):0;
+    let run=0;for(let k=start;k<=i;k++)run+=esOf(k);
+    return`<tr><td>${i+1}</td><td>${z.map((a,j)=>`<span class="adb ${csKcol(cs,a)}" role="button" tabindex="0" data-cssfix="${esc(id)},${i},${j}" aria-label="fix arrow ${esc(a)}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
+  }).join('');
+  let halvesHtml='';
+  if(half&&ends.length){
+    const nHalves=Math.ceil((R.ends||ends.length)/half),subs=[];
+    for(let h=0;h<nHalves;h++){
+      const segEnds=ends.slice(h*half,(h+1)*half);
+      if(!segEnds.length)break;
+      subs.push(segEnds.reduce((t,_,k)=>t+esOf(h*half+k),0));
+    }
+    if(subs.length>1||(subs.length===1&&ends.length>=half))halvesHtml=`<div class="ad-sum small">${subs.map((v,i)=>`Round ${i+1} score: <b>${v}</b>`).join(' &nbsp; ')}${subs.length>1?` &nbsp; Total: <b>${subs.reduce((a,b)=>a+b,0)}</b>`:''}</div>`;
+  }
   const r=csRow(cs,id);
   return`<div class="ad-sheet" data-cssid="${esc(id)}"><div class="ad-name">${esc(r.nm)}${id==csMe()?' (you)':''}</div><div class="ad-band">${esc(cs.round)}${R.custom?' · practice':''}</div>
     <table class="ad-tab"><thead><tr><th>#</th><th>Scores</th><th>End</th><th>Prog</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No ends yet.</td></tr>'}</tbody></table>
+    ${halvesHtml}
     <div class="ad-sum">${hiStats(ends.flat(),{round:cs.round})} <b class="big">${r.tot}</b><span class="small muted"> / ${R.max||R.ends*R.ape*11}</span></div></div>`;
 }
 function csGroupSheet(code){
@@ -436,7 +456,10 @@ function csEntryScreen(code){
   const curEnd=fx&&E[fx.i]?E[fx.i]:(last&&(last.length<R.ape||hold)?last:[]);
   const ei=fx?fx.i:(last&&(last.length<R.ape||hold)?E.length-1:E.length);
   const done=csDoneP(cs,id),endDone=curEnd.length===R.ape||done;
-  const endTot=csTotal([curEnd],cs),before=E.filter((z,k)=>z&&z.length===R.ape&&k<ei),prog=csTotal(before,cs)+endTot;
+  /* Prog restarts at the start of the current half for rounds with R.halfEnds (Lancaster 660) --
+     see app.js's halfRunStart comment. */
+  const half=R.halfEnds||0,halfFrom=typeof halfRunStart==='function'?halfRunStart(ei,half):0;
+  const endTot=csTotal([curEnd],cs),before=E.filter((z,k)=>z&&z.length===R.ape&&k>=halfFrom&&k<ei),prog=csTotal(before,cs)+endTot;
   const keys=csKeys(cs,ei,id);
   const r=csRow(cs,id);
   const chips=Array.from({length:R.ape},(_,j)=>curEnd[j]!=null?`<span class="adb ${csKcol(cs,curEnd[j])}" role="button" tabindex="0" data-cssfix2="${ei},${j}" aria-label="fix arrow ${esc(curEnd[j])}"${fx&&fx.i===ei&&fx.j===j?' style="outline:3px solid #3b82f6;outline-offset:2px"':''}>${esc(curEnd[j])}</span>`:'<span class="adb adb-empty"></span>').join('');
