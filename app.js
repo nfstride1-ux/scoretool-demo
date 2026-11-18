@@ -34,7 +34,7 @@ const ROUNDS={ // AA/WA round templates (arrows per end, distances)
  /* Onion Shed Challenge league round: the same Vegas 300 shot at 18 m (league.js). Not offered for match nights. */
  'Vegas 300 (18 m)':{ends:10,ape:3,face:'40cm',max:300,vegas:true,league:true,blocks:[{dist:18,unit:'m',size:40,type:'full',ends:10}]},
  /* C16 L1: official Lancaster Archery Classic 660 (2025 Format & Rules 4.1-4.2). 60 arrows, 20 ends of 3, 18 m, triangular 40 cm 3-spot locked. Inner X scores 11. Maximum 660. No 12-dot. League scoring is values only. */
- 'Lancaster 660':{ends:20,ape:3,face:'40cm 3-spot',max:660,lancaster:true,xv:11,face3:'vegas',note:'Official Lancaster Classic 660: 20 ends of 3 at 18 m on a triangular 40 cm 3-spot. The inner X scores 11 (2025 Classic rules 4.1–4.2). Maximum 660. There is no 12-dot on this round. Lingkana locks this face; scoring is values only.',blocks:[{dist:18,unit:'m',size:40,type:'full',ends:20}]},
+ 'Lancaster 660':{ends:20,ape:3,face:'40cm 3-spot',max:660,lancaster:true,xv:11,face3:'vegas',halfEnds:10,note:'Official Lancaster Classic 660: 20 ends of 3 at 18 m on a triangular 40 cm 3-spot. The inner X scores 11 (2025 Classic rules 4.1–4.2). Maximum 660. There is no 12-dot on this round. Shot as two halves of 10 ends (330 max each) with a break between them, as on the paper scoresheet: the running total resets at end 11, and the final score is the two halves added together. Lingkana locks this face; scoring is values only.',blocks:[{dist:18,unit:'m',size:40,type:'full',ends:20}]},
  'Practice 10 ends × 3':{ends:10,ape:3,face:'any',max:300},
  'Practice 6 ends × 6':{ends:6,ape:6,face:'any',max:360}};
 /* Schedule 9A rounds (rounds_aa.js): fill any round the table names that is not already here, and mark the ones that are. */
@@ -600,6 +600,19 @@ var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 window.zkLoad=()=>{if(!window._zkL){window._zkL=1;try{const v=+localStorage.getItem('scoretool.zoomk');if(v>=1&&v<=4)window._zk=v}catch(e){}}return window._zk||1};
 window.zkSet=k=>{if(!(k>=1&&k<=4))return;try{if(k==zkLoad()&&localStorage.getItem('scoretool.zoomk')==null)return}catch(e){}/* nothing chosen yet and still Z1: do not create the key */window._zk=k;window._zkL=1;try{localStorage.setItem('scoretool.zoomk',String(Math.round(k*100)/100))}catch(e){}};
 window.zkOpen=keep=>{PZ.k=keep?zkLoad():1;PZ.cx=PZ.cy=0};
+/* Rounds with R.halfEnds (e.g. Lancaster 660: 20 ends, two 10-end halves with a break, as on the
+   paper scoresheet) restart the running/progressive total at the start of each half, instead of it
+   counting straight through every end. The saved/synced total for the round is unaffected -- it is
+   already a flat sum over every end (lgTot, csTotal, total()), and a flat sum equals the two
+   halves added together either way. This only changes what the running total displays as you score,
+   end by end, to match the paper. Every scoring screen that shows a per-end running total (League's
+   oneSheet/entryScreen, Casual's csOneSheet/csEntryScreen, and Just me's own scoreSheet/score here)
+   uses this instead of carrying one running total across the whole round. */
+function halfRunStart(i,half){return half?Math.floor(i/half)*half:0}
+/* const ROUNDS is a top-level script binding, not a window property, so a sibling script with its
+   own local ROUNDS (lkflow.js has one, an unrelated array of night-type labels) cannot reach this
+   real one through window.ROUNDS -- only this explicit export lets it. */
+window.APP_ROUNDS=ROUNDS;
 function hiStats(A,s){const R0=ROUNDS[s.round]||{};if(R0.aba)return'';if(R0.wa18)return`10's: <b>${A.filter(a=>a=='10').length}</b>&nbsp; 9's: <b>${A.filter(a=>a=='9').length}</b>`;if(s.round===AUSI)return`10's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>&nbsp; X's: <b>${A.filter(a=>a=='X').length}</b>`;if(R0.lancaster||R0.xv==11)return`11's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's: <b>${A.filter(a=>a=='10').length}</b>`;if(R0.scheme==='aa-field')return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='X'||a=='5').length}</b>`;if(R0.scheme&&R0.scheme!=='wa10'&&R0.scheme!=='portsmouth'){const top=(typeof worldKeys==='function'&&worldKeys(R0,null,s)||[]).filter(k=>k!=='M').slice(0,3);if(top.length)return top.map(k=>`${k}'s: <b>${A.filter(a=>a==k).length}</b>`).join('&nbsp; ')}if(R0.ifaa||(typeof isIfaa=='function'&&isIfaa(R0)))return`5's: <b>${A.filter(a=>a=='5').length}</b>&nbsp; 4's: <b>${A.filter(a=>a=='4').length}</b>&nbsp; 3's: <b>${A.filter(a=>a=='3').length}</b>`;if(typeof isFld=='function'&&typeof faceR=='function'&&isFld(faceR(R0,0))||(/field/i.test(s.round||'')&&!(R0.scheme&&R0.scheme!=='wa10')))return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;const isB=bugsOn(s)||A.some(a=>a=='6')&&!A.some(a=>a=='X'||+a>6);if(isB)return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>`}
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),nEnds=roundEnds(R,s),nArr=typeof apeOf==="function"&&R.apes?R.apes.reduce((a,b)=>a+b,0):nEnds*(R.ape||1),fullMax=bugsOn(s)?nArr*6:(s.max!=null?s.max:R.max),per=fullMax&&nArr?fullMax/nArr:0,early=!isFull(s);
