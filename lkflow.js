@@ -981,8 +981,11 @@
     };
   }
 
+  /* selectArchers() is the picker's own "redraw this same screen" self-reference (night change,
+     target tap, back, toggling a name) -- it must stay on the picker for Lingkana too, not detour
+     into showAssigned(), which needs myId() and is a different, later screen (the PIN sign-in's
+     own "you already have a target" confirm step). */
   function selectArchers(){
-    if(!isOnion()){showAssigned();return}
     selectArchersOnion();
   }
   function selectArchersOnion(){
@@ -1030,24 +1033,31 @@
     });
     window._lkPicked=selected.slice();
     const selHtml=selected.length?`<div class="lk-selbox" id="lkselections"><h3>Selections</h3><ul>${selected.map(id=>`<li>${esc((rows.find(r=>r.id===id)||{}).name||id)}</li>`).join('')}</ul></div>`:'';
+    const takenInfo=id=>{
+      const other=claimedByOther(lg,w,id);
+      const onT=archerTarget(lg,w,id);
+      if(other)return{taken:true,why:(other.name||'Another scorer')+' already has this archer.'};
+      if(onT&&onT!==target)return{taken:true,why:'Already on target '+onT};
+      return{taken:false,why:''};
+    };
+    const pickable=rows.filter(r=>!takenInfo(r.id).taken);
     const body=rows.map(r=>{
-      const other=claimedByOther(lg,w,r.id);
-      const onT=archerTarget(lg,w,r.id);
-      const taken=!!other||(onT&&onT!==target);
+      const {taken,why}=takenInfo(r.id);
       const on=selected.includes(r.id);
-      const why=other?((other.name||'Another scorer')+' already has this archer.'):('Already on target '+onT);
       return `<label class="lk-row${taken?' locked':''}" data-lkid="${esc(r.id)}">
         <span class="nm">${esc(r.name)}</span>
         <input type="checkbox" data-lkid="${esc(r.id)}" ${on?'checked':''} ${taken?'disabled':''}>
         ${taken?`<span class="lk-padlock" title="${esc(why)}">🔒</span>`:''}
       </label>`;
-    }).join('')||(paidPickerIds(lg,w)&&registered.some(r=>r&&r.id)?'<p>No archers marked paid for this night yet. They stay registered, and show here once the host ticks them paid.</p>':'<p>No archers registered for this night yet. They sign up on the Event Registration page.</p>');
+    }).join('')||(paidPickerIds(lg,w)&&registered.some(r=>r&&r.id)?'<p>No archers marked paid for this night yet. They stay registered, and show here once the host ticks them paid.</p>':'<p>No archers registered for this night yet. Register them below, or they sign up on the Event Registration page.</p>');
     el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}" data-target="${target}">
       <h1>${title}</h1>
       ${nightSel}
       <div class="lk-tgt" id="lktgtlabel">Target ${target}</div>
       ${selHtml}
+      <p class="small muted">Tick who you are scoring on this target. <span class="lk-selcount" id="lkselcount">${selected.length}/4</span> · <button type="button" class="lk-host" id="lkpickall">All</button></p>
       <div id="lkarchlist">${body}</div>
+      <p><button type="button" class="lk-host" id="lkregarcher">Register archer</button></p>
       ${hostPwBtn}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
       ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
@@ -1055,6 +1065,25 @@
     $id('lknight').onchange=()=>{setNight(+$id('lknight').value);window._lkTarget=0;window._lkPicked=[];selectArchers()};
     $id('lkbacklogin').onclick=()=>{window._lkTarget=0;window._lkPicked=[];selectArchers()};
     if($id('lkhostpw'))$id('lkhostpw').onclick=()=>hostPw();
+    if($id('lkpickall'))$id('lkpickall').onclick=()=>{
+      const msg=$id('lkselmsg');
+      const room=4-selected.length;
+      if(room<=0){if(msg)msg.textContent='Pick up to 4 archers for this target.';return}
+      const add=pickable.filter(r=>!selected.includes(r.id)).slice(0,room).map(r=>r.id);
+      if(!add.length){if(msg)msg.textContent='No one else is free to add to this target.';return}
+      let failed='';
+      for(const id of add){
+        if(!isOnion()){const err=setClaim(lg,w,id,true);if(err){failed=err;break}}
+        window._lkPicked.push(id);
+      }
+      if(failed){if(msg)msg.textContent=failed}
+      selectArchers();
+    };
+    if($id('lkregarcher'))$id('lkregarcher').onclick=()=>{
+      regEntry();
+      const back=$id('lkregback');
+      if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+'#lk-home')}catch(e){}selectArchers()};
+    };
     const toggle=id=>{
       const msg=$id('lkselmsg');
       const other=claimedByOther(lg,w,id);
