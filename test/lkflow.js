@@ -319,6 +319,7 @@
           ${btn('lkqr','Login with QR Code','green')}
           ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
+          ${onion?'':btn('lkroster','Registered Archers','grey')}
           ${btn('lkrules','Rules','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
         </div>
@@ -333,6 +334,7 @@
     $id('lkqr').onclick=()=>qrLogin();
     $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
+    if($id('lkroster'))$id('lkroster').onclick=()=>roster();
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();
     $id('lkhomeback').onclick=()=>backToList();
@@ -1567,6 +1569,23 @@
     if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||'#lk-home'))}catch(e){}home(evCode())};
   }
 
+  async function roster(){
+    hideChrome(true);
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
+    const el=appEl();if(!el)return;
+    const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
+    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${esc((r.nights||[]).length?String((r.nights||[]).length):'')}</td></tr>`;
+    el.innerHTML=`<div class="lkf" id="lkrosterpage">
+      <h1>Registered Archers</h1>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered.</p>
+      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Nights signed up</th></tr></thead>
+      <tbody>${list.map(row).join('')||'<tr><td colspan="3">No archers registered yet.</td></tr>'}</tbody></table>
+      ${bar(btn('lkrosterback','Back','grey'),'')}
+    </div>`;
+    $id('lkrosterback').onclick=()=>home(evCode());
+  }
   function rules(){
     hideChrome(true);
     const el=appEl();if(!el)return;
