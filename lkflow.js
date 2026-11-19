@@ -932,9 +932,9 @@
       <h1>${title}</h1>
       ${nightSel}
       <div class="lk-tgt" id="lktgtlabel">Target ${target}</div>
+      <p><button type="button" class="lk-host" id="lkregarcher">Register archer</button></p>
       ${selHtml}
       <p class="small muted">Tick who you are scoring on this target. <span class="lk-selcount" id="lkselcount">${selected.length}/4</span> · <button type="button" class="lk-host" id="lkpickall">All</button></p>
-      <p><button type="button" class="lk-host" id="lkregarcher">Register archer</button></p>
       <div id="lkarchlist">${body}</div>
       ${hostPwBtn}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
