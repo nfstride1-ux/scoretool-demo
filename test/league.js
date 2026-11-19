@@ -15,7 +15,7 @@ const LG_R='Vegas 300 (18 m)',LG_W=6,LG_SNAP=6*36e5,LG_EXCL=['phill'],LG_KEYS=['
 const LG_RL='300 (18 m)',rdLabel=r=>r==LG_R?LG_RL:r;window.rdLabel=rdLabel;
 const LG_FINTXT='Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).';
 const lgAll=()=>S.leagues=S.leagues||[],lgGet=c=>lgAll().find(l=>l.code==c);
-const lgTopic=c=>H2H_NS+'-lg-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
+const lgTopic=c=>{const code=String(c).toLowerCase().replace(/[^a-z0-9]/g,'');return code==='lingkn26'?H2H_NS+'-lg-lingkn26-live2':H2H_NS+'-lg-'+code};
 /* Added shooters (22 Oct 2026, Nathe): people who won't score themselves (no app). The host, or Nathe as admin, adds them by name
    (under-16s by nickname only) and enters and edits their weekly 300s. Stored in lg.gn {id:{n,j,t,by}} (ids 'g' + 6 characters, never
    a tester id) and in lg.order like anyone else, so they're in the table, the 10-archer max and the day-6 shoot-up seeding. They sync
@@ -25,7 +25,7 @@ const lgGuest=id=>{if(!lgIsG(id)||typeof S=='undefined'||!S)return null;for(cons
 const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
 /* shoot-up and other views name archers through testerName: an added shooter shows by the name the host gave */
 {const _tn=testerName;testerName=function(id){const g=lgGuest(id);return g?g.n:_tn(id)}}
-function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,24);
+function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,40);
  if(n.length<2)return'Type a name (at least 2 characters).';if(!/^[A-Za-z0-9 '_-]+$/.test(n))return'Use letters, numbers, spaces, \' - and _ only.';if(nmRude(n))return'Please use a different name.';
  if(jr&&/\s/.test(n))return'Under-16s go by nickname only: one word, no surname.';
  if(lgArchers(lg).length>=h2hCap(lg))return'This league is full ('+h2hCap(lg)+' archers).';
@@ -60,11 +60,14 @@ function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgC
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
  if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
- /* Nathe 11 Nov 7:57am: league scoring is values only. Ignore any plot position; do not ask for or store arrow coordinates. Existing historical e.p on earlier ends is left untouched. */
- const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,null))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+ const lkVals=typeof lkIs==='function'&&lkIs(lg);
+ if(!lkVals&&window.arrowApply)arrowApply(e,'lg|'+code+'|'+w+'|'+id);
+ /* Lingkana is values only (no plots). Other leagues still store a plot when the archer taps the face. */
+ const fxs=window.csFxFor&&csFxFor('lg|'+code+'|'+w+'|'+id);if(fxs){window._csFx=null;if(!csFxPut(e,3,fxs,k,lkVals?null:xy))return false;Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
  if(lgDoneE(e))return false;let E=e.e[e.e.length-1];if(!E||E.length>=3){E=[];e.e.push(E)}E.push(k);
- /* a complete end is put in order (highest first, X before 10), values only */
- if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],[E2]=csSorted(E);E.splice(0,3,...E2);if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,[],E,[])}
+ if(!lkVals&&(xy||e.p)){const ix=e.e.length-1;e.p=e.p||[];while(e.p.length<=ix)e.p.push([]);const P=e.p[ix];while(P.length<E.length-1)P.push(null);P.push(xy||null)}
+ /* a complete end is put in order (highest first, X before 10), with plots on non-Lingkana leagues */
+ if(E.length==3&&window.csSorted){const ix=e.e.length-1,pre=[...E],preP=[...((!lkVals&&e.p&&e.p[ix])||[])];if(lkVals){const[E2]=csSorted(E);E.splice(0,3,...E2);if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,[],E,[])}else{const[E2,P2]=csSorted(E,e.p&&e.p[ix]);E.splice(0,3,...E2);if(e.p)e.p[ix]=P2;if(window.stOrd)stOrd.set('lg|'+code+'|'+w+'|'+id,ix,pre,preP,E,e.p&&e.p[ix])}}
  Object.assign(e,{by:h2hMe(),u:Date.now(),f:'vert'});lg.dirty=1;lgOwn(lg,w,id);save();
  /* 31 Oct 2026 (queue): auto-advance is the default again. Only once the third arrow is saved (save() above) does the card move to the
     next archer, in the same order as before, keeping the page where it is. The 27 Oct Next button stays as an option (S.lgNextBtn):
@@ -76,15 +79,24 @@ function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)
 /* the line that confirms the end just saved when the card has moved on by itself */
 function lgLastLine(lg,w,ids){const L=window._lgLast;if(S.lgNextBtn||!L||L.code!=lg.code||L.w!=w||!ids.includes(L.id)||ids.length<2)return'';return`<p class="small" id="lglast" style="margin:0 0 4px">Saved: ${esc(lgName(L.id))}, end ${L.n}: ${L.E.map(esc).join(' ')}.</p>`}
 const lgNextPref=(lg,ids)=>ids.length>1?`<label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0 0"><input type="checkbox" id="lgnextpref" ${S.lgNextBtn?'checked':''}> Stay on each archer after the 3rd arrow and tap Next to move on</label>`:'';
-function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];if(!lgDoneE(lgEnt(lg,n,w))){window._lgAct=n;break}}}
+function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg)return;const G=window._lgE&&window._lgE.ids||[id],s=G.indexOf(id);window._lgAct=null;
+ /* Move to the next archer who still has fewer complete ends (the rest of this end). When this end is finished for everyone, start the next end at archer 1 in the scorecard order. */
+ const mine=((lgEnt(lg,id,w)||{e:[]}).e||[]).filter(z=>z&&z.length==3).length;
+ for(let j=1;j<=G.length;j++){const n=G[(s+j)%G.length];const e=lgEnt(lg,n,w)||{e:[]};if(lgDoneE(e))continue;const last=(e.e||[])[e.e.length-1],part=!!(last&&last.length&&last.length<3),nEnds=(e.e||[]).filter(z=>z&&z.length==3).length;if(part||nEnds<mine){window._lgAct=n;return}}
+ window._lgAct=lgWavePick(lg,w,G)}
+/* Who is up when no archer is held on screen: a partial end first, otherwise the first scorecard archer with the fewest complete ends. */
+function lgWavePick(lg,w,ids){
+ const part=(ids||[]).find(id=>{if(lgLockedBy(lg,w,id))return false;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return false;const last=(e.e||[])[e.e.length-1];return !!(last&&last.length&&last.length<3)});
+ if(part)return part;let best=null,bn=1e9;(ids||[]).forEach(id=>{if(lgLockedBy(lg,w,id))return;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return;const n=(e.e||[]).filter(z=>z&&z.length==3).length;if(n<bn){bn=n;best=id}});return best||(ids&&ids[0])||null}
 function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
 function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
-/* my own week is also kept with my other sessions (values only; league scoring no longer stores plots). Only a week I score
+/* my own week is also kept with my other sessions (plots on non-Lingkana leagues, so groups and analysis work like Just me). Only a week I score
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
  const E=((e&&e.e)||[]).filter(x=>x&&x.length).map(x=>x.slice()),P=(e&&e.p)||[],has=P.some(l=>(l||[]).some(Boolean)),POS=E.map((x,i)=>x.map((_,j)=>((P[i]||[])[j])||null));
- if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}}catch(x){console.error(x)}}
+ if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}
+ if(e&&e.lcT&&e.arrowD){s.lcT=1;s.arrowD=e.arrowD}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
 function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
@@ -111,6 +123,8 @@ function lgSnapParts(lg){
   if(lg.pwHash){meta.pwHash=lg.pwHash;meta.pwSalt=lg.pwSalt||'';meta.pwt=lg.pwt||0}
   if(lg.paidt)meta.paidt=lg.paidt;
   if(lg.claimt)meta.claimt=lg.claimt;
+  if(lg.fresh)meta.fresh=lg.fresh;
+  if(lg.clear)meta.clear=lg.clear;
  }
  const roster={order,grp:lg.grp||{},gn:lg.gn||{}};
  const fat={...meta,...roster};
@@ -153,33 +167,73 @@ function lgSnapParts(lg){
     }else take(k,v);
    }
    flush()}
-  pack('reg',lg.reg||{});pack('paid',lg.paid||{});pack('claim',lg.claim||{});
+  pack('reg',(typeof lkPublicReg==='function'?lkPublicReg(lg.reg||{}):(lg.reg||{})));pack('paid',lg.paid||{});pack('claim',lg.claim||{});
+  if(lg.pins&&Object.keys(lg.pins).length)parts.push({...meta,pins:lg.pins});
   if(lg.claimt)meta.claimt=lg.claimt;
  }
  const t=Date.now();return parts.map((p,k)=>({...p,part:k+1,np:parts.length,t}))
 }
 function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)return false;if(LG_SINCE[lg.code]&&(d.t||0)<LG_SINCE[lg.code])return false;let ch=false;const fromHost=!lg.host||d.by==lg.host;
+ const lkFreshCut=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26';
+ const freshCut=lkFreshCut?+((typeof LK_FRESH!=='undefined'&&LK_FRESH)||(typeof window!=='undefined'&&window.LK_FRESH)||0):0;
+ if(freshCut&&+(d.fresh||0)<freshCut)return false;
+ const clearCut=lkFreshCut?+((typeof LK_CLEAR!=='undefined'&&LK_CLEAR)||(typeof window!=='undefined'&&window.LK_CLEAR)||0):0;
+ if(clearCut&&+(lg.clear||0)>=clearCut&&+(lg.fresh||0)>=clearCut&&+(d.clear||d.fresh||0)<clearCut)return false;
+ const incFresh=lkFreshCut?+(d.fresh||0):0, locFresh=lkFreshCut?+(lg.fresh||0):0;
+ /* A cached snapshot can carry the new fresh stamp and an older weeks time. That copy must not replace newer sign-ups. */
+ const incomingWt=+(d.wt||0), localWt=+(lg.wt||0);
+ const staleWt=!!(localWt&&incomingWt&&incomingWt<localWt);
+ if(lkFreshCut&&fromHost&&incFresh>locFresh){
+  lg.fresh=incFresh;ch=true;
+  if(!staleWt){
+  lg.order=[];lg.gn={};lg.sc={};lg.reg={};lg.claim={};lg.claimt=0;lg.paid={};lg.paidt=0;
+  if(Array.isArray(d.order))lg.order=d.order.filter(id=>typeof id=='string'&&!LG_EXCL.includes(id)).slice(0,h2hCap(lg));
+  if(d.gn&&typeof d.gn=='object'){lg.gn={};for(const id in d.gn){const g=d.gn[id];if(lgIsG(id)&&g&&typeof g.n=='string')lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''}}}
+  if(d.sc&&typeof d.sc=='object'){lg.sc={};for(const id in d.sc){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w];if(!v)continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:'vert'}}}}
+  if(d.reg&&typeof d.reg==='object')lg.reg=d.reg;
+  if(d.claim&&typeof d.claim==='object')lg.claim=d.claim;
+  if(d.paid&&typeof d.paid==='object'){lg.paid=d.paid;lg.paidt=d.paidt||0}
+  }
+ }
+ const staleFresh=lkFreshCut&&locFresh&&incFresh<locFresh;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
+ /* Group/target picks come from any scorer now (the self-service picker, not just the host's
+    auto-chunker), so d.grp is merged unconditionally -- arbitrated by its own per-week timestamp
+    check right here, same as .reg/.drop already are below. Every other field in the fromHost
+    block below is still host-only, unchanged. */
+ if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
   if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){const cap=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d))||d.code==='LINGKN26'||lg.code==='LINGKN26')?7:LG_W;lg.weeks=d.weeks.slice(0,cap).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
-  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
   if((d.cwt||0)>(lg.cwt||0)){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);lg.cw=Math.max(1,Math.min(cap,+d.cw||1));lg.cwt=d.cwt;ch=true}
   if(d.format==='lingkana'&&lg.format!=='lingkana'){lg.format='lingkana';ch=true}
   if(d.inviteOnly!=null&&!!d.inviteOnly!==!!lg.inviteOnly){lg.inviteOnly=!!d.inviteOnly;ch=true}
   if(d.pwHash&&(d.pwt||0)>=(lg.pwt||0)&&(d.pwHash!==lg.pwHash||d.pwSalt!==lg.pwSalt)){lg.pwHash=d.pwHash;lg.pwSalt=d.pwSalt||'';lg.pwt=d.pwt||0;ch=true}
-  if(d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
- if((fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
-  if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,24),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
- lg.order=lg.order||[];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),d.by])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}
- lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
-  if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}
+  if(!staleFresh&&d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}}
+ /* Nate Evans uses the same passcode and publishes paid ticks with by/cohost nate. Scorer phones do not. */
+ const lkPaidByNate=d&&(d.by==='nate'||d.cohost==='nate');
+ if(!staleFresh&&lkPaidByNate&&d.paid&&typeof d.paid==='object'&&(d.paidt||0)>=(lg.paidt||0)){lg.paid=d.paid;lg.paidt=d.paidt||0;ch=true}
+ if(!staleFresh&&(fromHost||d.by==LG_ADMIN)&&d.gn&&typeof d.gn=='object'){lg.gn=lg.gn||{};lg.order=lg.order||[];for(const id in d.gn){const g=d.gn[id];if(!lgIsG(id)||!g||typeof g.n!='string')continue;const o=lg.gn[id];
+  if(!o||(+g.t||0)>(o.t||0)){lg.gn[id]={n:nmClean(g.n).slice(0,40),j:g.j?1:0,t:+g.t||0,by:typeof g.by=='string'?g.by:''};ch=true}if(!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}}
+ if(!staleFresh){lg.order=lg.order||[];const alsoBy=lkFreshCut?[]:[d.by];for(const id of [...(Array.isArray(d.order)&&fromHost?d.order:[]),...alsoBy])if(typeof id=='string'&&!LG_EXCL.includes(id)&&!(lg.drop&&lg.drop[id])&&!lg.order.includes(id)&&lg.order.length<h2hCap(lg)){lg.order.push(id);ch=true}}
+ if(!staleFresh){lg.sc=lg.sc||{};for(const id in d.sc||{}){if(typeof id!='string'||id.length>16)continue;for(const w in d.sc[id]){if(!(+w>=1&&+w<=(typeof lkNights==='function'?lkNights(lg):LG_W)))continue;const v=d.sc[id][w],mine=lgEnt(lg,id,w);
+  if(!v||(mine&&(mine.u||0)>=(v.u||0)))continue;(lg.sc[id]=lg.sc[id]||{})[w]={e:lgDec(v.e),u:+v.u||0,by:typeof v.by=='string'?v.by:'',f:v.f=='vert'?'vert':'vert'};ch=true}}}
  /* Lingkana sign-ups: union by night and archer, so a register on another phone is not dropped. */
- if((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26'){
+ if(!staleFresh&&((typeof lkIs==='function'&&(lkIs(lg)||lkIs(d)))||d.format==='lingkana'||lg.format==='lingkana'||d.code==='LINGKN26'||lg.code==='LINGKN26')){
+  if(d.drop&&typeof d.drop==='object'){lg.drop=lg.drop||{};for(const id in d.drop){const v=d.drop[id]||{};const t=+v.t||0;if(!lg.drop[id]||t>(lg.drop[id].t||0)){lg.drop[id]={n:typeof v.n==='string'?v.n:'',t};ch=true}}}
   if(d.reg&&typeof d.reg==='object'){lg.reg=lg.reg||{};for(const night in d.reg){const list=d.reg[night];if(!Array.isArray(list))continue;lg.reg[night]=lg.reg[night]||[];
-   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(!rec.id&&r.name===rec.name)));
-    if(i<0){lg.reg[night].push(rec);ch=true}else if((rec.at||0)>(lg.reg[night][i].at||0)){lg.reg[night][i]=rec;ch=true}}}}
+   for(const rec of list){if(!rec||!(rec.id||rec.name))continue;if(staleWt&&freshCut&&(+rec.at||0)<freshCut)continue;if(typeof lkRegKept==='function'&&!lkRegKept(lg, rec.at))continue;if(lg.drop&&lg.drop[rec.id]&&(lg.drop[rec.id].t||0)>=(rec.at||0))continue;
+    const rk=String(rec.name||'').trim().replace(/\s+/g,' ').toLowerCase();
+    const i=lg.reg[night].findIndex(r=>r&&((rec.id&&r.id===rec.id)||(rk&&String(r.name||'').trim().replace(/\s+/g,' ').toLowerCase()===rk)));
+    if(rec.pin)delete rec.pin;
+    if(i<0){lg.reg[night].push(rec);ch=true}
+    else if((rec.at||0)>(lg.reg[night][i].at||0)){const prev=lg.reg[night][i];const next=Object.assign({},prev,rec,{id:prev.id||rec.id});if(next.pin)delete next.pin;lg.reg[night][i]=next;ch=true}
+    else if((rec.pinAt||0)>((lg.reg[night][i].pinAt)||0)){const prev=lg.reg[night][i];if(rec.pinHash){prev.pinHash=rec.pinHash;prev.pinSalt=rec.pinSalt||''}else{delete prev.pinHash;delete prev.pinSalt}prev.pinAt=rec.pinAt;if(prev.pin)delete prev.pin;ch=true}}}}
+  if(d.pins&&typeof d.pins==='object'){lg.pins=lg.pins||{};for(const id in d.pins){const p=d.pins[id]||{};const cur=lg.pins[id];if(!cur||(+p.pinAt||0)>(+cur.pinAt||0)){const pinHash=p.pinHash?String(p.pinHash):'';lg.pins[id]={pinHash,pinSalt:pinHash?String(p.pinSalt||''):'',pinAt:+p.pinAt||0,name:typeof p.name==='string'?p.name:''};ch=true}}}
+  if(typeof lkStripDropped==='function'&&lkStripDropped(lg))ch=true;
   if(d.claim&&typeof d.claim==='object'&&typeof lkMergeClaims==='function'){if(lkMergeClaims(lg,d.claim))ch=true}}
+ /* The co-host row belongs on this phone. A snapshot replace or a tombstone cannot wipe it. */
+ if(((typeof lkIs==='function'&&lkIs(lg))||lg.format==='lingkana'||lg.code==='LINGKN26'||d.format==='lingkana'||d.code==='LINGKN26')){if(typeof lkSeedHost==='function'&&lkSeedHost(lg))ch=true;if(typeof lkSeedCoHost==='function'&&lkSeedCoHost(lg))ch=true}
  return ch}
 let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
@@ -190,7 +244,9 @@ function lgRelayReady(lg){
   if(typeof lkIs!=='function'||!lkIs(lg))return true;
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
-  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'){if(lkApplyClaim(d,lg))ch=true}}save()}
+  if(typeof lkFresh==='function'&&typeof lkIs==='function'&&lkIs(lg))lkFresh(lg);
+  const L=await h2hPoll(lgTopic(lg.code),lg.since);if(L&&L.length){for(const d of L){lg.since=d._id;if(lgMerge(lg,d))ch=true;else if(d&&d.k==='lkreg'&&d.code===lg.code&&typeof lkApplyReg==='function'&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)&&(typeof lkRegKept!=='function'||lkRegKept(lg,(d.rec&&d.rec.at)||0))){const r=lkApplyReg(d.rec||d,lg);if(r&&r.ok)ch=true}else if(d&&d.k==='lkdrop'&&d.code===lg.code&&typeof lkApplyDrop==='function'&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){if(lkApplyDrop(lg,d.id,d.name,d.at||d.t))ch=true}else if(d&&d.k==='lkclaim'&&d.code===lg.code&&typeof lkApplyClaim==='function'&&(!(lg.fresh)||+(d.t||d.at||0)>=lg.fresh)){if(lkApplyClaim(d,lg))ch=true}}save()}
+  if(typeof lkDropHostIfUnregistered==='function'&&typeof lkIs==='function'&&lkIs(lg))lkDropHostIfUnregistered(lg);
   if(lgFinal(lg))ch=ch||false;
   /* 1 Nov 2026 (queue): the full snapshot is still re-sent when the app opens (so an away phone can catch up if the relay lost it),
      but at most once every 30 minutes per league (a send of new scores does not count), so opening the app again and again no longer floods the relay. */
@@ -248,7 +304,6 @@ window.lgSeed=lgSeed;window.lgPresetRecord=lgPresetRecord;window.LG_PRESET=LG_PR
 /* The rules as Nathe set them on 20 Oct 2026 (plain text), shown on the Onion Shed Challenge league screen. */
 const LG_RULES=['Six 300s at 18 m on the vertical 3-spot.','Each week for 5 weeks everyone shoots a 300 round, in person or over FaceTime.','On the 6th day they all shoot another 300 together in person in the Onion Shed.','The running total of all six 300s (maximum 1800, ties split on X count) sets the league table.','Shoot-up match play happens on day 6 only, starting once everyone\'s day-6 300 is in. Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).','Entry is $10 each night, winner takes all, minus a jokey 75%.'];
 const lgRulesCard=lg=>lg&&lg.code==LG_PRESET.code?`<div class="card" id="lgrules2"><h3 style="margin:0 0 6px">League rules</h3><ul class="small" style="margin:0;padding-left:18px;line-height:1.45">${LG_RULES.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ul></div>`:'';
-window.LG_RULES=LG_RULES;window.lgRulesCard=lgRulesCard;
 /* ---------- screens ---------- */
 /* Known venue events: each appears once, with its flyer as the card background. Opening goes to the event home. */
 function lgEventCode(kind){
@@ -257,11 +312,11 @@ function lgEventCode(kind){
   return'';
 }
 function lgEventKnown(){
-  const lk=lgEventCode('lingkana'), os=lgEventCode('onion');
-  const venue=(typeof LK_VENUE==='string'&&LK_VENUE)||'Lingkana Archery range, 107 Robinson Ave, Belmont WA 6104';
+  const lk=lgEventCode('lingkana');
+  /* Onion Shed Challenge hidden from the Leagues list for now (19 Nov 2026, Nathe) - it needs major
+     changes before it's shown again. Not deleted: the card is just left out of this list. */
   return[
-    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:venue+' · invite only'},
-    {code:os,kind:'onion',name:(LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge',flyer:'img/onion-shed-flyer.jpg',sub:'Six 300s at 18 m, then a day-6 shoot-up'}
+    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:'Invite only'}
   ];
 }
 function lgEventCardHTML(ev){
@@ -294,7 +349,7 @@ function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().filter
  <button class="btn alt full" id="lggo" style="margin-top:8px">Create league</button></details>
  <div class="row" style="gap:6px;margin-top:8px"><input id="lgjc" placeholder="League code" maxlength="8" autocapitalize="characters" style="flex:1"><button class="btn ghost" id="lgjgo">Join</button></div><p class="small" id="lgjmsg" role="alert"></p></div>`}
 function lgBindCard(){const c=$('#lgcard');if(!c)return;
- c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
+ c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowEnter==='function')lkFlowEnter(code);else if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
  c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code)});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});
@@ -307,12 +362,13 @@ const _lgH2H=window.h2hCard;window.h2hCard=function(){return _lgH2H.apply(this,a
 const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try{lgBindCard()}catch(e){console.error(e)}return o};
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
-  open=ids.filter(id=>!lgDoneE(lgEnt(lg,id,w))&&!lgLockedBy(lg,w,id)),a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:open[0]||ids[0];
+  a=act0&&(!lgDoneE(lgEnt(lg,act0,w))||held)?act0:lgWavePick(lg,w,ids);
  const I=lgInfo(lg,w),NE=I.ends,e=lgEnt(lg,a,w)||{e:[]},last=e.e[e.e.length-1],hold=held&&a==act0&&!!last&&last.length==3,cur3=last&&(last.length<3||hold)?last:[],en=Math.min(NE,e.e.length+(last&&last.length<3?0:1)),lock=lgLockedBy(lg,w,a),done=lgDoneE(e);
- /* Nathe 11 Nov 7:57am: league scoring is a number pad / buttons only — no target-face plotting UI, for one archer or a group. Personal and practice scoring outside leagues is unchanged. */
- const PL=false,NS='lg|'+lg.code+'|'+w+'|'+a,FX=null,LR=ROUNDS[LG_R],
-  AD=null;
- window._lgPl=null;
+ /* Lingkana is values only. Other leagues: one archer on this phone gets the Just me face (Hide target still works). Shared phones stay buttons only. */
+ const lkVals=typeof lkIs==='function'&&lkIs(lg),
+  PL=!lkVals&&ids.length==1&&!lock&&!!window.csAdCard,NS='lg|'+lg.code+'|'+w+'|'+a,FX=PL?csFxFor(NS):null,LR=ROUNDS[LG_R],
+  AD=PL?csAdCard({ns:NS,en:e,ape:3,ends:NE,R:LR,FR:face3R(faceR(LR,0),{face3:'vert'}),round:LG_R,keys:LG_KEYS,kcol:col,kattr:'data-lgk',uid:'lgundo',fx:FX,done,info:(ei,fin)=>`<b>${esc(lgName(a))}</b> · ${fin?I.done:'End '+(ei+1)+' of '+NE}`}):null;
+ window._lgPl=AD&&AD.pl?{...AD.pl,code:lg.code,w,id:a}:null;
  return`<div class="card" id="lgentry"><span class="kicker">Score card · ${I.kicker} ${w}</span><div class="row lc-chips" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${ids.map(id=>{const x=lgEnt(lg,id,w),n=x&&x.e?x.e.filter(z=>z.length==3).length:0,lb=lgLockedBy(lg,w,id);
   return`<button class="lc-chip${id==a?' on':''}" data-lgid="${esc(id)}">${esc(lgName(id))} <span class="small">${lgDoneE(x)?'finished':lb?'on '+esc(lgName(lb))+'\'s phone':n+'/'+NE}</span></button>`}).join('')}</div>
  ${AD?AD.html:`<p style="margin:8px 0 4px"><b>${esc(lgName(a))}</b> · ${hold?(done?I.done:'End '+e.e.length+' of '+NE+' complete'):done?I.done:'End '+en+' of '+NE} · ${I.face} · ${I.dist}</p>${lgLastLine(lg,w,ids)}

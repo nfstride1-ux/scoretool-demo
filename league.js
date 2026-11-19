@@ -197,9 +197,13 @@ function lgMerge(lg,d){if(!d||d.k!='ls'||d.code!=lg.code||(d.t||0)<H2H_RESET)ret
  }
  const staleFresh=lkFreshCut&&locFresh&&incFresh<locFresh;
  if(d.nm&&nmLearn(d.by,d.nm,d.nt,d.t))ch=true;
+ /* Group/target picks come from any scorer now (the self-service picker, not just the host's
+    auto-chunker), so d.grp is merged unconditionally -- arbitrated by its own per-week timestamp
+    check right here, same as .reg/.drop already are below. Every other field in the fromHost
+    block below is still host-only, unchanged. */
+ if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
  if(fromHost){if(!lg.host&&typeof d.host=='string'){lg.host=d.host;ch=true}if(typeof d.name=='string'&&d.name&&d.name!=lg.name){lg.name=nmClean(d.name).slice(0,40);ch=true}
   if(Array.isArray(d.weeks)&&(d.wt||0)>(lg.wt||0)){const cap=(typeof lkIs==='function'&&(lkIs(lg)||lkIs(d))||d.code==='LINGKN26'||lg.code==='LINGKN26')?7:LG_W;lg.weeks=d.weeks.slice(0,cap).map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x:'');lg.wt=d.wt;ch=true}
-  if(d.grp&&typeof d.grp=='object'){lg.grp=lg.grp||{};for(const w in d.grp){const g=d.grp[w];if(+w>=1&&+w<=((typeof lkNights==='function'?lkNights(lg):LG_W))&&g&&Array.isArray(g.g)&&(g.t||0)>((lg.grp[w]||{}).t||0)){lg.grp[w]={t:g.t,g:g.g.map(x=>Array.isArray(x)?x.filter(i=>typeof i=='string'):[])};ch=true}}}
   if(Array.isArray(d.fin)&&(d.fint||0)>(lg.fint||0)){lg.fin=d.fin.filter(x=>typeof x=='string');lg.fint=d.fint;ch=true}
   if((d.cwt||0)>(lg.cwt||0)){const cap=(typeof lkNights==='function'?lkNights(lg):LG_W);lg.cw=Math.max(1,Math.min(cap,+d.cw||1));lg.cwt=d.cwt;ch=true}
   if(d.format==='lingkana'&&lg.format!=='lingkana'){lg.format='lingkana';ch=true}
