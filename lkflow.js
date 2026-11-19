@@ -556,7 +556,6 @@
           const again=($id('lkpin2')&&$id('lkpin2').value)||'';
           if(!/^\d{4}$/.test(typed)){if(msg)msg.textContent='Enter a 4-digit PIN.';return}
           if(typed!==again){if(msg)msg.textContent='Those PINs do not match.';return}
-          if(String(pw)!==String(window.LK_PASSCODE||'')){if(msg)msg.textContent='That passcode is not right.';return}
           try{
             const salt=lkPinSalt();
             const hash=await lkPinHash(rec.name,typed,salt);
