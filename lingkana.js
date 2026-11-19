@@ -1694,6 +1694,7 @@ function lkResultsView(w){
   const scores=lkNightScores(lg,night);
   const stand=lkTable(lg);
   const p=lkPot(lg);
+  const nightOwed=(typeof lkNightPaid==='function'?lkNightPaid(lg,night):{owed:0}).owed;
   const d=lkFmtD(lkNightKey(lg,night));
   const scoreRows=scores.map(r=>`<tr><td>${r.rk}</td><td>${h(r.nm)}</td><td>${r.d?r.s:`<i>${r.s}</i>`}</td><td>${r.x}</td><td>${r.t10||0}</td></tr>`).join('')||'<tr><td colspan="5">No scores this night.</td></tr>';
   const standRows=stand.map(r=>`<tr><td>${r.tie?'=':''}${r.rk}</td><td>${h(r.nm)}</td>${r.W.map(c=>`<td>${c?c.s:'—'}</td>`).join('')}<td>${r.t}</td><td>${r.x}</td><td>${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No standings yet.</td></tr>';
@@ -1727,8 +1728,8 @@ function lkResultsView(w){
       <tbody>${standRows}</tbody></table>
     </div>
     <h3>Pot</h3>
-    <p>Running pot <b>$${p.pot}</b> from ${p.entries} paid ${p.entries==1?'entry':'entries'} × $${LK_ENTRY_FEE}. Live split 60 / 30 / 10: <b>$${p.first}</b> / <b>$${p.second}</b> / <b>$${p.third}</b>.</p>
-    ${p.owed?`<p class="small">Outstanding: $${p.owed} still unticked.</p>`:''}
+    <p>Running pot <b>$${p.pot}</b>. Live split 60 / 30 / 10: <b>$${p.first}</b> / <b>$${p.second}</b> / <b>$${p.third}</b>.</p>
+    ${nightOwed?`<p class="small">Outstanding: $${nightOwed} still unticked for this night.</p>`:''}
     <p class="small muted">The $${LK_RANGE_FEE} range fee is not in this pot. Night 7 also costs $${LK_ENTRY_FEE}.</p>
     <table id="lkrespot"><thead><tr><th>Night</th><th>Paid</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>${potRows}</tbody></table>
     </div>`;
