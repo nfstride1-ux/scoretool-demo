@@ -605,14 +605,19 @@ function csView(code){const cs=csGet(code);if(!cs)return;
  if(q('#csfin'))q('#csfin').onclick=()=>{if(!csAllDone(cs)&&!confirm('Finish the shoot now? Unfinished scores stay as they are.'))return;csFinish(code)};
  if(q('#csshareall'))q('#csshareall').onclick=async()=>{
   const msg=q('#cssharemsg'),xLabel=R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':(ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'9s':'X');
-  const lines=rows.map((r,i)=>`${i+1}. ${r.nm} - ${r.tot} (${r.t10} ${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}, ${r.x} ${xLabel})`);
-  const text=`${cs.name} - ${cs.round}\n${cs.date||''}\n\n${lines.join('\n')}\n\nScoreTool - this shoot's scores only, not counted in any league.`;
-  const title=cs.name+' - combined scorecard';
+  const tLabel=R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s';
+  const title=cs.name+' - combined scorecard',text=cs.round+(cs.date?' · '+cs.date:'');
+  if(window.drawCombined&&window.shareCanvas){
+   const name=(cs.name||'scorecard').replace(/[^A-Za-z0-9]+/g,'-')+'-combined.png';
+   try{await window.shareCanvas(window.drawCombined(cs,rows,xLabel,tLabel),name,title,text);if(msg)msg.textContent='Shared.';return}catch(e){}
+  }
+  const lines=rows.map((r,i)=>`${i+1}. ${r.nm} - ${r.tot} (${r.t10} ${tLabel}, ${r.x} ${xLabel})`);
+  const fullText=`${cs.name} - ${cs.round}\n${cs.date||''}\n\n${lines.join('\n')}\n\nScoreTool - this shoot's scores only, not counted in any league.`;
   try{
-   if(navigator.share){await navigator.share({title,text});if(msg)msg.textContent='Shared.';return}
+   if(navigator.share){await navigator.share({title,text:fullText});if(msg)msg.textContent='Shared.';return}
   }catch(e){if(e&&e.name=='AbortError')return}
-  try{if(navigator.clipboard){await navigator.clipboard.writeText(text);if(msg)msg.textContent='Copied to clipboard - paste it to the group.';return}}catch(e){}
-  if(msg)msg.textContent=text;
+  try{if(navigator.clipboard){await navigator.clipboard.writeText(fullText);if(msg)msg.textContent='Copied to clipboard - paste it to the group.';return}}catch(e){}
+  if(msg)msg.textContent=fullText;
  };
  app.querySelectorAll('[data-csrm]').forEach(b=>b.onclick=()=>{csRemove(code,b.dataset.csrm);csView(code)});
  app.querySelectorAll('[data-csunl]').forEach(b=>b.onclick=()=>{csUnlink(code,b.dataset.csunl);csView(code)});
