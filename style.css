@@ -322,6 +322,12 @@ label.lk-paidrow input[type=checkbox]{
 #lkresults th,#lkresults td{padding:3px 5px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink)}
 #lkresults th:nth-child(2),#lkresults td:nth-child(2){text-align:left}
 #lkresults thead{position:sticky;top:0;background:var(--card,#fff)}
+#lkresults #lkresstand{width:max-content;min-width:100%}
+#lkresults .lk-cardname{background:none;border:0;padding:0;font:inherit;color:var(--link,#1d6fe0);text-decoration:underline;cursor:pointer}
+#lkresults .lk-carddetail td{padding:6px 0 10px}
+#lkresults table.lk-card{width:100%;font-size:11px}
+#lkresults table.lk-card th,#lkresults table.lk-card td{padding:2px 4px;border-bottom:1px solid var(--line)}
+#lkresults table.lk-card tr.lk-r2start td{border-top:2px solid var(--ink)}
 #lkpotview table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;margin-top:10px}
 #lkpotview th,#lkpotview td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink)}
 #lkpotview th:first-child,#lkpotview td:first-child{text-align:left}
