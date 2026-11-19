@@ -125,9 +125,15 @@ body.lk-flow #sbar{display:none!important}
 .lk-evbrand.lingkana{background:#000;border-radius:14px;padding:18px 16px 16px;margin:0 0 22px}
 .lk-evbrand.onion{background:#140f0a;border-radius:14px;padding:14px 10px 12px;margin:0 0 22px}
 .lk-evbrand .lk-evname{margin:0;font-size:15px;font-weight:700;color:#eee}
-.lk-potbanner{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:12px;padding:12px 14px;margin:-10px 0 20px;background:linear-gradient(135deg,#ffd76a 0%,#d4a017 100%);color:#2a1800;font:800 15px var(--body,system-ui,sans-serif);cursor:pointer;box-shadow:0 2px 6px rgba(212,160,23,.35)}
-.lk-potbanner .lk-potbanner-amt{font-size:18px}
+.lk-potbanner{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;border:2px solid #ffe49a;border-radius:14px;padding:12px 16px;margin:-10px 0 20px;background:linear-gradient(135deg,#fff3b0 0%,#ffcc33 35%,#e0a518 70%,#9c6a00 100%);color:#3a2300;font:800 15px var(--body,system-ui,sans-serif);cursor:pointer;box-shadow:0 4px 14px rgba(180,120,0,.45),inset 0 1px 0 rgba(255,255,255,.65);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.lk-potbanner-icon{font-size:28px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.lk-potbanner-text{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.lk-potbanner-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.85}
+.lk-potbanner-amt{font-size:25px;font-weight:900}
+.lk-potbanner-shine{position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.65),transparent);transform:skewX(-20deg);animation:lkPotShine 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes lkPotShine{0%{left:-60%}55%{left:130%}100%{left:130%}}
 .lk-potbanner:active{filter:brightness(0.95)}
+@media (prefers-reduced-motion: reduce){.lk-potbanner-shine{animation:none;display:none}}
 .lk-home{display:flex;flex-direction:column;gap:14px;padding-top:8px}
 .lk-rules{padding-top:8px}
 .lk-rules h1{margin-bottom:8px}

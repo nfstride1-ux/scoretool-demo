@@ -315,7 +315,7 @@
           <img src="${logo}" alt="${esc(alt)}">
           <p class="lk-evname">${esc(evName())}</p>
         </div>
-        ${pot?`<button type="button" class="lk-potbanner" id="lkpotbanner"><span>🏆 Running pot</span><span class="lk-potbanner-amt">$${pot.pot}</span></button>`:''}
+        ${pot?`<button type="button" class="lk-potbanner" id="lkpotbanner"><span class="lk-potbanner-shine"></span><span class="lk-potbanner-icon">🏆</span><span class="lk-potbanner-text"><span class="lk-potbanner-label">Prize Pot</span><span class="lk-potbanner-amt">$${pot.pot}</span></span></button>`:''}
         <div class="lk-home">
           ${sess?btn('lkresume','Resume scoring','green'):''}
           ${btn('lklogin','Login to Event','green')}
@@ -336,7 +336,7 @@
     $id('lklogin').onclick=()=>{if(activeSession()){resumeScoring();return}login()};
     $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
-    if($id('lkpotbanner'))$id('lkpotbanner').onclick=()=>review();
+    if($id('lkpotbanner'))$id('lkpotbanner').onclick=()=>{if(typeof lkPotView==='function')lkPotView()};
     if($id('lkroster'))$id('lkroster').onclick=()=>roster();
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();
