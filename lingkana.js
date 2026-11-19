@@ -1775,46 +1775,18 @@ function lkResultsView(w){
     lkResultsView(k);
   });
 }
-async function lkResultsPng(lg,w){
-  const scores=lkNightScores(lg,w), stand=lkTable(lg), p=lkPot(lg);
-  const row=16, pad=28, W=794;
-  const H=Math.max(1123, pad+90+(scores.length+stand.length+12)*row+120);
-  const c=document.createElement('canvas');c.width=W;c.height=H;
-  const g=c.getContext('2d');
-  g.fillStyle='#fff';g.fillRect(0,0,W,H);
-  g.fillStyle='#111';
-  let y=pad;
-  const line=(txt,size,bold)=>{g.font=`${bold?'bold ':''}${size}px sans-serif`;g.fillText(txt,pad,y);y+=size+8};
-  line((lg.name||'Lingkana League')+' — Night '+w+' results',22,true);
-  line(lkFmtD(lkNightKey(lg,w))+' · '+LK_VENUE,13,false);
-  line("Tonight's scores",16,true);
-  g.font='12px sans-serif';
-  scores.forEach(r=>{g.fillText(`${r.rk}. ${r.nm}  ${r.s}  ${r.x}×11  ${r.t10||0}×10`,pad,y);y+=row});
-  if(!scores.length){g.fillText('No scores this night.',pad,y);y+=row}
-  y+=10;line('Ladder · Best 4 of 6',16,true);
-  g.font='12px sans-serif';
-  stand.forEach(r=>{g.fillText(`${r.rk}. ${r.nm}  ${r.t}  ${r.x}×11  ${r.tens||0}×10`,pad,y);y+=row});
-  y+=10;line('Pot $'+p.pot+' · 60/30/10 $'+p.first+' / $'+p.second+' / $'+p.third,16,true);
-  g.font='12px sans-serif';g.fillText((p.entries||0)+' paid entries × $'+LK_ENTRY_FEE+'. Range fee excluded.',pad,y);
-  return new Promise(res=>c.toBlob(b=>res(b?new File([b],'lingkana-night-'+w+'-results.png',{type:'image/png'}):null),'image/png'));
-}
 async function lkShareResults(lg,w){
   const url=lkResultsUrl(w);
   const title=(lg.name||'Lingkana League')+' · Night '+w+' results';
-  const text=title+' · '+lkFmtD(lkNightKey(lg,w))+'. Best-4 standings and pot. The app does not post this for you.';
+  const text=title+' · '+lkFmtD(lkNightKey(lg,w))+'. Tonight\'s scores and the ladder.';
   const msg=$('#lksharemsg');
   const say=s=>{if(msg)msg.textContent=s};
-  let file=null;try{file=await lkResultsPng(lg,w)}catch(e){file=null}
   const nav=typeof navigator!=='undefined'?navigator:null;
   if(nav&&typeof nav.share==='function'){
-    const payload={title,text,url};
-    if(file&&typeof nav.canShare==='function'&&nav.canShare({files:[file]})){
-      try{await nav.share({title,text,url,files:[file]});say('Shared.');return}catch(e){if(e&&e.name==='AbortError')return}
-    }
-    try{await nav.share(payload);say('Shared.');return}catch(e){if(e&&e.name==='AbortError')return}
+    try{await nav.share({title,text,url});say('Shared.');return}catch(e){if(e&&e.name==='AbortError')return}
   }
   try{if(nav&&nav.clipboard)await nav.clipboard.writeText(url)}catch(e){}
-  say('Share link ready: '+url+'. The app does not post this itself.');
+  say('Share link ready: '+url);
 }
 function lkBootResults(){
   if(!lkIsResHash())return false;
