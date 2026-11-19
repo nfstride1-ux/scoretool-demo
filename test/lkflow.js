@@ -1576,20 +1576,27 @@
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const el=appEl();if(!el)return;
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
+    const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
+    const night1k=lg&&typeof lkNightKey==='function'?lkNightKey(lg,1):(typeof LK_DATES!=='undefined'&&LK_DATES[0])||'1';
+    const paidBag=(lg&&lg.paid&&lg.paid[night1k])||{};
     const night1=r=>{
       const e=lg&&typeof lgEnt==='function'?lgEnt(lg,r.id,'1'):null;
       if(!e||!(e.e||[]).some(x=>x&&x.length))return'<span class="small muted">Not yet</span>';
       return String(typeof lgTot==='function'?lgTot(e.e,e):0);
     };
-    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${night1(r)}</td></tr>`;
+    const paidCell=r=>host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" ${paidBag[r.id]?'checked':''}>`:(paidBag[r.id]?'Paid':'—');
+    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${night1(r)}</td><td>${paidCell(r)}</td></tr>`;
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
       <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered.</p>
-      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Night 1 score</th></tr></thead>
-      <tbody>${list.map(row).join('')||'<tr><td colspan="3">No archers registered yet.</td></tr>'}</tbody></table>
+      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Night 1 score</th><th>Paid (N1)</th></tr></thead>
+      <tbody>${list.map(row).join('')||'<tr><td colspan="4">No archers registered yet.</td></tr>'}</tbody></table>
       ${bar(btn('lkrosterback','Back','grey'),'')}
     </div>`;
     $id('lkrosterback').onclick=()=>home(evCode());
+    if(host)el.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
+      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),night1k,box.checked);
+    });
   }
   function rules(){
     hideChrome(true);
