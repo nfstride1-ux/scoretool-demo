@@ -988,8 +988,8 @@ function lkRegisterView(){
     <form id="lkregform" autocomplete="on">
       <label for="lkregname">Name</label>
       <input id="lkregname" name="name" required maxlength="24" autocomplete="name" placeholder="Your name">
-      <label for="lkregbow">Bow type <span class="muted">(optional)</span></label>
-      <input id="lkregbow" name="bow" maxlength="24" placeholder="e.g. Compound">
+      <label for="lkregbow">Bow type</label>
+      <input id="lkregbow" name="bow" required maxlength="24" placeholder="e.g. Compound">
       <label for="lkregemail">Email <span class="muted">(optional)</span></label>
       <input id="lkregemail" name="email" type="email" maxlength="80" autocomplete="email">
       <label for="lkregphone">Phone <span class="muted">(optional)</span></label>
@@ -1057,6 +1057,7 @@ function lkRegisterView(){
     const phone=(appEl.querySelector('#lkregphone')||{}).value;
     const pin=(appEl.querySelector('#lkregpin')||{}).value||'';
     const pin2=(appEl.querySelector('#lkregpin2')||{}).value||'';
+    if(!String(bow||'').trim()){fail('Enter your bow type.');return}
     if(!/^\d{4}$/.test(pin)){fail('Enter a 4-digit PIN.');return}
     if(pin!==pin2){fail('Those PINs do not match.');return}
     const salt=lkPinSalt();
