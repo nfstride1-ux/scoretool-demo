@@ -307,12 +307,15 @@
     const sess=!onion&&activeSession();
     const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
     const alt=onion?'Onion Shed Championships':'Lingkana Indoor Archery';
+    const lgp=!onion&&typeof lkGet==='function'?lkGet():null;
+    const pot=lgp&&typeof lkPot==='function'?lkPot(lgp):null;
     el.innerHTML=`<div class="lkf" id="lkhome" data-ev="${esc(evCode())}">
       <div class="lk-evhome">
         <div class="lk-evbrand ${onion?'onion':'lingkana'}">
           <img src="${logo}" alt="${esc(alt)}">
           <p class="lk-evname">${esc(evName())}</p>
         </div>
+        ${pot?`<button type="button" class="lk-potbanner" id="lkpotbanner"><span>🏆 Running pot</span><span class="lk-potbanner-amt">$${pot.pot}</span></button>`:''}
         <div class="lk-home">
           ${sess?btn('lkresume','Resume scoring','green'):''}
           ${btn('lklogin','Login to Event','green')}
@@ -333,6 +336,7 @@
     $id('lklogin').onclick=()=>{if(activeSession()){resumeScoring();return}login()};
     $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
+    if($id('lkpotbanner'))$id('lkpotbanner').onclick=()=>review();
     if($id('lkroster'))$id('lkroster').onclick=()=>roster();
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();

@@ -125,6 +125,9 @@ body.lk-flow #sbar{display:none!important}
 .lk-evbrand.lingkana{background:#000;border-radius:14px;padding:18px 16px 16px;margin:0 0 22px}
 .lk-evbrand.onion{background:#140f0a;border-radius:14px;padding:14px 10px 12px;margin:0 0 22px}
 .lk-evbrand .lk-evname{margin:0;font-size:15px;font-weight:700;color:#eee}
+.lk-potbanner{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:12px;padding:12px 14px;margin:-10px 0 20px;background:linear-gradient(135deg,#ffd76a 0%,#d4a017 100%);color:#2a1800;font:800 15px var(--body,system-ui,sans-serif);cursor:pointer;box-shadow:0 2px 6px rgba(212,160,23,.35)}
+.lk-potbanner .lk-potbanner-amt{font-size:18px}
+.lk-potbanner:active{filter:brightness(0.95)}
 .lk-home{display:flex;flex-direction:column;gap:14px;padding-top:8px}
 .lk-rules{padding-top:8px}
 .lk-rules h1{margin-bottom:8px}
