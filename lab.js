@@ -102,10 +102,8 @@ function setupScores(){const L=(typeof myBows=='function'?myBows():[]);if(!L.len
 const SC=()=>_score();SC.sc=1;
 LABSEC.clubs='clubs';
 E.clubs=()=>menu('Clubs & leagues',[
- row('lab_squad','🛡️','Squads','Your private squad: board, activity, people'),
  row('lab_leagues','🏁','Leagues','Leagues you belong to. Join with a code or start one'),
- row('lab_group','📋','Group score card','Score your whole group on one phone'),
- row('follow','👣','Following','Archers you follow and your feed')]);
+ row('lab_group','📋','Group score card','Score your whole group on one phone')]);
 sub('lab_leagues','clubs','Leagues','clubs','Clubs',SC,e=>e.id=='lgcard');
 sub('lab_match','clubs','Match play','clubs','Clubs',SC,e=>e.id=='h2hcard');
 sub('lab_group','clubs','Group score card','clubs','Clubs',SC,e=>e.id=='pgcard'||e.id=='ifaacard'||e.id=='ifaagencard');
