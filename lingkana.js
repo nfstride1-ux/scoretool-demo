@@ -1687,11 +1687,24 @@ function lkCardHTML(lg,id,w){
   const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||((lg.sc||{})[id]||{})[w]||null;
   const ends=(e&&e.e)||[];
   const val=v=>v==='X'?11:v==='M'?0:(+v||0);
+  /* Classic WA target-face colours for the per-arrow chips: gold (X/10/9), red (8/7),
+     blue (6/5), black (4/3), white (2/1), grey for a miss. */
+  const cls=v=>{
+    if(!v)return 'lk-ar-blank';
+    if(v==='M')return 'lk-ar-miss';
+    const n=val(v);
+    if(n>=9)return 'lk-ar-gold';
+    if(n>=7)return 'lk-ar-red';
+    if(n>=5)return 'lk-ar-blue';
+    if(n>=3)return 'lk-ar-black';
+    return 'lk-ar-white';
+  };
   let run=0;
   const rows=ends.map((end,i)=>{
     const sum=(end||[]).reduce((s,v)=>s+val(v),0);
     run+=sum;
-    return `<tr${i===10?' class="lk-r2start"':''}><td>${i+1}</td><td>${(end||[]).map(v=>h(v||'–')).join(' ')}</td><td>${sum}</td><td>${run}</td></tr>`;
+    const arrows=(end||[]).map(v=>`<span class="lk-arrow ${cls(v)}">${h(v||'–')}</span>`).join('');
+    return `<tr${i===10?' class="lk-r2start"':''}><td>${i+1}</td><td class="lk-arrows">${arrows}</td><td>${sum}</td><td>${run}</td></tr>`;
   }).join('')||'<tr><td colspan="4">No ends recorded yet.</td></tr>';
   return `<div class="lg-wrap"><table class="lk-card"><thead><tr><th>End</th><th>Arrows</th><th>End</th><th>Running</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
