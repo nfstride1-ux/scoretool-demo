@@ -1290,7 +1290,12 @@ function lkPaidMap(lg){return (lg&&lg.paid)||{}}
 function lkNightPaid(lg,w){
   const k=lkNightKey(lg,w), bag=(lkPaidMap(lg)[k]||lkPaidMap(lg)[String(w)]||{});
   const paid=Object.keys(bag).filter(id=>bag[id]);
-  const sign=lkNightSignups(lg,w).map(r=>r.id);
+  /* "Expected to pay" is whoever actually turned up and got grouped onto a target this night
+     (lg.grp[w].g), not everyone on the season-long registration list -- registering once covers
+     every night (see lkRegister's allNights:1), so that list is not who is shooting tonight. A
+     night nobody has been grouped on yet owes nothing. */
+  const grouped=((((lg&&lg.grp)||{})[w])||{}).g||[];
+  const sign=[].concat(...grouped);
   const expected=[...new Set(sign.concat(paid))];
   const out=expected.filter(id=>!bag[id]);
   return{w,date:k,paid:paid.length,due:expected.length,out:out.length,total:paid.length*LK_ENTRY_FEE,owed:out.length*LK_ENTRY_FEE,ids:paid,outstanding:out};
