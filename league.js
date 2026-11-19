@@ -363,7 +363,10 @@ function lgBindCard(){const c=$('#lgcard');if(!c)return;
   const lg=lgCreate($('#lgname').value,T,[1,2,3,4,5,6].map(w=>($('#lgd'+w)||{}).value||''));if(lg)lgView(lg.code)};
  const j=$('#lgjgo');if(j)j.onclick=async()=>{const msg=await lgJoin($('#lgjc').value);const e=$('#lgjmsg');if(e&&msg)e.textContent='⚠ '+msg}}
 const lgFinDone=lg=>{const m=lg.fin&&h2hGet(lgFinCode(lg));return!!(m&&window.suLadder&&suLadder(m).length&&suLadder(m).slice(-1)[0].res.winner)};
-const _lgH2H=window.h2hCard;window.h2hCard=function(){return _lgH2H.apply(this,arguments)+lgCard()};
+/* lgCard() (the league flyer + "League code / Join" box) only renders when the Leagues page under
+   Clubs & leagues is asking for it (that page works by rendering the Score page off-screen and
+   keeping just #lgcard - see lab.js's sub('lab_leagues',...)). It no longer shows on Score itself. */
+const _lgH2H=window.h2hCard;window.h2hCard=function(){return _lgH2H.apply(this,arguments)+(typeof view!=='undefined'&&view=='lab_leagues'?lgCard():'')};
 const _lgScore=score;score=function(){const o=_lgScore.apply(this,arguments);try{lgBindCard()}catch(e){console.error(e)}return o};
 function lgEntryCard(lg,w,ids){const me=h2hMe(),act0=window._lgAct&&ids.includes(window._lgAct)?window._lgAct:null;
  const hd=window._lgHold,held=!!(ids.length>1&&act0&&hd&&hd.id==act0&&hd.n==((lgEnt(lg,act0,w)||{e:[]}).e||[]).length),
