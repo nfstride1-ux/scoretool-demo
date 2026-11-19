@@ -143,6 +143,10 @@ body.lk-flow #sbar{display:none!important}
 .lk-known > p{flex:1 1 100%;margin:0 0 4px}
 .lk-known-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:8px 14px;font:700 15px var(--body,system-ui,sans-serif);cursor:pointer;color:#111}
 .lk-known-btn.on{background:var(--lk-green,#2e7d32);color:#fff;border-color:var(--lk-green,#2e7d32)}
+.lk-maintabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 12px}
+.lk-maintabs .lk-known-btn{font-size:16px;padding:10px 16px}
+.lk-nighttabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.lk-nighttabs .lk-known-btn{font-size:13px;padding:6px 12px}
 .lkf .lk-tick{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500}
 .lkf .lk-tick input{width:18px;height:18px;accent-color:var(--lk-green,#2e7d32)}
 #lkpaidlist .lk-paidrow{cursor:default}

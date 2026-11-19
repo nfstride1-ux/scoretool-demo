@@ -1157,8 +1157,8 @@ function lkTableHTML(lg){
     return`<td class="${on?'lk-keep':'lk-drop'}"${on?' title="Counts in the best 4"':''}>${body}</td>`;
   };
   const tot=r=>r.open?`<i>${r.t}</i>`:String(r.t);
-  return`<div class="card" id="lkstand"><h3>Standings · best 4 of 6</h3>
-    <div class="lk-printhead"><p class="lk-printbrand">ScoreTool</p><h2>Lingkana Indoor League · Standings</h2><p>${h(lkStandSubtitle(lg))}</p></div>
+  return`<div class="card" id="lkstand"><h3>Ladder · Best 4 of 6</h3>
+    <div class="lk-printhead"><p class="lk-printbrand">ScoreTool</p><h2>Lingkana Indoor League · Ladder</h2><p>${h(lkStandSubtitle(lg))}</p></div>
     <div class="lk-standwrap"><table class="lk-stand" id="lktab"><colgroup><col class="rk"><col class="nm"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="n"><col class="best"><col class="xs"><col class="ts"></colgroup>
     <thead><tr><th></th><th class="nm">Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
     <tbody>${rows.map(r=>`<tr data-lkrow="${h(r.id)}"><td class="rk">${r.tie?'=':''}${r.rk}</td><td class="nm">${h(r.nm)}${r.id==me?' (you)':''}</td>${r.W.map((c,i)=>cells(r,c,i)).join('')}<td class="best">${tot(r)}</td><td class="xs">${r.x}</td><td class="ts">${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No scores yet.</td></tr>'}</tbody></table></div>
@@ -1690,6 +1690,7 @@ function lkResultsView(w){
   const n=+w||lkResNightFromHash()||Math.min(6,typeof lgWeek==='function'?lgWeek(lg):1);
   const night=n>=1&&n<=6?n:1;
   window._lkResNight=night;
+  const mtab=window._lkResTab==='ladder'?'ladder':'scores';
   const scores=lkNightScores(lg,night);
   const stand=lkTable(lg);
   const p=lkPot(lg);
@@ -1697,6 +1698,7 @@ function lkResultsView(w){
   const scoreRows=scores.map(r=>`<tr><td>${r.rk}</td><td>${h(r.nm)}</td><td>${r.d?r.s:`<i>${r.s}</i>`}</td><td>${r.x}</td><td>${r.t10||0}</td></tr>`).join('')||'<tr><td colspan="5">No scores this night.</td></tr>';
   const standRows=stand.map(r=>`<tr><td>${r.tie?'=':''}${r.rk}</td><td>${h(r.nm)}</td>${r.W.map(c=>`<td>${c?c.s:'—'}</td>`).join('')}<td>${r.t}</td><td>${r.x}</td><td>${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No standings yet.</td></tr>';
   const potRows=(p.nights||[]).map(x=>`<tr><td>N${x.w}</td><td>${x.paid}</td><td>$${x.total}</td><td>${x.out?('$'+x.owed):'—'}</td></tr>`).join('');
+  const nightTabs=[1,2,3,4,5,6].map(k=>`<button type="button" class="lk-known-btn${k===night?' on':''}" data-lknight="${k}" aria-pressed="${k===night}">N${k}</button>`).join('');
   appEl.innerHTML=`<div class="card" id="lkresults" data-lkn="${night}">
     <div class="lk-printbar">
       <button class="btn alt" type="button" id="lkprint">Print A4</button>
@@ -1708,13 +1710,22 @@ function lkResultsView(w){
     <h1>${h(lg.name)}</h1>
     <p class="small">${h(d)} · ${h(LK_VENUE)}</p>
     <p class="small muted">Lancaster 660 · triangular 40 cm 3-spot · values only. The app does not post these results itself.</p>
-    <h3>Tonight's scores</h3>
-    <table id="lknightscores"><thead><tr><th></th><th>Archer</th><th>Score</th><th>11s</th><th>10s</th></tr></thead>
-    <tbody>${scoreRows}</tbody></table>
-    <h3>Standings · best 4 of 6</h3>
-    <p class="small muted">No minimum nights. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12.</p>
-    <table id="lkresstand"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
-    <tbody>${standRows}</tbody></table>
+    <div class="lk-maintabs" role="tablist" aria-label="Review Scoresheets">
+      <button type="button" class="lk-known-btn${mtab==='scores'?' on':''}" data-lkmtab="scores" aria-pressed="${mtab==='scores'}">Latest scores</button>
+      <button type="button" class="lk-known-btn${mtab==='ladder'?' on':''}" data-lkmtab="ladder" aria-pressed="${mtab==='ladder'}">League Ladder</button>
+    </div>
+    <div id="lkmtab-scores"${mtab==='ladder'?' hidden':''}>
+      <div class="lk-nighttabs" role="tablist" aria-label="Night">${nightTabs}</div>
+      <h3>Tonight's scores</h3>
+      <table id="lknightscores"><thead><tr><th></th><th>Archer</th><th>Score</th><th>11s</th><th>10s</th></tr></thead>
+      <tbody>${scoreRows}</tbody></table>
+    </div>
+    <div id="lkmtab-ladder"${mtab==='ladder'?'':' hidden'}>
+      <h3>Ladder · Best 4 of 6</h3>
+      <p class="small muted">No minimum nights. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12.</p>
+      <table id="lkresstand"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
+      <tbody>${standRows}</tbody></table>
+    </div>
     <h3>Pot</h3>
     <p>Running pot <b>$${p.pot}</b> from ${p.entries} paid ${p.entries==1?'entry':'entries'} × $${LK_ENTRY_FEE}. Live split 60 / 30 / 10: <b>$${p.first}</b> / <b>$${p.second}</b> / <b>$${p.third}</b>.</p>
     ${p.owed?`<p class="small">Outstanding: $${p.owed} still unticked.</p>`:''}
@@ -1724,6 +1735,12 @@ function lkResultsView(w){
   if($('#lkprint'))$('#lkprint').onclick=()=>window.print();
   if($('#lkshare'))$('#lkshare').onclick=()=>lkShareResults(lg,night);
   if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}lkView(lg.code)};
+  document.querySelectorAll('[data-lkmtab]').forEach(b=>b.onclick=()=>{window._lkResTab=b.getAttribute('data-lkmtab');lkResultsView(night)});
+  document.querySelectorAll('[data-lknight]').forEach(b=>b.onclick=()=>{
+    const k=+b.getAttribute('data-lknight');
+    try{history.replaceState(null,'',location.pathname+location.search+'#lk-results&n='+k)}catch(e){}
+    lkResultsView(k);
+  });
 }
 async function lkResultsPng(lg,w){
   const scores=lkNightScores(lg,w), stand=lkTable(lg), p=lkPot(lg);
@@ -1741,7 +1758,7 @@ async function lkResultsPng(lg,w){
   g.font='12px sans-serif';
   scores.forEach(r=>{g.fillText(`${r.rk}. ${r.nm}  ${r.s}  ${r.x}×11  ${r.t10||0}×10`,pad,y);y+=row});
   if(!scores.length){g.fillText('No scores this night.',pad,y);y+=row}
-  y+=10;line('Standings · best 4 of 6',16,true);
+  y+=10;line('Ladder · Best 4 of 6',16,true);
   g.font='12px sans-serif';
   stand.forEach(r=>{g.fillText(`${r.rk}. ${r.nm}  ${r.t}  ${r.x}×11  ${r.tens||0}×10`,pad,y);y+=row});
   y+=10;line('Pot $'+p.pot+' · 60/30/10 $'+p.first+' / $'+p.second+' / $'+p.third,16,true);
