@@ -326,8 +326,17 @@ label.lk-paidrow input[type=checkbox]{
 #lkresults .lk-cardname{background:none;border:0;padding:0;font:inherit;color:var(--link,#1d6fe0);text-decoration:underline;cursor:pointer}
 #lkresults .lk-carddetail td{padding:6px 0 10px}
 #lkresults table.lk-card{width:100%;font-size:11px}
-#lkresults table.lk-card th,#lkresults table.lk-card td{padding:2px 4px;border-bottom:1px solid var(--line)}
+#lkresults table.lk-card th,#lkresults table.lk-card td{padding:3px 4px;border-bottom:1px solid var(--line)}
 #lkresults table.lk-card tr.lk-r2start td{border-top:2px solid var(--ink)}
+#lkresults td.lk-arrows{text-align:left;white-space:nowrap}
+#lkresults .lk-arrow{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-weight:800;font-size:12px;margin-right:3px}
+#lkresults .lk-ar-gold{background:#ffd400;color:#1a1a1a}
+#lkresults .lk-ar-red{background:#e8392c;color:#1a1a1a}
+#lkresults .lk-ar-blue{background:#2f7fe0;color:#fff}
+#lkresults .lk-ar-black{background:#1a1a1a;color:#fff}
+#lkresults .lk-ar-white{background:#fff;color:#1a1a1a;border:1px solid #ccc}
+#lkresults .lk-ar-miss,
+#lkresults .lk-ar-blank{background:#e5e7eb;color:#6b7280;border:1px solid #d1d5db}
 #lkpotview table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;margin-top:10px}
 #lkpotview th,#lkpotview td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink)}
 #lkpotview th:first-child,#lkpotview td:first-child{text-align:left}
