@@ -1577,25 +1577,23 @@
     const el=appEl();if(!el)return;
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
     const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
-    const night1k=lg&&typeof lkNightKey==='function'?lkNightKey(lg,1):(typeof LK_DATES!=='undefined'&&LK_DATES[0])||'1';
-    const paidBag=(lg&&lg.paid&&lg.paid[night1k])||{};
-    const night1=r=>{
-      const e=lg&&typeof lgEnt==='function'?lgEnt(lg,r.id,'1'):null;
-      if(!e||!(e.e||[]).some(x=>x&&x.length))return'<span class="small muted">Not yet</span>';
-      return String(typeof lgTot==='function'?lgTot(e.e,e):0);
+    const nights=lg&&typeof lkShootDates==='function'?lkShootDates(lg):[];
+    const paidCell=(r,n,i)=>{
+      const bag=(lg&&lg.paid&&lg.paid[n])||{};
+      const on=!!bag[r.id];
+      return host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''}>`:(on?'●':'');
     };
-    const paidCell=r=>host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" ${paidBag[r.id]?'checked':''}>`:(paidBag[r.id]?'Paid':'—');
-    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${night1(r)}</td><td>${paidCell(r)}</td></tr>`;
+    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td>${nights.map((n,i)=>`<td style="text-align:center">${paidCell(r,n,i)}</td>`).join('')}</tr>`;
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
-      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered.</p>
-      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Night 1 score</th><th>Paid (N1)</th></tr></thead>
-      <tbody>${list.map(row).join('')||'<tr><td colspan="4">No archers registered yet.</td></tr>'}</tbody></table>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. Tick a night to mark paid.</p>
+      <div style="overflow-x:auto"><table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th>${nights.map((n,i)=>`<th>N${i+1}</th>`).join('')}</tr></thead>
+      <tbody>${list.map(row).join('')||`<tr><td colspan="${2+nights.length}">No archers registered yet.</td></tr>`}</tbody></table></div>
       ${bar(btn('lkrosterback','Back','grey'),'')}
     </div>`;
     $id('lkrosterback').onclick=()=>home(evCode());
     if(host)el.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
-      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),night1k,box.checked);
+      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),box.getAttribute('data-lknight'),box.checked);
     });
   }
   function rules(){
