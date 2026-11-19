@@ -316,10 +316,9 @@
         <div class="lk-home">
           ${sess?btn('lkresume','Resume scoring','green'):''}
           ${btn('lklogin','Login to Event','green')}
-          ${btn('lkqr','Login with QR Code','green')}
           ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
-          ${btn('lkrules','Rules','grey')}
+          ${btn('lkrules','About','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
         </div>
         ${bar(btn('lkhomeback','Back to leagues','grey'),'')}
@@ -331,7 +330,6 @@
     </div>`;
     if($id('lkresume'))$id('lkresume').onclick=()=>resumeScoring();
     $id('lklogin').onclick=()=>{if(activeSession()){resumeScoring();return}login()};
-    $id('lkqr').onclick=()=>qrLogin();
     $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
     $id('lkrules').onclick=()=>rules();
@@ -515,7 +513,14 @@
     };
     wireNames();
     fitList();
-    if($id('lkfind'))$id('lkfind').oninput=()=>drawNames($id('lkfind').value);
+    if($id('lkfind')){
+      /* A phone keyboard's own autofill/suggestion bar can insert the full name without firing
+         input, so this also redraws on change and blur to catch that. */
+      const find=$id('lkfind');
+      find.oninput=()=>drawNames(find.value);
+      find.onchange=()=>drawNames(find.value);
+      find.onblur=()=>drawNames(find.value);
+    }
     if($id('lkshowall'))$id('lkshowall').onclick=()=>{
       window._lkNamesOpen=1;
       lkFullLogin();
@@ -628,134 +633,6 @@
     $id('lkpwgo').onclick=go;
     $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
-  }
-
-  /* jsQR fallback when this phone has no BarcodeDetector (iOS Safari). Large photos are scaled down and tried upright and on each side. */
-  function readQrSource(src,opt){
-    opt=opt||{};
-    if(typeof jsQR!=='function')return '';
-    const iw=src.videoWidth||src.naturalWidth||src.width||0;
-    const ih=src.videoHeight||src.naturalHeight||src.height||0;
-    if(!iw||!ih)return '';
-    const maxes=opt.maxes||[1200,800,480];
-    const angles=opt.angles||[0,90,180,270];
-    const canvas=document.createElement('canvas');
-    const ctx=canvas.getContext('2d',{willReadFrequently:true});
-    if(!ctx)return '';
-    for(let mi=0;mi<maxes.length;mi++){
-      const scale=Math.min(1,maxes[mi]/Math.max(iw,ih));
-      const w=Math.max(1,Math.round(iw*scale)), h=Math.max(1,Math.round(ih*scale));
-      for(let ai=0;ai<angles.length;ai++){
-        const angle=angles[ai], turn=angle%180!==0;
-        const cw=turn?h:w, ch=turn?w:h;
-        canvas.width=cw;canvas.height=ch;
-        ctx.setTransform(1,0,0,1,0,0);
-        ctx.clearRect(0,0,cw,ch);
-        ctx.save();
-        ctx.translate(cw/2,ch/2);
-        ctx.rotate(angle*Math.PI/180);
-        try{ctx.drawImage(src,-w/2,-h/2,w,h)}catch(e){ctx.restore();continue}
-        ctx.restore();
-        let pixels=null, code=null;
-        try{pixels=ctx.getImageData(0,0,cw,ch)}catch(e){pixels=null}
-        if(!pixels)continue;
-        try{code=jsQR(pixels.data,cw,ch,{inversionAttempts:'attemptBoth'})}catch(e){code=null}
-        if(code&&code.data)return String(code.data);
-      }
-    }
-    return '';
-  }
-
-  function qrLogin(){
-    hideChrome(true);
-    const el=appEl();if(!el)return;
-    el.innerHTML=`<div class="lkf" id="lkqrpage">
-      <h1>Login with QR Code</h1>
-      <div class="lk-qrbox">
-        <p>Point the camera at the event QR, or choose a photo of it.</p>
-        <input id="lkqrfile" type="file" accept="image/*" capture="environment">
-        <video id="lkqrcam" playsinline muted style="display:none;width:100%;border-radius:10px;margin-top:10px"></video>
-      </div>
-      <label for="lkqrpaste">Paste event link or code</label>
-      <input id="lkqrpaste" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <p class="lk-msg" id="lkqrmsg" role="alert"></p>
-      ${bar(btn('lkqrback','Back','grey'),btn('lkqrgo','Continue','green'))}
-    </div>`;
-    $id('lkqrback').onclick=()=>home(evCode());
-    const msg=$id('lkqrmsg');
-    const accept=text=>{
-      const s=String(text||'');
-      /* lk-onion26 is the Lingkana invite code — do not treat it as Onion Shed. */
-      if(/ONIONSH2|ONIONSHD|#os-|onion-shed|onion shed/i.test(s)&&!/lk-onion26/i.test(s)){setEv((typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2');home(evCode());return true}
-      if(/scoretool-demo|lk-onion26|lk-home|LINGKN26|lk-register|lk-login|#lingkana/i.test(s)){setEv((typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26');home(LK_CODE||evCode());return true}
-      if(msg)msg.textContent='That code is not for this event.';
-      return false;
-    };
-    const usePaste=()=>{
-      const v=($id('lkqrpaste')&&$id('lkqrpaste').value||'').trim();
-      if(!v)return false;
-      accept(v);
-      return true;
-    };
-    $id('lkqrgo').onclick=()=>{if(!usePaste())login()};
-    const paste=$id('lkqrpaste');
-    if(paste)paste.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();usePaste()}};
-    const file=$id('lkqrfile');
-    const decodePhoto=f=>{
-      if(typeof jsQR!=='function'){if(msg)msg.textContent='This phone cannot read a QR here. Use Login to Event.';return}
-      const url=URL.createObjectURL(f);
-      const img=new Image();
-      img.onload=()=>{
-        URL.revokeObjectURL(url);
-        const text=readQrSource(img);
-        if(text)accept(text);
-        else if(msg)msg.textContent='No QR code found in that photo.';
-      };
-      img.onerror=()=>{URL.revokeObjectURL(url);if(msg)msg.textContent='Could not read that photo.'};
-      img.src=url;
-    };
-    if(file)file.onchange=()=>{
-      const f=file.files&&file.files[0];if(!f)return;
-      if(window.BarcodeDetector){
-        const det=new BarcodeDetector({formats:['qr_code']});
-        createImageBitmap(f).then(bmp=>det.detect(bmp).then(c=>({bmp,c}))).then(({bmp,c})=>{
-          try{if(bmp.close)bmp.close()}catch(e){}
-          if(c&&c[0]&&c[0].rawValue)accept(c[0].rawValue);
-          else if(msg)msg.textContent='No QR code found in that photo.';
-        }).catch(()=>decodePhoto(f));
-      }else decodePhoto(f);
-    };
-    const vid=$id('lkqrcam');
-    const canCam=navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&vid;
-    if(canCam&&(window.BarcodeDetector||typeof jsQR==='function')){
-      navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
-        vid.srcObject=stream;vid.style.display='block';
-        const play=vid.play();if(play&&play.catch)play.catch(()=>{});
-        const stop=()=>stream.getTracks().forEach(t=>t.stop());
-        if(window.BarcodeDetector){
-          const det=new BarcodeDetector({formats:['qr_code']});
-          const tick=()=>{
-            if(!document.body.contains(vid)){stop();return}
-            det.detect(vid).then(c=>{if(c&&c[0]&&c[0].rawValue){stop();accept(c[0].rawValue)}else requestAnimationFrame(tick)}).catch(()=>requestAnimationFrame(tick));
-          };
-          requestAnimationFrame(tick);
-        }else{
-          let ang=0, busy=false;
-          const tick=()=>{
-            if(!document.body.contains(vid)){stop();return}
-            if(busy||vid.readyState<2){requestAnimationFrame(tick);return}
-            busy=true;
-            let text='';
-            try{text=readQrSource(vid,{maxes:[640],angles:[ang]})}catch(e){text=''}
-            busy=false;
-            ang=(ang+90)%360;
-            if(text){stop();accept(text);return}
-            requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
-        }
-      }).catch(()=>{});
-    }
   }
 
   function hostPw(){
@@ -1572,7 +1449,7 @@
     hideChrome(true);
     const el=appEl();if(!el)return;
     const onion=isOnion();
-    const title=onion?'Onion Shed Challenge rules':'Lingkana League rules';
+    const title=onion?'Onion Shed Challenge rules':'About';
     let body='';
     if(onion){
       const R=(typeof LG_RULES!=='undefined'&&LG_RULES)||[];
