@@ -4,7 +4,8 @@
    ad = the archer's name in the official results when it differs. data:false = no confirmed official results match yet, so the profile starts empty.
    Names only, no contact details. Real names show in personal places (sign-in, home, Me, score sheets, coach summary, parent and
    coach links, suggestions); social and competitive views (h2h, match night, squad, league, badges, share images) show the
-   tester's chosen nickname instead (names.js). junior:true = under 16. */
+   tester's chosen nickname instead (names.js). junior:true = under 16.
+   Policy (19 Nov 2026, Nathe): whenever a paid tier is built, everyone in this list stays free - never gated. */
 const TESTERS=[{id:'nathe',name:'Nathaniel Stride',short:'Nathe',bow:'Compound',data:true},
  {id:'phill',name:'Phill Arthur',short:'Phill',ad:'George Philip Arthur',bow:'Compound',data:true},
  {id:'logan',name:'Logan Wolfe',short:'Logan',bow:'Compound',data:true,junior:true},
