@@ -1683,6 +1683,18 @@ function lkNightScores(lg,w){
   rows.forEach((r,k)=>{r.rk=k&&rows[k-1].s==r.s&&rows[k-1].x==r.x&&(rows[k-1].t10||0)==(r.t10||0)?rows[k-1].rk:k+1});
   return rows;
 }
+function lkCardHTML(lg,id,w){
+  const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||((lg.sc||{})[id]||{})[w]||null;
+  const ends=(e&&e.e)||[];
+  const val=v=>v==='X'?11:v==='M'?0:(+v||0);
+  let run=0;
+  const rows=ends.map((end,i)=>{
+    const sum=(end||[]).reduce((s,v)=>s+val(v),0);
+    run+=sum;
+    return `<tr${i===10?' class="lk-r2start"':''}><td>${i+1}</td><td>${(end||[]).map(v=>h(v||'–')).join(' ')}</td><td>${sum}</td><td>${run}</td></tr>`;
+  }).join('')||'<tr><td colspan="4">No ends recorded yet.</td></tr>';
+  return `<div class="lg-wrap"><table class="lk-card"><thead><tr><th>End</th><th>Arrows</th><th>End</th><th>Running</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 function lkResultsView(w){
   const appEl=typeof app!=='undefined'?app:null;if(!appEl)return;
   const lg=lkEnsure();if(!lg)return;
@@ -1698,12 +1710,14 @@ function lkResultsView(w){
   const mtab=window._lkResTab==='ladder'?'ladder':'scores';
   const scores=lkNightScores(lg,night);
   const stand=lkTable(lg);
-  const p=lkPot(lg);
-  const nightOwed=(typeof lkNightPaid==='function'?lkNightPaid(lg,night):{owed:0}).owed;
   const d=lkFmtD(lkNightKey(lg,night));
-  const scoreRows=scores.map(r=>`<tr><td>${r.rk}</td><td>${h(r.nm)}</td><td>${r.d?r.s:`<i>${r.s}</i>`}</td><td>${r.x}</td><td>${r.t10||0}</td></tr>`).join('')||'<tr><td colspan="5">No scores this night.</td></tr>';
+  const openCard=window._lkCardOpen||null;
+  const scoreRows=scores.map(r=>{
+    const main=`<tr><td>${r.rk}</td><td><button type="button" class="lk-cardname" data-lkcard="${h(r.id)}">${h(r.nm)}</button></td><td>${r.d?r.s:`<i>${r.s}</i>`}</td><td>${r.x}</td><td>${r.t10||0}</td></tr>`;
+    const detail=openCard===r.id?`<tr class="lk-carddetail"><td colspan="5">${lkCardHTML(lg,r.id,night)}</td></tr>`:'';
+    return main+detail;
+  }).join('')||'<tr><td colspan="5">No scores this night.</td></tr>';
   const standRows=stand.map(r=>`<tr><td>${r.tie?'=':''}${r.rk}</td><td>${h(r.nm)}</td>${r.W.map(c=>`<td>${c?c.s:'—'}</td>`).join('')}<td>${r.t}</td><td>${r.x}</td><td>${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No standings yet.</td></tr>';
-  const potRows=(p.nights||[]).map(x=>`<tr><td>N${x.w}</td><td>${x.paid}</td><td>$${x.total}</td><td>${x.out?('$'+x.owed):'—'}</td></tr>`).join('');
   const nightTabs=[1,2,3,4,5,6].map(k=>`<button type="button" class="lk-known-btn${k===night?' on':''}" data-lknight="${k}" aria-pressed="${k===night}">N${k}</button>`).join('');
   appEl.innerHTML=`<div class="card" id="lkresults" data-lkn="${night}">
     <div class="lk-printbar">
@@ -1728,20 +1742,20 @@ function lkResultsView(w){
     </div>
     <div id="lkmtab-ladder"${mtab==='ladder'?'':' hidden'}>
       <h3>Ladder · Best 4 of 6</h3>
-      <p class="small muted">No minimum nights. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12.</p>
-      <table id="lkresstand"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
-      <tbody>${standRows}</tbody></table>
+      <p class="small muted">No minimum nights. Rank is by highest total, then 11s on the counting scores, then 10s. The shoot-up is the top 12. Swipe sideways to see every night.</p>
+      <div class="lg-wrap"><table id="lkresstand"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>N${k}</th>`).join('')}<th>Best 4</th><th>11s</th><th>10s</th></tr></thead>
+      <tbody>${standRows}</tbody></table></div>
     </div>
-    <h3>Pot</h3>
-    <p>Running pot <b>$${p.pot}</b>. Live split 60 / 30 / 10: <b>$${p.first}</b> / <b>$${p.second}</b> / <b>$${p.third}</b>.</p>
-    ${nightOwed?`<p class="small">Outstanding: $${nightOwed} still unticked for this night.</p>`:''}
-    <p class="small muted">The $${LK_RANGE_FEE} range fee is not in this pot. Night 7 also costs $${LK_ENTRY_FEE}.</p>
-    <table id="lkrespot"><thead><tr><th>Night</th><th>Paid</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>${potRows}</tbody></table>
     </div>`;
   if($('#lkprint'))$('#lkprint').onclick=()=>window.print();
   if($('#lkshare'))$('#lkshare').onclick=()=>lkShareResults(lg,night);
   if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}lkView(lg.code)};
   document.querySelectorAll('[data-lkmtab]').forEach(b=>b.onclick=()=>{window._lkResTab=b.getAttribute('data-lkmtab');lkResultsView(night)});
+  document.querySelectorAll('[data-lkcard]').forEach(b=>b.onclick=()=>{
+    const id=b.getAttribute('data-lkcard');
+    window._lkCardOpen=window._lkCardOpen===id?null:id;
+    lkResultsView(night);
+  });
   document.querySelectorAll('[data-lknight]').forEach(b=>b.onclick=()=>{
     const k=+b.getAttribute('data-lknight');
     try{history.replaceState(null,'',location.pathname+location.search+'#lk-results&n='+k)}catch(e){}
