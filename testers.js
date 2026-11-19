@@ -66,9 +66,11 @@ function setTester(id){const was=TESTER&&TESTER.id;
  localStorage.setItem('scoretool.tester',id);const u=new URL(location.href);u.searchParams.delete('tester');u.hash='';location.href=u.toString()}
 function testerLink(id){return location.origin+location.pathname+'?tester='+id}
 function pickerLabel(t){if(t.custom&&t.junior){const D=window.NM_DEF;if(D&&D[t.id])return D[t.id];return t.short}return t.name}
-function testerPicker(){return`<div class="card dark" id="whopick"><span class="kicker">Your profile</span><h1>Who's shooting?</h1><p>Pick your name, or make your own profile. Scores stay on this phone.</p>
-${TESTERS.map(t=>`<button class="btn full" style="margin:8px 0" data-tester="${t.id}">${pickerLabel(t)}</button>`).join('')}
-<div class="card" id="newprofile"><span class="kicker">New archer</span><h2>Create my profile</h2><p class="small">You can start without picking a name from the list.</p>
+/* The named-testers roster (TESTERS) was Nathe's own dev/testing squad, picked by hand from one shared
+   deployed instance. A stranger opening the app for the first time must never see it: just create a
+   profile. Testing is over, so this no longer offers a way to browse or pick someone else's name here. */
+function testerPicker(){return`<div class="card dark" id="whopick"><span class="kicker">Your profile</span><h1>Who's shooting?</h1><p>Scores stay on this phone. Create your profile to get started.</p>
+<div class="card" id="newprofile"><span class="kicker">New archer</span><h2>Create my profile</h2>
 <label for="npname">Your name</label><input id="npname" maxlength="40" autocomplete="name">
 <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="npjun" type="checkbox" style="width:auto"> Under 16. The list shows a nickname, not a full name.</label>
 <p class="small" id="npmsg"></p><button class="btn alt full" id="npc" type="button">Create my profile</button></div>
