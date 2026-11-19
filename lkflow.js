@@ -895,7 +895,16 @@
       return{taken:false,why:''};
     };
     const pickable=rows.filter(r=>!takenInfo(r.id).taken);
-    const body=rows.map(r=>{
+    const freeRows=rows.filter(r=>!(archerTarget(lg,w,r.id)&&archerTarget(lg,w,r.id)!==target));
+    const lockedRow=r=>{
+      const {why}=takenInfo(r.id);
+      return `<label class="lk-row locked" data-lkid="${esc(r.id)}">
+        <span class="nm">${esc(r.name)}</span>
+        <input type="checkbox" data-lkid="${esc(r.id)}" disabled>
+        <span class="lk-padlock" title="${esc(why)}">🔒</span>
+      </label>`;
+    };
+    const freeBody=freeRows.map(r=>{
       const {taken,why}=takenInfo(r.id);
       const on=selected.includes(r.id);
       return `<label class="lk-row${taken?' locked':''}" data-lkid="${esc(r.id)}">
@@ -904,14 +913,23 @@
         ${taken?`<span class="lk-padlock" title="${esc(why)}">🔒</span>`:''}
       </label>`;
     }).join('')||(paidPickerIds(lg,w)&&registered.some(r=>r&&r.id)?'<p>No archers marked paid for this night yet. They stay registered, and show here once the host ticks them paid.</p>':'<p>No archers registered for this night yet. Register them below, or they sign up on the Event Registration page.</p>');
+    /* Archers already locked onto another target: grouped by that target instead of scattered
+       among the pickable list, so the groups forming tonight are easy to read at a glance. This
+       re-groups on every redraw, so it reflects whatever the latest group is. */
+    const otherTargets=[...new Set(rows.map(r=>archerTarget(lg,w,r.id)).filter(t=>t&&t!==target))].sort((a,b)=>a-b);
+    const groupedBody=otherTargets.map(t=>{
+      const members=rows.filter(r=>archerTarget(lg,w,r.id)===t);
+      return `<div class="lk-grouphdr">Target ${t}</div>${members.map(lockedRow).join('')}`;
+    }).join('');
+    const body=freeBody+groupedBody;
     el.innerHTML=`<div class="lkf" id="lkselect" data-ev="${esc(evCode())}" data-target="${target}">
       <h1>${title}</h1>
       ${nightSel}
       <div class="lk-tgt" id="lktgtlabel">Target ${target}</div>
       ${selHtml}
       <p class="small muted">Tick who you are scoring on this target. <span class="lk-selcount" id="lkselcount">${selected.length}/4</span> · <button type="button" class="lk-host" id="lkpickall">All</button></p>
-      <div id="lkarchlist">${body}</div>
       <p><button type="button" class="lk-host" id="lkregarcher">Register archer</button></p>
+      <div id="lkarchlist">${body}</div>
       ${hostPwBtn}
       <p class="lk-msg" id="lkselmsg" role="alert"></p>
       ${bar(btn('lkbacklogin','Back','grey'),btn('lkstart',`Start (${selected.length})`,'green'))}
@@ -1202,13 +1220,14 @@
     const info=typeof lgInfo==='function'?lgInfo(lg,w):{ends:20,title:'Lancaster 660',face:'triangular 40 cm 3-spot',dist:'18 m'};
     const done=allDone(lg,w,ids);
     const arrows=ids.some(id=>{const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};return ((e.e||[]).flat().length)>0});
+    const canHost=typeof lgCanEd==='function'&&lgCanEd(lg);
     const el=appEl();if(!el)return;
     el.innerHTML=`<div class="ad" id="lksheet">
       <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score Sheet</div>
       ${done?'':'<button type="button" class="ad-go" id="addsc" style="position:sticky;top:0;z-index:5;width:100%">Add Scores</button>'}
       ${ids.map(id=>oneSheet(id,lg,w,info)).join('')}
       <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}</div>
-      ${done?'':'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>'}
+      ${!done&&canHost?'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>':''}
     </div>`;
     $id('labfl').onclick=()=>finishLater();
     $id('sback').onclick=()=>{window._lkScoreMode=null;selectArchers()};
@@ -1228,10 +1247,13 @@
       window._lkScoreMode=null;review();
     };
     if($id('labdiscard'))$id('labdiscard').onclick=()=>{
-      if(!confirm("Discard this card? These archers' scores for this night are deleted from this phone."))return;
+      if(!confirm("Discard this card? These archers' scores for this night are deleted for everyone."))return;
       lg.sc=lg.sc||{};
       ids.forEach(id=>{if(lg.sc[id])delete lg.sc[id][w]});
       lg.dirty=1;if(typeof save==='function')save();
+      /* A local-only delete would just come back on the next sync -- the relay and every other
+         phone still have the old scores, and merging only ever adds newer entries, never removes. */
+      if(typeof lgTick==='function')lgTick(true);
       window._lkScoreMode=null;window._csFx=null;window._lgHold=null;
       selectArchers();
     };
