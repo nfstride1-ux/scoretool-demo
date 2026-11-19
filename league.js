@@ -278,7 +278,7 @@ window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=l
    fixed league record (one code, host Nathe) ADDED once to each member's own leagues list, never replacing anything: skipped when the
    phone already has this code or a league with the same name, and not re-added if the member removes it. Phill and anyone who is
    not a member (new users) never get it. Scores, weeks and standings sync on the league's own ntfy topic like any other league. */
-const LG_OLD=['ONIONSHD'];/* the league record hidden on 26 Oct 2026: kept in storage exactly as saved, never listed, never edited, never re-joined */
+const LG_OLD=['ONIONSHD','ONIONSH2'];/* league records hidden: ONIONSHD on 26 Oct 2026, ONIONSH2 on 19 Nov 2026 (needs a bigger rework). Kept in storage exactly as saved, never listed, never edited, never re-joined */
 const LG_PRESET={code:'ONIONSH2',name:'Onion Shed Challenge',host:'nathe',members:['nathe','logan','steven','joseph','michael','dana','tahuri','estiaan','nate','darnie'],
  /* 22 Oct 2026 (Nathe): Danie (darnie) joins and scores himself; Leslie Anderson is an added shooter scored by the host, with a fixed id so every phone agrees */
  gn:{gleslie:{n:'Leslie Anderson',j:0,t:Date.UTC(2026,9,22,13,45),by:'nathe'}},
@@ -318,10 +318,10 @@ function lgEventCode(kind){
   return'';
 }
 function lgEventKnown(){
-  const lk=lgEventCode('lingkana'), os=lgEventCode('onion');
+  const lk=lgEventCode('lingkana');
+  /* Onion Shed Challenge needs a bigger rework before it's shown again - not removed, just off the browse list for now. */
   return[
-    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:''},
-    {code:os,kind:'onion',name:(LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge',flyer:'img/onion-shed-flyer.jpg',sub:'Six 300s at 18 m, then a day-6 shoot-up'}
+    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:''}
   ];
 }
 function lgEventCardHTML(ev){
