@@ -171,7 +171,8 @@ body.lk-flow #sbar{display:none!important}
 .lk-namelist{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
 /* The name list scrolls on its own. The PIN and passcode sit above it, and the page keeps
    a gap under them equal to the fixed Back/Login bar plus the iPhone home indicator. */
-#lkloginpage{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}
+#lkloginpage,
+#lkrosterpage{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}
 #lkloginpage .lk-namelist{max-height:min(320px, 42dvh);overflow-y:auto;-webkit-overflow-scrolling:touch}
 #lkloginpage #lkpin,
 #lkloginpage #lkpin2,
