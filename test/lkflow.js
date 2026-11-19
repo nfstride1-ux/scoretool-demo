@@ -1576,11 +1576,16 @@
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const el=appEl();if(!el)return;
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
-    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${esc((r.nights||[]).length?String((r.nights||[]).length):'')}</td></tr>`;
+    const night1=r=>{
+      const e=lg&&typeof lgEnt==='function'?lgEnt(lg,r.id,'1'):null;
+      if(!e||!(e.e||[]).some(x=>x&&x.length))return'<span class="small muted">Not yet</span>';
+      return String(typeof lgTot==='function'?lgTot(e.e,e):0);
+    };
+    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td><td>${night1(r)}</td></tr>`;
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
       <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered.</p>
-      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Nights signed up</th></tr></thead>
+      <table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th><th>Night 1 score</th></tr></thead>
       <tbody>${list.map(row).join('')||'<tr><td colspan="3">No archers registered yet.</td></tr>'}</tbody></table>
       ${bar(btn('lkrosterback','Back','grey'),'')}
     </div>`;
