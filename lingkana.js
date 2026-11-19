@@ -226,10 +226,6 @@ function lkArcherName(lg,id){
   }
   return '';
 }
-function lkGroupAllOrganisers(lg,ids){
-  const g=(ids||[]).filter(Boolean);
-  return !!g.length&&g.every(id=>lkIsOrganiser(id,lkArcherName(lg,id)));
-}
 function lkCoHostRow(r){
   if(!r)return false;
   if(r.id&&(String(r.id)===LK_COHOST_ID||String(r.id)==='lkhost:nate'))return true;
@@ -1556,7 +1552,6 @@ function lkSetGroups(w,G){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
   if(+w>=7)return 'Night 7 scoring is not open yet.';
   const N=(G||[]).map(g=>(g||[]).filter(Boolean));
-  if(N.some(g=>g.length===1&&!lkGroupAllOrganisers(lg,g)))return 'A group needs at least two archers.';
   if(N.some(g=>g.length>4))return 'A group can have at most 4 archers.';
   if(N.filter(g=>g.length).length>LK_LANES)return 'There are only 13 targets.';
   lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};

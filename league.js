@@ -20,9 +20,15 @@ const lgTopic=c=>{const code=String(c).toLowerCase().replace(/[^a-z0-9]/g,'');re
    (under-16s by nickname only) and enters and edits their weekly 300s. Stored in lg.gn {id:{n,j,t,by}} (ids 'g' + 6 characters, never
    a tester id) and in lg.order like anyone else, so they're in the table, the 10-archer max and the day-6 shoot-up seeding. They sync
    in the league snapshot (gn), accepted only from the host or the admin. Nothing existing is changed: they are only added. */
-const LG_ADMIN='nathe',lgIsG=id=>/^g[a-z0-9]{6}$/.test(String(id||'')),lgCanEd=lg=>!!lg&&(lg.host==h2hMe()||h2hMe()==LG_ADMIN);
+const LG_ADMIN='nathe',lgIsG=id=>/^g[a-z0-9]{6}$/.test(String(id||'')),lgCanEd=lg=>!!lg&&(lg.host==h2hMe()||h2hMe()==LG_ADMIN||(typeof lkCoHostOn==='function'&&lkCoHostOn()));
 const lgGuest=id=>{if(!lgIsG(id)||typeof S=='undefined'||!S)return null;for(const l of S.leagues||[]){const g=(l.gn||{})[id];if(g&&g.n)return g}return null};
-const lgName=id=>{const g=lgGuest(id);return g?g.n:h2hShort(id)};
+/* The Lingkana host/co-host rows use fixed ids (lkhost:nathe, lkhost:nate), not a tester id or a
+   g-prefixed guest id, so neither lgGuest nor h2hShort/nmNeutral knows their real name -- nmNeutral
+   falls back to the generic "Archer" placeholder without this. */
+const lgName=id=>{
+  if(typeof LK_HOST_REG_ID!=='undefined'&&id===LK_HOST_REG_ID)return LK_HOST_REG_NAME;
+  if(typeof LK_COHOST_ID!=='undefined'&&id===LK_COHOST_ID)return LK_COHOST_NAME;
+  const g=lgGuest(id);return g?g.n:h2hShort(id)};
 /* shoot-up and other views name archers through testerName: an added shooter shows by the name the host gave */
 {const _tn=testerName;testerName=function(id){const g=lgGuest(id);return g?g.n:_tn(id)}}
 function lgAddGuest(code,raw,jr){const lg=lgGet(code);if(!lgCanEd(lg)||lg.fin)return'Only the host can add shooters.';const n=nmClean(raw).slice(0,40);
@@ -56,7 +62,7 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
  if(typeof lkIs==='function'&&lkIs(lg)&&N.some(g=>g.length>4))return false;
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
-function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgIsG(id)&&lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
+function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
 function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
  if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
