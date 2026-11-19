@@ -36,7 +36,7 @@ function hasArrows(s){try{return arrowsIn(s)>0}catch(e){return !!(s.ends||[]).so
 
 function practiceShoots(){
  return (typeof allSessions==='function'?allSessions():(S.sessions||[]).slice()).filter(s=>{
-  if(!s||s.pg||isOfficialSession(s))return false;
+  if(!s||s.pg)return false;
   return hasArrows(s)||!!s.finished||(typeof isDone==='function'&&isDone(s));
  }).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.id).localeCompare(String(a.id||'')));
 }
@@ -45,11 +45,6 @@ function groups(){
  const g={Target:[],Indoor:[],Field:[],Clout:[],'3D':[]};
  practiceShoots().forEach(s=>{const c=practiceCat(s.round);(g[c]||(g[c]=[])).push(s)});
  return g;
-}
-
-function phoneOfficial(){
- return (typeof allSessions==='function'?allSessions():(S.sessions||[]).slice()).filter(s=>s&&!s.pg&&!s.sample&&isOfficialSession(s)&&(hasArrows(s)||!!s.finished))
-  .sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.id).localeCompare(String(a.id||'')));
 }
 
 function shootButton(s){
@@ -86,10 +81,8 @@ function officialHTML(){
   return `<div class="list-item" data-scpb="${c}"><b>${c}</b> · ${top.best.sc}<div class="small muted">${esc(top.rd)} · ${esc(top.best.date)}${top.best.ev?' · '+esc(top.best.ev):''} <span class="real">official</span></div></div>`}).join('');
  const all=CATS.map(c=>{const L=(by[c]||[]).slice().sort((a,b)=>b.best.sc-a.best.sc||String(a.rd).localeCompare(String(b.rd)));if(!L.length)return '';
   return `<h3 style="margin:12px 0 4px">${c}</h3>`+L.map(g=>`<div class="list-item" data-scpbr="${esc(g.rd)}"><b>${g.best.sc}</b> · ${esc(g.rd)}<div class="small muted">${esc(g.best.date)}${g.best.ev?' · '+esc(g.best.ev):''} <span class="real">official</span></div></div>`).join('')}).join('');
- const phone=phoneOfficial();
- const phoneHTML=phone.length?`<div class="card" id="sc-official-shoots"><h2 style="margin:2px 0 8px">Official scorecards on this phone</h2><p class="small muted" style="margin:0 0 8px">Competition sheets saved on this phone. Tap one to open it.</p>${phone.map(shootButton).join('')}</div>`:'';
  return `<div class="card" id="scpb"><span class="kicker">Official</span><h2 style="margin:2px 0 8px">Official personal bests</h2>${pack.bow?`<p class="small muted" style="margin:0 0 8px">${esc(pack.bow)}. Best full official score in each category. Practice scores are not included.</p>`:'<p class="small muted" style="margin:0 0 8px">Best full official score in each category. Practice scores are not included.</p>'}${bows}${lines}</div>
-  <div class="card" id="scpb-all"><h2 style="margin:2px 0 8px">Every official round</h2><p class="small muted" style="margin:0 0 8px">Your best full score on each official round.</p>${all||'<p class="small muted">No official scores on this phone yet.</p>'}</div>${phoneHTML}`;
+  <div class="card" id="scpb-all"><h2 style="margin:2px 0 8px">Every official round</h2><p class="small muted" style="margin:0 0 8px">Your best full score on each official round.</p>${all||'<p class="small muted">No official scores on this phone yet.</p>'}</div>`;
 }
 
 function scorecardsView(){
