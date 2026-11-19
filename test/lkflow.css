@@ -119,11 +119,8 @@ body.lk-flow #sbar{display:none!important}
 #lgcard h3.st-evh{margin:0 0 2px}
 
 .lk-evhome{padding-top:8px}
-.lk-evbrand{text-align:center;margin:0 0 22px}
-.lk-evbrand img{display:block;margin:0 auto 10px;max-width:min(280px,86%);height:auto;object-fit:contain}
-.lk-evbrand.lingkana{background:#000;border-radius:14px;padding:18px 16px 16px;margin:0 0 22px}
-.lk-evbrand.onion{background:#140f0a;border-radius:14px;padding:14px 10px 12px;margin:0 0 22px}
-.lk-evbrand .lk-evname{margin:0;font-size:15px;font-weight:700;color:#eee}
+.st-evcard-static{margin:0 0 22px;cursor:default}
+.st-evcard-static:focus{outline:none}
 .lk-home{display:flex;flex-direction:column;gap:14px;padding-top:8px}
 .lk-rules{padding-top:8px}
 .lk-rules h1{margin-bottom:8px}

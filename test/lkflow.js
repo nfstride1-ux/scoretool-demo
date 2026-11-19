@@ -305,13 +305,12 @@
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const sess=!onion&&activeSession();
-    const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
-    const alt=onion?'Onion Shed Championships':'Lingkana Indoor Archery';
+    const flyer=onion?'img/onion-shed-flyer.jpg':'img/lingkana-flyer.jpg';
     el.innerHTML=`<div class="lkf" id="lkhome" data-ev="${esc(evCode())}">
       <div class="lk-evhome">
-        <div class="lk-evbrand ${onion?'onion':'lingkana'}">
-          <img src="${logo}" alt="${esc(alt)}">
-          <p class="lk-evname">${esc(evName())}</p>
+        <div class="st-evcard st-evcard-static" style="background-image:url('${esc(flyer)}')">
+          <span class="st-evcard-shade"></span>
+          <span class="st-evcard-body"><b>${esc(evName())}</b></span>
         </div>
         <div class="lk-home">
           ${sess?btn('lkresume','Resume scoring','green'):''}
@@ -320,7 +319,7 @@
           ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
           ${onion?'':btn('lkroster','Registered Archers','grey')}
-          ${btn('lkrules','Rules','grey')}
+          ${btn('lkrules','About','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
         </div>
         ${bar(btn('lkhomeback','Back to leagues','grey'),'')}
@@ -1600,7 +1599,7 @@
     hideChrome(true);
     const el=appEl();if(!el)return;
     const onion=isOnion();
-    const title=onion?'Onion Shed Challenge rules':'Lingkana League rules';
+    const title=onion?'Onion Shed Challenge rules':'About';
     let body='';
     if(onion){
       const R=(typeof LG_RULES!=='undefined'&&LG_RULES)||[];
