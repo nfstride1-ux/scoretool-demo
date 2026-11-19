@@ -312,11 +312,12 @@ function lgEventCode(kind){
   return'';
 }
 function lgEventKnown(){
-  const lk=lgEventCode('lingkana'), os=lgEventCode('onion');
+  const lk=lgEventCode('lingkana');
   const venue=(typeof LK_VENUE==='string'&&LK_VENUE)||'Lingkana Archery range, 107 Robinson Ave, Belmont WA 6104';
+  /* Onion Shed Challenge hidden from the Leagues list for now (19 Nov 2026, Nathe) - it needs major
+     changes before it's shown again. Not deleted: the card is just left out of this list. */
   return[
-    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:venue+' · invite only'},
-    {code:os,kind:'onion',name:(LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge',flyer:'img/onion-shed-flyer.jpg',sub:'Six 300s at 18 m, then a day-6 shoot-up'}
+    {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:venue+' · invite only'}
   ];
 }
 function lgEventCardHTML(ev){
