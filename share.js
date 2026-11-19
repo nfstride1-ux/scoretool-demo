@@ -53,7 +53,19 @@ async function shareCanvas(c,name,title,text){const blob=await new Promise(r=>c.
  if(file&&navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title,text});return(window._lastShare.how='shared')}catch(e){if(e&&e.name=='AbortError')return(window._lastShare.how='cancelled')}}
  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},4000);return(window._lastShare.how='downloaded')}
 async function shareSheet(s){const who=s.pg?whoName(s):'';return shareCanvas(sheetCanvas(s),fname(s),who?'Score sheet · '+who:'Score sheet',(who?who+' · ':'')+`${s.round} · ${s.pg&&window.pgTot?pgTot(s):total(s)}`)}
-window.shareCanvas=shareCanvas;window.shareSlug=slug;
+/* Casual group's combined scorecard: one ranked image in the app's own colours, not a text list. */
+function drawCombined(cs,rows,xLabel,tLabel){
+ const rowH=76,H=256+50+rowH*rows.length+100,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');box(g,0,0,W,H,BG);
+ txt(g,'ScoreTool',PAD,46,{s:30,w:800,c:GOLD});txt(g,'Combined scorecard',W-PAD,46,{s:26,c:MUT,a:'right'});
+ const rd=String(cs.round||'');box(g,PAD,84,W-2*PAD,64,GOLD);txt(g,rd.length>58?rd.slice(0,56)+'…':rd,PAD+20,116,{s:28,w:800,c:BLK});
+ txt(g,cs.name||'Casual shoot',PAD,184,{s:34,w:800});txt(g,cs.date||'',W-PAD,184,{s:28,c:MUT,a:'right'});
+ let y=256;box(g,PAD,y,W-2*PAD,50,PANEL,LINE);txt(g,'#',PAD+16,y+25,{s:20,c:MUT});txt(g,'Archer',PAD+70,y+25,{s:20,c:MUT});txt(g,'Total',W-PAD-16,y+25,{s:20,c:MUT,a:'right'});y+=50;
+ rows.forEach((r,i)=>{const yy=y+i*rowH;box(g,PAD,yy,W-2*PAD,rowH,i%2?null:PANEL);
+  txt(g,i+1,PAD+16,yy+30,{s:22,c:MUT});txt(g,r.nm,PAD+70,yy+30,{s:28,w:800});txt(g,r.tot,W-PAD-16,yy+30,{s:32,w:800,a:'right',c:GOLD});
+  txt(g,`${r.t10} ${tLabel} · ${r.x} ${xLabel}`,PAD+70,yy+58,{s:18,c:MUT})});
+ const fy=y+rowH*rows.length+30;box(g,PAD,fy,W-2*PAD,2,LINE);txt(g,"This shoot's scores only, not counted in any league.",PAD,fy+34,{s:20,c:MUT});
+ return c}
+window.shareCanvas=shareCanvas;window.shareSlug=slug;window.drawCombined=drawCombined;
 
 /* Competition complete (group card): white-background images (they are printed and posted), black text, gold bars, no emoji.
    Drawn from the stored competition record only (S.peel.comp), so the saved days are never read or changed here. Each archer's sheet
