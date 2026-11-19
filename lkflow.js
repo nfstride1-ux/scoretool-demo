@@ -1419,46 +1419,16 @@
       lkResultsView(w);
       const back=$id('lkresback');
       if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}home(evCode())};
-      if(lg&&typeof lkCanHost==='function'&&lkCanHost(lg)&&typeof lkPotHTML==='function'){
-        const card=document.getElementById('lkresults');
-        const wrap=document.createElement('div');
-        wrap.innerHTML=lkPotHTML(lg);
-        const pot=wrap.firstElementChild;
-        if(pot&&card&&card.parentNode)card.parentNode.insertBefore(pot,card.nextSibling);
-        if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
-        document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
-          const nw=+(window._lkPotNight||w);
-          const m=typeof lkSetPaid==='function'?lkSetPaid(box.getAttribute('data-lkpaid'),typeof lkNightKey==='function'?lkNightKey(lg,nw):'',box.checked):'';
-          if(m){box.checked=!box.checked;return}
-          review();
-        });
-        document.querySelectorAll('[data-lkdrop]').forEach(btn=>btn.onclick=()=>{
-          const id=btn.getAttribute('data-lkdrop');
-          if(btn.getAttribute('data-go')!=='1'){window._lkDropAsk=id;review();return}
-          const m=typeof lkDropArcher==='function'?lkDropArcher(id):'';
-          window._lkDropAsk=null;
-          if(m)return;
-          review();
-        });
-        document.querySelectorAll('[data-lkdropcancel]').forEach(btn=>btn.onclick=()=>{window._lkDropAsk=null;review()});
-      }
       return;
     }
     const el=appEl();if(!el)return;
     const stand=typeof lkTableHTML==='function'&&lg?lkTableHTML(lg):'<p>No scores yet.</p>';
-    const pot=(typeof lkPotHTML==='function'&&lg)?lkPotHTML(lg):'';
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
       <h1>Review Scoresheets</h1>
-      ${stand}${pot}
+      ${stand}
       ${bar(btn('lkrevback','Back','grey'),'')}
     </div>`;
     $id('lkrevback').onclick=()=>home(evCode());
-    if($id('lkpotnight'))$id('lkpotnight').onchange=()=>{window._lkPotNight=+$id('lkpotnight').value;review()};
-    document.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
-      const nw=+(window._lkPotNight||w);
-      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),typeof lkNightKey==='function'?lkNightKey(lg,nw):'',box.checked);
-      review();
-    });
     if(typeof lkBindStandUI==='function')lkBindStandUI(lg);
   }
 
