@@ -317,7 +317,7 @@
           ${sess?btn('lkresume','Resume scoring','green'):''}
           ${btn('lklogin','Login to Event','green')}
           ${btn('lkereg','Event Registration','green')}
-          ${btn('lkreview','Review Scoresheet','grey')}
+          ${btn('lkreview','Review Scoresheets','grey')}
           ${onion?'':btn('lkroster','Registered Archers','grey')}
           ${btn('lkrules','About','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
@@ -1444,7 +1444,7 @@
     const stand=typeof lkTableHTML==='function'&&lg?lkTableHTML(lg):'<p>No scores yet.</p>';
     const pot=(typeof lkPotHTML==='function'&&lg)?lkPotHTML(lg):'';
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
-      <h1>Review Scoresheet</h1>
+      <h1>Review Scoresheets</h1>
       ${stand}${pot}
       ${bar(btn('lkrevback','Back','grey'),'')}
     </div>`;
@@ -1679,7 +1679,7 @@
     const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
     const lg=typeof lgGet==='function'?lgGet(code):null;
     if(!lg||typeof lgTable!=='function'){
-      el.innerHTML=`<div class="lkf" id="lkreviewpage"><h1>Review Scoresheet</h1><p>This league is not on this phone yet.</p>${bar(btn('lkrevback','Back','grey'),'')}</div>`;
+      el.innerHTML=`<div class="lkf" id="lkreviewpage"><h1>Review Scoresheets</h1><p>This league is not on this phone yet.</p>${bar(btn('lkrevback','Back','grey'),'')}</div>`;
       $id('lkrevback').onclick=()=>home(code);
       return;
     }
@@ -1687,7 +1687,7 @@
     const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab" id="ostab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}"><td>${r.tie?'=':''}${r.rk}</td><td>${esc(r.nm)}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')||'<tr><td colspan="9">No scores yet.</td></tr>'}</tbody></table></div>
       <p class="small muted">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting.</p>`;
     el.innerHTML=`<div class="lkf" id="lkreviewpage">
-      <h1>Review Scoresheet</h1>
+      <h1>Review Scoresheets</h1>
       <p class="small muted">${esc(evName())}. Running total of all six 300s.</p>
       <div class="card">${tab}</div>
       ${bar(btn('lkrevback','Back','grey'),'')}

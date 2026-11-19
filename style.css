@@ -324,8 +324,9 @@ label.lk-paidrow input[type=checkbox]{
 #lkresults thead{position:sticky;top:0;background:var(--card,#fff)}
 @media print{
   @page{size:A4 portrait;margin:10mm}
-  #tabs,header,nav,.btn,.lk-printbar,.lk-standbar,#lksharemsg,#lkstandsharemsg{display:none!important}
+  #tabs,header,nav,.btn,.lk-printbar,.lk-standbar,.lk-maintabs,.lk-nighttabs,#lksharemsg,#lkstandsharemsg{display:none!important}
   #app,#lkresults{box-shadow:none!important;margin:0!important;padding:0!important;max-width:none!important;background:#fff!important;color:#000!important}
+  #lkresults [hidden]{display:block!important}
   .lk-standwrap,#lkpaidlist,#lkgrptab{max-height:none!important;overflow:visible!important}
   #lkresults table{font-size:8.5pt;width:100%}
   #lkresults th,#lkresults td{padding:2px 4px;border-bottom:0.3pt solid #ccc}
