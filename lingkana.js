@@ -1732,11 +1732,16 @@ function lkResultsView(w){
   }).join('')||'<tr><td colspan="5">No scores this night.</td></tr>';
   const standRows=stand.map(r=>`<tr><td>${r.tie?'=':''}${r.rk}</td><td>${h(r.nm)}</td>${r.W.map(c=>`<td>${c?c.s:'—'}</td>`).join('')}<td>${r.t}</td><td>${r.x}</td><td>${r.tens||0}</td></tr>`).join('')||'<tr><td colspan="11">No standings yet.</td></tr>';
   const nightTabs=[1,2,3,4,5,6].map(k=>`<button type="button" class="lk-known-btn${k===night?' on':''}" data-lknight="${k}" aria-pressed="${k===night}">N${k}</button>`).join('');
+  /* A results link gets shared well beyond the invited group (it's meant to), so only send someone
+     back into the league home - which offers Login/Register - if this device already belongs here
+     (registered, logged in before, or host/co-host). Anyone else looking from a forwarded link stays
+     view-only: no path from here into registering. */
+  const isMember=(typeof lkDeviceRegistered==='function'&&lkDeviceRegistered())||(typeof lkCanHost==='function'&&lkCanHost(lg));
   appEl.innerHTML=`<div class="card" id="lkresults" data-lkn="${night}">
     <div class="lk-printbar">
       <button class="btn alt" type="button" id="lkprint">Print A4</button>
       <button class="btn alt" type="button" id="lkshare">Share</button>
-      <button class="btn ghost" type="button" id="lkresback">Back to league</button>
+      <button class="btn ghost" type="button" id="lkresback">${isMember?'Back to league':'Back to ScoreTool'}</button>
       <p class="small" id="lksharemsg" role="status"></p>
     </div>
     <span class="kicker">Results · Night ${night}</span>
@@ -1762,7 +1767,7 @@ function lkResultsView(w){
     </div>`;
   if($('#lkprint'))$('#lkprint').onclick=()=>window.print();
   if($('#lkshare'))$('#lkshare').onclick=()=>lkShareResults(lg,night);
-  if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}lkPotBack(lg.code)};
+  if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}if(isMember)lkPotBack(lg.code);else if(typeof nav==='function')nav('home')};
   document.querySelectorAll('[data-lkmtab]').forEach(b=>b.onclick=()=>{window._lkResTab=b.getAttribute('data-lkmtab');lkResultsView(night)});
   document.querySelectorAll('[data-lkcard]').forEach(b=>b.onclick=()=>{
     const id=b.getAttribute('data-lkcard');
