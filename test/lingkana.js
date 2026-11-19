@@ -53,7 +53,7 @@ const LK_RULES=[
   'Night 7: 150 warm-up is not scored, then a ladder shoot-up for the top 12 (#12 v #11, winner moves up).'
 ];
 function lkRulesHTML(){
-  return`<ul>${LK_RULES.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`;
+  return`<p class="small muted">${h(LK_VENUE)}</p><ul>${LK_RULES.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`;
 }
 
 
