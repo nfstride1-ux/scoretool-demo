@@ -318,6 +318,7 @@
           ${btn('lklogin','Login to Event','green')}
           ${btn('lkereg','Event Registration','green')}
           ${btn('lkreview','Review Scoresheet','grey')}
+          ${onion?'':btn('lkroster','Registered Archers','grey')}
           ${btn('lkrules','About','grey')}
           ${btn('lkhomeapp','Back to ScoreTool','grey')}
         </div>
@@ -332,6 +333,7 @@
     $id('lklogin').onclick=()=>{if(activeSession()){resumeScoring();return}login()};
     $id('lkereg').onclick=()=>regEntry();
     $id('lkreview').onclick=()=>review();
+    if($id('lkroster'))$id('lkroster').onclick=()=>roster();
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();
     $id('lkhomeback').onclick=()=>backToList();
@@ -1465,6 +1467,44 @@
     if(typeof lkRegisterView==='function')lkRegisterView();
     const back=document.getElementById('lkregback');
     if(back)back.onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(window.LK_HOME_HASH||'#lk-home'))}catch(e){}home(evCode())};
+  }
+
+  async function roster(){
+    hideChrome(true);
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
+    if(typeof lkSyncStart==='function')lkSyncStart();
+    if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
+    const el=appEl();if(!el)return;
+    const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
+    const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
+    const nights=lg&&typeof lkShootDates==='function'?lkShootDates(lg):[];
+    const paidCell=(r,n)=>{
+      const bag=(lg&&lg.paid&&lg.paid[n])||{};
+      const on=!!bag[r.id];
+      return host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''}>`:(on?'●':'');
+    };
+    const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td>${nights.map(n=>`<td style="text-align:center">${paidCell(r,n)}</td>`).join('')}${host?`<td><button type="button" class="lk-host" data-lkremove="${esc(r.id)}">Remove</button></td>`:''}</tr>`;
+    el.innerHTML=`<div class="lkf" id="lkrosterpage">
+      <h1>Registered Archers</h1>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. Tick a night to mark paid.</p>
+      <div style="overflow-x:auto"><table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th>${nights.map((n,i)=>`<th>N${i+1}</th>`).join('')}${host?'<th></th>':''}</tr></thead>
+      <tbody>${list.map(row).join('')||`<tr><td colspan="${2+nights.length+(host?1:0)}">No archers registered yet.</td></tr>`}</tbody></table></div>
+      <p class="lk-msg" id="lkrostermsg" role="alert"></p>
+      ${bar(btn('lkrosterback','Back','grey'),'')}
+    </div>`;
+    $id('lkrosterback').onclick=()=>home(evCode());
+    if(host)el.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
+      if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),box.getAttribute('data-lknight'),box.checked);
+    });
+    if(host)el.querySelectorAll('[data-lkremove]').forEach(b=>b.onclick=()=>{
+      const id=b.getAttribute('data-lkremove');
+      const name=(list.find(r=>r.id===id)||{}).name||'this archer';
+      if(!confirm(`Remove ${name} from the Registered Archers list? Their scores, if any, are kept.`))return;
+      const err=typeof lkDropArcher==='function'?lkDropArcher(id):'Could not remove that archer.';
+      const msg=$id('lkrostermsg');
+      if(err){if(msg)msg.textContent=err;return}
+      roster();
+    });
   }
 
   function rules(){
