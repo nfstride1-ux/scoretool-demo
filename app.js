@@ -54,7 +54,10 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
  ['diary','setup','bows'].forEach(k=>{if(S[k])S[k]=S[k].filter(x=>!isS(x)&&!/^SAMPLE/i.test(x.text||'')&&!/\(SAMPLE\)/.test(x.name||''))});
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
-if(TESTER&&!S.profile){S.profile=TESTER.name;if(TESTER.id!='nathe')S.unlocked=true;save()}
+/* Payment isn't connected anywhere yet (entitlementVerify grants nothing, see below): every tester except
+   Nathe unlocked for free already, so a fresh device under his own name should not be the one profile
+   that hits the "Not open yet" paywall. Unlock everyone until a real payment flow ships. */
+if(TESTER&&!S.profile){S.profile=TESTER.name;S.unlocked=true;save()}
 /* a tester renamed to his name in the official results (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
 if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
 if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
@@ -217,7 +220,6 @@ async function entitlementVerify(){const base=String(SCORETOOL_ENTITLEMENT_URL||
   return {ok:false,reason:'rejected'}}
  catch(e){return {ok:false,reason:'unreachable'}}}
 window.entitlementVerify=entitlementVerify;
-function gate(){return`<div class="card dark gate" id="gate"><span class="kicker">ScoreTool</span><h1>Not open yet</h1><p>Payment is not connected. This phone cannot turn the app on. Scores already saved on this phone are left as they are.</p></div>`}
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their past competition results.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}
 function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> competition results loaded.</p>`:
@@ -226,8 +228,6 @@ function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
- /* unlocked:true already on this phone is left as it is. There is no button that can set it. */
- if(!S.unlocked){app.innerHTML=gate();$('#tabs').hidden=true;return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
  if(typeof ifaaFromHash=='function'&&/^#score(\?|$)/.test(location.hash)){if(ifaaFromHash())return}
