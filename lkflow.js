@@ -1273,18 +1273,40 @@
   function oneSheet(id,lg,w,info){
     const e=(typeof lgEnt==='function'&&lgEnt(lg,id,w))||{e:[]};
     const ends=endsOf(e),s=sessOf(e);
-    let run=0;
+    /* Lancaster 660 (and any other round with ROUNDS[round].halfEnds) is shot as two halves with a
+       break: the Prog column restarts at the start of each half, as on the paper scoresheet, and the
+       round's two halves are shown added together below. The saved/synced total (tot, via lgTot) is
+       unchanged -- it is already a flat sum over every end, which equals the two halves added
+       together either way. */
+    /* window.APP_ROUNDS, not the bare ROUNDS -- lkflow.js's own ROUNDS (line 6) is an unrelated
+       array of night-type labels that shadows the real app.js round-definitions object in this
+       scope, and that one is a plain script-level const, so window.ROUNDS isn't it either. */
+    const half=((typeof window!=='undefined'&&window.APP_ROUNDS&&window.APP_ROUNDS[s.round])||{}).halfEnds||0;
+    const esOf=i=>typeof endSum==='function'?endSum(ends[i],s):(typeof lgTot==='function'?lgTot([ends[i]],e):0);
     const arrowsAll=ends.flat();
     const tot=typeof lgTot==='function'?lgTot(ends,e):arrowsAll.reduce((t,a)=>t+(a==='X'?11:a==='M'?0:(+a||0)),0);
     const shot=arrowsAll.length,early=ends.length<(info.ends||20),fullMax=660,per=11;
     const stats=typeof hiStats==='function'?hiStats(arrowsAll,s):'';
     const rows=ends.map((end,i)=>{
-      const es=typeof endSum==='function'?endSum(end,s):(typeof lgTot==='function'?lgTot([end],e):0);
-      run+=es;
+      const es=esOf(i);
+      const start=typeof halfRunStart==='function'?halfRunStart(i,half):0;
+      let run=0;for(let k=start;k<=i;k++)run+=esOf(k);
       return `<tr><td>${i+1}</td><td>${end.map((a,j)=>`<span class="adb ${typeof col==='function'?col(a):''}" role="button" tabindex="0" data-lkfix="${esc(id)},${i},${j}" aria-label="fix end ${i+1} arrow ${a}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
     }).join('');
+    let halvesHtml='';
+    if(half&&ends.length){
+      const nHalves=Math.ceil((info.ends||ends.length)/half);
+      const subs=[];
+      for(let h=0;h<nHalves;h++){
+        const segEnds=ends.slice(h*half,(h+1)*half);
+        if(!segEnds.length)break;
+        subs.push(segEnds.reduce((t,_,k)=>t+esOf(h*half+k),0));
+      }
+      if(subs.length>1||(subs.length===1&&ends.length>=half))halvesHtml=`<div class="ad-sum small">${subs.map((v,i)=>`Round ${i+1} score: <b>${v}</b>`).join(' &nbsp; ')}${subs.length>1?` &nbsp; Total: <b>${subs.reduce((a,b)=>a+b,0)}</b>`:''}</div>`;
+    }
     return `<div class="ad-sheet" data-lksid="${esc(id)}"><div class="ad-name">${esc((typeof lgName==='function'&&lgName(id))||id)}</div><div class="ad-band">${esc(info.title||'Lancaster 660')}</div>
       <table class="ad-tab"><thead><tr><th>#</th><th>Scores<div style="font-weight:400">${esc(faceSub(s,info))}</div></th><th>End</th><th>Prog</th></tr></thead><tbody>${rows}</tbody></table>
+      ${halvesHtml}
       <div class="ad-sum">${stats}&nbsp; <b class="big">${tot}</b><span class="small muted">&nbsp;/ ${early?shot*per+' <span class="small">('+shot+' arrows shot)</span>':fullMax}</span></div></div>`;
   }
   function finishLater(){
@@ -1306,8 +1328,9 @@
     const el=appEl();if(!el)return;
     el.innerHTML=`<div class="ad" id="lksheet">
       <div class="ad-title"><button type="button" class="labfl" id="labfl" title="Every arrow is already saved. Carry on later from Select Archers.">Finish later</button>Score Sheet</div>
+      ${done?'':'<button type="button" class="ad-go" id="addsc" style="position:sticky;top:0;z-index:5;width:100%">Add Scores</button>'}
       ${ids.map(id=>oneSheet(id,lg,w,info)).join('')}
-      <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}${done?'':`<button class="ad-go" id="addsc">Add Scores</button>`}</div>
+      <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${arrows?`<button class="ad-fin" id="finnow">Finished</button>`:''}</div>
       ${done?'':'<button type="button" class="ad-discard" id="labdiscard">Discard card</button>'}
     </div>`;
     $id('labfl').onclick=()=>finishLater();
@@ -1373,7 +1396,11 @@
     const s=sessOf(e);
     const endTot=typeof endSum==='function'?endSum(cur,s):(typeof lgTot==='function'?lgTot([cur],e):0);
     const completed=E.filter(z=>z&&z.length===3);
-    const before=completed.slice(0,fx?fx.i:completed.length-(hold?1:0));
+    /* Prog restarts at the start of the current half for rounds with ROUNDS[round].halfEnds (see
+       oneSheet()'s comment) -- only ends from this half, not the whole round, feed the running total. */
+    const half=((typeof window!=='undefined'&&window.APP_ROUNDS&&window.APP_ROUNDS[s.round])||{}).halfEnds||0;
+    const halfFrom=typeof halfRunStart==='function'?halfRunStart(ei,half):0;
+    const before=completed.slice(halfFrom,fx?fx.i:completed.length-(hold?1:0));
     const prog=(typeof lgTot==='function'?lgTot(before,e):0)+endTot;
     const keys=(typeof LG_KEYS!=='undefined'?LG_KEYS:['X','10','9','8','7','6','M']);
     const lock=typeof lgLockedBy==='function'&&lgLockedBy(lg,w,id);
@@ -1458,6 +1485,10 @@
       }
     }
     window._lkScoreMode='sheet';
+    /* The whole group just finished this end (nobody left to catch up): push it to the relay right
+       now rather than waiting on lgTick's own periodic timer, so a spectator on the live leaderboard
+       (PR #20's 10s poll) picks it up as soon as possible after the actual event. */
+    if(typeof lgAfter==='function')lgAfter(lg);
     groupSheet();
   }
   function scoreScreen(){

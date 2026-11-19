@@ -605,9 +605,14 @@ window.zkOpen=keep=>{PZ.k=keep?zkLoad():1;PZ.cx=PZ.cy=0};
    counting straight through every end. The saved/synced total for the round is unaffected -- it is
    already a flat sum over every end (lgTot, csTotal, total()), and a flat sum equals the two
    halves added together either way. This only changes what the running total displays as you score,
-   end by end, to match the paper. Casual's csOneSheet/csEntryScreen use this directly (ROUNDS is
-   the real global here, unlike lkflow.js, which shadows it -- see that file's own comment). */
+   end by end, to match the paper. Every scoring screen that shows a per-end running total (League's
+   oneSheet/entryScreen, Casual's csOneSheet/csEntryScreen, and Just me's own scoreSheet/score here)
+   uses this instead of carrying one running total across the whole round. */
 function halfRunStart(i,half){return half?Math.floor(i/half)*half:0}
+/* const ROUNDS is a top-level script binding, not a window property, so a sibling script with its
+   own local ROUNDS (lkflow.js has one, an unrelated array of night-type labels) cannot reach this
+   real one through window.ROUNDS -- only this explicit export lets it. */
+window.APP_ROUNDS=ROUNDS;
 function hiStats(A,s){const R0=ROUNDS[s.round]||{};if(R0.aba)return'';if(R0.wa18)return`10's: <b>${A.filter(a=>a=='10').length}</b>&nbsp; 9's: <b>${A.filter(a=>a=='9').length}</b>`;if(s.round===AUSI)return`10's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>&nbsp; X's: <b>${A.filter(a=>a=='X').length}</b>`;if(R0.lancaster||R0.xv==11)return`11's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's: <b>${A.filter(a=>a=='10').length}</b>`;if(R0.scheme==='aa-field')return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='X'||a=='5').length}</b>`;if(R0.scheme&&R0.scheme!=='wa10'&&R0.scheme!=='portsmouth'){const top=(typeof worldKeys==='function'&&worldKeys(R0,null,s)||[]).filter(k=>k!=='M').slice(0,3);if(top.length)return top.map(k=>`${k}'s: <b>${A.filter(a=>a==k).length}</b>`).join('&nbsp; ')}if(R0.ifaa||(typeof isIfaa=='function'&&isIfaa(R0)))return`5's: <b>${A.filter(a=>a=='5').length}</b>&nbsp; 4's: <b>${A.filter(a=>a=='4').length}</b>&nbsp; 3's: <b>${A.filter(a=>a=='3').length}</b>`;if(typeof isFld=='function'&&typeof faceR=='function'&&isFld(faceR(R0,0))||(/field/i.test(s.round||'')&&!(R0.scheme&&R0.scheme!=='wa10')))return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;const isB=bugsOn(s)||A.some(a=>a=='6')&&!A.some(a=>a=='X'||+a>6);if(isB)return`6's: <b>${A.filter(a=>a=='6').length}</b>&nbsp; 5's: <b>${A.filter(a=>a=='5').length}</b>`;return`X's: <b>${A.filter(a=>a=='X').length}</b>&nbsp; 10's/X's: <b>${A.filter(a=>a=='X'||a=='10').length}</b>`}
 function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  const arrowsAll=s.ends.flat(),nEnds=roundEnds(R,s),nArr=typeof apeOf==="function"&&R.apes?R.apes.reduce((a,b)=>a+b,0):nEnds*(R.ape||1),fullMax=bugsOn(s)?nArr*6:(s.max!=null?s.max:R.max),per=fullMax&&nArr?fullMax/nArr:0,early=!isFull(s);
