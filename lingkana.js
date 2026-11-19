@@ -1762,7 +1762,7 @@ function lkResultsView(w){
     </div>`;
   if($('#lkprint'))$('#lkprint').onclick=()=>window.print();
   if($('#lkshare'))$('#lkshare').onclick=()=>lkShareResults(lg,night);
-  if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}lkView(lg.code)};
+  if($('#lkresback'))$('#lkresback').onclick=()=>{try{history.replaceState(null,'',location.pathname+location.search+(location.hash||'').replace(/#lk-results[^#]*/,''))}catch(e){}lkPotBack(lg.code)};
   document.querySelectorAll('[data-lkmtab]').forEach(b=>b.onclick=()=>{window._lkResTab=b.getAttribute('data-lkmtab');lkResultsView(night)});
   document.querySelectorAll('[data-lkcard]').forEach(b=>b.onclick=()=>{
     const id=b.getAttribute('data-lkcard');
