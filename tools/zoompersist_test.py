@@ -22,6 +22,11 @@ VW="id=>+document.querySelector('#'+id).getAttribute('viewBox').split(' ')[2]"
 TAB="[...document.querySelectorAll('.zbar .zb.on')].map(x=>x.textContent).join()"
 def vw(pg,fid,k,w=0.62):return abs(pg.evaluate(VW,fid)-w/k)<0.01
 def zlabel(pg,z):return pg.evaluate("s=>document.querySelector(s).textContent",z)
+def cycleTo(pg,zsel,label,tries=8):
+  # the zoom cycle has more than 3 stops now (Z1..Z4, Reset); click until the wanted label shows rather than assuming a fixed click count
+  for _ in range(tries):
+    if zlabel(pg,zsel)==label:return
+    pg.click(zsel);pg.wait_for_timeout(120)
 def run(pg,tag,fid,zsel,tabattr,plotspot3,endnext,w=0.62):
   """Z2 on Spot 3, finish an end: next end must open on Spot 1 at Z2; Z1 then stays"""
   pg.click(f'[{tabattr}="3"]');pg.wait_for_timeout(250);pg.click(zsel);pg.wait_for_timeout(200)
@@ -37,7 +42,7 @@ def run(pg,tag,fid,zsel,tabattr,plotspot3,endnext,w=0.62):
   for i in range(3):plotspot3(i)
   endnext();pg.wait_for_timeout(300)
   chk(f'{tag}: third end still Spot 1 at Z2',pg.evaluate(TAB)=='Spot 1' and zlabel(pg,zsel)=='Z2' and vw(pg,fid,2,w))
-  pg.click(zsel);pg.click(zsel);pg.wait_for_timeout(200)
+  cycleTo(pg,zsel,'Z1');pg.wait_for_timeout(200)
   chk(f'{tag}: archer changes to Z1',zlabel(pg,zsel)=='Z1' and vw(pg,fid,1,w))
   pg.click(f'[{tabattr}="3"]');pg.wait_for_timeout(250)
   for i in range(3):plotspot3(i)

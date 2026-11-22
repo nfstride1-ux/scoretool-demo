@@ -16,7 +16,8 @@ PORT=8874
 srv=subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 def relay(route,req):route.fulfill(status=200,body='{}',headers={'access-control-allow-origin':'*'})
 def zset(pg,sel,k):
-  for _ in range(4):
+  # more than 4 stops in the cycle now (Z1..Z4, Reset), so from an arbitrary start it can take up to 4 clicks
+  for _ in range(8):
     if pg.evaluate('PZ.k')==k:break
     pg.click(sel);pg.wait_for_timeout(120)
 def phone(b,tid='nate'):
@@ -64,7 +65,7 @@ try:
   for spot in [0,1,2,3]:
     for zoom in [0,1]:
       pg.click(f'[data-spot="{spot}"]');pg.wait_for_timeout(200)
-      for _ in range(3):
+      for _ in range(6):
         if pg.evaluate('PZ.k')==(2 if zoom else 1):break
         pg.click('#zcycle');pg.wait_for_timeout(150)  # zoom is kept across spots now, so set the level wanted
       cs=[C[1]] if spot==0 and zoom else [C[spot-1]] if spot else C
@@ -79,7 +80,7 @@ try:
   chk('zoomed on spot 3',abs(pg.evaluate(VW,'pface')-0.62/3)<0.01)
   pg.click('[data-spot="2"]');pg.wait_for_timeout(250);chk('Spot 2 keeps the zoom (3x)',abs(pg.evaluate(VW,'pface')-0.62/3)<0.01)
   pg.click('[data-spot="3"]');pg.wait_for_timeout(250);chk('then Spot 3 also keeps the zoom (3x)',abs(pg.evaluate(VW,'pface')-0.62/3)<0.01)
-  pg.click('#zcycle');pg.click('#zcycle');pg.wait_for_timeout(150);plot(0,0.62);clean()
+  zset(pg,'#zcycle',2);pg.wait_for_timeout(150);plot(0,0.62);clean()
   chk('zoom is kept while plotting the same end',abs(pg.evaluate(VW,'pface')-0.31)<0.01)
   plot(0,0.62);plot(0,0.62);clean()
   chk('Just me: end complete, zoom still the same on the end just finished',abs(pg.evaluate(VW,'pface')-0.31)<0.01)

@@ -69,6 +69,30 @@ function practiceHTML(){
     (L.length?L.map(shootButton).join(''):`<p class="small muted" style="margin:6px 0 0">No shoots in ${c} yet.</p>`)+`</div>`}).join('');
 }
 
+/* Casual shoots (22 Nov 2026). A finished casual shoot is its own record in S.casual, not a session in
+   S.sessions -- it can include guests who have no ScoreTool account at all, scored by the host. The
+   Score tab's Casual board only ever shows shoots still being scored (by design, since 21 Nov), so once
+   a shoot is finished this card is the only way back into it: its full combined scorecard (csView, with
+   every archer, guest or not), not the single-archer session view the practice groups above use. */
+function casualShoots(){
+ if(typeof csAll!=='function'||typeof csFin!=='function')return [];
+ return csAll().filter(cs=>cs&&cs.status!=='declined'&&cs.status!=='invite'&&csFin(cs))
+  .sort((a,b)=>(b.fint||b.pt||0)-(a.fint||a.pt||0));
+}
+function casualButton(cs){
+ const n=(cs.ppl||[]).length,guests=(cs.ppl||[]).filter(p=>p&&!p.tid).length;
+ const bits=[esc(typeof fmtD==='function'?fmtD(cs.date):cs.date),esc(typeof plN==='function'?plN(n,'person','people'):n+' people')];
+ if(guests)bits.push(esc(typeof plN==='function'?plN(guests,'guest','guests'):guests+' guests'));
+ if(cs.mp&&cs.mp.on)bits.push('match play');
+ const line=`<b>${esc(cs.name||'Casual shoot')}</b><span class="small muted" style="display:block;font-weight:600">${esc(cs.round)}<br>${bits.join(' &middot; ')}</span>`;
+ return `<div class="list-item" data-cscrow="${esc(cs.code)}"><button type="button" class="btn ghost sc-open" data-csopen2="${esc(cs.code)}">${line}</button></div>`;
+}
+function casualHTML(){
+ const L=casualShoots();
+ if(!L.length)return '';
+ return `<div class="card" id="sccat-casual" data-sccat="Casual shoots"><h2 style="margin:0 0 4px">Casual shoots</h2><p class="small muted" style="margin:0 0 8px">Every finished casual shoot on this phone, with everyone's score, including guests who don't have the app. Tap to open the full scorecard.</p>${L.map(casualButton).join('')}</div>`;
+}
+
 function officialHTML(){
  const ready=window._bsReady!==false;
  if(!ready)return `<div class="card" id="scpb"><span class="kicker">Official</span><h2 style="margin:2px 0 8px">Official personal bests</h2><p class="small muted">Loading your official scores…</p></div>`;
@@ -86,11 +110,12 @@ function officialHTML(){
 }
 
 function scorecardsView(){
- app.innerHTML=`<div id="scorecards">${practiceHTML()}${officialHTML()}</div>`;
+ app.innerHTML=`<div id="scorecards">${practiceHTML()}${casualHTML()}${officialHTML()}</div>`;
  if(typeof bindNotes==='function')bindNotes();
  if(window.calRowBind)calRowBind(app);
  app.querySelectorAll('[data-scbow]').forEach(b=>b.onclick=()=>{window._scBow=b.dataset.scbow;scorecardsView()});
  app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openScorecard(b.dataset.open,'scorecards'));
+ app.querySelectorAll('[data-csopen2]').forEach(b=>b.onclick=()=>{if(typeof csView==='function')csView(b.dataset.csopen2)});
  app.querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{if(typeof dropScore==='function'&&dropScore(b.dataset.drop))scorecardsView()});
 }
 
