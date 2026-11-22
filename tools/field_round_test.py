@@ -61,7 +61,7 @@ with sync_playwright() as p:
     pg.click('[data-spot="1"]');pg.wait_for_timeout(200)
     pg.click('#zcycle');pg.wait_for_timeout(80);pg.click('#zcycle');pg.wait_for_timeout(120)
     vw=E("""()=>{const v=document.querySelector('#pface').viewBox.baseVal;return {w:v.width,k:PZ.k,lab:document.querySelector('#zcycle').textContent,spot:cur.spot}}""")
-    chk('spot 1 zoomed to 3x',abs(vw['k']-3)<0.01 and vw['lab']=='Reset' and abs(vw['w']-0.62/3)<0.02 and vw['spot']==1)
+    chk('spot 1 zoomed to 3x',abs(vw['k']-3)<0.01 and vw['lab']=='Z3' and abs(vw['w']-0.62/3)<0.02 and vw['spot']==1)
     pg.click('[data-spot="2"]');pg.wait_for_timeout(200)
     vw2=E("""()=>{const v=document.querySelector('#pface').viewBox.baseVal;return {w:v.width,k:PZ.k,spot:cur.spot}}""")
     chk('spot 2 keeps 3x',vw2['spot']==2 and abs(vw2['k']-3)<0.01 and abs(vw2['w']-0.62/3)<0.02)

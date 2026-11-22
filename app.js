@@ -550,10 +550,10 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  if($('#hideface'))$('#hideface').onclick=()=>{S.hideFace=!S.hideFace;save();score()};
  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>putArrow(b.dataset.k,null));
  const f=$('#pface');if(f){const L=$('#loupe'),W=$('#fwrap');const B=vb.split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
-  const clampZ=()=>{PZ.k=Math.min(4,Math.max(1,PZ.k));const fr=f.getBoundingClientRect(),ar=(fr.width||1)/(fr.height||1),Ew=Math.max(B[2],B[3]*ar),Eh=Math.max(B[3],B[2]/ar);const m=Ew/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));const my=Eh/2*(1-1/PZ.k);PZ.cy=Math.min(my,Math.max(-my,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
-  const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);const zc=$('#zcycle');if(zc){const st=zStep(PZ.k);zc.textContent=['Z1','Z2','Reset'][st];zc.setAttribute('aria-label',['Zoom in to 2x','Zoom in to 3x','Reset zoom'][st]);zc.classList.toggle('on',st>0)}if(window._zkOn)zkSet(PZ.k)};
+  const clampZ=()=>{PZ.k=Math.min(ZLV[ZLV.length-1],Math.max(1,PZ.k));const fr=f.getBoundingClientRect(),ar=(fr.width||1)/(fr.height||1),Ew=Math.max(B[2],B[3]*ar),Eh=Math.max(B[3],B[2]/ar);const m=Ew/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));const my=Eh/2*(1-1/PZ.k);PZ.cy=Math.min(my,Math.max(-my,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
+  const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);const zc=$('#zcycle');if(zc){const st=zStep(PZ.k);zc.textContent=ZLABELS[st];zc.setAttribute('aria-label',ZARIA[st]);zc.classList.toggle('on',st>0)}if(window._zkOn)zkSet(PZ.k)};
   f.style.touchAction='none';W.style.touchAction='none';W.style.overscrollBehavior='contain';let pan=null;applyZ();
-  /* one small button cycles Z1 (2x) -> Z2 (3x) -> Reset (1x); its label is what the next tap does. Pinch still works. */$('#zcycle').onclick=ev=>{ev.stopPropagation();const st=zStep(PZ.k);PZ.k=ZLV[(st+1)%3];if(PZ.k==1)PZ.cx=PZ.cy=0;applyZ()};
+  /* one small button cycles Z1 (2x) -> Z2 (3x) -> Z3 (4x) -> Z4 (5x) -> Reset (1x); its label is what the next tap does. Pinch still works. */$('#zcycle').onclick=ev=>{ev.stopPropagation();const st=zStep(PZ.k);PZ.k=ZLV[(st+1)%ZLV.length];if(PZ.k==1)PZ.cx=PZ.cy=0;applyZ()};
   const pt=ev=>{const q=f.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;return q.matrixTransform(f.getScreenCTM().inverse())};
   const show=ev=>{const q=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=Math.max(4,Math.min(r.width-114,ev.clientX-r.left-55))+'px';L.style.top=Math.max(4,Math.min(r.height-114,ev.clientY-r.top-150))+'px';const lw=0.24/PZ.k;
    L.innerHTML=faceSVG(shown,'lf',`${q.x-lw/2} ${q.y-lw/2} ${lw} ${lw}`,FR,faceHi(`<path d="M${q.x-lw/6} ${q.y}h${lw/3}M${q.x} ${q.y-lw/6}v${lw/3}" stroke="#39ff14" stroke-width="${0.006/PZ.k}"/><circle cx="${q.x}" cy="${q.y}" r="${0.012/PZ.k}" fill="none" stroke="#39ff14" stroke-width="${0.004/PZ.k}"/>`),{d:cur.lcT?arrowMM(arrowNow(cur,'cur')):0,cm:FF&&FF.f})+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${tapScore(q,FR,R,cur.lcT?arrowLC(FR,arrowNow(cur,'cur'),FF&&FF.f):undefined).k}</b>`};
@@ -588,7 +588,9 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  $('#eback').onclick=()=>{fix=null;fixRet=false;justDone=false;fldHold=null;fldHoldId=null;sv='sheet';score()};
  $('#enext').onclick=()=>{justDone=false;fldHold=null;fldHoldId=null;sv='sheet';score()}}
 const faceName=F=>F.bugs?'Bugs Eyes field 3-spot (6-1)':isIfaa(F)||/ifaa/i.test(F.face||'')?'IFAA face 20-65cm (5-3)':/field/.test(F.face||'')?'WA field face 20-80cm (6-1)':F.face=='any'?'Full 10-ring face':`${/^\d/.test(F.face)?'WA ':''}${F.face.replace(/ full$/,'').replace(/ (6-ring|3-spot)/,' ($1)')}`;
-const ZLV=[1,2,3],zStep=k=>k<=1.001?0:k<2.999?1:2;/* 0: normal (shows Z1), 1: zoomed below 3x (shows Z2), 2: 3x or more (shows Reset) */
+const ZLV=[1,2,3,4,5],ZLABELS=['Z1','Z2','Z3','Z4','Reset'],ZARIA=['Zoom in to 2x','Zoom in to 3x','Zoom in to 4x','Zoom in to 5x','Reset zoom'];
+/* nearest ZLV stop to the current (possibly pinch-set) k; its label is what the next tap does (Z1..Z4 step up, Reset back to 1x) */
+function zStep(k){let b=0,bd=Infinity;ZLV.forEach((v,i)=>{const d=Math.abs(k-v);if(d<bd){bd=d;b=i}});return b}
 const faceSize=F=>F.bugs?'Bugs Eyes 3-spot':isIfaa(F)||/ifaa/i.test(F.face||'')?'IFAA 20-65cm face':isFld(F)?(((F.face||'').match(/(\d+(?:-\d+)?)cm/)||[])[1]||'')+'cm field face':F.face=='any'?'Full face':(m=>m?m[1]+'cm '+(isSix(F)?'6-ring':isSpot(F)?'3-spot':'face'):'Full face')((F.face||'').match(/(\d+)cm/));
 const distOf=(F,round)=>F.dist||((round.match(/(\d+(?:m|yd))/)||[])[1])||'';
 function sheetSections(s){const R=ROUNDS[s.round],out=[];
@@ -597,8 +599,8 @@ function sheetSections(s){const R=ROUNDS[s.round],out=[];
  s.ends.forEach((x,i)=>{const F=faceR(R,i),e=isFld(F)&&!s.bugs&&s.ff&&s.ff[i],k=isFld(F)&&!s.bugs?(e?`${e.f}cm field face (6-1) @ ${e.d}m · ${PEGN[e.p||s.peg]||''} peg`:faceName(F)+' · face not set'):faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
 /* Zoom kept on the indoor 3-spot faces (Just me, Casual, match nights, Vegas, League): the level the archer sets (Z1/Z2/Reset or a pinch) stays across spots, ends, archers and an app reload until they change it. One shared place (also used by casual.js). Other faces open each end on the full face. */
-window.zkLoad=()=>{if(!window._zkL){window._zkL=1;try{const v=+localStorage.getItem('scoretool.zoomk');if(v>=1&&v<=4)window._zk=v}catch(e){}}return window._zk||1};
-window.zkSet=k=>{if(!(k>=1&&k<=4))return;try{if(k==zkLoad()&&localStorage.getItem('scoretool.zoomk')==null)return}catch(e){}/* nothing chosen yet and still Z1: do not create the key */window._zk=k;window._zkL=1;try{localStorage.setItem('scoretool.zoomk',String(Math.round(k*100)/100))}catch(e){}};
+window.zkLoad=()=>{if(!window._zkL){window._zkL=1;try{const v=+localStorage.getItem('scoretool.zoomk');if(v>=1&&v<=5)window._zk=v}catch(e){}}return window._zk||1};
+window.zkSet=k=>{if(!(k>=1&&k<=5))return;try{if(k==zkLoad()&&localStorage.getItem('scoretool.zoomk')==null)return}catch(e){}/* nothing chosen yet and still Z1: do not create the key */window._zk=k;window._zkL=1;try{localStorage.setItem('scoretool.zoomk',String(Math.round(k*100)/100))}catch(e){}};
 window.zkOpen=keep=>{PZ.k=keep?zkLoad():1;PZ.cx=PZ.cy=0};
 /* Rounds with R.halfEnds (e.g. Lancaster 660: 20 ends, two 10-end halves with a break, as on the
    paper scoresheet) restart the running/progressive total at the start of each half, instead of it
