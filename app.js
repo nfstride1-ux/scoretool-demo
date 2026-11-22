@@ -227,6 +227,7 @@ function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class
 function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
  if(location.hash.startsWith('#coach=')) return renderCoachLanding();
+ if(location.hash.startsWith('#sheet=')) return renderSheetLink();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
  $('#tabs').hidden=false;
  if(!S.profile){app.innerHTML=pickProfile();app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{S.profile=b.dataset.p;save();nav('home')});return}
@@ -624,12 +625,12 @@ function scoreSheet(R,fin){const s=cur,secs=sheetSections(s);let run=0;
  ${!sec.plain&&secs.length>1?`<div class="ad-sum small">${hiStats(A,s)} <b>${A.reduce((t,a)=>t+val(a),0)}</b></div>`:''}`}).join('')}
  <div class="ad-sum">${hiStats(arrowsAll,s)}&nbsp; <b class="big">${total(s)}</b><span class="small muted">&nbsp;/ ${early?arrowsIn(s)*per+' <span class="small">('+arrowsIn(s)+' arrows shot)</span>':fullMax}</span></div></div>
  ${fin?roundSummary(s)+(window.shootCompareHTML?shootCompareHTML(s):'')+(window.endViewHTML?endViewHTML(s):'')+`<div class="ad-sheet" style="padding:10px">${window.phBoxHtml&&s.id?phBoxHtml(s.id,'fin'):''}${noteBox(s)}<button class="btn alt full" id="finsess" style="margin-top:10px">${window.icon?icon('check'):''} Finish session</button><button class="btn ghost full" id="fin" style="margin-top:8px">See my wins</button></div>`:''}
- <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${s.sample?'':`<button class="ad-fin" id="delscore" type="button">Delete score</button>`}${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:'')+(window.shareSheet?`<button class="ad-fin" id="shsheet">Share</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
+ <div class="ad-foot"><button class="ad-back" id="sback">‹ Back</button>${s.sample?'':`<button class="ad-fin" id="delscore" type="button">Delete score</button>`}${fin?(early?`<button class="ad-fin" id="unfin">Keep scoring</button>`:'')+(window.shareSheet?`<button class="ad-fin" id="shsheet">Share</button>`:'')+(window.shareLink?`<button class="ad-fin" id="shlink">Copy link</button>`:''):`${arrowsIn(s)?`<button class="ad-fin" id="finnow">Finished</button>`:''}<button class="ad-go" id="addsc">Add Scores</button>`}</div></div>`;
  bindNotes();if(fin&&window.endViewBind)endViewBind(app);/* end by end viewer: finished shoots only */
  app.querySelectorAll('[data-fix]').forEach(el=>el.onclick=el.onkeydown=ev=>{if(ev.type=='keydown'&&ev.key!='Enter'&&ev.key!=' ')return;fix=el.dataset.fix.split(',').map(Number);fixRet=true;sv='entry';if(isFld(faceR(R,0))){fldHold=fix[0];fldHoldId=s.id}score()});
  if($('#addsc'))$('#addsc').onclick=()=>{fldHold=null;fldHoldId=null;sv='entry';score()};
  if($('#finnow'))$('#finnow').onclick=()=>{if(!confirm(`Finish round now? ${arrowsIn(s)} arrows, ${total(s)} points.`))return;while(s.ends.length>1&&!s.ends[s.ends.length-1].length){s.ends.pop();if(s.pos)s.pos.length=Math.min(s.pos.length,s.ends.length)}s.finished=true;fix=null;justDone=false;sv='sheet';save();score()};
- if($('#shsheet'))$('#shsheet').onclick=()=>shareSheet(s);if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
+ if($('#shsheet'))$('#shsheet').onclick=()=>shareSheet(s);if($('#shlink'))$('#shlink').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(shareLink(s));$('#shlink').textContent='Copied ✓'};if($('#unfin'))$('#unfin').onclick=()=>{delete s.finished;save();sv='entry';score()};
  if($('#fin'))$('#fin').onclick=()=>{cur=null;sv='sheet';nav('home')};
  if($('#delscore'))$('#delscore').onclick=()=>{const id=s.id,back=window._sheetBack;if(!dropScore(id))return;window._sheetBack=null;if(back&&back!=='score')nav(back);else score()};
  /* Finish session (23 Oct 2026, Steven): the round is already saved arrow by arrow, so this only closes the sheet and shows the done state (no save, no second copy) */
@@ -914,11 +915,16 @@ function renderShare(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURICo
  /* the tester's own Preview gets a way back to where they came from (sweep 23 Oct); a parent opening the link sees no back */
  const bk=$('#shpvback');if(bk)bk.onclick=()=>{try{sessionStorage.removeItem('scoretool.shprev')}catch(e){}history.replaceState(null,'',location.href.split('#')[0]);$('#tabs').hidden=false;nav(pv)}}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href*="#share="]');if(a&&typeof view!='undefined'&&!location.hash.startsWith('#share=')){try{sessionStorage.setItem('scoretool.shprev',view)}catch(e){}}},true);
+/* Real link-based sharing (23 Nov 2026): '#sheet=' opens a read-only view of one score sheet, redrawn by the
+   same sheetCanvas() the PNG share uses, from data carried in the URL hash alone (no account, no server). */
+function renderSheetLink(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(7))))))}catch(e){app.innerHTML='<div class="card">This link is invalid.</div>';return}
+ let img='';try{const c=window.sheetCanvas(D);img=`<img src="${c.toDataURL('image/png')}" alt="Score sheet" style="width:100%;border-radius:12px;display:block">`}catch(e){img='<div class="card">This score sheet could not be shown.</div>'}
+ app.innerHTML=`<div class="card dark"><span class="kicker">Score sheet · read only</span></div>${img}<a class="btn full" href="${location.href.split('#')[0]}" style="margin-top:10px">Open my own ScoreTool</a>`}
 
 /* 31 Oct 2026: wait until every script on the page has run before the first draw. On a slow connection the results fetch could
    finish while later scripts (squads.js, lab.js...) were still loading, and the draw then failed with "Can't find variable: squad". */
 Promise.all([loadReal(),document.readyState=='loading'?new Promise(r=>addEventListener('DOMContentLoaded',r,{once:true})):null]).then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
-addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach='))render();else nav(location.hash=='#plot'?'score':'home')});
+addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach=')||location.hash.startsWith('#sheet='))render();else nav(location.hash=='#plot'?'score':'home')});
 
 /* ---------- scoring screen scroll bar (custom, so it shows on iOS too) ----------
    Small blue square thumb on a thin track, inset from the screen edge. Its only job: scroll past the target without touching it.

@@ -106,7 +106,7 @@ function paper(s,noShare){const hd=s.abaHead||{},HS=halves(s);
  <p class="small muted" style="margin:6px 0 0" id="abahow">${HS.map((o,h)=>`${hName(h,HS.length)}: ${o.H.desc}`).join('. ')}. ${HS.every(o=>o.H.t==HS[0].H.t)?(HS.length>1?'Each half is targets 1-':'Targets 1-')+HS[0].H.t:HS.map((o,h)=>hName(h,HS.length)+' targets 1-'+o.H.t).join(', ')}. Points: 1A 20, 1B 18, 1C 16 · 2A 14, 2B 12, 2C 10 · 3A 8, 3B 6, 3C 4.</p>
  <table class="aba-pts"><tr><th>Arrow</th><th>A</th><th>B</th><th>C</th></tr>${PTS.map((r,k)=>`<tr><th>${k+1}</th>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>
  ${grid(s,false)}
- ${s.abaNote?`<p class="small muted">${escA(s.abaNote)}</p>`:''}${s.finished&&!noShare&&window.shareSheet?'<button class="btn full" id="shsheet" style="margin-top:8px">Share score sheet</button>':''}</div>`}
+ ${s.abaNote?`<p class="small muted">${escA(s.abaNote)}</p>`:''}${s.finished&&!noShare&&window.shareSheet?'<button class="btn full" id="shsheet" style="margin-top:8px">Share score sheet</button>':''}${s.finished&&!noShare&&window.shareLink?'<button class="btn ghost full" id="shlink" style="margin-top:8px">Copy link</button>':''}</div>`}
 window.abaPaper=paper;
 /* Scorer: one target at a time. Arrow 1's buttons (20/18/16/Miss); a score records the target and moves straight on.
    Only a Miss in a 3-arrow half brings up arrow 2 (14/12/10/Miss), then arrow 3 (8/6/4/Miss); three misses = 0 and move on.
@@ -138,6 +138,7 @@ function abaScore(R){const A=st(),i=targetIdx(),fin=i>=R.ends||cur.finished,W=fi
  const u=$('#abaundo');if(u)u.onclick=abaUndo;const f=$('#abafin');if(f)f.onclick=()=>{if(!cur.ends.some(e=>e.length))return;if(!cur.ends[cur.ends.length-1].length)cur.ends.pop();cur.finished=true;save();abaScore(R)};
  const x=$('#abaexit');if(x)x.onclick=()=>{if(cur.finished){cur=null;sv='sheet';window._abaView='score';save();score()}else leaveScoring()};
  const shb=$('#shsheet');if(shb)shb.onclick=()=>shareSheet(cur);
+ const shl=$('#shlink');if(shl)shl.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(shareLink(cur));shl.textContent='Copied ✓'};
  const d=$('#abadone');if(d)d.onclick=()=>{cur=null;sv='sheet';window._abaView='score';score()}}
 window.abaScore=abaScore;
 /* Event card: tie this score to an Archery Calendar event on its date (list from archerycalendars.com, Australia). Tying it also sends the
