@@ -25,7 +25,7 @@ const idbDel=id=>tx('readwrite',st=>st.delete(key(id)));
 const TH={};let loaded=false;
 function loadAll(){if(!WHO()||!window.indexedDB)return Promise.resolve();const pre=WHO()+':';
  return tx('readonly',st=>{const out=[];const r=st.openCursor(IDBKeyRange.bound(pre,pre+'\uffff'));r.onsuccess=()=>{const c=r.result;if(c){out.push([String(c.key).slice(pre.length),c.value]);c.continue()}};return{get result(){return out}}})
-  .then(L=>{(L||[]).forEach(([id,v])=>{if(v&&v.thumb)TH[id]={thumb:v.thumb,at:v.at||0}});loaded=true;refresh()}).catch(()=>{loaded=true})}
+  .then(L=>{(L||[]).forEach(([id,v])=>{if(v&&v.thumb)TH[id]={thumb:v.thumb,at:v.at||0,auto:!!v.auto}});loaded=true;refresh()}).catch(()=>{loaded=true})}
 window.phHas=id=>!!TH[id];
 /* ---- shrink ---- */
 function loadImg(file){if(window.createImageBitmap)return createImageBitmap(file,{imageOrientation:'from-image'}).catch(()=>createImageBitmap(file)).catch(()=>viaImg(file));return viaImg(file)}
@@ -33,27 +33,53 @@ function viaImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL
 const b64=c=>c.split(',')[1]||'';
 const bytes=s=>Math.floor(s.length*3/4);
 function draw(img,w,h,sx,sy,sw,sh){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.imageSmoothingQuality='high';g.drawImage(img,sx,sy,sw,sh,0,0,w,h);return c}
-async function shrink(file){const img=await loadImg(file);const W0=img.width||img.naturalWidth,H0=img.height||img.naturalHeight;if(!W0||!H0)throw new Error('That photo could not be read.');
- let sc=Math.min(1,LONG/Math.max(W0,H0)),out=null,w=0,h=0;
+/* shrinkImg also accepts a <canvas> (drawImage/width/height work the same on either) -- reused below for the auto scorecard */
+function shrinkImg(img,opts){const o=opts||{},long=o.long||LONG,targetB=o.targetB||TARGET_B,q0=o.q0||0.8,q1=o.q1||0.34,qs=o.qs||0.08;
+ const W0=img.width||img.naturalWidth,H0=img.height||img.naturalHeight;if(!W0||!H0)throw new Error('That could not be read.');
+ let sc=Math.min(1,long/Math.max(W0,H0)),out=null,w=0,h=0;
  for(let pass=0;pass<5&&!out;pass++){w=Math.max(1,Math.round(W0*sc));h=Math.max(1,Math.round(H0*sc));const c=draw(img,w,h,0,0,W0,H0);
-  for(let q=0.8;q>=0.34;q-=0.08){const d=b64(c.toDataURL('image/jpeg',q));if(bytes(d)<=TARGET_B){out=d;break}}
+  for(let q=q0;q>=q1;q-=qs){const d=b64(c.toDataURL('image/jpeg',q));if(bytes(d)<=targetB){out=d;break}}
   if(!out)sc*=0.8}
- if(!out)throw new Error('That photo could not be made small enough.');
+ if(!out)throw new Error('That could not be made small enough.');
  const m=Math.min(W0,H0),t=draw(img,THUMB,THUMB,(W0-m)/2,(H0-m)/2,m,m);let thumb=b64(t.toDataURL('image/jpeg',0.72));if(bytes(thumb)>16000)thumb=b64(t.toDataURL('image/jpeg',0.5));
  try{img.close&&img.close()}catch(e){}
  return{photo:out,thumb,w,h,at:Date.now()}}
+async function shrink(file){const img=await loadImg(file);return shrinkImg(img)}
 window.phShrink=shrink;
+/* Auto scorecard (22 Nov 2026): once a round is finished, if the archer hasn't added their own photo, draw the real coloured
+   scorecard (share.js's sheetCanvas -- the same image "Share score sheet" sends) and queue it through this same photo pipe, so
+   Archery Calendar shows the actual scorecard instead of just the number. A manual photo always wins: this only fills an empty
+   slot, and "Add your own photo" replaces it like any other photo. Flat graphics compress far smaller than camera photos at a
+   given size, so it uses a bigger budget (1600px / 90KB) than the camera path, which is untouched (its own defaults, above). */
+const AUTOBUSY=new Set();
+function autoCard(id){if(!id||TH[id]||AUTOBUSY.has(id)||typeof window.sheetCanvas!='function')return;
+ const s=(typeof S!='undefined'&&S.sessions||[]).find(x=>x&&x.id==id);
+ if(!s||s.sample||!Array.isArray(s.ends)||typeof ROUNDS!='object'||!ROUNDS[s.round])return;
+ AUTOBUSY.add(id);
+ try{const c=window.sheetCanvas(s),v=shrinkImg(c,{long:1600,targetB:90*1024});v.auto=1;
+  idbPut(id,v).then(()=>{TH[id]={thumb:v.thumb,at:v.at,auto:1};const d=get('phdel')||[];if(d.includes(id))put('phdel',d.filter(x=>x!=id));AUTOBUSY.delete(id);refresh(id);setTimeout(tick,50)}).catch(()=>AUTOBUSY.delete(id))}
+ catch(e){AUTOBUSY.delete(id)}}
+/* Backfill (22 Nov 2026): one older finished round at a time, slowly, so opening Scorecards with a long history never freezes the page. */
+let backfillAt=0;
+function backfillTick(){if(!loaded||!WHO()||typeof S=='undefined'||!S.unlocked||Date.now()-backfillAt<2500)return;
+ const isFin=s=>s&&!s.sample&&Array.isArray(s.ends)&&typeof ROUNDS=='object'&&ROUNDS[s.round]&&!TH[s.id]&&(typeof isDone=='function'&&isDone(s)||!!s.finished);
+ const s=(S.sessions||[]).find(isFin);if(!s)return;backfillAt=Date.now();autoCard(s.id)}
+setInterval(backfillTick,3000);
 /* ---- UI ---- */
 const skips=()=>get('phskip')||[];
 function boxInner(id,ctx){const t=TH[id];
- if(t)return`<div class="phrow"><button type="button" class="phthumb" data-phact="view" data-phid="${esc2(id)}" aria-label="Open the photo"><img alt="Photo for this round" src="data:image/jpeg;base64,${t.thumb}"></button>
-  <div class="phmeta"><span class="small">${IC('camera')} Photo saved${stTxt(id)}</span><div class="phbtns"><button type="button" class="btn ghost phbtn" data-phact="add" data-phid="${esc2(id)}">Replace photo</button><button type="button" class="btn ghost phbtn" data-phact="del" data-phid="${esc2(id)}">${IC('trash')} Remove</button></div></div></div>`;
+ if(t){const delBtn=t.auto?'':`<button type="button" class="btn ghost phbtn" data-phact="del" data-phid="${esc2(id)}">${IC('trash')} Remove</button>`;
+  return`<div class="phrow"><button type="button" class="phthumb" data-phact="view" data-phid="${esc2(id)}" aria-label="${t.auto?'Open the scorecard':'Open the photo'}"><img alt="${t.auto?'Scorecard for this round':'Photo for this round'}" src="data:image/jpeg;base64,${t.thumb}"></button>
+  <div class="phmeta"><span class="small">${IC('camera')} ${t.auto?'Scorecard added':'Photo saved'}${stTxt(id)}</span><div class="phbtns"><button type="button" class="btn ghost phbtn" data-phact="add" data-phid="${esc2(id)}">${t.auto?'Add your own photo instead':'Replace photo'}</button>${delBtn}</div></div></div>`}
  if(ctx=='fin'){if(skips().includes(id))return'';
   return`<div class="phfin"><button type="button" class="btn phadd" data-phact="add" data-phid="${esc2(id)}">${IC('camera')} Add a photo</button><button type="button" class="btn ghost phskip" data-phact="skip" data-phid="${esc2(id)}">Skip</button>
   <p class="small muted" style="margin:6px 0 0">Optional: your score sheet, target or the day. Kept small.</p></div>`}
  return`<button type="button" class="btn ghost phbtn phaddrow" data-phact="add" data-phid="${esc2(id)}">${IC('camera')} Add photo</button>`}
 function stTxt(id){const tok=get('link');if(!okTok(tok))return'';const s=get('phsent')||{};if(state.off)return'';return TH[id]&&s[id]===TH[id].at?' · on Archery Calendar':' · waiting to upload'}
-window.phBoxHtml=(id,ctx)=>{if(!WHO()||!id||!window.indexedDB)return'';ctx=ctx=='fin'?'fin':'row';return`<div class="phbox phbox-${ctx}" data-phbox="${esc2(id)}" data-phctx="${ctx}">${boxInner(id,ctx)}</div>`};
+window.phBoxHtml=(id,ctx)=>{if(!WHO()||!id||!window.indexedDB)return'';ctx=ctx=='fin'?'fin':'row';
+ /* only the just-finished screen triggers right away (one id); older rows fill in slowly via backfillTick so a long history never blocks the page */
+ if(ctx=='fin'&&loaded&&!TH[id])setTimeout(()=>autoCard(id),0);
+ return`<div class="phbox phbox-${ctx}" data-phbox="${esc2(id)}" data-phctx="${ctx}">${boxInner(id,ctx)}</div>`};
 function refresh(id){document.querySelectorAll('[data-phbox]').forEach(el=>{if(id&&el.dataset.phbox!=id)return;el.innerHTML=boxInner(el.dataset.phbox,el.dataset.phctx)})}
 window.phRefresh=refresh;
 function say(m){if(window.toast2)toast2(m);else if(window.toast)toast(m)}
