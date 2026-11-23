@@ -503,9 +503,8 @@ function putArrow(k,xy){if(cur&&cur.lcT&&!arrowPlotted(cur))arrowApply(cur,'cur'
  if(i<0){if(cur.ends.length>=roundEnds(R,cur))return;cur.ends.push([]);cur.pos.push([]);i=cur.ends.length-1}
  const e=cur.ends[i];e.push(k);if(xy)xy.sn=e.length;/* shot number in the end, kept with the arrow when the end is sorted (end by end viewer) */(cur.pos[i]=cur.pos[i]||[])[e.length-1]=xy||null;
  if(endComplete(R,e,i)){const pe=[...e],pq=[...(cur.pos[i]||[])];sortEnd(i);stOrd.set(cur.id,i,pe,pq,cur.ends[i],cur.pos[i]);if(i==cur.ends.length-1)justDone=true;
-  if(later&&isFull(cur)){justDone=false;sv='sheet';fix=null;fixRet=false}
-  /* one target face (single face, outdoor): once its arrows are plotted, open the next end. The last end stays until Next. A 3-spot end stays too: its targets are the spots, and the last spot waits for Next. Field stays on the end until Next, which returns to the scorecard. */
-  else if(xy&&justDone&&i==cur.ends.length-1&&cur.ends.length<roundEnds(R,cur)&&!use3(cur,R,faceR(R,i))&&!isFld(faceR(R,i)))justDone=false}
+  /* every face stays on the completed end until Next, which returns to the scorecard (23 Nov 2026, Nathe: single target faces used to skip straight to the next end instead, unlike indoor 3-spot and field). */
+  if(later&&isFull(cur)){justDone=false;sv='sheet';fix=null;fixRet=false}}
  /* a numbered spot is one target. After its arrow is plotted, show the next spot. Spot 3 is the last target on this face, so it stays. Indoor 3-spot and Bugs Eyes. */
  if(xy&&!later&&R.ape==3&&cur.spot>=1&&cur.spot<3&&(use3(cur,R,faceR(R,Math.max(0,i)))||bug3(cur,R,Math.max(0,i))))cur.spot++;
  save();score()}
@@ -526,7 +525,7 @@ function score(){regCustom();if(!cur){if(crEdit)return roundForm();const mine=(S
  const R=ROUNDS[cur.round],last=cur.ends[cur.ends.length-1],fin=isDone(cur)||(!!cur.finished&&arrowsIn(cur)>0),P=cur.pos||[];
  if(R.aba&&window.abaScore)return abaScore(R);if(sv=='sheet'&&!fix){window._pzEnd=null;return scoreSheet(R,fin)}/* coming back reopens the end with the kept zoom (zkOpen) */
  const full=endComplete(R,last,cur.ends.length-1),hole=shortEnd(R),showingDone=full&&(justDone||fin)&&(hole<0||hole==cur.ends.length-1),fldRound=isFld(faceR(R,0)),held=fldRound&&fldHoldId==cur.id&&fldHold!=null&&fldHold>=0&&fldHold<cur.ends.length&&!showingDone?fldHold:null,ei=fix?fix[0]:held!=null?held:showingDone?cur.ends.length-1:hole>=0?hole:full?cur.ends.length:cur.ends.length-1,e=cur.ends[ei]||[];
- {const zk=cur.id+'|'+ei,k3=use3(cur,R,faceR(R,ei))||bug3(cur,R,ei);if(window._pzSE!==zk){window._pzSE=zk;if(k3&&cur.spot>0)cur.spot=1}if(window._pzEnd!==zk){window._pzEnd=zk;zkOpen(k3)}window._zkOn=k3}/* indoor 3-spot and Bugs Eyes: a new end opens on Spot 1 and keeps the zoom the archer set (zkOpen); any other face opens on the full face */
+ {const zk=cur.id+'|'+ei,k3=use3(cur,R,faceR(R,ei))||bug3(cur,R,ei),keepZ=k3||!isFld(faceR(R,ei));if(window._pzSE!==zk){window._pzSE=zk;if(k3&&cur.spot>0)cur.spot=1}if(window._pzEnd!==zk){window._pzEnd=zk;zkOpen(keepZ)}window._zkOn=keepZ}/* 3-spot and Bugs Eyes open a new end on Spot 1; every face except field keeps the zoom the archer set (zkOpen) across ends (23 Nov 2026, Nathe: single target faces used to reset to full zoom every end too) */
  const FR0=faceR(R,ei),BG=!!cur.bugs&&isFld(FR0),I3=use3(cur,R,FR0),FF=isFld(FR0)&&!BG?fldFor(cur,ei,FR0):null,FR=BG?{face:'Bugs Eyes field 3-spot',bugs:true,dist:FR0.dist}:FF?fldFR(FF):I3?face3R(FR0,cur):{...FR0},FL=FF?fldDists(cur.peg,FF.f,fldMarked(FR0)):null,SC=isBug(FR)?BUGC:spots3(FR),SP=SC&&cur.spot?SC[cur.spot-1]:null,vb=SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR),bcol=k=>isIfaa(R)||isIfaa(FR)||isBug(FR)||isFld(FR)?(k=='M'?'k-m':+k>=5?'k-y':'k-k'):col(k),d=distOf(FR,cur.round);
  if(R.wa18){if(cur.inner10==null)cur.inner10=sightedCompound();FR.wa18=true;FR.inner10=!!cur.inner10}/* 2 cm 10 for a sighted compound, 4 cm 10 otherwise. No X. */
  if(R.ausi)FR.ausi=true;/* Australian Indoor: X and 10 down to 6, then M, on the single face as well as a 3-spot. */
@@ -599,7 +598,7 @@ function sheetSections(s){const R=ROUNDS[s.round],out=[];
  if(R&&isFld(faceR(R,0)))return[{k:'',ends:s.ends.map((_,i)=>i),plain:true}];
  s.ends.forEach((x,i)=>{const F=faceR(R,i),e=isFld(F)&&!s.bugs&&s.ff&&s.ff[i],k=isFld(F)&&!s.bugs?(e?`${e.f}cm field face (6-1) @ ${e.d}m · ${PEGN[e.p||s.peg]||''} peg`:faceName(F)+' · face not set'):faceName(F)+(distOf(F,s.round)?' @ '+distOf(F,s.round):'');if(!out.length||out[out.length-1].k!=k)out.push({k,ends:[]});out[out.length-1].ends.push(i)});return out}
 var PZ=window.PZ||(window.PZ={k:1,cx:0,cy:0});
-/* Zoom kept on the indoor 3-spot faces (Just me, Casual, match nights, Vegas, League): the level the archer sets (Z1/Z2/Reset or a pinch) stays across spots, ends, archers and an app reload until they change it. One shared place (also used by casual.js). Other faces open each end on the full face. */
+/* Zoom kept on every face except field (Just me, Casual, match nights, Vegas, League, and single target faces such as 30/720): the level the archer sets (Z1/Z2/Reset or a pinch) stays across spots, ends, archers and an app reload until they change it. One shared place (also used by casual.js). Field opens each end on the full face. */
 window.zkLoad=()=>{if(!window._zkL){window._zkL=1;try{const v=+localStorage.getItem('scoretool.zoomk');if(v>=1&&v<=5)window._zk=v}catch(e){}}return window._zk||1};
 window.zkSet=k=>{if(!(k>=1&&k<=5))return;try{if(k==zkLoad()&&localStorage.getItem('scoretool.zoomk')==null)return}catch(e){}/* nothing chosen yet and still Z1: do not create the key */window._zk=k;window._zkL=1;try{localStorage.setItem('scoretool.zoomk',String(Math.round(k*100)/100))}catch(e){}};
 window.zkOpen=keep=>{PZ.k=keep?zkLoad():1;PZ.cx=PZ.cy=0};
