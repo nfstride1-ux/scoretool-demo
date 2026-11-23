@@ -267,11 +267,11 @@ window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||l
  lgAll().push({code:d.code,name:nmClean(String(d.name||'League')).slice(0,40),host:d.from,order:[d.from,me],sc:{},status:'invite',created:d.t||Date.now()});save();return true};
 function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h2hCode(),lg={code,name:nmClean(name||'').slice(0,40)||'Onion Shed Challenge',host:me,order:[me,...T.filter(id=>id!=me&&!LG_EXCL.includes(id))].slice(0,H2H_MAX),
  weeks:(weeks||[]).slice(0,LG_W),wt:Date.now(),cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),dirty:1};lgAll().push(lg);save();
- for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);return lg}
-async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(typeof lkJoinGuard==='function'){const block=lkJoinGuard(code,me);if(block)return block}if(code.length!=8)return'Type the 8-character league code.';if(lgIsPresetCode(code))return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);return''}
+ for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);if(window.calNudgeLeague)window.calNudgeLeague();return lg}
+async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(typeof lkJoinGuard==='function'){const block=lkJoinGuard(code,me);if(block)return block}if(code.length!=8)return'Type the 8-character league code.';if(lgIsPresetCode(code))return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);if(window.calNudgeLeague)window.calNudgeLeague();return''}
  const L=await h2hPoll(lgTopic(code));const s=(L||[]).filter(d=>d.k=='ls'&&d.code==code);if(!s.length)return'No league found with that code yet. Ask the host to open the league, then try again.';
  const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<h2hCap(lg))lg.order.push(me);
- lgAll().push(lg);save();lgTick(true);lgView(code);return''}
+ lgAll().push(lg);save();lgTick(true);lgView(code);if(window.calNudgeLeague)window.calNudgeLeague();return''}
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
 /* Onion Shed Challenge (22 Oct 2026, Nathe): before the go-live change the league card was titled 'Onion Shed Challenge' for everyone,
    but no league record was ever stored or synced, so when the card became a generic 'Your leagues' list it vanished. It is now a
@@ -351,7 +351,7 @@ function lgCard(){if(!TESTER)return'';lgSeed();const me=h2hMe(),L=lgAll().filter
 function lgBindCard(){const c=$('#lgcard');if(!c)return;
  c.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>{const code=b.getAttribute('data-evopen');if(typeof lkFlowEnter==='function')lkFlowEnter(code);else if(typeof lkFlowHome==='function')lkFlowHome(code);else lgView(code)});
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
- c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code)});
+ c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code);if(window.calNudgeLeague)window.calNudgeLeague()});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});
  const tp=$('#lgtpl');if(tp)tp.onclick=()=>{c.querySelectorAll('[data-lgop]').forEach(x=>{x.checked=LG_PRESET.members.includes(x.dataset.lgop)})};
  const g=$('#lggo');if(g)g.onclick=()=>{if(lgAll().filter(l=>!lgPresetHidden(l)&&l.host==h2hMe()&&!lgFinDone(l)).length>=3)return;const T=[...c.querySelectorAll('[data-lgop]:checked')].map(x=>x.dataset.lgop);if(T.length>H2H_MAX-1)return;
