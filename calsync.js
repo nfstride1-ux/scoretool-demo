@@ -91,6 +91,11 @@ function maybePrompt(force){if(!force&&get('prompted')||scoringNow()||document.g
  const d=document.createElement('div');d.id='calPrompt';d.className='calprompt';d.setAttribute('role','status');
  d.innerHTML='<b>'+(window.icon?icon('calendar'):'')+' Add finished scores to your Archery Calendar?</b><span>They show in My events on the day you shot them. Only you can see them.</span><span style="font-size:1rem;line-height:1.5">How: 1. Tap Add to my Archery Calendar. 2. Sign in on archerycalendars.com, then tap Link ScoreTool. 3. Tap Back to ScoreTool.</span><div><a class="btn alt" id="calGo" href="'+linkUrl()+'">Add to my Archery Calendar</a> <button class="btn ghost" id="calNo">Not now</button></div>';
  document.body.appendChild(d);d.querySelector('#calNo').onclick=()=>d.remove();d.querySelector('#calGo').onclick=()=>d.remove();setTimeout(()=>d.remove(),20000)}
+/* Same one-time-only card as above, called from league.js when a league is created or joined: creating/joining a league
+   is often someone's first ScoreTool action, so this surfaces the calendar link before they ever finish a round, without
+   a second, separate code - the league code (h2hCode(), shared/posted publicly) and this link secret (private, per device)
+   stay two different things. Silent if already linked, already prompted once, or a dialog is already open. */
+window.calNudgeLeague=function(){try{if(WHO()&&!okTok(get('link')))maybePrompt()}catch(e){}};
 function toast2(t){const d=document.createElement('div');d.className='calprompt';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),4000)}
 /* Send past rounds (23 Oct 2026): rounds finished before linking are never sent on their own (baseline). The archer can send any finished,
    non-sample round from Past sessions or Me › Settings › Archery Calendar. Each is tied to an Archery Calendar event that covers its date
