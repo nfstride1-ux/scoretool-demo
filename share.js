@@ -43,7 +43,20 @@ function drawEnds(s){const R=ROUNDS[s.round]||{},fld=isFldRound(s),E=s.ends.filt
   txt(g,es,W-PAD-140,yy+rowH/2,{s:26,w:800,a:'right'});txt(g,run,W-PAD,yy+rowH/2,{s:24,c:MUT,a:'right'})});
  y+=E.length*rowH+30;const A=E.flat(),cnt=fld?`6s: ${A.filter(a=>a=='6').length}   5s: ${A.filter(a=>a=='5').length}`:`Xs: ${A.filter(a=>a=='X').length}   10s + Xs: ${A.filter(a=>a=='X'||a=='10').length}`;
  txt(g,cnt,PAD,y+40,{s:26,c:MUT});txt(g,'TOTAL',W-PAD-200,y+40,{s:30,w:800,a:'right'});txt(g,total(s),W-PAD,y+40,{s:44,w:800,a:'right',c:GOLD});return c}
-function sheetCanvas(s){return(ROUNDS[s.round]||{}).aba?drawABA(s):drawEnds(s)}
+/* IFAA Field/Hunter: same chip-row layout as drawEnds, but with IFAA's own colours (5=gold, 4 and 3=black,
+   M=grey -- matching the k-y/k-k/k-m classes the live scoring screen already uses for isIfaa rounds),
+   'Target' instead of 'End', and a 5s/4s/3s count instead of Xs/10s. No ring face, no X. */
+const chipIfaa=a=>a=='M'?['#475569',WHT]:a=='5'?[GOLD,BLK]:[BLK,WHT];
+function drawIFAA(s){const R=ROUNDS[s.round]||{},kind=R.ifaa||'field',E=s.ends.filter(e=>e&&e.length),ape=Math.max(1,...E.map(e=>e.length)),rowH=60;
+ const H=256+50+rowH*E.length+150,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');box(g,0,0,W,H,BG);
+ let y=head(g,s,0,GOLD,BLK,(kind=='hunter'?'IFAA Hunter Round · red peg':'IFAA Field Round · white peg')+' · 5-4-3, no X');
+ const cs=Math.min(84,(W-2*PAD-60-240)/ape);txt(g,'#',PAD+8,y+24,{s:20,c:MUT});txt(g,'Target',W-PAD-140,y+24,{s:20,c:MUT,a:'right'});txt(g,'Prog',W-PAD,y+24,{s:20,c:MUT,a:'right'});y+=50;let run=0;
+ E.forEach((e,i)=>{const yy=y+i*rowH,es=endSum(e);run+=es;box(g,PAD,yy,W-2*PAD,rowH,i%2?null:PANEL);txt(g,i+1,PAD+8,yy+rowH/2,{s:22,c:MUT});
+  e.forEach((a,j)=>{const[b,f]=chipIfaa(a),x=PAD+60+j*cs;g.fillStyle=b;g.beginPath();g.arc(x+cs/2,yy+rowH/2,Math.min(cs,rowH)/2-6,0,7);g.fill();if(b==BLK){g.strokeStyle='#64748b';g.lineWidth=2;g.stroke()}txt(g,a,x+cs/2,yy+rowH/2+1,{s:22,w:800,c:f,a:'center'})});
+  txt(g,es,W-PAD-140,yy+rowH/2,{s:26,w:800,a:'right'});txt(g,run,W-PAD,yy+rowH/2,{s:24,c:MUT,a:'right'})});
+ y+=E.length*rowH+30;const A=E.flat(),cnt=`5s: ${A.filter(a=>a=='5').length}   4s: ${A.filter(a=>a=='4').length}   3s: ${A.filter(a=>a=='3').length}`;
+ txt(g,cnt,PAD,y+40,{s:26,c:MUT});txt(g,'TOTAL',W-PAD-200,y+40,{s:30,w:800,a:'right'});txt(g,total(s),W-PAD,y+40,{s:44,w:800,a:'right',c:GOLD});return c}
+function sheetCanvas(s){const R=ROUNDS[s.round]||{};return R.aba?drawABA(s):R.ifaa?drawIFAA(s):drawEnds(s)}
 window.sheetCanvas=sheetCanvas;
 const slug=t=>String(t||'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 const fname=s=>('scoretool-'+(s.date||'')+(s.pg?'-'+slug(whoName(s)):'')+'-'+String(s.round||'sheet').replace(/[^A-Za-z0-9]+/g,'-').replace(/-+$/,'')).slice(0,80)+'.png';

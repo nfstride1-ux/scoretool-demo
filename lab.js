@@ -103,10 +103,10 @@ const SC=()=>_score();SC.sc=1;
 LABSEC.clubs='clubs';
 E.clubs=()=>menu('Clubs & leagues',[
  row('lab_leagues','🏁','Leagues','Leagues you belong to. Join with a code or start one'),
- row('lab_group','📋','Group score card','Score your whole group on one phone')]);
+ row('lab_group','📋','Event scoring','Score your whole group on one phone: ABA 3D or IFAA Field/Hunter')]);
 sub('lab_leagues','clubs','Leagues','clubs','Clubs',SC,e=>e.id=='lgcard');
 sub('lab_match','clubs','Match play','clubs','Clubs',SC,e=>e.id=='h2hcard');
-sub('lab_group','clubs','Group score card','clubs','Clubs',SC,e=>e.id=='pgcard'||e.id=='ifaacard'||e.id=='ifaagencard');
+sub('lab_group','clubs','Event scoring','clubs','Clubs',SC,e=>e.id=='pgcard'||e.id=='ifaacard'||e.id=='ifaagencard');
 LABSEC.lab_squad='clubs';
 const SQT=[['board','Board',t=>/WEEKLY LEAGUE|MORE BOARDS/.test(t)],['activity','Activity',t=>/ACTIVITY/.test(t)],['people','People',t=>/COACHES & PARENTS|ME IN THIS SQUAD|ADMIN ONLY/.test(t)],['manage','Create / join',t=>/CREATE ANOTHER SQUAD|SAFE SQUADS/.test(t)]];
 E.lab_squad=function(){squad();const n=app.children.length,tab=S._labsq||'board',T=SQT.find(x=>x[0]==tab)||SQT[0];

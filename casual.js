@@ -22,7 +22,7 @@ const CS_MAX=10,CS_SNAP=6*36e5,CS_MP_ENDS=3;
 const CS_SEED_FINISHED_ONLY=true;
 const csAll=()=>S.casual=S.casual||[],csGet=c=>csAll().find(x=>x.code==c);
 const csTopic=c=>H2H_NS+'-cs-'+String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
-const csStd=()=>Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return R&&!R.custom&&!R.legacy&&!R.aba&&!R.league});
+const csStd=()=>Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return R&&!R.custom&&!R.legacy&&!R.aba&&!R.league&&!R.ifaa});
 /* discipline of a round, from the app's own face helpers */
 function csDisc(r){const R=ROUNDS[r];if(!R)return null;const c=(S.customRounds||[]).find(x=>x&&x.name===r);if(c){const d=c.kind==='3d'?'3d':(c.disc||'target');return CS_DISC[d]?d:'target'}if(R.retired&&R.disc&&CS_DISC[R.disc])return R.disc;if(R.d3||R.aba||R.kind==='3d')return'3d';if(R.clout||/clout/i.test(r))return'clout';const F=faceR(R,0);if(isFld(F))return'field';if(R.vegas||indoor3(R,F))return'indoor';return'target'}
 const CS_DISC={target:'Target',indoor:'Indoor',field:'Field',clout:'Clout','3d':'3D'};
@@ -219,7 +219,7 @@ window.csMpStart=csMpStart;window.csMpOff=csMpOff;window.csMpSetup=csMpSetup;win
 /* Just me uses this same discipline row and the same round classification. The dropdown lists only the selected discipline.
    Choosing another discipline refills the list. jmSelectRound switches discipline when a test or a stored round names one that is not on screen. The last discipline is remembered. */
 function jmDisc(){if(S.lastDisc&&CS_DISC[S.lastDisc])return S.lastDisc;const d=S.lastRound&&csDisc(S.lastRound);return d&&CS_DISC[d]?d:'target'}
-function jmRoundNames(disc){return Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return !!(R&&!R.legacy&&!R.retired&&csDisc(r)===disc)})}
+function jmRoundNames(disc){return Object.keys(ROUNDS).filter(r=>{const R=ROUNDS[r];return !!(R&&!R.legacy&&!R.retired&&!R.ifaa&&csDisc(r)===disc)})}
 function jmRoundInner(disc){const names=jmRoundNames(disc),sel=names.includes(S.lastRound)?S.lastRound:(names[0]||'');
  const empty=names.length?'':`<option value="" selected>No rounds in this list yet</option>`;
  return names.map(r=>`<option value="${esc(r)}" ${r===sel?'selected':''}>${esc(typeof rdPick==='function'?rdPick(r):r)}</option>`).join('')+empty+'<option value="__new">+ Create my own practice round</option>'}
