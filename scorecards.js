@@ -25,6 +25,7 @@ function practiceCat(round){
  }catch(e){}
  if(R.aba||R.kind==='3d'||/\b3d\b|3-d/i.test(name))return '3D';
  if(R.clout||/clout/i.test(name))return 'Clout';
+ if(R.ifaa||(typeof isIfaa==='function'&&isIfaa(R)))return 'Field';
  let F=null;try{F=typeof faceR==='function'?faceR(R,0):null}catch(e){}
  if((F&&typeof isFld==='function'&&isFld(F))||(/field/i.test(name)&&!/ifaa/i.test(name)))return 'Field';
  if(R.vegas||R.lancaster||/indoor|vegas/i.test(name))return 'Indoor';

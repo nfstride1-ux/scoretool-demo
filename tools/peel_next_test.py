@@ -96,7 +96,7 @@ try:
   nS=pg.evaluate("S.sessions.length")
   pg.click('#pgsave');pg.wait_for_timeout(200)
   txt=pg.inner_text('#pgsaved');print(txt)
-  chk('Save confirms in plain words, with totals and where to find them',txt.startswith('Saved.') and all(n in txt for n in NAMES) and all(str(e) in txt for e in exp) and 'Group score card' in txt and 'Day 1' in txt)
+  chk('Save confirms in plain words, with totals and where to find them',txt.startswith('Saved.') and all(n in txt for n in NAMES) and all(str(e) in txt for e in exp) and 'Event scoring' in txt and 'Day 1' in txt)
   at1=pg.evaluate("pgEv().days[0].saved.at")
   pg.click('#pgsave');pg.wait_for_timeout(120);pg.click('#pgsave');pg.wait_for_timeout(200)
   chk('Save tapped three times: one record, no duplicate days or sessions',pg.evaluate("pgEv().days.length")==1 and pg.evaluate("S.sessions.length")==nS and pg.evaluate("Object.keys(pgEv().days[0]).filter(k=>k=='saved').length")==1 and pg.evaluate("pgEv().days[0].saved.a.length")==3 and pg.evaluate("pgEv().days[0].saved.a.map(x=>x.tot)")==exp)
