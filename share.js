@@ -53,6 +53,13 @@ async function shareCanvas(c,name,title,text){const blob=await new Promise(r=>c.
  if(file&&navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title,text});return(window._lastShare.how='shared')}catch(e){if(e&&e.name=='AbortError')return(window._lastShare.how='cancelled')}}
  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},4000);return(window._lastShare.how='downloaded')}
 async function shareSheet(s){const who=s.pg?whoName(s):'';return shareCanvas(sheetCanvas(s),fname(s),who?'Score sheet · '+who:'Score sheet',(who?who+' · ':'')+`${s.round} · ${s.pg&&window.pgTot?pgTot(s):total(s)}`)}
+/* Real link-based sharing (23 Nov 2026): a plain URL next to the PNG share, for texting a link that opens
+   instead of a file to download. No server, no account -- the scores ride in the URL hash (same trick as
+   the existing parent-view and coach-view links) and the app redraws the exact sheetCanvas() image from
+   them. Read-only: opening the link never touches the viewer's own sessions. */
+function shareLinkData(s){return{v:1,round:s.round,date:s.date,ends:s.ends,aba:s.aba||null,abaHead:{...(s.abaHead||{}),name:whoName(s)},abaClub:s.abaClub||false,bugs:s.bugs||false,src:s.src||'',pg:1}}
+function shareLink(s){return location.origin+location.pathname+'#sheet='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(shareLinkData(s))))))}
+window.shareLink=shareLink;
 /* Casual group's combined scorecard: one ranked image in the app's own colours, not a text list. */
 function drawCombined(cs,rows,xLabel,tLabel){
  const rowH=76,H=256+50+rowH*rows.length+100,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');box(g,0,0,W,H,BG);
