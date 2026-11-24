@@ -8,10 +8,12 @@ const who=()=>(typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest';
 const SKEY=()=>'scoretool.resultsSource.'+who();
 const IKEY=()=>'scoretool.imported.'+who();
 const OKEY=()=>'scoretool.official.'+who();
-/* Home pages checked 6 Nov 2026. Archery GB answers 403 to a scripted fetch and 200 in a browser; the address is the body's own site. */
+/* Home pages checked 6 Nov 2026. Archery GB answers 403 to a scripted fetch and 200 in a browser; the address is the body's own site.
+   24 Nov 2026 (Nathe): Archery Australia (and WA, which shares the same national database) keep every archer's official
+   personal bests, across every discipline, on Archer's Diary's own Bests search, not the association's home page. */
 const BODIES=[
- ['aa','Archery Australia','https://archery.org.au/'],
- ['awa','Archery WA (state)','https://www.archerywa.com.au/'],
+ ['aa','Archery Australia',"https://archersdiary.com/Performance.aspx"],
+ ['awa','Archery WA (state)',"https://archersdiary.com/Performance.aspx"],
  ['world','World Archery','https://www.worldarchery.sport/'],
  ['agb','Archery GB','https://www.archerygb.org/'],
  ['usa','USA Archery','https://www.usarchery.org/'],
@@ -106,7 +108,7 @@ function view(){
  <select id="rsbody">${BODIES.map(b=>`<option value="${b[0]}" ${o.body===b[0]?'selected':''}>${h(b[1])}</option>`).join('')}</select>
  <label for="rsurl">Website</label>
  <input id="rsurl" type="url" inputmode="url" autocomplete="off" value="${h(o.url||'')}" ${other?'':'readonly'} placeholder="${other?'https://…':'Filled from the body you picked'}">
- ${other?'<p class="small muted" style="margin:4px 0 0">Other: type the address yourself. It is not filled in for you.</p>':'<p class="small muted" style="margin:4px 0 0">This is the body\'s home page. Change the body to pick another.</p>'}
+ ${other?'<p class="small muted" style="margin:4px 0 0">Other: type the address yourself. It is not filled in for you.</p>':'<p class="small muted" style="margin:4px 0 0">Filled in for the body you picked. Change the body to pick another.</p>'}
  <label for="rsmem">Member / archer ID</label>
  <input id="rsmem" autocomplete="off" value="${h(o.member||'')}" placeholder="Your member or archer number">
  <button class="btn full" id="rssave" type="button" style="margin-top:10px">Save</button>
