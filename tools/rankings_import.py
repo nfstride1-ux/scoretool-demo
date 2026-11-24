@@ -115,11 +115,13 @@ def parse_page(text, discipline):
     grid = html_rows(text) if re.search(r'<t[dh]\b', text, re.I) else text_rows(text)
     if not grid:
         raise SystemExit('no table rows in the saved page')
-    start = 0
-    if looks_header(grid[0]):
-        mapping = header_map(grid[0])
-        start = 1
-    else:
+    start, mapping = 0, None
+    for i, cells in enumerate(grid):
+        if looks_header(cells):
+            mapping = header_map(cells)
+            start = i + 1
+            break
+    if mapping is None:
         # Place, Archer, Class, Gender, Division, State, Club, Current
         mapping = {'rank': 0, 'name': 1, 'age_class': 2, 'gender': 3, 'division': 4, 'state': 5, 'club': 6, 'rating': 7}
     if 'name' not in mapping or 'rating' not in mapping:
