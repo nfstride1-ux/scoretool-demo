@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-24-0130-diary-paste',d:'2026-11-24',items:[
+   ['trophy',"Paste your Archer's Diary bests","Tools, My results source, opens Bests in a new tab. Copy the AA number saved on this phone, paste the results table, and confirm. It shows on personal bests under that bow. Rankings can show a national place and a WA place from a saved list.",'ee5c476']]},
   {v:'v2026-11-17-2405-loginfit',d:'2026-11-17',items:[
    ['lock',"The passcode stays above the buttons","On the Lingkana login, the PIN and the passcode sit above the name list. The Back and Login bar no longer covers the box, including on a short phone and when the keyboard is open.",'35a2571']]},
   {v:'v2026-11-17-2350-clearnight',d:'2026-11-17',items:[
