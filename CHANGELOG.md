@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-24-0130-diary-paste
+
+Bests from Archer's Diary are pasted in by hand, and the rankings card can show a state rank from a saved list. Cache version is `v2026-11-24-0130-diary-paste` (`?v=202611240130`). Nothing in the app fetches Archer's Diary. Not merged.
+
+- My results source has Open my Archer's Diary results, which opens the Bests page in a new tab. A saved AA number is shown with Copy. Paste my results reads a copied table (tabs, spaced columns, or HTML) into discipline, round, division, score, date and event. Confirm saves it on the phone. Pasting again replaces that set and does not duplicate it. The old Paste a table or a CSV path is unchanged.
+- Personal bests put a pasted division on its own bow tab. Compound stays on Compound, and a barebow paste does not also appear under Compound.
+- Rankings use `data/rankings.json` with national lists and a list per state. The old `archers` map is still read. The ranking card shows national class rank and the WA class rank for each discipline, with the as-of date. WA is empty in the saved file until someone imports a saved page.
+- `python3 tools/rankings_import.py` reads HTML or copied text you saved yourself. It does not fetch.
+
+### Files
+diarypaste.js, results.js, best.js, rankings.js, real.js, lab.js, data/rankings.json, index.html, sw.js, version.json, tools/rankings_import.py, tools/diary_paste_test.py, tools/rankings_import_test.py, tools/rankings_card_test.py, tools/fixtures/rankings/.
+
 ## v2026-11-17-2405-loginfit
 
 The Lingkana login PIN and passcode stay above the fixed Back and Login bar. Cache version is `v2026-11-17-2405-loginfit` (`?v=202611172405`), newer than `v2026-11-17-2350-clearnight`. Not merged.
