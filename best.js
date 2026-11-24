@@ -38,7 +38,9 @@ function practice(){if(typeof done!='function')return[];const bow=BOW(typeof myB
 const maxOf=s=>{if(s.disc=='3D')return null;const n=s.ds.reduce((t,d)=>t+d.e.reduce((k,e)=>k+e.length,0),0);return n?n*(s.disc=='Field'?6:10):null};
 function groups(bow){const G={};entries().filter(s=>s.bow==bow&&s.sc>0).forEach(s=>{(G[s.rd]=G[s.rd]||{rd:s.rd,disc:s.disc,all:[]}).all.push(s)});
  practice().filter(s=>s.bow==bow).forEach(s=>{const k=anRoundOf(s.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:s.disc,all:[]});g.all.push(s)});
- if(window.importedShoots)importedShoots().forEach(s=>{const bowI=bow,row={d:s.date,ev:s.event||'Imported',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:[],ok:false,part:false,bow:bowI,src:'imported'};
+ const sheetBow=(()=>{const L=entries().slice().sort((a,b)=>a.d<b.d?1:-1);return L[0]?L[0].bow:''})();
+ if(window.importedShoots)importedShoots().forEach(s=>{const bowI=bowOfImport(s)||sheetBow||bow;if(bowI!==bow)return;
+  const row={d:s.date,ev:s.event||'Imported',club:'',disc:discOfImport(s),div:s.division||'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:[],ok:false,part:false,bow:bowI,src:'imported'};
   const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
  if(window.officialAdded)officialAdded().forEach(s=>{const bowI=bow,ends=s.ends||[],row={d:s.date,ev:s.event||'Official',club:'',disc:/field/i.test(s.round)?'Field':/indoor|18m|25m|vegas/i.test(s.round)?'Indoor':'Outdoor',div:'',cls:'',rd:s.round,sc:s.score,rt:'',url:'',ds:ends.length?[{dist:'Official',face:s.round,e:ends}]:[],ok:!!ends.length,part:false,bow:bowI,src:'official'};
   const k=anRoundOf(row.rd),g=Object.values(G).find(x=>anRoundOf(x.rd)==k)||(G[k]=G[k]||{rd:k,disc:row.disc,all:[]});g.all.push(row)});
@@ -63,7 +65,12 @@ window.offGhosts=function(appRound){const bow=window._bsBow||curBow();const list
 window.ghostBowNow=function(){return window._bsBow||curBow()};
 window.offGhost=function(appRound){const b=bestForApp(appRound,window._bsBow||curBow());if(!b)return null;const E=b.E;
  return{mode:'off',src:'off',ends:E.map(e=>e.reduce((t,a)=>t+v(a),0)),ar:E.map(e=>e.slice()),pos:null,date:fmt(b.s.d),ev:b.s.ev}};
-function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])}
+/* A pasted division names the bow tab. Barebow is checked before compound and recurve so "Barebow Recurve" is not filed under Recurve. */
+function bowOfImport(s){const d=String(s&&s.division||'');if(!d.trim())return '';if(/barebow/i.test(d))return 'Barebow';return BOW(d)==='Other'?'':BOW(d)}
+function discOfImport(s){const t=String(s&&(s.discipline||s.round)||'');if(/clout/i.test(t))return 'Clout';if(/field/i.test(t))return 'Field';if(/3d|3-d/i.test(t))return '3D';if(/indoor|18m|25m|vegas/i.test(t))return 'Indoor';if(/outdoor|target/i.test(s&&s.discipline||''))return 'Outdoor';return /indoor|18m|25m|vegas/i.test(s&&s.round||'')?'Indoor':'Outdoor'}
+function bows(){const c={};entries().forEach(s=>c[s.bow]=(c[s.bow]||0)+1);
+ if(window.importedShoots)importedShoots().forEach(s=>{const b=bowOfImport(s);if(b)c[b]=(c[b]||0)+1});
+ return Object.entries(c).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1))}
 function curBow(){const B=bows();if(!B.length)return null;if(window._bsBow&&B.some(b=>b[0]==window._bsBow))return window._bsBow;const L=entries().sort((a,b)=>a.d<b.d?1:-1);return L[0]?L[0].bow:B[0][0]}
 /* The one score the Personal bests card marks PB for this round: highest full score, earlier date on a tie, same bow the card opens on.
    Practice, official sheets and imported rows are counted together, the same way groups() builds the card. */
@@ -110,7 +117,7 @@ window.officialPbRows=function(){try{
   add({d:typeof normDate==='function'?normDate(r.date):r.date,ev:r.event||'',disc:cl?'Clout':fld?'Field':td?'3D':ind?'Indoor':'Outdoor',div:r.division||'',rd:r.round,sc:+r.score,part:false,bow:BOW(r.division),src:'csv'})});
  const bowNow=()=>{try{return curBow()||practiceBow()||''}catch(e){return ''}};
  const discOf=n=>/clout/i.test(n)?'Clout':/field/i.test(n)?'Field':/3d|3-d/i.test(n)?'3D':/indoor|18m|25m|vegas/i.test(n)?'Indoor':'Outdoor';
- if(window.importedShoots)importedShoots().forEach(s=>add({d:s.date,ev:s.event||'Imported',disc:discOf(s.round),div:'',rd:s.round,sc:+s.score,part:false,bow:bowNow(),src:'imported'}));
+ if(window.importedShoots)importedShoots().forEach(s=>{const b=bowOfImport(s)||bowNow();add({d:s.date,ev:s.event||'Imported',disc:s.discipline?discOfImport(s):discOf(s.round),div:s.division||'',rd:s.round,sc:+s.score,part:false,bow:b,src:'imported'})});
  if(window.officialAdded)officialAdded().forEach(s=>add({d:s.date,ev:s.event||'Official',disc:discOf(s.round),div:'',rd:s.round,sc:+s.score,part:false,bow:bowNow(),src:'official'}));
  const Bs=bows();
  let bow=window._scBow&&L.some(s=>s.bow==window._scBow)?window._scBow:(bowNow()||(Bs[0]&&Bs[0][0])||'');

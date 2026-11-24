@@ -89,7 +89,11 @@ E.myarch=()=>menu('My archery',[
 sub('lab_latest','myarch','Latest shoot','myarch','My archery',()=>_home(),(e,t,i)=>i<3||/FROM YOUR NOTES/.test(t));
 sub('lab_arrows','myarch','Practice arrows','myarch','My archery',()=>_home(),(e,t,i)=>i==0||/TODAY'S ARROWS/.test(t));
 sub('lab_diary','myarch','Diary','myarch','My archery',()=>diary(),(e,t)=>/SHOOTING DIARY|TIMELINE/.test(t));
-sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class'||e.id=='rankcard');
+sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class'||e.id=='rankcard'||e.id=='rank-slot',()=>{
+ if(typeof aaRankCard!='function'||document.getElementById('rank-slot'))return;
+ const html=aaRankCard((typeof S!='undefined'&&S&&S.profile)||'');
+ const anchor=document.getElementById('realrank')||document.getElementById('c-class')||document.getElementById('rankcard');
+ if(anchor)anchor.insertAdjacentHTML('afterend',html);else app.insertAdjacentHTML('afterbegin',html)});
 sub('lab_gear','myarch','Setups & sight marks','myarch','My archery',()=>diary(),(e,t)=>e.id=='gearcard'||/BOW & SETUP DIARY|CURRENT SETUP/.test(t),()=>{app.insertAdjacentHTML('beforeend',setupScores())});
 function setupScores(){const L=(typeof myBows=='function'?myBows():[]);if(!L.length)return'';
  const ss=(S.sessions||[]).filter(s=>s.bow&&!s.sample&&typeof isDone=='function'&&isDone(s));

@@ -23,7 +23,8 @@ function src(){const o=read(SKEY());return o&&typeof o=='object'?o:{body:'aa',ur
 function imports(){const a=read(IKEY());return Array.isArray(a)?a:[]}
 window.importedShoots=function(){return imports().filter(r=>r&&r.imported&&r.date&&r.round&&r.score>0).map(r=>({
  id:r.id,date:r.date,round:r.round,score:+r.score,ends:[],dists:[],flagged:0,src:'imported',inc:false,
- event:r.event||'',club:'',rating:null,url:'',field:/field/i.test(r.round),imported:true}))};
+ event:r.event||'',club:'',rating:null,url:'',field:/field/i.test(r.round)||/field/i.test(r.discipline||''),imported:true,
+ division:r.division||'',discipline:r.discipline||'',diary:!!r.diary}))};
 function officials(){const a=read(OKEY());return Array.isArray(a)?a:[]}
 /* C4: a finished official round the archer typed in. Not a scored session, so it cannot replace one. */
 window.officialAdded=function(){return officials().filter(r=>r&&r.official&&r.finished&&r.date&&r.round&&r.score>0).map(r=>({
@@ -71,6 +72,8 @@ async function readScorePhoto(file){await loadOcr();const worker=await Tesseract
  try{const r=await worker.recognize(file);return readCardText(r&&r.data&&r.data.text)}finally{try{await worker.terminate()}catch(e){}}}
 function parseScore(s){const n=parseInt(String(s||'').replace(/[^\d]/g,''),10);return n>0?n:0}
 let grid=[],header=false,map={round:0,date:1,score:2,event:3};
+let diaryText='',diaryRows=[],diarySkipped=0,diaryMsg='';
+const DIARY_URL='https://www.archersdiary.com/Performance.aspx';
 function applyMap(){const rows=header?grid.slice(1):grid;
  return rows.map(r=>{const g=i=>i<0?'':(r[i]||'');return {round:g(map.round).trim(),date:parseDate(g(map.date)),score:parseScore(g(map.score)),event:g(map.event).trim()}}).filter(r=>r.round||r.date||r.score||r.event)}
 function taken(date,round,score){
@@ -113,6 +116,22 @@ function view(){
  <p class="small" id="rssaved" style="margin:6px 0 0"></p>
  <a class="btn alt full" id="rsopen" href="${h(url||'#')}" target="_blank" rel="noopener" ${url?'':'aria-disabled="true" style="pointer-events:none;opacity:.55"'}>Open my results</a>
  <p class="small muted" style="margin:6px 0 0">Opens the saved website in your browser. ScoreTool does not sign in or read the page.</p>
+ </div>
+ <div class="card" id="rsdiary"><span class="kicker">Archer's Diary</span><h2 style="margin:2px 0 8px">Paste my results</h2>
+ <p class="small" style="margin:0 0 8px">Opens Bests in a new tab. You copy the table and paste it here. ScoreTool does not sign in and does not read that page.</p>
+ <a class="btn alt full" id="rsdiaryopen" href="${DIARY_URL}" target="_blank" rel="noopener">Open my Archer's Diary results</a>
+ ${o.member?`<p class="small" style="margin:10px 0 0">Your AA number, kept on this phone. Copy it into the search on that page.</p>
+ <div class="row" style="gap:8px;align-items:center;margin-top:6px"><b id="rsaa" style="flex:1;min-width:0;word-break:break-all">${h(o.member)}</b><button class="btn ghost" id="rscopy" type="button">Copy</button></div>
+ <p class="small" id="rscopynote" style="margin:6px 0 0"></p>`:'<p class="small muted" style="margin:8px 0 0">Save your AA number above and it can be copied from here. It stays on this phone.</p>'}
+ <label for="rsdiarypaste" style="margin-top:10px">Paste my results</label>
+ <textarea id="rsdiarypaste" rows="5" placeholder="Paste the results table from Archer's Diary">${h(diaryText)}</textarea>
+ <button class="btn ghost" id="rsdiaryread" type="button">Read the paste</button>
+ ${diaryRows.length?`<h3 style="margin:12px 0 6px">Preview</h3>
+ <table class="labtbl" id="rsdiarypreview"><thead><tr><th>Discipline</th><th>Round</th><th>Division</th><th>Score</th><th>Date</th><th>Event</th></tr></thead><tbody>
+ ${diaryRows.slice(0,8).map(r=>`<tr><td>${h(r.discipline||'—')}</td><td>${h(r.round)}</td><td>${h(r.division||'—')}</td><td>${r.score}</td><td>${h(r.date||'—')}</td><td>${h(r.event||'—')}</td></tr>`).join('')}</tbody></table>
+ <p class="small muted">${diaryRows.length} best${diaryRows.length==1?'':'s'}${diaryRows.length>8?`, first 8 shown`:''}.${diarySkipped?` ${diarySkipped} line${diarySkipped==1?'':'s'} left out.`:''} Confirm replaces the bests you pasted before. It does not add a second copy.</p>
+ <button class="btn alt full" id="rsdiaryconfirm" type="button">Confirm import</button>`:diaryText?`<p class="small" id="rsdiaryempty" style="margin:8px 0 0">No results found in that paste. Copy the bests table: discipline, round, division, score, date and event.</p>`:''}
+ <p class="small" id="rsdiarydone" style="margin:6px 0 0">${h(diaryMsg)}</p>
  </div>
  <div class="card" id="rsimport"><span class="kicker">Bring scores in yourself</span><h2 style="margin:2px 0 8px">Paste a table or a CSV</h2>
  <p class="small" style="margin:0 0 8px">Map the columns, check the preview, then confirm. Nothing is saved until you confirm. A round you already scored is left as it is.</p>
@@ -160,6 +179,21 @@ function view(){
   localStorage.setItem(SKEY(),JSON.stringify(g));view()};
  $('#rssave').onclick=()=>{const g=grab();if(g.body==='other'&&g.url&&!httpUrl(g.url)){$('#rssaved').textContent='The website needs to start with https://';return}
   localStorage.setItem(SKEY(),JSON.stringify(g));$('#rssaved').textContent='Saved on this phone.';view()};
+ const copy=$('#rscopy');if(copy)copy.onclick=()=>{const t=($('#rsaa')&&$('#rsaa').textContent)||'';const note=$('#rscopynote');
+  const say=m=>{if(note)note.textContent=m};if(!t){say('Nothing to copy.');return}
+  const done=()=>say('Copied. Paste it into the search on Archer\'s Diary.');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){say('Select the number and copy it yourself.')}ta.remove()})}
+  else {const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){say('Select the number and copy it yourself.')}ta.remove()}};
+ const box=$('#rsdiarypaste');if(box)box.oninput=()=>{diaryText=box.value};
+ $('#rsdiaryread')&&($('#rsdiaryread').onclick=()=>{diaryText=($('#rsdiarypaste')&&$('#rsdiarypaste').value)||'';
+  const parsed=window.parseDiaryPaste?parseDiaryPaste(diaryText):{rows:[],skipped:0};diaryRows=(parsed.rows||[]).filter(r=>r.date);diarySkipped=(parsed.skipped||0)+(parsed.rows||[]).length-diaryRows.length;
+  diaryMsg=diaryRows.length?'Check the preview, then confirm. Nothing is saved until you do.':'';view()});
+ const confirm=$('#rsdiaryconfirm');if(confirm)confirm.onclick=()=>{
+  const fresh=[];const seen={};diaryRows.forEach(r=>{if(!r.round||!r.date||!r.score)return;const k=r.date+'|'+r.round.toLowerCase()+'|'+r.score+'|'+(r.division||'').toLowerCase();if(seen[k])return;seen[k]=1;
+   fresh.push({id:'diary-'+fresh.length,round:r.round,date:r.date,score:r.score,event:r.event||'',division:r.division||'',discipline:r.discipline||'',imported:true,diary:true})});
+  const keep=imports().filter(r=>!r.diary);localStorage.setItem(IKEY(),JSON.stringify(keep.concat(fresh)));
+  diaryMsg=`Saved ${fresh.length} best${fresh.length==1?'':'s'} on this phone. Pasting again replaces these, and does not add a second copy. They show on personal bests under the bow in the division.`;
+  diaryRows=[];view()};
  const open=$('#rsopen');if(open&&!url)open.onclick=e=>e.preventDefault();
  const readText=t=>{grid=parseTable(t);header=grid.length>1&&looksHeader(grid[0]);
   map=header?guess(grid[0]):{round:0,date:1,score:2,event:grid[0]&&grid[0].length>3?3:-1};view();
