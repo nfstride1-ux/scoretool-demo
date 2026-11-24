@@ -494,8 +494,24 @@
           x.setAttribute('aria-pressed',on?'true':'false');
         });
         paintPin(window._lkLoginId);
+        onlyPicked(true);
         fitList();
       });
+    };
+    /* Once a name is tapped, show only that name. Change name brings the full list back. */
+    const onlyPicked=on=>{
+      const id=String(window._lkLoginId||'');
+      if(!id)on=false;
+      el.querySelectorAll('[data-lkscorer]').forEach(x=>{x.hidden=on&&x.getAttribute('data-lkscorer')!==id});
+      const find=$id('lkfind'),lab=el.querySelector('label[for="lkfind"]'),all=$id('lkshowall');
+      [find,lab,all&&all.parentNode].forEach(n=>{if(n)n.hidden=on});
+      let ch=$id('lkchangename');
+      if(on&&!ch){
+        const box=$id('lkscorernames');
+        if(box){const p=document.createElement('p');p.innerHTML='<button type="button" class="lk-host" id="lkchangename">Change name</button>';box.insertAdjacentElement('afterend',p);ch=$id('lkchangename');
+          ch.onclick=()=>{onlyPicked(false);if(find){find.value='';drawNames('')}fitList()}}
+      }
+      if(ch)ch.parentNode.hidden=!on;
     };
     const drawNames=q=>{
       const query=String(q||'').trim().toLowerCase();
@@ -515,6 +531,7 @@
       if(room>72)list.style.maxHeight=Math.min(320, Math.floor(room))+'px';
     };
     wireNames();
+    if(window._lkLoginId&&el.querySelectorAll('[data-lkscorer]').length>1)onlyPicked(true);
     fitList();
     if($id('lkfind')){
       /* A phone keyboard's own autofill/suggestion bar can insert the full name without firing
