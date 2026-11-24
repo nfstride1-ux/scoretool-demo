@@ -408,6 +408,7 @@
       <select id="lknight">${nightChoices(lg,w)}</select>
       <div id="lkcred">
         <div id="lkpinbox"></div>
+        <div id="lkpassbox" hidden><label for="lkpw">Event passcode</label><input id="lkpw" type="password" autocomplete="off" value=""></div>
         <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       </div>
       <p class="small" id="lkscorerlabel">Your name</p>
