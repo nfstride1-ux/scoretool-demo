@@ -1,5 +1,5 @@
-/* My results source (test build, 6 Nov 2026). Country or body, website and member number stay on this phone.
-   Nothing is fetched. The archer opens the site themselves, or pastes a table / CSV, maps the columns, and confirms before anything is saved.
+/* My results source (24 Nov 2026). Results region, website and member number stay on this phone.
+   Nothing is fetched. Australian regions open Archer's Diary. Other keeps a name and results website you type.
    Saved imports are tagged imported, never replace a scored session, and are left out of ratings. */
 (function(){
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
@@ -8,18 +8,47 @@ const who=()=>(typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest';
 const SKEY=()=>'scoretool.resultsSource.'+who();
 const IKEY=()=>'scoretool.imported.'+who();
 const OKEY=()=>'scoretool.official.'+who();
-/* Home pages checked 6 Nov 2026. Archery GB answers 403 to a scripted fetch and 200 in a browser; the address is the body's own site. */
+const DIARY_URL='https://www.archersdiary.com/Performance.aspx';
+const WA_RESULTS_URL='https://www.worldarchery.sport/events/results';
+/* Archer's Diary regions (24 Nov 2026). World Archery opens the public results list. */
 const BODIES=[
- ['aa','Archery Australia','https://archery.org.au/'],
- ['awa','Archery WA (state)','https://www.archerywa.com.au/'],
- ['world','World Archery','https://www.worldarchery.sport/'],
- ['agb','Archery GB','https://www.archerygb.org/'],
- ['usa','USA Archery','https://www.usarchery.org/'],
+ ['aa','National Results',DIARY_URL],
+ ['act','Archery ACT',DIARY_URL],
+ ['nsw','Archery NSW',DIARY_URL],
+ ['tas','Archery Society of Tasmania',DIARY_URL],
+ ['sa','Archery South Australia',DIARY_URL],
+ ['vic','Archery Victoria',DIARY_URL],
+ ['awa','Archery WA',DIARY_URL],
+ ['nqaa','North Queensland Archery Association',DIARY_URL],
+ ['sqas','South Queensland Archery Society',DIARY_URL],
+ ['world','World Archery results',WA_RESULTS_URL],
  ['other','Other','']
 ];
+const AA_IDS={'aa':1,'act':1,'nsw':1,'tas':1,'sa':1,'vic':1,'awa':1,'nqaa':1,'sqas':1};
+const OLD_NAMES={agb:'Archery GB',usa:'USA Archery'};
 const bodyOf=id=>BODIES.find(b=>b[0]==id)||BODIES[0];
 function read(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
-function src(){const o=read(SKEY());return o&&typeof o=='object'?o:{body:'aa',url:BODIES[0][2],member:''}}
+function migrateSrc(o){
+ const member=(o&&typeof o=='object'&&o.member)||'';
+ const name=(o&&typeof o=='object'&&o.name)||'';
+ if(!o||typeof o!='object'||!o.body)return {body:'aa',url:DIARY_URL,member,name:''};
+ if(o.body==='other'||(o.body&&!BODIES.some(b=>b[0]==o.body))){
+  return {body:'other',url:(o.url||''),member,name:(name||OLD_NAMES[o.body]||'').trim()};
+ }
+ const known=bodyOf(o.body);
+ return {body:known[0],url:known[2],member,name:''};
+}
+function src(){
+ const o=read(SKEY());
+ const next=migrateSrc(o);
+ try{
+  const prev=o&&typeof o=='object'?o:null;
+  if(!prev||prev.body!=next.body||prev.url!=next.url||(prev.member||'')!=next.member||(prev.name||'')!=(next.name||'')){
+   localStorage.setItem(SKEY(),JSON.stringify(next));
+  }
+ }catch(e){}
+ return next;
+}
 function imports(){const a=read(IKEY());return Array.isArray(a)?a:[]}
 window.importedShoots=function(){return imports().filter(r=>r&&r.imported&&r.date&&r.round&&r.score>0).map(r=>({
  id:r.id,date:r.date,round:r.round,score:+r.score,ends:[],dists:[],flagged:0,src:'imported',inc:false,
@@ -73,7 +102,6 @@ async function readScorePhoto(file){await loadOcr();const worker=await Tesseract
 function parseScore(s){const n=parseInt(String(s||'').replace(/[^\d]/g,''),10);return n>0?n:0}
 let grid=[],header=false,map={round:0,date:1,score:2,event:3};
 let diaryText='',diaryRows=[],diarySkipped=0,diaryMsg='';
-const DIARY_URL='https://www.archersdiary.com/Performance.aspx';
 function applyMap(){const rows=header?grid.slice(1):grid;
  return rows.map(r=>{const g=i=>i<0?'':(r[i]||'');return {round:g(map.round).trim(),date:parseDate(g(map.date)),score:parseScore(g(map.score)),event:g(map.event).trim()}}).filter(r=>r.round||r.date||r.score||r.event)}
 function taken(date,round,score){
@@ -96,7 +124,7 @@ function keepPhoto(id,file){return new Promise(res=>{const img=new Image(),url=U
    req.onsuccess=()=>{const db=req.result;if(db.objectStoreNames.contains('photos')){put(db);return}const v=db.version+1;db.close();const req2=indexedDB.open('scoretool-official-photos',v);req2.onerror=()=>res(false);
     req2.onupgradeneeded=()=>{if(!req2.result.objectStoreNames.contains('photos'))req2.result.createObjectStore('photos')};req2.onsuccess=()=>put(req2.result)}},'image/jpeg',0.7)};img.onerror=()=>{URL.revokeObjectURL(url);res(false)};img.src=url})}
 function view(){
- const o=src(),other=o.body==='other',url=httpUrl(o.url);
+ const o=src(),other=o.body==='other',aa=!!AA_IDS[o.body],url=httpUrl(o.url);
  const cols=grid[0]?grid[0].map((_,i)=>header?grid[0][i]||('Column '+(i+1)):'Column '+(i+1)):[];
  const sel=(k,label)=>{const opts=cols.map((c,i)=>`<option value="${i}" ${map[k]===i?'selected':''}>${h(c)}</option>`).join('');
   return `<label for="rm_${k}">${label}</label><select id="rm_${k}"><option value="-1" ${map[k]<0?'selected':''}>Not in this table</option>${opts}</select>`};
@@ -105,17 +133,19 @@ function view(){
  app.innerHTML=`<div class="labbar"><button class="btn ghost labback" type="button" id="rsback">‹ Tools</button><h1>My results source</h1></div>
  <div class="card" id="rssource"><span class="kicker">My results source</span><h2 style="margin:2px 0 8px">Where your results live</h2>
  <p class="small" style="margin:0 0 8px">Kept on this phone only. Not sent anywhere. Nothing is fetched from the organisation.</p>
- <label for="rsbody">Country or body</label>
+ <label for="rsbody">Results region</label>
  <select id="rsbody">${BODIES.map(b=>`<option value="${b[0]}" ${o.body===b[0]?'selected':''}>${h(b[1])}</option>`).join('')}</select>
- <label for="rsurl">Website</label>
- <input id="rsurl" type="url" inputmode="url" autocomplete="off" value="${h(o.url||'')}" ${other?'':'readonly'} placeholder="${other?'https://…':'Filled from the body you picked'}">
- ${other?'<p class="small muted" style="margin:4px 0 0">Other: type the address yourself. It is not filled in for you.</p>':'<p class="small muted" style="margin:4px 0 0">This is the body\'s home page. Change the body to pick another.</p>'}
- <label for="rsmem">Member / archer ID</label>
- <input id="rsmem" autocomplete="off" value="${h(o.member||'')}" placeholder="Your member or archer number">
+ ${other?`<label for="rsname">Organisation or country</label>
+ <input id="rsname" autocomplete="off" value="${h(o.name||'')}" placeholder="Name of the organisation or country">
+ <label for="rsurl">Results website</label>
+ <input id="rsurl" type="url" inputmode="url" autocomplete="off" value="${h(o.url||'')}" placeholder="https://…">
+ <p class="small muted" style="margin:4px 0 0">Type the name and the results website. It is kept on this phone. Open my results opens that page.</p>`:aa?`<p class="small muted" style="margin:4px 0 0">Pick ${h(bodyOf(o.body)[1])} in Archer's Diary and use your AA member number.</p>`:`<p class="small muted" style="margin:4px 0 0">Opens the World Archery results list.</p>`}
+ <label for="rsmem">${aa?'AA member number':'Member / archer ID'}</label>
+ <input id="rsmem" autocomplete="off" value="${h(o.member||'')}" placeholder="${aa?'Your AA member number':'Your member or archer number'}">
  <button class="btn full" id="rssave" type="button" style="margin-top:10px">Save</button>
  <p class="small" id="rssaved" style="margin:6px 0 0"></p>
  <a class="btn alt full" id="rsopen" href="${h(url||'#')}" target="_blank" rel="noopener" ${url?'':'aria-disabled="true" style="pointer-events:none;opacity:.55"'}>Open my results</a>
- <p class="small muted" style="margin:6px 0 0">Opens the saved website in your browser. ScoreTool does not sign in or read the page.</p>
+ <p class="small muted" style="margin:6px 0 0">${aa?`Opens Archer's Diary. Pick ${h(bodyOf(o.body)[1])} in the region drop-down and use your AA member number. ScoreTool does not sign in or read the page.`:other?`Opens the website you saved. ScoreTool does not sign in or read the page.`:`Opens the World Archery results list. ScoreTool does not sign in or read the page.`}</p>
  </div>
  <div class="card" id="rsdiary"><span class="kicker">Archer's Diary</span><h2 style="margin:2px 0 8px">Paste my results</h2>
  <p class="small" style="margin:0 0 8px">Opens Bests in a new tab. You copy the table and paste it here. ScoreTool does not sign in and does not read that page.</p>
@@ -173,9 +203,11 @@ function view(){
  <button class="btn ghost" id="rssyncpaste" type="button" style="margin-top:8px">Paste a table or a CSV</button>
  </div>`:''}`;
  $('#rsback').onclick=()=>nav('tools');
- const grab=()=>{const b=$('#rsbody').value,known=bodyOf(b);return {body:b,url:b==='other'?$('#rsurl').value.trim():known[2],member:$('#rsmem').value.trim()}};
- $('#rsbody').onchange=()=>{const b=$('#rsbody').value,mem=$('#rsmem').value.trim();
-  const g=b==='other'?{body:'other',url:'',member:mem}:{body:b,url:bodyOf(b)[2],member:mem};
+ const grab=()=>{const b=$('#rsbody').value,mem=$('#rsmem').value.trim();
+  if(b==='other')return {body:'other',url:($('#rsurl')&&$('#rsurl').value.trim())||'',member:mem,name:($('#rsname')&&$('#rsname').value.trim())||''};
+  const known=bodyOf(b);return {body:known[0],url:known[2],member:mem,name:''}};
+ $('#rsbody').onchange=()=>{const mem=$('#rsmem').value.trim(),b=$('#rsbody').value;
+  const g=b==='other'?{body:'other',url:'',member:mem,name:''}:{body:b,url:bodyOf(b)[2],member:mem,name:''};
   localStorage.setItem(SKEY(),JSON.stringify(g));view()};
  $('#rssave').onclick=()=>{const g=grab();if(g.body==='other'&&g.url&&!httpUrl(g.url)){$('#rssaved').textContent='The website needs to start with https://';return}
   localStorage.setItem(SKEY(),JSON.stringify(g));$('#rssaved').textContent='Saved on this phone.';view()};

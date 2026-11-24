@@ -2,6 +2,18 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-24-0930-regions
+
+My results source uses Archer's Diary regions, World Archery results, and a custom Other source. Cache version is `v2026-11-24-0930-regions` (`?v=202611240930`), newer than `v2026-11-24-0130-diary-paste`. Not merged.
+
+- The Results region list is National Results, the eight Archer's Diary state bodies, World Archery results, and Other. Archery GB and USA Archery are no longer listed.
+- For an Australian region, Open my results opens Archer's Diary. The help text says to pick that region there and use the AA member number. A saved Archery Australia or Archery WA choice is kept, with the same member ID.
+- Other has a name and a results website (https), saved on this phone. Open my results opens that page. An old Archery GB or USA Archery choice is moved to Other and keeps its saved address.
+- Paste my results stays directly under the Open button. Its behaviour is unchanged.
+
+### Files
+results.js, index.html, sw.js, version.json, whatsnew.js, CHANGELOG.md.
+
 ## v2026-11-24-0130-diary-paste
 
 Bests from Archer's Diary are pasted in by hand, and the rankings card can show a state rank from a saved list. Cache version is `v2026-11-24-0130-diary-paste` (`?v=202611240130`). Nothing in the app fetches Archer's Diary. Not merged.
