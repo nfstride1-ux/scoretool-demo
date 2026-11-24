@@ -2,6 +2,16 @@
 
 Newest first. Each entry names the version tag shown in Settings.
 
+## v2026-11-24-0900-rankings
+
+National and WA rankings from Archer's Diary, saved by hand on 24 Nov 2026. Cache version is `v2026-11-24-0900-rankings` (`?v=202611240900`), newer than `v2026-11-24-0130-diary-paste`. Nothing in the app fetches Archer's Diary. Not merged.
+
+- `data/rankings.json` is now the full national and WA lists (outdoor 2192, indoor 1896, field 1159, clout 624 nationally; WA 143, 190, 107 and 99). The `archers` map is still written from the national rows. As of 24 Nov 2026.
+- The importer finds the table header in a Ctrl+A page copy, so preamble and the "Listed N entries" footer are skipped. A 6-column table (no State or Club) is read correctly.
+
+### Files
+data/rankings.json, tools/rankings_import.py, tools/rankings_import_test.py, tools/fixtures/rankings/ctrl-a-copy.txt, tools/rankings_card_test.py, index.html, sw.js, version.json, CHANGELOG.md, whatsnew.js.
+
 ## v2026-11-24-0130-diary-paste
 
 Bests from Archer's Diary are pasted in by hand, and the rankings card can show a state rank from a saved list. Cache version is `v2026-11-24-0130-diary-paste` (`?v=202611240130`). Nothing in the app fetches Archer's Diary. Not merged.

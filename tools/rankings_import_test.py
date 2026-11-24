@@ -21,7 +21,8 @@ json.dump(old, open(dest, 'w'))
 proc = subprocess.run([sys.executable, TOOL, '--out', dest,
     '--page', 'national', 'outdoor', os.path.join(FIX, 'national-outdoor.html'),
     '--page', 'WA', 'outdoor', os.path.join(FIX, 'wa-outdoor.txt'),
-    '--page', 'national', 'indoor', os.path.join(FIX, 'national-indoor.tsv')],
+    '--page', 'national', 'indoor', os.path.join(FIX, 'national-indoor.tsv'),
+    '--page', 'national', 'clout', os.path.join(FIX, 'ctrl-a-copy.txt')],
     capture_output=True, text=True)
 chk('tool exits 0', proc.returncode==0)
 if proc.returncode:
@@ -45,6 +46,12 @@ chk('tsv indoor', len(indoor)==2 and indoor[0]['name']=='Nathaniel Stride' and i
 chk('a discipline that was not in the saved pages is kept', any(r['name']=='Logan Wolfe' and r['discipline']=='field' for r in data['national']['field']))
 chk('replaced discipline is only the saved page', all(r['name']!='Logan Wolfe' for r in data['national']['outdoor']))
 chk('archers map still groups national rows by name', 'Nathaniel Stride' in data['archers'] and any(r['discipline']=='indoor' for r in data['archers']['Nathaniel Stride']))
-chk('untouched state disciplines stay empty lists', data['states']['WA']['clout']==[] and data['national']['clout']==[])
+chk('untouched state disciplines stay empty lists', data['states']['WA']['clout']==[])
+ctrl = data['national']['clout']
+chk('ctrl+a copy skips preamble and listed footer', len(ctrl)==3)
+byc = {r['name']: r for r in ctrl}
+chk('ctrl+a 6-column rating and place', byc['Ada Archer']['rating']=='90.0' and byc['Ada Archer']['rank']==1 and byc['Nathaniel Stride']['rank']==2)
+chk('ctrl+a class rank without state or club columns', byc['Nathaniel Stride']['class_rank']==1 and byc['Nathaniel Stride']['class_size']==2 and byc['Ada Archer']['class_size']==1)
+chk('ctrl+a does not invent state or club', byc['Ada Archer']['state']=='' and byc['Ada Archer']['club']=='')
 print('rankings import: PASS', len(ok), 'FAIL', len(bad), bad[:8])
 sys.exit(1 if bad else 0)

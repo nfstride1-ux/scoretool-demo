@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-24-0900-rankings',d:'2026-11-24',items:[
+   ['trophy',"Updated national and WA rankings","The rankings card now uses the Archer's Diary list saved on 24 Nov 2026, including a WA place for each discipline you are in.",'958938b']]},
   {v:'v2026-11-24-0130-diary-paste',d:'2026-11-24',items:[
    ['trophy',"Paste your Archer's Diary bests","Tools, My results source, opens Bests in a new tab. Copy the AA number saved on this phone, paste the results table, and confirm. It shows on personal bests under that bow. Rankings can show a national place and a WA place from a saved list.",'ee5c476']]},
   {v:'v2026-11-17-2405-loginfit',d:'2026-11-17',items:[

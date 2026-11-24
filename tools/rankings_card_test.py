@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""390px: ranking card (saved list, and a list that includes a WA rank) and the results paste."""
+"""390px: ranking card (saved list, and a list that includes a WA rank) and the results paste.
+The card is fed fixture rankings, not data/rankings.json, so a refresh of the saved list does not break this test."""
 import json, os, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 import guard
@@ -14,10 +15,17 @@ def chk(n, c):
 PORT = freeport.get()
 srv = subprocess.Popen([sys.executable, '-m', 'http.server', PORT], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(0.8)
-WA = {
+NAT = {
  "as_of": "2026-10-15",
  "source": "saved",
  "national": {"outdoor": [{"name": "Nathaniel Stride", "club": "Gosnells Archers Inc", "state": "Western Australia", "rank": 1047, "class_rank": 199, "class_size": 331, "age_class": "Open", "gender": "Male", "division": "Compound", "rating": "44.5", "discipline": "outdoor"}], "indoor": [], "field": [], "clout": []},
+ "states": {},
+ "archers": {}
+}
+WA = {
+ "as_of": "2026-10-15",
+ "source": "saved",
+ "national": NAT["national"],
  "states": {"WA": {"outdoor": [{"name": "Nathaniel Stride", "club": "Gosnells Archers Inc", "state": "Western Australia", "rank": 12, "class_rank": 8, "class_size": 22, "age_class": "Open", "gender": "Male", "division": "Compound", "rating": "44.5", "discipline": "outdoor"}], "indoor": [], "field": [], "clout": []}},
  "archers": {}
 }
@@ -28,6 +36,7 @@ try:
         pg = b.new_page(viewport={'width': 390, 'height': 844})
         errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.route('**/data/rankings.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(NAT)))
         pg.goto('http://127.0.0.1:'+PORT+'/?tester=nathe')
         pg.wait_for_timeout(1200)
         pg.evaluate("""()=>{localStorage.setItem('scoretool.resultsSource.nathe', JSON.stringify({body:'aa', url:'https://archery.org.au/', member:'24601'})); if(typeof S!=='undefined'){S.unlocked=true; if(!S.profile)S.profile='Nathaniel Stride'; save();} }""")
