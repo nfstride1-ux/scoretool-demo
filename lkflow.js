@@ -393,10 +393,11 @@
     const reveal=hostPhone?'':`<p><button type="button" class="lk-host" id="lkshowall">Not you? Show all names</button></p>`;
     const reset=hostPhone?`<p><button type="button" class="lk-host" id="lkpinreset">Reset PIN</button></p>`:'';
     /* A name that already has a PIN logs in with the night, the name and that PIN. The event passcode is only for a name that still has no PIN, and for a host phone. */
+    /* On a host phone only the hosts themselves skip the PIN. Any other archer still enters their own PIN. */
+    const hostSelf=rec=>!!rec&&(cohostRec(rec)||(hostPhone&&((typeof lkIsHostAccount==='function'&&lkIsHostAccount(rec.id))||(typeof lkIsHostRegName==='function'&&lkIsHostRegName(rec.name)))));
     const needsPass=id=>{
-      if(hostPhone)return true;
       const rec=names.find(n=>String(n.id)===String(id));
-      if(!rec||cohostRec(rec))return !!rec;
+      if(!rec||hostSelf(rec))return !!rec;
       const info=typeof lkPinOf==='function'?lkPinOf(lg,rec.id):null;
       return !(info&&info.pinHash);
     };
@@ -428,7 +429,7 @@
     const paintPin=id=>{
       const box=$id('lkpinbox');if(!box)return;
       const rec=names.find(n=>n.id===id);
-      if(hostPhone||cohostRec(rec)||!rec){box.hidden=true;box.innerHTML='';paintPass(id);return}
+      if(!rec||hostSelf(rec)){box.hidden=true;box.innerHTML='';paintPass(id);return}
       const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
       if(left){
         box.hidden=false;
@@ -560,7 +561,7 @@
       const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
       if(!rec){if(msg)msg.textContent='Tap your name.';return}
-      const skipPin=hostPhone||cohostRec(rec);
+      const skipPin=hostSelf(rec);
       if(!skipPin){
         const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
         if(left){if(msg)msg.textContent='Too many wrong PINs. This name is locked on this phone for a minute.';return}
