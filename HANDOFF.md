@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 14:25 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/cal-delete-sync` (cache `v2026-11-25-1425-caldel`). Deleting a ScoreTool session now removes it from the linked Archery Calendar My events list and the score-shot day marks. `dropScore` and Discard round call `calDiscard`. On each sync, sessions (and official/imported rows) that were already sent but are no longer in ScoreTool, including ones deleted before this change, are posted to `scoretool_delete_score`. If that function is not on the calendar yet, the id stays in `sent` and is retried; new scores still send. New test: `tools/calsync_delete_test.py` (tester Steven Test, mocked RPC, no live league data). Lingkana data was not touched. No features were removed.
+- Half-done: PR only; not merged. The calendar SQL (`scoretool_delete_score` in nfstride1-ux/archery-calendar branch `cursor/scoretool-delete-score`) must be run in the live Supabase SQL Editor or deletes will wait and retry. Nothing goes live until Nathe says so.
+- Next: Nathe reviews both pull requests. Apply the SQL, then this ScoreTool change, then verify on a phone if he wants.
+- Decision: Incomplete sessions should not auto-sync unless they are marked finished or tied to an event (existing rule, unchanged). The calendar should only keep what ScoreTool still has. Already-deleted incomplete scores are cleaned up on the next successful sync once the SQL is live.
+
 ## 25 Nov 2026, 13:58 AWST — [Jarvis]
 
 - Who: Jarvis.

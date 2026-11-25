@@ -1,6 +1,6 @@
 /* Finished rounds -> the archer's My events on Archery Calendar (22 Oct 2026).
    Link once: Me › Settings › Archery Calendar (or the one-time prompt) opens archerycalendars.com/#/scoretool, where the archer signs in
-   and taps Link. The calendar hands back a secret that can ONLY add/update this archer's own ScoreTool scores (supabase/scoretool_scores.sql
+   and taps Link. The calendar hands back a secret that can ONLY add/update/remove this archer's own ScoreTool scores (supabase/scoretool_scores.sql
    in the calendar repo). Stored data: NEW keys only (scoretool.cal.<tester>.*). Scores already finished before this update are never sent,
    and no score, session or other stored record is changed. Never blocks scoring: everything is async and silent on failure. */
 (function(){
@@ -45,7 +45,7 @@ function baseline(){if(get('base'))return;put('base',(S.sessions||[]).filter(fin
 /* 'force' (23 Oct 2026): ids of past finished rounds the archer chose to send untied (Send to Archery Calendar) */
 const forceSet=()=>new Set(get('force')||[]);
 function todo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};return (S.sessions||[]).filter(s=>(forced(s)||finished(s))&&!gone.has(s.id)&&sent[s.id]!==sig(s))}
-window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}};
+window.calDiscard=id=>{if(!WHO()||!id)return;const d=get('discarded')||[];if(!d.includes(id)){d.push(id);put('discarded',d.slice(-500))}setTimeout(tick,50)};
 async function postScore(body){const r=await fetch(SB+'/rest/v1/rpc/scoretool_save_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
 async function send(s,tok){return postScore({p_token:tok,p_source_id:WHO()+':'+s.id,p_shot_date:s.date,p_round:roundOut(s),p_score:total(s),p_max:maxOf(s),p_location:locOf(s)})}
@@ -70,16 +70,24 @@ function extraRows(){const rows=[],seen=new Set();
 function extraTodo(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{};
  return extraRows().filter(x=>{if(gone.has(x.id)||sameSent(x.date,x.round,x.score))return false;const label=withPb(x.round,recPb(x.round,x.date,x.score));x._round=label;x._sig=JSON.stringify([x.date,label,x.score,x.max,x.loc||null]);return sent[x.id]!==x._sig})}
 async function sendExtra(x,tok){return postScore({p_token:tok,p_source_id:WHO()+':'+x.id,p_shot_date:x.date,p_round:x._round,p_score:x.score,p_max:x.max,p_location:x.loc})}
-async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo(),X=extraTodo();if(!L.length&&!X.length)return 0;
- const tok=get('link');if(!okTok(tok)){maybePrompt();return 0}
+function liveIds(){const ids=new Set();(S.sessions||[]).forEach(s=>{if(s&&s.id&&!s.sample)ids.add(s.id)});extraRows().forEach(x=>{if(x&&x.id)ids.add(x.id)});return ids}
+/* Sessions (or official/imported rows) that were sent, then deleted on this phone. Also covers already-deleted
+   scores from before this update: they stay in scoretool.cal.<tester>.sent after dropScore removed them from S.sessions. */
+function staleSent(){const gone=new Set(get('discarded')||[]),sent=get('sent')||{},live=liveIds();return Object.keys(sent).filter(id=>gone.has(id)||!live.has(id))}
+async function postDelete(tok,id){const r=await fetch(SB+'/rest/v1/rpc/scoretool_delete_score',{method:'POST',headers:{apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB,'Content-Type':'application/json'},body:JSON.stringify({p_token:tok,p_source_id:WHO()+':'+id})});
+ if(r.ok)return 'ok';const j=await r.json().catch(()=>({}));if(r.status==404||/PGRST202/.test(j.code||''))return 'off';if(/not linked/i.test(j.message||''))return 'unlinked';return 'err'}
+async function tick(){if(window.ADMIN_VIEW){window.avSkip&&avSkip('calendar');return 0}let k=0;try{if(!WHO()||typeof S=='undefined'||!S.unlocked||state.busy)return 0;adoptPending();baseline();seedNathe();const L=todo(),X=extraTodo(),D=staleSent();if(!L.length&&!X.length&&!D.length)return 0;
+ const tok=get('link');if(!okTok(tok)){if(L.length||X.length)maybePrompt();return 0}
  if(!navigator.onLine)return 0;state.busy=true;const sent=get('sent')||{};
- const take=async(id,sg,run)=>{const r=await run();if(r=='ok'){sent[id]=sg;put('sent',sent);state.live=true;state.err='';k++;return 'ok'}
+ const take=async(id,sg,run)=>{const r=await run();if(r=='ok'){if(sg==null)delete sent[id];else sent[id]=sg;put('sent',sent);state.live=true;state.err='';k++;return 'ok'}
   if(r=='off'){state.live=false;return 'stop'}if(r=='unlinked'){localStorage.removeItem(K('link'));state.err='The link was removed on Archery Calendar. Link again to keep adding scores.';return 'stop'}
   state.err='Couldn’t reach Archery Calendar. Will try again.';return 'stop'};
+ /* Deletes first. If the calendar has not switched on scoretool_delete_score yet ('off'), leave them in sent and still send new scores. */
+ for(const id of D){const r=await postDelete(tok,id);if(r=='ok'){delete sent[id];put('sent',sent);k++;continue}if(r=='unlinked'){localStorage.removeItem(K('link'));state.err='The link was removed on Archery Calendar. Link again to keep adding scores.';return k}if(r=='off')break;state.err='Couldn’t reach Archery Calendar. Will try again.';return k}
  for(const s of L){if(await take(s.id,sig(s),()=>send(s,tok))=='stop')return k}
  for(const x of extraTodo()){if(await take(x.id,x._sig,()=>sendExtra(x,tok))=='stop')break}
 }catch(e){}finally{state.busy=false}return k}
-setInterval(tick,4000);addEventListener('online',tick);setTimeout(tick,1500);
+window.calTick=tick;setInterval(tick,4000);addEventListener('online',tick);setTimeout(tick,1500);
 /* once only, never in the way: a small card after a round is finished, if not linked */
 function scoringNow(){try{if(document.querySelector('#cspface,#csentry,[data-csk],[data-lgk]'))return true;return typeof cur!='undefined'&&!!cur&&typeof isDone=='function'&&!isDone(cur)&&view=='score'}catch(e){return false}}
 setInterval(()=>{const d=document.getElementById('calPrompt');if(d&&scoringNow())d.remove()},500);
