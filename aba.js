@@ -15,7 +15,7 @@ window.ABA_IC=IC;
 ROUNDS[IC_OLD]={...ROUNDS[IC],legacy:true};
 [[3,'3 arrow'],[2,'2 arrow'],[1,'1 arrow']].forEach(([n,l])=>{ROUNDS['ABA 3D · '+l+' (20 targets)']={ends:20,ape:1,face:'ABA 3D animal',max:400,aba:n,halves:[{n,t:20,l:n+'A',name:n+'-arrow round',desc:n>1?'up to '+n+' arrows a target: the first arrow to hit scores':'one arrow a target: a miss scores 0'}],practice:true,legacy:true}});
 const hitCode=a=>a&&a.k?a.k+(a.z||''):'M';window.abaHitCode=hitCode;
-function migrate(){let ch=0;(S.sessions||[]).forEach(x=>{if(x.round==IC_OLD){x.round=IC;ch=1}if(x.id=='aba20250517'&&x.src=='paper'&&x.abaNote!==NOTE){x.abaNote=NOTE;ch=1}});if(S.lastRound==IC_OLD){S.lastRound=IC;ch=1}if(ch)save()}
+function migrate(){let ch=0;(S.sessions||[]).forEach(x=>{if(x.round==IC_OLD){x.round=IC;ch=1}/* 25 Nov 2026 fix: the paper-sheet note text went with the seed in #72; a sheet already on a phone keeps its own note (was a ReferenceError on that phone) */});if(S.lastRound==IC_OLD){S.lastRound=IC;ch=1}if(ch)save()}
 const isAba=r=>!!(ROUNDS[r]&&ROUNDS[r].aba);window.isAbaRound=isAba;
 const escA=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* which half a round-target index (0-based) is in: {h, n arrows, tn target number in half, start index} */

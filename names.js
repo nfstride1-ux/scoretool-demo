@@ -37,7 +37,9 @@ const nmIdx=id=>TESTERS.findIndex(t=>t.id==id);
    id with no default. */
 const NM_DEF={};
 const nmDef=id=>NM_DEF[id]||null;
-const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);return i<0?'Archer':'Archer '+(i+1)};
+/* 25 Nov 2026 (fix): a profile made on (or kept from before testing ended on) this phone shows its own first name, never 'Archer N'.
+   The name comes from this phone's storage only and is not posted to the relay (only an own display-name pick is). */
+const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);if(i>=0&&TESTERS[i].short)return TESTERS[i].short;return i<0?'Archer':'Archer '+(i+1)};
 window.NM_DEF=NM_DEF;
 /* Rule check. Returns {ok,n,msg}. selfId is skipped for the uniqueness check; pass uniq=false to check format/rude only. */
 function nmCheck(raw,selfId,uniq=true){const n=nmClean(raw);
@@ -75,11 +77,12 @@ const nmEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 /* every real-name variant -> tester id, longest first so 'Tai Archer' beats 'Tai Archer' */
 const NM_VAR=(()=>{const L=[];NM_REAL.full.forEach(([id,n])=>{L.push([id,n]);const p=n.split(/\s+/);if(p.length>1){L.push([id,p[0]+' '+p[p.length-1][0]+'.']);L.push([id,p[0]+' '+p[1][0]+'.'])}});
  const seen=new Set();return L.filter(([i,n])=>{const k=n.toLowerCase();if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>b[1].length-a[1].length)})();
-const NM_RX=new RegExp('('+NM_VAR.map(([,n])=>nmEsc(n)).join('|')+')(?![A-Za-z])','gi');
+/* no names on this phone: no pattern at all (an empty one would match everywhere) */
+const NM_RX=NM_VAR.length?new RegExp('('+NM_VAR.map(([,n])=>nmEsc(n)).join('|')+')(?![A-Za-z])','gi'):null;
 const nmIdOf=s=>{const k=String(s||'').trim().toLowerCase();const v=NM_VAR.find(([,n])=>n.toLowerCase()==k);return v?v[0]:null};
 /* map a stored name (S.profile, squad member, coach...) to the name to show */
 function dispName(s){if(s==null)return s;const id=nmIdOf(s);if(id)return testerName(id);if(typeof S!='undefined'&&S&&s==S.profile)return myName();return s}
-function nmScrub(t){if(!t||typeof t!='string')return t;NM_RX.lastIndex=0;if(!NM_RX.test(t))return t;NM_RX.lastIndex=0;return t.replace(NM_RX,m=>testerName(nmIdOf(m)))}
+function nmScrub(t){if(!t||typeof t!='string'||!NM_RX)return t;NM_RX.lastIndex=0;if(!NM_RX.test(t))return t;NM_RX.lastIndex=0;return t.replace(NM_RX,m=>testerName(nmIdOf(m)))}
 window.dispName=dispName;window.testerName=testerName;window.myName=myName;window.nmScrub=nmScrub;window.nmCheck=nmCheck;
 /* --- relay sync --- */
 const NM_TOPIC=()=>H2H_NS+'-names';
@@ -107,7 +110,7 @@ let nmSkipMem=false;
 const nmLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const nmSkipped=id=>nmSkipMem||(+nmLS.get(nmAskKey(id))||0)>=NM_RESET;
 (function(){if(!TESTER)return;const id=TESTER.id;if(nmOwnRaw(id)&&!nmOwn(id)){nmLS.del(nmOwnKey(id));if(!nmSkipped(id))nmLS.del(nmAskKey(id))}})();
-function nmNeedPrompt(){if(!TESTER||window.ADMIN_VIEW)return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
+function nmNeedPrompt(){if(!TESTER||window.ADMIN_VIEW)return false;/* a profile kept from before testing ended opens straight into the app (25 Nov 2026 fix) */if(TESTER.founding&&!nmClash(TESTER.id))return false;if(nmClash(TESTER.id))return true;return!nmDef(TESTER.id)&&!nmOwn(TESTER.id)&&!nmSkipped(TESTER.id)}
 function nmScreen(){const clash=nmClash(TESTER.id);$('#tabs').hidden=true;
  app.innerHTML=`<div class="card dark" id="nmscreen"><span class="kicker">Welcome</span><h1>${clash?'Pick another name':'Choose your display name'}</h1>
  <p class="small">${clash?'Someone else picked that name first. Choose a different one.':'This is the name other people see in matches, squads and leagues.'}</p>${nmForm('nmin','Save name')}
