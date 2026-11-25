@@ -151,7 +151,7 @@ function csUndo(code,id){window._csFx=null;const cs=csGet(code);if(!cs||!csCanSc
 function csOwnSession(cs){const me=csMe();if(!csP(cs,me)||!csDoneP(cs,me))return;const id='cs-'+cs.code;let s=S.sessions.find(x=>x.id==id);const E=csEnds(cs,me).map(e=>e.slice()),en=csEnt(cs,me)||{},PO=en.p&&en.e?en.e.map((x,i)=>x&&x.length?(en.p[i]||[]).map(q=>q||null):null).filter(Boolean):null,POS=PO&&PO.some(l=>l.some(Boolean))?E.map((x,i)=>x.map((_,j)=>(PO[i]||[])[j]||null)):null;
  if(!s){s={id,date:cs.date||today(),round:cs.round,ends:E,pos:POS||E.map(()=>[]),note:'Casual shoot: '+cs.name,casual:cs.code};if(cs.face3)s.face3=cs.face3;if(csSplit(cs)&&csAF(cs,me)!=csBase(cs))s.face3=csAF(cs,me);if(ROUNDS[cs.round].vegas)s.face3='vegas';S.sessions.push(s)}else{s.ends=E;if(POS)s.pos=POS}
  if(en.lcT&&en.arrowD){s.lcT=1;s.arrowD=en.arrowD}}
-function csAfter(cs){csOwnSession(cs);if(csFin(cs)&&cs.mp&&cs.mp.on&&!cs.mp.seeds&&csHost(cs))csMpStart(cs.code,true);save();csMatchSync(cs);if($('#csview')&&window._csv==cs.code)csView(cs.code);csTick(true)}
+function csAfter(cs){csOwnSession(cs);if(csFin(cs)&&cs.mp&&cs.mp.on&&!cs.mp.seeds&&csHost(cs))csMpStart(cs.code,true);save();csMatchSync(cs);if($('#csarchsheet')&&window._csv==cs.code&&window._csSheetId)csArcherSheet(cs.code,window._csSheetId);else if($('#csview')&&window._csv==cs.code)csView(cs.code);csTick(true)}
 function csFinish(code){const cs=csGet(code);if(!cs||!csHost(cs)||cs.fin)return;cs.fin=1;cs.fint=Date.now();cs.dirty=1;csAfter(cs)}
 /* ---------- match play (shootup.js ladder) ---------- */
 const csMpCode=cs=>cs.code+'M';
@@ -411,7 +411,7 @@ function csWavePick(cs,ids){const R=csR(cs);const part=(ids||[]).find(id=>{if(cs
    entryScreen() in lkflow.js (built first there; this mirrors it for a casual group, not a shared
    function, since the two data models -- cs.sc/csKey vs lg.sc/lgKey, no per-device archer lock here
    -- differ enough that sharing code risked the already-working League flow for no real gain). */
-function csOneSheet(cs,id){
+function csOneSheet(cs,id,viewOnly){
   const R=csR(cs),e=csEnt(cs,id)||{e:[]},ends=(e.e||[]).filter(z=>z&&z.length);
   /* See app.js's halfRunStart comment: a round with R.halfEnds (Lancaster 660) restarts Prog at the
      start of each half; the saved total (r.tot, via csTotal/csRow) is unaffected, a flat sum either
@@ -422,7 +422,8 @@ function csOneSheet(cs,id){
     const es=esOf(i);
     const start=typeof halfRunStart==='function'?halfRunStart(i,half):0;
     let run=0;for(let k=start;k<=i;k++)run+=esOf(k);
-    return`<tr><td>${i+1}</td><td>${z.map((a,j)=>`<span class="adb ${csKcol(cs,a)}" role="button" tabindex="0" data-cssfix="${esc(id)},${i},${j}" aria-label="fix arrow ${esc(a)}">${esc(a)}</span>`).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
+    const chip=(a,j)=>viewOnly?`<span class="adb adb-view ${csKcol(cs,a)}">${esc(a)}</span>`:`<span class="adb ${csKcol(cs,a)}" role="button" tabindex="0" data-cssfix="${esc(id)},${i},${j}" aria-label="fix arrow ${esc(a)}">${esc(a)}</span>`;
+    return`<tr><td>${i+1}</td><td>${z.map(chip).join('')}</td><td>${es}</td><td>${run}</td></tr>`;
   }).join('');
   let halvesHtml='';
   if(half&&ends.length){
@@ -464,6 +465,18 @@ function csGroupSheet(code){
       csEntryScreen(code);
     };
   });
+}
+function csArcherSheet(code,id){
+  const cs=csGet(code);if(!cs||!csP(cs,id)){window._csSheetId=null;csView(code);return}
+  window._csv=code;window._csSheetId=id;cur=null;$('#tabs').hidden=false;
+  const R=csR(cs),r=csRow(cs,id),p=csP(cs,id);
+  const name=`${esc(r.nm)}${id==csMe()?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}`;
+  const html=R.aba&&typeof csAbaSheetHtml==='function'
+    ?`<div class="ad-sheet" id="csarchcard"><div class="ad-name">${name}</div><div class="ad-band">${esc(cs.round)}${R.custom?' · practice':''}</div>${csAbaSheetHtml(cs,id,false)}</div>`
+    :csOneSheet(cs,id,true).replace(`<div class="ad-name">${esc(r.nm)}${id==csMe()?' (you)':''}</div>`,`<div class="ad-name">${name}</div>`);
+  app.innerHTML=`<div class="ad" id="csarchsheet"><div class="ad-title">Score Sheet</div>${html}<div class="ad-foot"><button type="button" class="ad-back" id="csarchback">‹ Back</button></div></div>`;
+  $('#csarchback').onclick=()=>{window._csSheetId=null;csView(code)};
+  if(!(window.csAdFit&&document.querySelector('#csarchsheet .ad-pad')&&csAdFit()))scrollTo(0,0);
 }
 function csEntryScreen(code){
   const cs=csGet(code);if(!cs)return;
@@ -591,10 +604,9 @@ function csView(code){const cs=csGet(code);if(!cs)return;
  if(cs.status=='invite'){app.innerHTML=`<div id="csview"><div class="card dark"><span class="kicker">Casual shoot</span><h1>${esc(cs.name)}</h1><p class="small">${esc(testerName(cs.host))} added you. Tap Join on your Score tab.</p></div></div>`;return}
  const mpOk=cs.ppl.length>=2,seedsN=csSeeds(cs).length,lad=m&&window.suLadder?suLadder(m):[],mpDone=lad.length&&lad[lad.length-1].res.winner;
  const ask=host&&fin&&mpOk&&!(cs.mp&&cs.mp.on)&&!(cs.mp&&cs.mp.ask)&&seedsN>=2;
- const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr>${fin?'<th>#</th>':''}<th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'9s':'X'}</th></tr></thead><tbody>${sortedRows.map((r,ri)=>{const p=csP(cs,r.id);return`<tr data-csrow="${esc(r.id)}">${fin?`<td class="small muted">${ri+1}</td>`:''}<td>${esc(r.nm)}${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${csMixed(cs)?` <span class="small muted">${csAF(cs,r.id)=='single'?'single face':'3-spot'}</span>`:''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
+ const tab=`<table class="ad-tab cs-tab" style="width:100%"><thead><tr>${fin?'<th>#</th>':''}<th>Archer</th><th>${R.d3?'Targets':'Ends'}</th><th>Score</th><th>${R.d3?csTB(cs)[0]+'s':csFldS(cs)?'6s':'10s'}</th><th>${R.d3?csTB(cs)[1]+'s':csFldS(cs)?'5s':ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'9s':'X'}</th></tr></thead><tbody>${sortedRows.map((r,ri)=>{const p=csP(cs,r.id);return`<tr class="cs-openrow" data-csrow="${esc(r.id)}" data-cssheet="${esc(r.id)}" tabindex="0" role="link" aria-label="Open ${esc(r.nm)}'s scorecard">${fin?`<td class="small muted">${ri+1}</td>`:''}<td><span class="cs-openname">${esc(r.nm)}</span>${r.id==me?' (you)':''}${p&&!p.tid?' <span class="small muted">name only</span>':''}${csMixed(cs)?` <span class="small muted">${csAF(cs,r.id)=='single'?'single face':'3-spot'}</span>`:''}${p&&p.tid&&p.tid!=cs.host&&!(cs.seen||{})[p.tid]&&!csEnds(cs,r.id).length&&host?' <span class="small muted">invited</span>':''}</td><td>${r.n}/${R.ends}</td><td><b>${r.tot}</b></td><td>${r.t10}</td><td>${r.x}</td></tr>`}).join('')}</tbody></table>
  ${csMixed(cs)?`<p class="small muted" id="csfacenote" style="margin:4px 0 0">Different faces: each archer shoots their own, scored on the same ${ROUNDS[cs.round]&&ROUNDS[cs.round].wa18?'10 to M':'X, 10 to M'} scale.</p>`:''}
- <p class="small muted" style="margin:4px 0 0">${fin?'This shoot\'s scores only, highest to lowest.':'This shoot\'s scores only, in the order people were added.'} Not counted in any league.</p>`;
- const ends=`<details id="csends"><summary class="small">${R.d3?'Targets':'Ends'} for each archer</summary>${rows.map(r=>`<div class="small" style="margin:6px 0"><b>${esc(r.nm)}</b>: ${r.E.length?r.E.map((e,i)=>`${R.d3?'T':'E'}${i+1} ${esc(e.join(' '))} (${csTotal(e,cs)})`).join(' · '):'no ends yet'}</div>`).join('')}</details>`;
+ <p class="small muted" style="margin:4px 0 0">Tap a name to open their scorecard. ${fin?'This shoot\'s scores only, highest to lowest.':'This shoot\'s scores only, in the order people were added.'} Not counted in any league.</p>`;
  const mpCard=!mpOk?`<div class="card" id="csmp"><p class="small muted" style="margin:0">Match play needs 2 or more archers.</p></div>`
   :`<div class="card" id="csmp"><span class="kicker">Match play</span>${ask?`<div id="csask"><h3 style="margin:2px 0 4px">Do match play?</h3><p class="small" style="margin:0 0 8px">Seeded from this shoot's scores, highest score is seed 1${CS_SEED_FINISHED_ONLY?' (only archers who finished every end)':''}. ${R.d3?CS_MP_ENDS+' targets, one score each':CS_MP_ENDS+' ends of 3'} a match, winner moves up.</p><div class="row" style="gap:6px;justify-content:flex-start"><button class="btn alt" id="csyes">Yes, start match play</button><button class="btn ghost" id="csnot">No thanks</button></div></div>`:''}
   ${host?`<div class="row" style="gap:8px;justify-content:flex-start;align-items:center;margin-top:${ask?'10':'0'}px"><span class="small">Match play</span>${csSeg('csmpt',[['off','Off'],['on','On']],cs.mp&&cs.mp.on?'on':'off')}</div>`:`<p class="small" style="margin:0">Match play is ${cs.mp&&cs.mp.on?'on':'off'}.</p>`}
@@ -607,7 +619,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;
  ${csAllDone(cs)?'':csEntryCard(cs)}
  ${csAllDone(cs)||!csAbaN(cs,0)?'':csAbaLive(cs)}
  ${csAllDone(cs)&&csAbaN(cs,0)?`<div class="card" id="csabasum"><span class="kicker">Totals</span>${cs.ppl.map(p=>`<p style="margin:6px 0 0"><b>${esc(csNm(cs,p.id))}</b></p>${csAbaTotHtml(cs,p.id).replace(/<div class="list-item"[^]*?<\/div>/,'')}${csAbaSheetHtml(cs,p.id,false)}`).join('')}</div>`:''}
- <div class="card"><h3>Scores</h3>${tab}${ends}</div>
+ <div class="card" id="csscores"><h3>Scores</h3>${tab}</div>
  ${csAnCard(cs)}
  ${fin&&rows.length>1?`<div class="card" id="csshare"><h3 style="margin:0 0 6px">Combined scorecard</h3><p class="small muted" style="margin:0 0 8px">Everyone's score from this shoot, to send to the group.</p><button class="btn alt" id="csshareall">Share combined scorecard</button><p class="small" id="cssharemsg" role="status"></p></div>`:''}
  ${csAllDone(cs)&&csEntryCard(cs)?`<details class="card" id="csfix" ${window._csFix?'open':''}><summary class="small">Fix a score</summary>${csEntryCard(cs).replace('<div class="card" id="csentry">','<div id="csentry">')}</details>`:''}
@@ -616,6 +628,8 @@ function csView(code){const cs=csGet(code);if(!cs)return;
  <p class="small muted" id="csq" style="margin:8px 0 4px">${csQTxt(cs)}</p><div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap"><button class="btn ghost" id="csrf">Refresh now</button><button class="btn ghost" id="csback">Back to Score</button>${fin?`<button class="btn ghost" id="csdel">Remove from this phone</button>`:''}</div></div></div>`;
  const q=s=>app.querySelector(s);if(q('#csfix'))q('#csfix').ontoggle=()=>{window._csFix=q('#csfix').open};
  app.querySelectorAll('[data-csid]').forEach(b=>b.onclick=()=>{window._csAct=b.dataset.csid;csView(code)});
+ const openSheet=id=>csArcherSheet(code,id);
+ app.querySelectorAll('tr[data-cssheet]').forEach(tr=>{tr.onclick=()=>openSheet(tr.dataset.cssheet);tr.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();openSheet(tr.dataset.cssheet)}}});
  const act=q('#csentry .lc-chip.on')?q('#csentry .lc-chip.on').dataset.csid:(cs.ppl.map(p=>p.id).filter(id=>csCanScore(cs,id))[0]);
  app.querySelectorAll('[data-csfa]').forEach(b=>b.onclick=()=>{window._csAct=act;csSetFace(code,act,b.dataset.csfv)});
  app.querySelectorAll('[data-csk]').forEach(b=>b.onclick=()=>{window._csAct=act;const E0=csEnds(cs,act),ei=E0.length,nA=csAbaN(cs,ei),sg=nA>1?csStg(cs,act,ei):0;
@@ -653,6 +667,6 @@ function csView(code){const cs=csGet(code);if(!cs)return;
  q('#csrf').onclick=()=>csTick(true);q('#csback').onclick=()=>{window._csv=null;nav('score')};
  if(q('#csdel'))q('#csdel').onclick=()=>{if(!confirm('Remove this casual shoot from this phone? Other phones keep it.'))return;S.casual=csAll().filter(x=>x.code!=code);S.matches=h2hAll().filter(x=>x.code!=csMpCode(cs));save();window._csv=null;nav('score')};
  if(!(window.csAdFit&&q('#csad')&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0)}
-window.csView=csView;
+window.csView=csView;window.csArcherSheet=csArcherSheet;window.csOneSheet=csOneSheet;
 /* leaving the shoot view by the tabs clears it */
-const _csNav=nav;nav=function(v){if(v!='score'){window._csMode=null;window._csSeen=0}window._csv=null;return _csNav.apply(this,arguments)};
+const _csNav=nav;nav=function(v){if(v!='score'){window._csMode=null;window._csSeen=0}window._csv=null;window._csSheetId=null;return _csNav.apply(this,arguments)};
