@@ -138,7 +138,7 @@ function plansInner(){
  <p id="planmsg" role="status">${window._planNotice&&window._planNotice!=='1'?esc(window._planNotice):''}</p>
  <div class="row" id="planctl" style="gap:8px;justify-content:flex-start"><button class="btn ghost" id="planrestore" type="button" aria-expanded="false">Restore</button>${manage}</div>
  <div id="planrest" hidden><button class="btn ghost full" id="plangoogle" type="button">Continue with Google</button>
- <button class="btn ghost full" id="planapple" type="button">Continue with Apple</button></div></div>`}
+ <button class="btn ghost full" id="planapple" type="button">Continue with Apple</button></div><p class="small" style="margin:10px 0 0"><a href="privacy.html">Privacy</a> · <a href="privacy.html#terms">Terms</a></p></div>`}
 function plansGateHTML(){return '<div id="gate">'+plansInner()+'</div>'}
 window.plansGateHTML=plansGateHTML;
 function plansBind(){
@@ -165,7 +165,7 @@ if(typeof home==='function'){const _home=home;home=function(){_home.apply(this,a
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
 E.plans=function(){app.innerHTML='<button class="btn ghost" id="planback" type="button">Back</button>'+plansInner();plansBind();document.getElementById('planback').onclick=()=>nav('home')};
 if(E.lab_me){const baseMe=E.lab_me;E.lab_me=function(){baseMe.apply(this,arguments);const menu=app.querySelector('.labmenu');if(!menu||document.getElementById('planrow'))return;menu.insertAdjacentHTML('beforeend','<button class="labrow" id="planrow" type="button"><span><b>Plans</b><small>Free, Plus and Pro</small></span><span class="go" aria-hidden="true">›</span></button>');document.getElementById('planrow').onclick=()=>nav('plans')}}
-if(E.lab_settings){const baseSet=E.lab_settings;E.lab_settings=function(){baseSet.apply(this,arguments);if(document.getElementById('plancard'))return;const host=document.getElementById('themecard')||document.getElementById('settingscard');if(!host)return;host.insertAdjacentHTML('beforebegin','<div class="card" id="plancard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">'+esc(tierLabel())+'</h2><button class="btn" id="plansee" type="button">See plans</button></div>');document.getElementById('plansee').onclick=()=>nav('plans')}}
+if(E.lab_settings){const baseSet=E.lab_settings;E.lab_settings=function(){baseSet.apply(this,arguments);if(document.getElementById('plancard'))return;const host=document.getElementById('themecard')||document.getElementById('settingscard');if(!host)return;host.insertAdjacentHTML('beforebegin','<div class="card" id="plancard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">'+esc(tierLabel())+'</h2><button class="btn" id="plansee" type="button">See plans</button><p class="small" style="margin:8px 0 0"><a href="privacy.html">Privacy</a> · <a href="privacy.html#terms">Terms</a></p></div>');document.getElementById('plansee').onclick=()=>nav('plans')}}
 /* #plans opens Plans straight away (the link from archerycalendars.com), with or without a profile on this phone. */
 if(typeof render==='function'){const _render=render;render=function(){
  if(location.hash==='#plans'||window._plansHash){window._plansHash=1;const t=document.getElementById('tabs');if(t)t.hidden=!(typeof TESTER!=='undefined'&&TESTER&&S&&S.profile);

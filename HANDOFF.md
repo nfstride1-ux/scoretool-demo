@@ -4,6 +4,12 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 19:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1855-privacy`). Nathe t1200u: new `privacy.html` (Privacy, with Terms at `#terms`), the page Google's OAuth branding will point at. It covers data on the phone, the ntfy.sh relay for leagues and match play, optional Archery Calendar sync (Supabase), Google or Apple sign-in for paid plans (email only, to match the plan), payments by the payment processor (no card details stored), Microsoft Clarity analytics (typing hidden), Help feedback through FormSubmit, contact nfshold@gmail.com, and owner Nathaniel Stride (Archery Calendar), Western Australia. Terms: free features, subscriptions incl. GST that renew until cancelled through Manage, fair use, as is, WA law and Australian Consumer Law. No refund wording. Small "Privacy · Terms" links on Plans and on the Settings plan card. The Your data note now says the free app has no account or payment details, that paid plans add Google or Apple sign-in, and links the page (backup_test's phrase is kept).
+- Half-done: PR only, not merged.
+
 ## 25 Nov 2026, 18:33 AWST — [Jarvis]
 
 - Who: Jarvis.
