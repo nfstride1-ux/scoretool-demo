@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 13:58 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/lk-score-gate` (cache `v2026-11-25-1358-scoregate`). Lingkana scoring is gated. Anyone can still open the event home, registered list, scoresheets, ladder and pot with no profile. Before "Pick a target", ticks, group changes, scoring, or a league snapshot post, the app now asks for a registered name plus that archer's PIN, or the shared scoring passcode (same salted PBKDF2 verifier; the passcode itself is not in the repo). The host phone (`h2hMe()==='nathe'`) skips that check. Nate Evans skips only when already host-capable (`lkCoHostOn()`). "Score tonight" and `#lkfulllogin` stay, so `safety_smoke` still has its login path. New test: `tools/lk_score_gate_test.py` (needs `LK_TEST_PASSCODE`). Relay topic and live league data were not changed. Night default is still the last started night (18 Nov today): switching the picker to 2 Dec while `lgWeek()` stays on night 1 would silently refuse night-2 scores, so that was left alone.
+- Half-done: PR only; not merged. Nothing goes live until Nathe says so, and only after this is verified on a real phone if he wants that too.
+- Decision: viewing stays open; entering the scoring system does not. No features were removed. The Score-tab "League shoot" removal is a separate branch and was not touched here.
+
 ## 25 Nov 2026, 11:26 AWST — [Grok Bot]
 
 - Who: Grok Bot.
@@ -54,3 +61,10 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Done (same PR #79, Nathe's ask): host "Registered Archers" list and the Club pot "Tick who paid" list show a night's paid box BLUE when that archer signed up for that night and is not ticked paid yet. Tapping it ticks paid exactly as before (`lkSetPaid`, host phone only, `lg.paid[night][id]`); paid boxes show a green tick; boxes for nights the archer is not on stay plain white. Who counts as signed up for a night: `lkNightRegd` in `lingkana.js` — rows from a night-by-night sign-up now carry `nr`; rows already on phones count if their sign-up time is after PR #74 went live (2026-11-25 03:07:58 UTC); the old "every night" registrations do not; a PIN-only update is not a sign-up and no longer moves the row's sign-up time; Nathe and Nate count on every night. Existing paid ticks are read and stored unchanged. Cache `v2026-11-25-1339-paidblue`. New test `tools/lk_roster_paid_test.py` (needs `LK_SNAPSHOT`; relay posts are caught, never sent). No existing test changed.
 - Half-done: PR open, not merged; Nathe approves go-live.
 - Next: after go-live, a host phone that synced before shows blue for today's night-2 sign-ups from their sign-up time; nothing to migrate.
+
+## 25 Nov 2026, 14:02 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/remove-myresults-source` (cache `v2026-11-25-1410-noresultsrc`). Nathe (t1160u, t1165u): Tools > My results source removed from the live app and from `/test/`, with all its tools: results region + member number + Open my results, Archer's Diary "Paste my results", "Paste a table or a CSV", "Add an official result" with photo/screenshot reading (Tesseract OCR), and the switched-off Sync now card. Deleted `results.js`, `diarypaste.js`, `vendor/ocr/`, `test/results.js`, `test/vendor/ocr/`, `tools/diary_paste_test.py`; removed the Tools row/section in `lab.js` and `test/lab.js`, `lab_results` in `test/tiers.js`, the script tags, the `test/sw.js` entry, and the What's new notes about the page. `window.importedShoots`/`window.officialAdded` moved into `mydata.js` (read only), so results already saved on a phone by that page still show in PBs, Stats and calendar sync. `tools/rankings_card_test.py`: only its My results source steps changed (it seeds the saved rows instead of pasting). Import my data unchanged.
+- Not in the repo: a copy of the removed page (live and `/test/`) is kept in the private backup on Jarvis's box, not published.
+- Half-done: PR only, not merged; waits for Nathe's "go live". The Archer's Diary Export (.xlsx) import is not built.

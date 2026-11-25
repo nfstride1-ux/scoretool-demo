@@ -1695,6 +1695,7 @@ function lkAssignGroups(lg,w){
 }
 function lkSetGroups(w,G){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
+  if(typeof lkScoringAllowed==='function'&&!lkScoringAllowed(lg))return 'Sign in with your name and PIN, or the scoring passcode, to change groups.';
   if(+w>=7)return 'Night 7 scoring is not open yet.';
   const N=(G||[]).map(g=>(g||[]).filter(Boolean));
   if(N.some(g=>g.length>4))return 'A group can have at most 4 archers.';
@@ -1720,7 +1721,7 @@ function lkScoreGroup(w,gi){
   const G=(((lg.grp||{})[w]||{}).g||[])[gi]||[];
   if(!G.length)return 'Add archers to the group first.';
   if(G.length>4)return 'A group can have at most 4 archers.';
-  if(!lkAuthed(lg)){window._lkWantScore={w:+w,gi:+gi};lkUnlockView(lg);return 'Type the passcode.';}
+  if(!lkScoringAllowed(lg)){window._lkWantScore={w:+w,gi:+gi};lkUnlockView(lg);return 'Type the passcode.';}
   window._lgE={code:lg.code,w:+w,ids:G.slice()};window._lgAct=G[0]||null;window._lgHold=null;
   window._lkScoreIds=G.slice();window._lkScoreI=0;window._lkFlowNight=+w;
   if(typeof lkFlowScore==='function'){lkFlowScore();return ''}
@@ -1763,6 +1764,16 @@ function lkAuthed(lg){
   if(!lg)return false;
   try{if(sessionStorage.getItem(LK_PW_SESSION)===lg.code)return true}catch(e){}
   return window._lkAuthed===lg.code;
+}
+/* Scoring (pick a target, tick, enter scores, push claims/groups/scores) needs a registered
+   name+PIN, the shared scoring passcode, or the host phone. Viewing the roster, scoresheets,
+   ladder and pot does not. Nathe's phone (h2hMe()==='nathe') and a Nate Evans co-host
+   session already marked host-capable skip the prompt. */
+function lkScoringAllowed(lg){
+  if(!lg)return false;
+  if(typeof lkCanHost==='function'&&lkCanHost(lg))return true;
+  if(typeof lkHostPhone==='function'&&lkHostPhone(lg))return true;
+  return lkAuthed(lg);
 }
 function lkMarkAuth(lg){
   window._lkAuthed=lg.code;
@@ -1984,6 +1995,6 @@ Object.assign(window,{lkNightRegd,
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
 });
 })();
