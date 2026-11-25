@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 13:58 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/lk-score-gate` (cache `v2026-11-25-1358-scoregate`). Lingkana scoring is gated. Anyone can still open the event home, registered list, scoresheets, ladder and pot with no profile. Before "Pick a target", ticks, group changes, scoring, or a league snapshot post, the app now asks for a registered name plus that archer's PIN, or the shared scoring passcode (same salted PBKDF2 verifier; the passcode itself is not in the repo). The host phone (`h2hMe()==='nathe'`) skips that check. Nate Evans skips only when already host-capable (`lkCoHostOn()`). "Score tonight" and `#lkfulllogin` stay, so `safety_smoke` still has its login path. New test: `tools/lk_score_gate_test.py` (needs `LK_TEST_PASSCODE`). Relay topic and live league data were not changed. Night default is still the last started night (18 Nov today): switching the picker to 2 Dec while `lgWeek()` stays on night 1 would silently refuse night-2 scores, so that was left alone.
+- Half-done: PR only; not merged. Nothing goes live until Nathe says so, and only after this is verified on a real phone if he wants that too.
+- Decision: viewing stays open; entering the scoring system does not. No features were removed. The Score-tab "League shoot" removal is a separate branch and was not touched here.
+
 ## 25 Nov 2026, 11:26 AWST — [Grok Bot]
 
 - Who: Grok Bot.

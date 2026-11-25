@@ -63,7 +63,7 @@ function lgSetGroups(code,w,G){const lg=lgGet(code),me=h2hMe();if(!lg||lg.host!=
  lg.grp=lg.grp||{};lg.grp[w]={t:Date.now(),g:N.filter(g=>g.length)};lg.dirty=1;save();lgTick(true);return true}
 /* ---------- scoring ---------- */
 function lgLockedBy(lg,w,id){const e=lgEnt(lg,id,w),me=h2hMe();if(lgCanEd(lg))return null;return lgHas(e)&&e.by&&e.by!=me?e.by:null}
-function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(lgLockedBy(lg,w,id))return false;
+function lgKey(code,w,id,k,xy){const lg=lgGet(code);if(!lg||!LG_KEYS.includes(k)||w!=lgWeek(lg)||lg.fin)return false;if(!lgLkScoreOk(lg))return false;if(lgLockedBy(lg,w,id))return false;
  lg.sc=lg.sc||{};lg.sc[id]=lg.sc[id]||{};const e=lg.sc[id][w]=lg.sc[id][w]||{e:[]};
  if(typeof lkIs==='function'&&lkIs(lg)){e.nEnds=20;e.xv=11;e.lancaster=true;e.round='Lancaster 660'}
  const lkVals=typeof lkIs==='function'&&lkIs(lg);
@@ -94,9 +94,9 @@ function lgNextArcher(code,w,id){const lg=lgGet(code);window._lgHold=null;if(!lg
 function lgWavePick(lg,w,ids){
  const part=(ids||[]).find(id=>{if(lgLockedBy(lg,w,id))return false;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return false;const last=(e.e||[])[e.e.length-1];return !!(last&&last.length&&last.length<3)});
  if(part)return part;let best=null,bn=1e9;(ids||[]).forEach(id=>{if(lgLockedBy(lg,w,id))return;const e=lgEnt(lg,id,w)||{e:[]};if(lgDoneE(e))return;const n=(e.e||[]).filter(z=>z&&z.length==3).length;if(n<bn){bn=n;best=id}});return best||(ids&&ids[0])||null}
-function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
+function lgUndo(code,w,id){window._csFx=null;const lg=lgGet(code);if(!lg||!lgLkScoreOk(lg)||lgLockedBy(lg,w,id)||lg.fin)return;const e=lgEnt(lg,id,w);if(!lgHas(e))return;const E=e.e[e.e.length-1],ux=e.e.length-1,r=window.stOrd&&stOrd.take('lg|'+code+'|'+w+'|'+id,ux,E,e.p&&e.p[ux]);if(r){E.splice(0,E.length,...r.E);if(e.p&&e.p[ux])e.p[ux].splice(0,e.p[ux].length,...r.P)}else E.pop();if(!E.length)e.e.pop();if(e.p){const n=e.e.length;e.p.length=Math.min(e.p.length,n);if(E.length&&e.p[n-1])e.p[n-1].length=Math.min(e.p[n-1].length,E.length)}e.u=Date.now();lg.dirty=1;lgOwn(lg,w,id);save();if(typeof lkIs==='function'&&lkIs(lg)){const last=e.e[e.e.length-1];window._lkHoldRelay=!!(last&&last.length&&last.length<3)}lgAfter(lg)}
 /* delete one arrow of the end being shot (fix mode) */
-function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
+function lgFxDel(code,w,id){const lg=lgGet(code),fx=window._csFx;window._csFx=null;if(!lg||!fx||lg.fin||!lgLkScoreOk(lg)||lgLockedBy(lg,w,id)||w!=lgWeek(lg))return false;const e=lgEnt(lg,id,w);if(!lgHas(e)||!csFxDel(e,fx))return false;Object.assign(e,{by:h2hMe(),u:Date.now()});lg.dirty=1;lgOwn(lg,w,id);save();lgAfter(lg);return true}
 /* my own week is also kept with my other sessions (plots on non-Lingkana leagues, so groups and analysis work like Just me). Only a week I score
    on this phone is written, and only once it is finished (or already written); the league record itself is unchanged. */
 function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg-'+lg.code+'-w'+w;let s=S.sessions.find(x=>x.id==sid);if(!s&&!lgDoneE(e))return;
@@ -104,7 +104,7 @@ function lgOwn(lg,w,id){try{if(id!=h2hMe())return;const e=lgEnt(lg,id,w),sid='lg
  if(!s){const rd=(typeof lkRound==='function'&&lkRound(lg,w))||LG_R;s={id:sid,date:lgToday(),round:rd,ends:E,pos:has?POS:E.map(()=>[]),note:'League: '+lg.name+', week '+w,league:lg.code};if(rd==='Lancaster 660')s.face3='vegas';else s.face3='vert';S.sessions.push(s)}else if(E.length){s.ends=E;if(has)s.pos=POS}else{s.ends=[[]];s.pos=[[]]}
  if(e&&e.lcT&&e.arrowD){s.lcT=1;s.arrowD=e.arrowD}}catch(x){console.error(x)}}
 /* a second phone for the same archer and week: refused unless it confirms a takeover */
-function lgTake(code,w,id,ask=true){const lg=lgGet(code);const by=lg&&lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
+function lgTake(code,w,id,ask=true){const lg=lgGet(code);if(!lg||!lgLkScoreOk(lg))return false;const by=lgLockedBy(lg,w,id);if(!by)return true;if(ask&&!confirm(`${lgName(id)}'s week ${w} is being scored on ${lgName(by)}'s phone. Take over scoring here?`))return false;
  const e=lgEnt(lg,id,w);e.by=h2hMe();e.u=Date.now();lg.dirty=1;save();lgAfter(lg);return true}
 function lgAfter(lg){lgFinal(lg);if($('#lgview')&&window._lgv==lg.code)lgView(lg.code);lgTick(true)}
 /* ---------- final ---------- */
@@ -245,9 +245,16 @@ let lgBusy=false;const lgOpened={},LG_REOPEN=30*6e4;
 /* the time of the last re-send on open is kept in its own key (scoretool.opost.<archer>.<code>), not in the saved record */
 const LG_RSOK=k=>'scoretool.opost.'+((typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'nathe')+'.'+k;function lgOpGet(k){try{return +localStorage.getItem(LG_RSOK(k))||0}catch(e){return 0}}function lgOpSet(k){try{localStorage.setItem(LG_RSOK(k),String(Date.now()))}catch(e){}}
 
+function lgLkScoreOk(lg){
+  if(typeof lkIs!=='function'||!lkIs(lg))return true;
+  if(typeof lkScoringAllowed==='function')return lkScoringAllowed(lg);
+  return typeof lkAuthed==='function'&&lkAuthed(lg);
+}
 function lgRelayReady(lg){
   /* L11: Lingkana holds relay posts mid-end (flag set from lgKey / lgUndo), so a 12-archer night does not post on every arrow. Other leagues are unchanged. */
   if(typeof lkIs!=='function'||!lkIs(lg))return true;
+  /* Unauthenticated phones may poll and view, but must not publish scores, groups or claims. */
+  if(!lgLkScoreOk(lg))return false;
   return !window._lkHoldRelay}
 async function lgTick(force){if(window.ADMIN_VIEW){window.avSkip&&avSkip('league');return}if(lgBusy||!TESTER)return;lgBusy=true;let ch=false;try{for(const lg of lgAll()){if(lg.status=='invite')continue;
   if(typeof lkFresh==='function'&&typeof lkIs==='function'&&lkIs(lg))lkFresh(lg);

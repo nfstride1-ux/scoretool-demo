@@ -14,6 +14,22 @@
   const myId=()=>{try{return sessionStorage.getItem('scoretool.lk.scorerId')||''}catch(e){return''}};
   const setMyId=id=>{try{if(id)sessionStorage.setItem('scoretool.lk.scorerId',id);else sessionStorage.removeItem('scoretool.lk.scorerId')}catch(e){}};
   const appEl=()=>typeof app!=='undefined'?app:document.getElementById('app');
+  /* Viewing roster/scoresheets/ladder/pot stays open. Scoring (pick a target, tick, enter
+     or publish scores) needs a registered name+PIN, the shared passcode, or the host phone. */
+  function scoringOk(lg){
+    lg=lg||(typeof lkEnsure==='function'&&lkEnsure())||null;
+    if(typeof lkScoringAllowed==='function')return lkScoringAllowed(lg);
+    if(typeof lkCanHost==='function'&&lkCanHost(lg))return true;
+    if(typeof lkHostPhone==='function'&&lkHostPhone(lg))return true;
+    return typeof lkAuthed==='function'&&!!lg&&lkAuthed(lg);
+  }
+  function needScoreLogin(lg){
+    if(scoringOk(lg))return false;
+    lkFullLogin();
+    const msg=document.getElementById('lkpwmsg');
+    if(msg&&!String(msg.textContent||'').trim())msg.textContent='Sign in with your name and PIN, or the scoring passcode, to score.';
+    return true;
+  }
 
   function hideChrome(on){
     document.body.classList.toggle('lk-flow',!!on);
@@ -90,6 +106,7 @@
     return true;
   }
   function setClaim(lg,w,id,on){
+    if(!scoringOk(lg))return 'Sign in with your name and PIN, or the scoring passcode, to score.';
     const k=claimKey(lg,w), who=me(), name=myName()||(typeof TESTER!=='undefined'&&TESTER&&TESTER.name)||who||'Scorer';
     lg.claim=lg.claim||{};lg.claim[k]=lg.claim[k]||{};
     const cur=lg.claim[k][id];
@@ -337,10 +354,9 @@
   }
 
 
-  /* The full name-search + personal PIN + event passcode sign-in. Kept for the host and the Nate
-     Evans co-host session flag (lkMarkCoHost), and for anyone who wants their own PIN-protected
-     identity (e.g. to review their own past sessions). Ordinary scoring on the night does not need
-     this any more: see login() below, which is the scorer-facing entry point. */
+  /* The full name-search + personal PIN + event passcode sign-in. Ordinary scoring uses this
+     (or the passcode on the Score tonight screen) before a target can be picked. The host phone
+     and a host-capable Nate Evans session skip it. */
   async function lkFullLogin(){
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
@@ -415,7 +431,8 @@
     </div>`;
     const paintPass=id=>{
       const box=$id('lkpassbox');if(!box)return;
-      box.hidden=!needsPass(id);
+      /* Visible with no name (passcode-only scoring) or when this name still needs the passcode. */
+      box.hidden=!!id&&!needsPass(id);
     };
     const paintPin=id=>{
       const box=$id('lkpinbox');if(!box)return;
@@ -551,7 +568,17 @@
       const rec=names.find(n=>n.id===id);
       const pw=($id('lkpw')&&$id('lkpw').value)||'';
       const msg=$id('lkpwmsg');
-      if(!rec){if(msg)msg.textContent='Tap your name.';return}
+      if(!rec){
+        if(pw){
+          const pm=typeof lkUnlock==='function'?await lkUnlock(pw):'Scoring is not available on this phone.';
+          if(pm){if(msg)msg.textContent=pm;return}
+          setNight(+($id('lknight')&&$id('lknight').value)||w);
+          window._lkTarget=0;window._lkPicked=[];
+          selectArchersOnion();
+          return;
+        }
+        if(msg)msg.textContent='Tap your name, or enter the scoring passcode.';return
+      }
       const skipPin=hostPhone||cohostRec(rec);
       if(!skipPin){
         const left=typeof lkPinLocked==='function'?lkPinLocked(rec.id):0;
@@ -605,11 +632,9 @@
     bindEnter();
   }
 
-  /* Scorer-facing sign-in: pick a lane, see who is already on it, tick who you are scoring with.
-     No roster search and no personal PIN for ordinary scoring, with a Lingkana night picker. This is now the entry point from the home
-     screen's Login to Event button. lkFullLogin() (above) is kept for the host, for Nate Evans'
-     co-host session, and for anyone who wants their own PIN-protected identity; it is reachable
-     from the link on this screen. */
+  /* First screen from Login to Event. Viewing is already on the home buttons. Pick a target
+     (and the passcode box on this page) is the scoring entry: a registered name+PIN or the
+     shared passcode is required, unless this is the host phone. */
   async function login(){
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
@@ -627,7 +652,9 @@
       <select id="lknight">${nightChoices(lg,w)}</select>
       <label for="lkscorer">Your name (optional, shown to the group)</label>
       <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(myName()||'')}">
-      <p class="small muted">Next, pick your target and tick who you are scoring with on it.</p>
+      <p class="small muted">To score, sign in with a registered name and PIN, or the scoring passcode. Anyone can still review scores, the ladder, the pot and who is registered from the event home.</p>
+      <label for="lkscorepw">Scoring passcode (or sign in with a PIN)</label>
+      <input id="lkscorepw" type="password" autocomplete="current-password">
       <p class="lk-msg" id="lkpwmsg" role="alert"></p>
       <p><button type="button" class="lk-host" id="lkfulllogin">Host or returning archer? Sign in with a PIN</button></p>
       ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Pick a target','green'))}
@@ -639,10 +666,21 @@
       if(n)setMyName(n);
       setNight(+($id('lknight')&&$id('lknight').value)||w);
       window._lkTarget=0;window._lkPicked=[];
-      selectArchersOnion();
+      const msg=$id('lkpwmsg');
+      if(scoringOk(lg)){selectArchersOnion();return}
+      const pw=($id('lkscorepw')&&$id('lkscorepw').value)||'';
+      if(pw){
+        (typeof lkUnlock==='function'?lkUnlock(pw):Promise.resolve('Scoring is not available on this phone.')).then(m=>{
+          if(m){if(msg)msg.textContent=m;return}
+          selectArchersOnion();
+        });
+        return;
+      }
+      needScoreLogin(lg);
     };
     $id('lkpwgo').onclick=go;
     $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+    if($id('lkscorepw'))$id('lkscorepw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
   }
 
@@ -719,6 +757,7 @@
   }
   function setTargets(lg,w,target,ids){
     if(!lg)return 'The league is not on this phone yet.';
+    if(!isOnion()&&!scoringOk(lg))return 'Sign in with your name and PIN, or the scoring passcode, to score.';
     const k=nightKey(lg,w);
     lg.reg=lg.reg||{};
     const list=lg.reg[k]||[];
@@ -734,6 +773,7 @@
     return '';
   }
   function startScoring(lg,w,ids){
+    if(!isOnion()&&needScoreLogin(lg))return;
     window._lkScoreIds=ids.slice();
     window._lkScoreI=0;
     window._lkScoreMode=null;
@@ -780,9 +820,9 @@
     const lg=eventLg();
     if(!lg){home();return}
     if(isOnion()){selectArchersOnion();return}
-    if(typeof lkAuthed==='function'&&!lkAuthed(lg)){login();return}
+    if(!scoringOk(lg)){login();return}
     const id=myId();
-    if(!id){login();return}
+    if(!id){selectArchersOnion();return}
     const w=nightOf(lg);
     hideChrome(true);
     const el=appEl();if(!el)return;
@@ -856,6 +896,7 @@
   function selectArchersOnion(){
     const lg=eventLg();
     if(!lg){home();return}
+    if(!isOnion()&&needScoreLogin(lg))return;
     hideChrome(true);
     const w=nightOf(lg);
     const target=+(window._lkTarget||0);
@@ -1222,6 +1263,7 @@
   function groupSheet(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
+    if(needScoreLogin(lg))return;
     const w=nightOf(lg);
     const ids=window._lkScoreIds||window._lkPicked||[];
     if(!ids.length){selectArchers();return}
@@ -1285,6 +1327,7 @@
   function entryScreen(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
+    if(needScoreLogin(lg))return;
     const w=nightOf(lg);
     const ids=window._lkScoreIds||window._lkPicked||[];
     if(!ids.length){selectArchers();return}
@@ -1404,6 +1447,7 @@
   function scoreScreen(){
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(!lg){home();return}
+    if(needScoreLogin(lg))return;
     const w=nightOf(lg);
     const ids=window._lkScoreIds||window._lkPicked||[];
     if(!ids.length){selectArchers();return}
@@ -1501,7 +1545,7 @@
     if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
     const lg=typeof lkGet==='function'?lkGet():null;
-    if(typeof lkAuthed==='function'&&lg&&lkAuthed(lg))selectArchers();
+    if(scoringOk(lg))selectArchers();
     else login();
   }
 
