@@ -1463,6 +1463,43 @@ function lkPaidAuthority(){
   if(me&&(me==='nathe'||(lg&&me===lg.host)))return me;
   return '';
 }
+/* Only Nathe's host phone auto-republishes paid ticks. A co-host session can still tick
+   (existing lkCanHost / lkSetPaid) and publish that change, but an empty co-host copy must not overwrite the host list. */
+function lkIsPaidPublisher(lg){
+  const me=typeof h2hMe==='function'?h2hMe():'';
+  if(!me||!lg)return false;
+  return me==='nathe'||me===LK_HOST||me===lg.host;
+}
+function lkPaidBoxHTML(opts){
+  const o=opts||{};
+  const on=!!o.on,reg=!!o.reg,host=!!o.host;
+  const id=o.id||'',night=o.night,name=o.name||'';
+  const tip=on?'Paid':(reg?'Registered, not paid yet':'Not registered for this night');
+  const cls='lk-paidbox'+(reg&&!on?' lk-regd':'');
+  if(host){
+    const nightAttr=night!=null&&night!==''?` data-lknight="${h(night)}"`:'';
+    return `<input type="checkbox" class="${cls}" data-reg="${reg?1:0}" data-lkpaid="${h(id)}"${nightAttr} ${on?'checked':''} aria-label="${h(name)}: ${tip}" title="${tip}">`;
+  }
+  if(on)return `<span class="lk-paidmark lk-paid-on" title="${tip}" aria-label="${tip}"></span>`;
+  if(reg)return `<span class="lk-paidmark lk-regd" title="${tip}" aria-label="${tip}"></span>`;
+  return '';
+}
+function lkPaidKeyHTML(host,nightOnly){
+  const when=nightOnly?'this night':'that night';
+  if(host)return `<span class="lk-key lk-key-reg"></span> Blue = registered for ${when}, not paid yet. Tap it to mark paid <span class="lk-key lk-key-paid"></span>.`;
+  return `<span class="lk-key lk-key-paid"></span> Green = paid. <span class="lk-key lk-key-reg"></span> Blue = registered for ${when}, not paid yet.`;
+}
+function lkRepublishPaidIfHost(lg){
+  lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
+  if(typeof lkIsPaidPublisher!=='function'||!lkIsPaidPublisher(lg))return Promise.resolve(false);
+  const hasPaid=!!(lg.paid&&Object.values(lg.paid).some(bag=>bag&&Object.keys(bag).some(id=>bag[id])));
+  /* A new host phone with no local paid list must not publish an empty list (that would clear the pot on other phones). */
+  if(!hasPaid&&!(+lg.paidt>0))return Promise.resolve(false);
+  const last=window._lkPaidPosted||0;
+  if(last&&Date.now()-last<120000)return Promise.resolve(false);
+  window._lkPaidPosted=Date.now();
+  return lkPublishPaid(lg);
+}
 function lkPublishPaid(lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);
   const who=lkPaidAuthority();
@@ -1492,6 +1529,7 @@ async function lkSyncOnce(){
       }
       if(typeof save==='function')save();
     }
+    try{lkRepublishPaidIfHost(lg)}catch(e){}
   }catch(e){}
   finally{window._lkSyncBusy=false}
   if(ch&&!window._lkSyncRedraw){
@@ -1499,8 +1537,10 @@ async function lkSyncOnce(){
     setTimeout(()=>{window._lkSyncRedraw=0},800);
     try{
       if(document.getElementById('lkloginpage')&&typeof window.lkFlowLogin==='function')window.lkFlowLogin();
+      else if(document.getElementById('lkhome')&&!window._lkHomePainting&&(!window._lkPage||window._lkPage==='home')&&typeof window.lkFlowHome==='function')window.lkFlowHome();
       else if((document.getElementById('lkpaidlist')||document.getElementById('lkpot'))&&typeof window.lkFlowReview==='function')window.lkFlowReview();
       else if(document.getElementById('lkresults'))lkResultsView(window._lkResNight);
+      else if(document.getElementById('lkpotview')&&typeof lkPotView==='function')lkPotView();
     }catch(e){}
   }
   return ch;
@@ -1538,7 +1578,7 @@ function lkPotHTML(lg){
     const nm=h((rec&&rec.name)||(typeof lgName==='function'&&lgName(id))||id);
     const on=!!paid[id];
     const regd=lkNightRegd(lg,night,id,(rec&&rec.name)||lkArcherName(lg,id)); /* 25 Nov 2026: blue = signed up for this night, not paid yet */
-    const box=host?`<input type="checkbox" class="lk-paidbox${regd&&!on?' lk-regd':''}" data-lkpaid="${h(id)}" ${on?'checked':''} title="${on?'Paid':(regd?'Registered, not paid yet':'Not registered for this night')}">`:(on?'Paid':(regd?'<span class="lk-regdot">Registered</span>':'—'));
+    const box=lkPaidBoxHTML({on,reg:regd,host,id,name:(rec&&rec.name)||lkArcherName(lg,id)||id})||(host?'':'—');
     const ask=host&&window._lkDropAsk===id;
     const cohostRow=String(id)===LK_COHOST_ID||String(id)==='lkhost:nate'||lkIsCoHostName((rec&&rec.name)||lkArcherName(lg,id));
     const drop=host&&!cohostRow?(ask?`<span class="lk-dropask">Remove ${nm}?<button type="button" class="lk-remove" data-lkdrop="${h(id)}" data-go="1">Remove</button><button type="button" class="lk-cancel" data-lkdropcancel="1">Cancel</button></span>`:`<button type="button" class="lk-remove" data-lkdrop="${h(id)}">Remove</button>`):'';
@@ -1552,9 +1592,9 @@ function lkPotHTML(lg){
     ${p.owed?`<p class="small">Outstanding: <b>$${p.owed}</b> still unticked across the season.</p>`:''}
     <p class="small muted">The $${LK_RANGE_FEE} range fee is paid to the venue and is not in this pot. Night 7 also puts $${LK_ENTRY_FEE} into the pot.</p>
     <div class="lg-wrap"><table class="ad-tab" id="lkpotnights"><thead><tr><th></th><th>Night</th><th>Paid</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>${nightRows}</tbody></table></div>
-    <label for="lkpotnight" style="margin-top:8px">Tick who paid on</label>
+    <label for="lkpotnight" style="margin-top:8px">${host?'Tick who paid on':'Who paid on'}</label>
     <select id="lkpotnight">${LK_DATES.slice(0,6).map((d,i)=>`<option value="${i+1}" ${i+1===Math.min(w,6)?'selected':''}>${h(lkFmtD(d).replace(/,?\s*\d{4}/,''))}</option>`).join('')}</select>
-    <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them.${host?' <span class="lk-key lk-key-reg"></span> Blue = registered for this night, not paid yet.':''}</p>
+    <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them. ${lkPaidKeyHTML(host,true)}</p>
     <div id="lkpaidlist">${rows}</div>
     </div>`;
 }
@@ -1973,11 +2013,12 @@ function lkPotBack(code){
   if(typeof lkFlowHome==='function'){lkFlowHome(code);return}
   if(typeof lkView==='function'&&lkGet())lkView(code);
 }
-function lkPotView(){
+async function lkPotView(){
   const appEl=typeof app!=='undefined'?app:null;if(!appEl)return;
-  const lg=lkEnsure();if(!lg)return;
+  window._lkPage='potview';
   if(typeof lkSyncStart==='function')lkSyncStart();
-  if(typeof lkSyncOnce==='function')lkSyncOnce();
+  if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
+  const lg=lkEnsure();if(!lg)return;
   const p=lkPot(lg);
   const potRows=(p.nights||[]).map(x=>`<tr><td>N${x.w}</td><td>${x.paid}</td><td>$${x.total}</td><td>${x.out?('$'+x.owed):'—'}</td></tr>`).join('');
   appEl.innerHTML=`<div class="card lk-potview" id="lkpotview">
@@ -2003,6 +2044,6 @@ Object.assign(window,{lkNightRegd,
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkNameSuggestHits,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkNameSuggestHits,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkIsPaidPublisher,lkRepublishPaidIfHost,lkPaidBoxHTML,lkPaidKeyHTML,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
 });
 })();

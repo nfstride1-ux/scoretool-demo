@@ -304,14 +304,18 @@
     el.querySelectorAll('[data-evopen]').forEach(b=>b.onclick=()=>home(b.getAttribute('data-evopen')));
   }
 
-  function home(code){
+  async function home(code){
     window._lkLeftHome=0;
     window._lkNamesOpen=0;
+    window._lkPage='home';
     setEv(code);
     if(isOnion()){if(typeof lgSeed==='function')lgSeed()}
     else if(typeof lkEnsure==='function')lkEnsure();
     hideChrome(true);
     if(!isOnion()&&typeof lkSyncStart==='function')lkSyncStart();
+    window._lkHomePainting=(window._lkHomePainting||0)+1;
+    try{
+    if(!isOnion()&&typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const sess=!onion&&activeSession();
@@ -351,6 +355,7 @@
     $id('lkrules').onclick=()=>rules();
     $id('lkhomeapp').onclick=()=>backToApp();
     $id('lkhomeback').onclick=()=>backToList();
+    }finally{window._lkHomePainting=Math.max(0,(window._lkHomePainting||1)-1)}
   }
 
 
@@ -1514,6 +1519,7 @@
   }
 
   async function review(){
+    window._lkPage='review';
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -1548,28 +1554,31 @@
   }
 
   async function roster(){
+    window._lkPage='roster';
     hideChrome(true);
-    const lg=typeof lkEnsure==='function'?lkEnsure():null;
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
+    const lg=typeof lkEnsure==='function'?lkEnsure():null;
     const el=appEl();if(!el)return;
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
     const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
     const nights=lg&&typeof lkShootDates==='function'?lkShootDates(lg):[];
     /* 25 Nov 2026 (Nathe): a box is BLUE when the archer signed up for that night (night-by-night sign-up, lkNightRegd) and is not ticked paid yet. Tapping it marks
-       paid exactly as before (lkSetPaid, host phone only). Paid ticks are read and stored the same way. */
+       paid exactly as before (lkSetPaid, host phone only). Other phones show the same green / blue marks, view only, from the host's published list. */
     const regOn=(r,n)=>typeof lkNightRegd==='function'&&lkNightRegd(lg,n,r.id,r.name);
     const paidCell=(r,n)=>{
       const bag=(lg&&lg.paid&&lg.paid[n])||{};
       const on=!!bag[r.id];
       const reg=regOn(r,n);
+      if(typeof lkPaidBoxHTML==='function')return lkPaidBoxHTML({on,reg,host,id:r.id,night:n,name:r.name});
       const tip=on?'Paid':(reg?'Registered, not paid yet':'Not registered for this night');
       return host?`<input type="checkbox" class="lk-paidbox${reg&&!on?' lk-regd':''}" data-reg="${reg?1:0}" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''} aria-label="${esc(r.name)}: ${tip}" title="${tip}">`:(on?'●':(reg?'<span class="lk-regdot" title="Registered" aria-label="Registered">●</span>':''));
     };
     const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td>${nights.map(n=>`<td style="text-align:center">${paidCell(r,n)}</td>`).join('')}${host?`<td><button type="button" class="lk-host" data-lkremove="${esc(r.id)}">Remove</button></td>`:''}</tr>`;
+    const key=typeof lkPaidKeyHTML==='function'?lkPaidKeyHTML(host,false):(host?'<span class="lk-key lk-key-reg"></span> Blue = registered for that night, not paid yet. Tap it to mark paid <span class="lk-key lk-key-paid"></span>.':'<span class="lk-regdot">●</span> = registered for that night.');
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
-      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. ${host?'<span class="lk-key lk-key-reg"></span> Blue = registered for that night, not paid yet. Tap it to mark paid <span class="lk-key lk-key-paid"></span>.':'<span class="lk-regdot">●</span> = registered for that night.'}</p>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. ${key}</p>
       <div style="overflow-x:auto"><table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th>${nights.map((n,i)=>`<th>N${i+1}</th>`).join('')}${host?'<th></th>':''}</tr></thead>
       <tbody>${list.map(row).join('')||`<tr><td colspan="${2+nights.length+(host?1:0)}">No archers registered yet.</td></tr>`}</tbody></table></div>
       <p class="lk-msg" id="lkrostermsg" role="alert"></p>

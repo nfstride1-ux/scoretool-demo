@@ -3,14 +3,22 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+## v2026-11-25-1510-paidshare: Paid ticks and the pot show on every phone
+- The host phone publishes who has paid, as a small host-signed league snapshot. Other phones show those ticks (green = paid, blue = registered and not paid yet) and the matching prize pot, but cannot change them.
+- Only the host phone can tick or untick who paid. Nate Evans keeps his existing host-capable login; that right was not widened.
+- A paid message that is not from the host is ignored, so another phone cannot fake the paid list.
+- The event home waits for a sync and then shows the live pot, instead of staying on $0 until you leave and come back.
+- Paid ticks are packed earlier in the full snapshot, so they are less likely to be missed at the end of a long post.
+
 ## v2026-11-25-1505-noleaguetab: League shoot removed from the Score tab
 - The Score tab "What are you shooting?" card is now Just me and Casual shoot only.
 - League scoring stays in Clubs → Leagues (Lingkana League, Score my week). The helper text that said league shoots are scored below on this tab is gone.
 - A phone that still had League shoot selected falls back to Just me with no error. The Clubs hint under the card is unchanged.
-- Cache version is `v2026-11-25-1505-noleaguetab`, built on main after PR #79 and PR #82. Not merged until go-live.
+- Cache version is `v2026-11-25-1505-noleaguetab`, built on main after PR #79 and PR #82.
 
 ### Files
 casual.js, lab.js, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 
 ## v2026-11-25-1103-nightpin4: Lingkana sign-up night by night with your PIN
 - The register page (poster QR, #lk-register, and Event Registration on the event home) asks for the night first.
@@ -118,7 +126,6 @@ Hosts can open Lingkana scoring when they are the only archers paid, and Nate Ev
 
 - A group still needs at least two archers. That rule is lifted only when everyone paid for the night is an organiser: Nathaniel Stride (host id `nathe`, or his registration, for example `g7wbux6`) and Nate Evans. One of them, or just the two of them, is given a target so the scoring screen opens. Group sizes for any other paid list stay 4, then 3, then 2.
 - Nate Evans is registered on every shoot night, the same way the login list adds the co-host. The 17 Nov 10:04 wipe and a later snapshot cannot remove him, so he shows on Tick who paid, can be ticked, and is included when groups are built. If he also registers under the name Nate Evans, that row is kept and a second one is not added. He is a host, so a scorer phone does not ask him for a PIN before those ticks.
->>>>>>> origin/main
 
 ## v2026-11-17-1830-live
 

@@ -4,12 +4,20 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 15:10 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/lk-paid-share` (cache `v2026-11-25-1510-paidshare`), rebased onto main after PR #81 (Score-tab League shoot removal). The host phone publishes paid ticks (existing `ls` snapshot, packed earlier, plus a compact republish from the host only). Other phones show green ticks and the pot, view only. Editing stays host-only; Nate's existing `lkCoHostOn` host-capable login is unchanged and was not widened. Forged paid messages that are not `by` the host (including a borrowed `cohost=nate` flag) are ignored. Event home awaits sync and then shows the live pot. New test `tools/lk_paid_share_test.py` (synthetic names; relay posts are caught, never sent). No existing test changed. Live league data was not written to. This PR removes nothing. Score tab was not touched.
+- Half-done: PR only, not merged; waits for Nathe's "go live".
+- Decision: anyone may view who is paid and the pot; only the host phone changes the ticks.
+
 ## 25 Nov 2026, 15:05 AWST — [Jarvis]
 
 - Who: Jarvis.
 - Done: Updated `cursor/score-tab-no-league` (PR #81) onto current main (merged #79 name suggestions and #82 My results source; no force push). Cache `v2026-11-25-1505-noleaguetab`, newer than live `v2026-11-25-1420-suggest2`. Score tab is still Just me and Casual shoot only. Clubs → Leagues → Lingkana, the scoring gate, and name suggestions are kept from main. Relay data was not written to.
 - Half-done: Nathe said go live on PR #81; merge follows once required checks are green.
 - Decision: this PR still removes only the Score-tab League shoot option and its helper. Nothing else is merged with it.
+
 
 ## 25 Nov 2026, 14:20 AWST — [Jarvis]
 
