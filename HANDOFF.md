@@ -8,6 +8,7 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 
 - Who: Jarvis.
 - Done: Nathe 6:59am "Make tune preview not paid version". plans.js tierOf returns 'pro' only when host is nfstride1-ux.github.io and path matches /scoretool-lab/pr/<n>/ (previewOpen). Live /scoretool-demo/ and localhost never match. Cache v2026-11-26-0659-tuningpreview. pr/91 republished.
+- Also: tools/safety_smoke_test.py now waits for the display-name prompt that can open just after the Score tab (CI race, failed 4 runs in a row; the same race shows on the previous commit locally). No app change.
 - Decision: unlock lives in code behind the address check (not a hand-patched preview copy), so any republish keeps it and merging it changes nothing live.
 
 ## 26 Nov 2026, 06:50 AWST — [Jarvis]
