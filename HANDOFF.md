@@ -2,7 +2,15 @@
 
 Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
-Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
+Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
+
+## 25 Nov 2026, 11:26 AWST — [Grok Bot]
+
+- Who: Grok Bot.
+- Done: Updated the shipping rule. Jarvis stays the lead and default builder. Claude, OpenAI, and Grok Bot may also ship code, as long as the change goes through a pull request, `safety-smoke` and `privacy-scan` pass, and a signed entry is added to this file. Nothing goes live without Nathe's own OK. No app code was changed.
+- Half-done: Branch protection is still not switched on. Nathe has the steps in `PROJECT_RULES.md`.
+- Next: Other AIs can pick up work after a credit drop, using this rule.
+- Decision: Nathe approved this on 25 Nov 2026 at 11:20 Perth: any of these AIs may ship under the checks above. He also approved merging this pull request.
 
 ## 25 Nov 2026, 10:55 AWST — [Cursor]
 
