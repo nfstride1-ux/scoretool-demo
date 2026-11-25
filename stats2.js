@@ -15,7 +15,7 @@ const canon=r=>APP_ALIAS[r]||r;window.canonRound=canon;
 const E=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=d=>{const x=new Date(d+'T00:00');return isNaN(x)?d:x.getDate()+' '+x.toLocaleString('en-AU',{month:'short'})+' '+x.getFullYear()};
 const avg=v=>v.length?v.reduce((a,b)=>a+b,0)/v.length:null,r1=v=>v==null?'–':(Math.round(v*10)/10).toFixed(1),pl=(n,w)=>n+' '+w+(n==1?'':'s');
-const isMe=()=>false; /* 25 Nov 2026: same for every archer */
+const isMe=()=>!!(window.myDataHas&&myDataHas('ad')); /* 25 Nov 2026: only with the archer's own imported official results (mydata.js) */
 function ratingOf(r){if(r.rating)return r.rating;const m=/Rating\s+([\d.]+)/i.exec(r.notes||'');if(m)return+m[1];
  if(typeof aaRating=='function'&&typeof aaCategory=='function'){const c=aaCategory(r.division);if(c){const v=aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m');if(v!=null)return Math.round(v*10)/10}}return null}
 /* every shoot, one list */

@@ -2,8 +2,8 @@
    plus best scores on his rounds by archers on the official AA Open compound top-10 lists). The Coach's read maths below is copied
    verbatim from the coach playground (coach.js), so both show the same numbers. */
 (function(){
-/* 25 Nov 2026: no archer gets preloaded official data any more (the per-person files are gone), so this card is off for everyone. */
-const isMe=()=>false;
+/* 25 Nov 2026: no per-person files are shipped any more; this card shows only for an archer who imported their own file (mydata.js). */
+const isMe=()=>!!(window.myDataHas&&myDataHas('ad')); /* 25 Nov 2026: the archer's own imported official results (mydata.js) */
 let AD=null,R=[],EXPECT={},CS=null;const ME=18568,byId={[ME]:{name:'Nathaniel Stride',c:'#3b82f6'}};
 const escH=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return+dd+' '+'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[m-1]+' '+y.slice(2)};
