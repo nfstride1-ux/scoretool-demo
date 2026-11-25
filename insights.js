@@ -303,7 +303,7 @@ const _sc=score;score=function(){
   if(cur.finished||isDone(cur))g.rev=g.ends.length;
   const nx=$('#enext');if(nx)nx.addEventListener('click',()=>{const full=cur.ends.filter(e=>e.length==R.ape).length;g.rev=Math.max(g.rev||0,full);save()},true);
   const fn=$('#finnow');if(fn)fn.addEventListener('click',()=>{},true);
-  const chips=app.querySelector('.ad-chips');if(chips&&!$('#ghbar')){chips.insertAdjacentHTML('afterend',ghostBar());const fw=$('#fwrap'),bh=$('#ghbar').offsetHeight;if(fw)fw.style.height=Math.max(160,fw.offsetHeight-bh)+'px'}
+  const chips=app.querySelector('.ad-chips');if(chips&&!$('#ghbar')){chips.insertAdjacentHTML('afterend',ghostBar());const fw=$('#fwrap'),bh=$('#ghbar').offsetHeight;if(fw&&bh){if(fw.dataset.z0h)fw.dataset.z0h=Math.max(160,parseFloat(fw.dataset.z0h)-bh)+'px';if(window.plotZoomRoom&&window.PZ&&PZ.k>1)plotZoomRoom(fw,PZ.k);else fw.style.height=Math.max(160,(fw.dataset.z0h?parseFloat(fw.dataset.z0h):fw.offsetHeight))+'px'}}
   const sh=app.querySelector('.ad-sheet');if(!chips&&sh&&!app.querySelector('.gh-res'))sh.insertAdjacentHTML('afterend',ghostSheet())
  }catch(err){console.error('insights',err)}
  return out};

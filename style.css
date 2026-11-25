@@ -95,7 +95,7 @@ details summary{cursor:pointer}
 
 html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 #pface{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#fwrap{overflow:visible}
+#fwrap,#csfwrap{overflow:visible}
 .zbar{display:flex;gap:6px;align-items:center;justify-content:center;margin:2px 8px}
 .zb{min-width:36px;padding:4px 8px;border-radius:8px;border:1px solid var(--line,#444);background:transparent;color:inherit;font-weight:600}
 .zb.on{background:#1d4ed8;color:#fff;border-color:#1d4ed8}

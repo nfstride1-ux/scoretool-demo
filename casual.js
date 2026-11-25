@@ -340,9 +340,9 @@ function csAbaSheetHtml(cs,id,live){if(!window.abaGrid)return'';const s=csAbaSes
 const csSpotSC=FR=>isBug(FR)?BUGC:spots3(FR);
 const csFaceVB=FR=>{const SC=csSpotSC(FR),SP=SC&&window._csSpot?SC[window._csSpot-1]:null;return SP?`${SP[0]-0.31} ${SP[1]-0.31} 0.62 0.62`:faceVB(FR)};
 function csFaceHtml(FR,pts,locked,opt){if(opt&&opt.zk&&window._csSE!==opt.zk){window._csSE=opt.zk;if(spots3(FR)&&!isBug(FR)&&window._csSpot>0)window._csSpot=1}/* a new end (or another archer's turn) opens on Spot 1 */const SC=csSpotSC(FR),vb=csFaceVB(FR),SP=SC&&window._csSpot,o=opt||{};
- /* face height: the same sizes Just me uses (the vertical 3-spot is tall, so it gets the tall box) */
- const H=SP?'min(340px,40vh,40dvh)':isBug(FR)||FR.col||FR.vert?'min(320px,calc(100vh - 530px),calc(100dvh - 530px))':'min(290px,36vh,36dvh)';
- return(o.noHide?'':`<div class="row" style="gap:6px;justify-content:flex-start;margin:6px 0 2px"><button class="ad-small" id="cshide" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>`)+(S.hideFace?'':`${SC?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(window._csSpot||0)==n?' on':''}" data-csspot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}${o.noHide?'':'<p class="small muted" style="margin:2px 0">Tap the face or a score. Hold to aim with the magnifier.</p>'}<div id="csfwrap" style="position:relative;width:100%;height:${H};margin:0 auto;overflow:hidden;touch-action:none;border-radius:8px">${faceSVG(pts,'cspface',vb,FR,'',o.d>0?{d:+o.d,cm:o.cm||0}:null).replace('width="100%"','width="100%" height="100%"')}<button type="button" class="zcyc" id="cszcycle"></button><div id="csloupe" hidden style="position:absolute;z-index:3;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`)}
+ /* face height: the same sizes Just me uses (plotBaseH). When zoomed, plotZoomRoom grows the box. */
+ const H=plotBaseH(SP,FR);
+ return(o.noHide?'':`<div class="row" style="gap:6px;justify-content:flex-start;margin:6px 0 2px"><button class="ad-small" id="cshide" aria-pressed="${!!S.hideFace}">${S.hideFace?'Show target':'Hide target'}</button></div>`)+(S.hideFace?'':`${SC?`<div class="zbar" role="group" aria-label="Spot">${[0,1,2,3].map(n=>`<button class="zb${(window._csSpot||0)==n?' on':''}" data-csspot="${n}">${n?'Spot '+n:'All spots'}</button>`).join('')}</div>`:''}${o.noHide?'':'<p class="small muted" style="margin:2px 0">Tap the face or a score. Hold to aim with the magnifier.</p>'}<div id="csfwrap" style="position:relative;width:100%;height:${H};margin:0 auto;overflow:visible;touch-action:none;border-radius:8px">${faceSVG(pts,'cspface',vb,FR,'',o.d>0?{d:+o.d,cm:o.cm||0}:null).replace('width="100%"','width="100%" height="100%"')}<button type="button" class="zcyc" id="cszcycle"></button><div id="csloupe" hidden style="position:absolute;z-index:3;width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid #111;box-shadow:0 2px 8px #0006;pointer-events:none;background:#fff"></div></div>`)}
 /* ---------- Just me look-alike scoring card (league and casual, one archer on this phone) ----------
    The same layout and behaviour as the Just me scorer: End / Prog boxes, the arrows of the end as chips (tap one to fix it),
    the face for the end, the score keys, Undo, and the table of every end. League and casual both draw it from here. */
@@ -380,18 +380,22 @@ function csAdBind(again){const ad=app.querySelector('#csad');if(!ad)return;const
 function csAdFit(){const ad=app.querySelector('#csad'),pd=ad&&ad.querySelector('.ad-pad');if(!ad||!pd)return false;
  const fw=app.querySelector('#csfwrap'),nv=document.querySelector('nav'),H=document.querySelector('header.top,header'),hd=(H?H.getBoundingClientRect().bottom:0)+4,lim=innerHeight-(nv&&nv.getBoundingClientRect().top>0?nv.getBoundingClientRect().height:0)-8;
  const top=()=>(ad.querySelector('.ad-head')||ad).getBoundingClientRect().top,place=()=>scrollTo(0,Math.max(0,scrollY+top()-hd));
+ /* shrink against the compact 1x height, then grow again if zoomed, so zoom room is not undone */
+ if(fw&&fw.dataset.z0h)fw.style.height=fw.dataset.z0h;
  place();const need=pd.getBoundingClientRect().bottom-top(),av=lim-hd;
- if(fw&&need>av){fw.style.height=Math.max(170,fw.getBoundingClientRect().height-(need-av))+'px';place()}return true}
+ if(fw&&need>av){fw.style.height=Math.max(170,fw.getBoundingClientRect().height-(need-av))+'px'}
+ if(fw&&window.plotZoomBase)plotZoomBase(fw,fw.getBoundingClientRect().height);
+ place();return true}
 function csFaceBind(C,plot,again){if(!C)return;const q=x=>app.querySelector(x);
  if(q('#cshide'))q('#cshide').onclick=()=>{S.hideFace=!S.hideFace;save();again()};
  app.querySelectorAll('[data-csspot]').forEach(b=>b.onclick=()=>{window._csSpot=+b.dataset.csspot;PZ.cx=PZ.cy=0;if(!window._zkOn)PZ.k=1;again()});
  const f=q('#cspface');if(!f)return;window._zkOn=!!C.keepZ;if(C.zk&&window._csZk!==C.zk){window._csZk=C.zk;zkOpen(!!C.keepZ)}/* another end or archer opens on the kept zoom (indoor 3-spot) or the full face */const FR=C.FR,R=C.R,pts=C.pts,L=q('#csloupe'),W=q('#csfwrap'),B=csFaceVB(FR).split(/[ ,]+/).map(Number),bc=[B[0]+B[2]/2,B[1]+B[3]/2];
  const clampZ=()=>{PZ.k=Math.min(ZLV[ZLV.length-1],Math.max(1,PZ.k));const fr=f.getBoundingClientRect(),ar=(fr.width||1)/(fr.height||1),Ew=Math.max(B[2],B[3]*ar),Eh=Math.max(B[3],B[2]/ar),m=Ew/2*(1-1/PZ.k);PZ.cx=Math.min(m,Math.max(-m,PZ.cx));const my=Eh/2*(1-1/PZ.k);PZ.cy=Math.min(my,Math.max(-my,PZ.cy));if(PZ.k==1)PZ.cx=PZ.cy=0};
- const applyZ=()=>{clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);const zc=q('#cszcycle');if(zc){const st=zStep(PZ.k);zc.textContent=ZLABELS[st];zc.classList.toggle('on',st>0)}if(window._zkOn)zkSet(PZ.k)};
+ const applyZ=()=>{plotZoomRoom(W,PZ.k);clampZ();const w=B[2]/PZ.k,h=B[3]/PZ.k;f.setAttribute('viewBox',`${bc[0]+PZ.cx-w/2} ${bc[1]+PZ.cy-h/2} ${w} ${h}`);const zc=q('#cszcycle');if(zc){const st=zStep(PZ.k);zc.textContent=ZLABELS[st];zc.classList.toggle('on',st>0)}if(window._zkOn)zkSet(PZ.k)};
  f.style.touchAction='none';let pan=null,hold=null;applyZ();
  q('#cszcycle').onclick=ev=>{ev.stopPropagation();const st=zStep(PZ.k);PZ.k=ZLV[(st+1)%ZLV.length];if(PZ.k==1)PZ.cx=PZ.cy=0;applyZ()};
  const pt=ev=>{const p=f.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(f.getScreenCTM().inverse())};
- const show=ev=>{const p=pt(ev),r=W.getBoundingClientRect();L.hidden=false;L.style.left=Math.max(4,Math.min(r.width-114,ev.clientX-r.left-55))+'px';L.style.top=Math.max(4,Math.min(r.height-114,ev.clientY-r.top-150))+'px';const lw=0.24/PZ.k;
+ const show=ev=>{const p=pt(ev);placeLoupe(L,ev);const lw=0.24/PZ.k;
   const z=window.arrowNow?arrowNow(C.sess,C.sid):null,ad=z&&z.lcT&&window.arrowMM?arrowMM(z):0,lc=z&&window.arrowLC?arrowLC(FR,z):undefined;
   L.innerHTML=faceSVG(pts,'cslf',`${p.x-lw/2} ${p.y-lw/2} ${lw} ${lw}`,FR,faceHi(`<path d="M${p.x-lw/6} ${p.y}h${lw/3}M${p.x} ${p.y-lw/6}v${lw/3}" stroke="#39ff14" stroke-width="${0.006/PZ.k}"/><circle cx="${p.x}" cy="${p.y}" r="${0.012/PZ.k}" fill="none" stroke="#39ff14" stroke-width="${0.004/PZ.k}"/>`),ad?{d:ad}:null)+`<b style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:13px;background:#fffc">${tapScore(p,FR,R,lc).k}</b>`};
  const clr=()=>{if(hold){clearTimeout(hold);hold=null}},plotAt=ev=>{L.hidden=true;const z=window.arrowNow?arrowNow(C.sess,C.sid):null,lc=z&&window.arrowLC?arrowLC(FR,z):undefined;const t=tapScore(pt(ev),FR,R,lc);plot(t.k,t.xy)};

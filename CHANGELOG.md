@@ -3,6 +3,15 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+## v2026-11-25-1539-zoomroom: Bigger plotting area when zoomed, magnifier stays on screen
+- When you zoom in on a plotting face, the target area grows with the zoom (up to most of the screen). The compact size at 1x is unchanged.
+- The magnifier stays visible when you aim near the top or bottom edge. Score keys and Back/Next stay in the page — scroll to them if needed.
+- Applies to every plotting scorer that shares this zoom: Just me (including practice and vs ghost), match nights / H2H, Casual and League when they show a plot face, all face types (single, triangle and vertical 3-spot, field, Bugs Eyes, clout-size 122 cm). Casual button-only scoring and Lingkana (values only) are unchanged.
+- Cache version is `v2026-11-25-1539-zoomroom`. Not merged until go-live.
+
+### Files
+app.js, casual.js, insights.js, style.css, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-25-1505-noleaguetab: League shoot removed from the Score tab
 - The Score tab "What are you shooting?" card is now Just me and Casual shoot only.
 - League scoring stays in Clubs → Leagues (Lingkana League, Score my week). The helper text that said league shoots are scored below on this tab is gone.

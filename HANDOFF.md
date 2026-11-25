@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 15:39 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/plot-zoom-room` (cache `v2026-11-25-1539-zoomroom`). When the plotting zoom goes above 1x, the face box grows to most of the viewport so the zoomed face has more room around it. The magnifier stays on screen near the top and bottom edges (it flips below or to the side if there is no room, and is `position:fixed` so the scoring card does not clip it). At 1x the box stays the compact size it has now, including the shrink that keeps the score keys on screen. Score keys and Back/Next stay in the page and can be reached by scrolling. Shared helpers (`plotBaseH`, `plotZoomRoom`, `placeLoupe`) in `app.js`, used by Just me (`score()`), Casual and League plotting (`csFaceHtml` / `csFaceBind` / `csAdFit`), match nights / H2H (they use the Just me screen), and Just me vs ghost (insights no longer undoes the grown box). Covers single faces (40/60/80/122 cm), triangle and vertical 3-spot, WA field, Bugs Eyes, and clout-size 122 cm. Casual stays buttons-only where it already is (no plot face). Lingkana is still values-only and was not written to. Practice Arrows is a count page with no zoom/magnifier, and the Arrow optimizer tuning face has no zoom, so those were left as they are. No existing test was edited. This PR removes nothing.
+- Half-done: PR only, not merged; waits for Nathe's "go live". Verified at 390x844 with touch: at 1x the box stays 290–338 px; at 5x it grows to 836 px; zoom-out restores the compact height; the magnifier stays fully on screen at the top and bottom edges.
+- Decision: one pull request, not merged from here.
+
 ## 25 Nov 2026, 15:05 AWST — [Jarvis]
 
 - Who: Jarvis.
