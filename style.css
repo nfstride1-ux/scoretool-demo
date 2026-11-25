@@ -46,7 +46,7 @@ a{color:var(--blue)}.dark a{color:var(--gold)}
 .ad-num{display:flex;align-items:center;justify-content:space-between;background:#eef0f2;border:1px solid #d1d5db;border-radius:6px;padding:0 0 0 10px;flex:1}.ad-num b{background:#dfe2e6;padding:10px;min-width:44px;text-align:right;font-size:22px;align-self:stretch;display:flex;align-items:center;justify-content:flex-end}
 .ad-chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:0 10px}
 .adb{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border:1px solid #333;border-radius:3px;font-weight:700;font-size:14px;margin:1px;cursor:pointer;box-sizing:border-box}
-.adb.k-y,.adb.k-w{border:1px solid #333!important}.adb-empty{background:#f3f4f6;border-style:dashed;cursor:default}
+.adb.k-y,.adb.k-w{border:1px solid #333!important}.adb-empty{background:#f3f4f6;border-style:dashed;cursor:default}.adb-view{cursor:default}
 .ad-small{margin-left:auto;background:#eef0f2;color:#111;border:1px solid #c7c9cc;border-radius:6px;padding:8px 10px;font:600 13px var(--body);min-height:40px}.ad-small+.ad-small{margin-left:4px}.ad-small:disabled{opacity:.4}
 .ad-pad{display:grid;grid-template-columns:repeat(var(--cols,6),1fr);gap:5px;padding:8px 10px}
 .ad-pad button{min-height:46px;padding:0;border-radius:4px;border:1px solid #111;font:800 18px var(--body);cursor:pointer}.ad-pad button:disabled{opacity:.45}
@@ -228,6 +228,10 @@ body.cb .up{color:#5ab0ff}body.cb .dn{color:#ff9f1a}body.cb .ad-go{background:#2
 .cs-sug{margin:6px 6px 0 0}
 .cs-person{gap:6px}
 .cs-tab td:first-child,.cs-tab th:first-child{text-align:left}
+.cs-tab tr.cs-openrow{cursor:pointer}
+.cs-tab tr.cs-openrow td{padding-top:10px;padding-bottom:10px;min-height:44px;vertical-align:middle}
+.cs-tab tr.cs-openrow:focus,.cs-tab tr.cs-openrow:focus-within,.cs-tab tr.cs-openrow:active{background:rgba(37,99,235,.12)}
+.cs-tab .cs-openname{color:var(--link,#60a5fa);font-weight:700;text-decoration:underline;text-underline-offset:2px}
 #cstype0{margin-bottom:6px}
 .inc-prog{font-weight:700;margin-left:4px;white-space:nowrap}
 .vadnum{display:inline-block;min-width:32px;min-height:28px;padding:0 6px;margin:0 1px;border:1px solid var(--blue);border-radius:8px;background:var(--blue-bg);color:var(--blue);font:700 13px var(--body);cursor:pointer;vertical-align:baseline}
