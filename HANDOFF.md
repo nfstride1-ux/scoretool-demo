@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 14:20 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR #79 (`cursor/lk-reg-suggest`) updated onto current main (merged main, including the live #80 score gate and #82; no force push). Cache `v2026-11-25-1420-suggest2`. The same 2+ letter name suggestions now also run on the Score tonight / Login to Event name box (`#lkscorer`): up to 8 tap buttons (start of the name or of any word, any case, iPhone-safe plain buttons). A tap fills the exact name and moves to the PIN on the existing login screen. Suggestions include registered names already on the phone plus Nathe (Nathaniel Stride) and Nate Evans. Blue (registered tonight, unpaid) and green (paid) tick boxes on the host Registered Archers and Club pot lists are unchanged. New test `tools/lk_score_suggest_test.py` (relay posts are caught, never sent). No existing test changed. Lingkana league data was not written to. This PR removes nothing.
+- Half-done: PR only, not merged; waits for Nathe's "go live".
+- Decision: viewing stays open; scoring still needs a name+PIN, the passcode, or the host phone.
+
 ## 25 Nov 2026, 13:58 AWST — [Jarvis]
 
 - Who: Jarvis.

@@ -967,6 +967,14 @@ function lkBootReg(){
   if(typeof lkRegisterView==='function'){lkRegisterView();return true}
   return false;
 }
+function lkNameSuggestHits(q,names){
+  const query=(typeof lkCleanName==='function'?lkCleanName(q):String(q||'').trim()).toLowerCase();
+  if(query.length<2)return [];
+  return (names||[]).filter(Boolean).filter(n=>{
+    const l=String(n).toLowerCase();
+    return l.startsWith(query)||l.split(/[\s\-']+/).some(w=>w.startsWith(query));
+  }).slice(0,8);
+}
 function lkKnownRegistrants(lg){
   lg=lg||lkGet()||(typeof lkEnsure==='function'&&lkEnsure())||null;
   const by=new Map();
@@ -1180,7 +1188,7 @@ function lkRegisterView(){
     const names=lkKnownRegistrants(lg).map(a=>a.name).filter(Boolean);
     const draw=()=>{
       const q=lkCleanName(retName.value).toLowerCase();
-      const hit=q.length<2?[]:names.filter(n=>{const l=n.toLowerCase();return l.startsWith(q)||l.split(/[\s\-']+/).some(w=>w.startsWith(q))}).slice(0,8);
+      const hit=lkNameSuggestHits(retName.value,names);
       if(hit.length===1&&hit[0].toLowerCase()===q){sugg.hidden=true;sugg.innerHTML='';return}
       sugg.innerHTML=hit.map(n=>`<button type="button" data-retname="${h(n)}">${h(n)}</button>`).join('');
       sugg.hidden=!hit.length;
@@ -1995,6 +2003,6 @@ Object.assign(window,{lkNightRegd,
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkNameSuggestHits,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
 });
 })();
