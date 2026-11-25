@@ -302,15 +302,19 @@ function csBindList(){const c=$('#cscard');if(!c)return;c.querySelectorAll('[dat
  c.querySelectorAll('[data-csacc]').forEach(b=>b.onclick=()=>{const cs=csGet(b.dataset.csacc);cs.status='active';cs.dirty=1;save();csTick(true).then(()=>{if(window._csv==cs.code)csView(cs.code)});csView(cs.code)});
  c.querySelectorAll('[data-csno]').forEach(b=>b.onclick=()=>{const cs=csGet(b.dataset.csno);if(!cs)return;cs.status='declined';cs.nosend=1;save();(async()=>{await h2hPost(csTopic(cs.code),{k:'csno',code:cs.code,by:csMe(),t:Date.now()});S.casual=csAll().filter(x=>x.code!=cs.code);save()})();S.casual=csAll().filter(x=>x.code!=cs.code||x.nosend);save();score()})}
 /* the Score tab: choose the kind of shoot first */
-const CS_TYPES=[['solo','Just me'],['casual','Casual shoot'],['league','League shoot']];
+/* League scoring lives in Clubs > Leagues, not on this tab. */
+const CS_TYPES=[['solo','Just me'],['casual','Casual shoot']];
 const _csScore=score;score=function(){const o=_csScore.apply(this,arguments);try{csDecorate()}catch(e){console.error(e)}return o};
 /* Casual shoots you can still score (not finished, not declined/invite-only). Used to resume straight
    into the one obviously-right shoot, rather than the type picker, when you tap Score. */
 const csActiveMine=()=>csAll().filter(cs=>cs&&cs.status!='declined'&&cs.status!='invite'&&!csFin(cs)&&(cs.ppl||[]).some(p=>csCanScore(cs,p.id)));
-function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const first=$('#rd').closest('.card');if(!first)return;const mode=window._csMode||'solo';
+function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const first=$('#rd').closest('.card');if(!first)return;
+ /* leftover League shoot (in-memory _csMode; it was never written to localStorage) falls back to Just me */
+ if(window._csMode=='league')window._csMode=null;
+ const mode=window._csMode||'solo';
  /* Score button resume (22 Nov 2026): the first time you land on Score this visit (not after you've
     already picked a type here), and there is exactly one casual shoot still being scored, offer to
-    jump straight back into it instead of the Just me / Casual / League picker. One tap either way --
+    jump straight back into it instead of the Just me / Casual picker. One tap either way --
     Resume, or just use the picker below as normal. Doesn't fire again until you leave Score and come back. */
  const seen=window._csSeen;window._csSeen=1;const act=!seen&&mode=='solo'?csActiveMine():[];
  if(act.length==1){const cs=act[0],a=cs.ppl.find(p=>csCanScore(cs,p.id)),r=csRow(cs,a.id);
@@ -318,10 +322,8 @@ function csDecorate(){if(cur||!TESTER||!$('#rd')||$('#csview'))return;const firs
  first.insertAdjacentHTML('afterbegin',`<div id="cstype0"><label>What are you shooting?</label>${csSeg('cstp',CS_TYPES,mode)}</div>`);
  if(mode!='solo'){const mr=$('#myrcard');if(mr)mr.remove()}
  if(mode=='casual'){[...first.children].forEach(x=>{if(x.id!='cstype0')x.remove()});first.insertAdjacentHTML('beforeend',csSetupHtml());csBindSetup(first)}
- else if(mode=='league'){[...first.children].forEach(x=>{if(x.id!='cstype0')x.remove()});first.insertAdjacentHTML('beforeend',`<p class="small" id="csleague" style="margin:8px 0 0">League shoots are scored inside your league, below. Open your league and tap Score my week.</p>`)}
- const lc=$('#lgcard');if(mode=='league'&&lc){const p=lc.parentNode;p.insertBefore(lc,first.nextSibling)}
  first.insertAdjacentHTML('afterend',csListCard());csBindList();
- first.querySelectorAll('[data-cstp]').forEach(b=>b.onclick=()=>{window._csMode=b.dataset.cstp=='solo'?null:b.dataset.cstp;score();if(b.dataset.cstp=='league'){const l=$('#lgcard');if(l)l.scrollIntoView({block:'start'})}});
+ first.querySelectorAll('[data-cstp]').forEach(b=>b.onclick=()=>{window._csMode=b.dataset.cstp=='solo'?null:b.dataset.cstp;score()});
  const rb=$('#csresume [data-csresume]');if(rb)rb.onclick=()=>csView(rb.dataset.csresume)}
 /* The Just me ABA sheet for a casual shoot: the same grid (abaGrid) the Just me scorer draws, one row a target with its score and the running total
    for its 10-target block, block totals, half totals and the round total, built from the casual card on screen. Display only; nothing is stored. */

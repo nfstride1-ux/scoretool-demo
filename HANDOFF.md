@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 15:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Updated `cursor/score-tab-no-league` (PR #81) onto current main (merged #79 name suggestions and #82 My results source; no force push). Cache `v2026-11-25-1505-noleaguetab`, newer than live `v2026-11-25-1420-suggest2`. Score tab is still Just me and Casual shoot only. Clubs → Leagues → Lingkana, the scoring gate, and name suggestions are kept from main. Relay data was not written to.
+- Half-done: Nathe said go live on PR #81; merge follows once required checks are green.
+- Decision: this PR still removes only the Score-tab League shoot option and its helper. Nothing else is merged with it.
+
 ## 25 Nov 2026, 14:20 AWST — [Jarvis]
 
 - Who: Jarvis.
@@ -11,12 +18,20 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Half-done: PR only, not merged; waits for Nathe's "go live".
 - Decision: viewing stays open; scoring still needs a name+PIN, the passcode, or the host phone.
 
+## 25 Nov 2026, 13:59 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR branch `cursor/score-tab-no-league` (cache `v2026-11-25-1359-noleaguetab`). Removed the Score tab "League shoot" option and its helper text ("League shoots are scored inside your league, below. Open your league and tap Score my week."). Just me and Casual shoot stay. The hint "Leagues, match play and group cards are in Clubs" stays. If `_csMode` is still `'league'` (in-memory only; it was never saved to localStorage), the tab falls back to Just me with no error. Clubs → Leagues → Lingkana League and Score my week were not changed. Relay, pot, members, scores, paid ticks and groups were not touched. `/test/` staging was left as it is. No tests were edited. This branch was later updated to include main after PR #80 (Lingkana score gate) merged.
+- Half-done: not merged; Nathe approves go-live. These tests still assert the old Score-tab League shoot button or `#lgcard` on Score when `_csMode` is `'league'`, and will fail if run: `tools/casual_test.py` (the type-picker checks), `tools/audit_2026_11_25_test.py` ("Score tab offers Just me, Casual, League"), and `tools/nopreset_test.py` (`card()` reads `#lgcard` after setting `_csMode='league'` and `nav('score')`). None of those are in the pull-request CI gate (`safety-smoke` + `privacy-scan`).
+- Decision: one pull request, not merged from here.
+
 ## 25 Nov 2026, 13:58 AWST — [Jarvis]
 
 - Who: Jarvis.
 - Done: branch `cursor/lk-score-gate` (cache `v2026-11-25-1358-scoregate`). Lingkana scoring is gated. Anyone can still open the event home, registered list, scoresheets, ladder and pot with no profile. Before "Pick a target", ticks, group changes, scoring, or a league snapshot post, the app now asks for a registered name plus that archer's PIN, or the shared scoring passcode (same salted PBKDF2 verifier; the passcode itself is not in the repo). The host phone (`h2hMe()==='nathe'`) skips that check. Nate Evans skips only when already host-capable (`lkCoHostOn()`). "Score tonight" and `#lkfulllogin` stay, so `safety_smoke` still has its login path. New test: `tools/lk_score_gate_test.py` (needs `LK_TEST_PASSCODE`). Relay topic and live league data were not changed. Night default is still the last started night (18 Nov today): switching the picker to 2 Dec while `lgWeek()` stays on night 1 would silently refuse night-2 scores, so that was left alone.
 - Half-done: PR only; not merged. Nothing goes live until Nathe says so, and only after this is verified on a real phone if he wants that too.
 - Decision: viewing stays open; entering the scoring system does not. No features were removed. The Score-tab "League shoot" removal is a separate branch and was not touched here.
+
 
 ## 25 Nov 2026, 11:26 AWST — [Grok Bot]
 
