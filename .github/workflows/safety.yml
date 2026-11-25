@@ -1,0 +1,43 @@
+name: Safety
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: safety-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safety-smoke:
+    name: safety-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements-safety.txt
+      - name: Install Playwright
+        run: |
+          pip install -r tools/requirements-safety.txt
+          python -m playwright install --with-deps chromium
+      - name: Headless smoke
+        run: python3 tools/safety_smoke_test.py
+
+  privacy-scan:
+    name: privacy-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan public files
+        run: |
+          python3 tools/privacy_scan.py --self-test
+          python3 tools/privacy_scan.py
