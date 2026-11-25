@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-25-1510-paidshare',d:'2026-11-25',items:[
+   ['people',"Paid ticks and the pot show on every phone","The host's paid ticks now show on every phone: a green tick for paid and a blue box for registered, not paid yet. The prize pot updates to match. Only the host phone can change who is paid.",'paidshare']]},
   {v:'v2026-11-25-1410-noresultsrc',d:'2026-11-25',items:[
    ['trophy',"Import my data replaces My results source","Tools no longer has My results source. To add your official results, use Tools, Import my data. Results you already pasted or typed in there stay on this phone and still count in your personal bests and stats."]]},
   {v:'v2026-11-25-1025-audit2',d:'2026-11-25',items:[
