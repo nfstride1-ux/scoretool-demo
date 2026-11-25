@@ -23,12 +23,8 @@ function adoptPending(){const p=sessionStorage.getItem('scoretool.cal.pending');
 const evs=()=>get('events')||{};
 window.calEvOf=s=>{if(!WHO()||!s||!s.id)return null;try{seedNathe()}catch(e){}return evs()[s.id]||null};
 window.calSetEv=(id,o)=>{if(!WHO()||!id)return;const E=evs();if(o)E[id]=o;else delete E[id];put('events',E);setTimeout(tick,50)};
-/* Nathe asked (23 Oct) for his 18 Oct 2026 score to show on that day's Melville 3D in My events: tie it once, his own score only */
-function seedNathe(){if(WHO()!='nathe'||get('mel1018b'))return;const E=evs();let n=0;const CLUB={r1:226,r2:224,pos:1,div:'Compound',src:'Bowmen of Melville Facebook'};
- /* club results (Facebook, Oct 2026) show the round was complete: 226 + 224 = 450, 1st Compound */Object.keys(E).forEach(k=>{const e=E[k];if(e&&e.id=='ad-melville-3d-2026-10-18'&&!e.full){e.full=1;e.res=CLUB;n++}});
- (S.sessions||[]).filter(s=>s&&!s.sample&&s.date=='2026-10-18'&&ROUNDS[s.round]&&ROUNDS[s.round].aba&&Array.isArray(s.ends)&&arrowsIn(s)>0&&!E[s.id])
-  .forEach(s=>{E[s.id]={id:'ad-melville-3d-2026-10-18',name:'3D - Bowmen of Melville',club:'Bowmen of Melville',date:'2026-10-18',fun:1,send:1,full:1,res:CLUB};n++});
- if(n){put('events',E);put('mel1018b',1);put('mel1018',1)}}
+/* 25 Nov 2026: the old one-off per-person seed is removed; kept as a no-op so callers still work. */
+function seedNathe(){}
 const forced=s=>{const e=s&&s.id&&evs()[s.id];return !!(e&&e.send&&!s.sample&&Array.isArray(s.ends)&&ROUNDS[s.round]&&arrowsIn(s)>0)};
 const tiedRound=s=>{const e=evs()[s.id];if(!e)return null;const R=ROUNDS[s.round],n=s.ends.filter(x=>x&&x.length).length;
  return (e.name+(R.aba?' · ABA scoring':'')+(e.full&&e.res&&e.res.pos==1?' · 1st '+e.res.div:'')+(e.full||isFull(s)?'':' (partial: '+n+' of '+R.ends+(R.aba?' targets)':' ends)'))).slice(0,120)};

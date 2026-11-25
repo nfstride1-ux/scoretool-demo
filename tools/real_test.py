@@ -58,7 +58,7 @@ try:
   ap.uncheck('#incinc');ap.wait_for_timeout(300)
   chk('no horizontal overflow',ap.evaluate('document.documentElement.scrollWidth')<=390)
   # another tester sees none of it
-  ap.evaluate("S.profile='Logan Wolfe'");ap.click('nav [data-v=rewards]');ap.wait_for_timeout(600);ap.click('nav [data-v=stats]');ap.wait_for_timeout(600)
+  ap.evaluate("S.profile='Lee Archer'");ap.click('nav [data-v=rewards]');ap.wait_for_timeout(600);ap.click('nav [data-v=stats]');ap.wait_for_timeout(600)
   chk('other tester: no real rank / coach read',ap.locator('#realrank,#coachread').count()==0)
   chk('no console errors',not errs);print('ERR',errs[:3])
   b.close()

@@ -1,4 +1,4 @@
-/* ScoreTool demo: fair-play nudge for self-logged practice arrows only.
+/* ScoreTool: fair-play nudge for self-logged practice arrows only.
    Official competition scores are never checked or held.
    Thresholds (generous on purpose, so normal shooting never trips them):
    - Scored ends: an end finished less than (arrows per end x 10 s) after the previous end

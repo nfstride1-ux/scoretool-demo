@@ -23,7 +23,7 @@ def mk(tid):
     since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
     route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
   return relay
-NAMES={'logan':'Logan Wolfe','joseph':'Joseph Snook','tahuri':'Tahuri Burney','nathe':'Nathaniel Stride'}
+NAMES={'logan':'Lee Archer','joseph':'Jo Archer','tahuri':'Tai Archer','nathe':'Nathaniel Stride'}
 errs=[];DLG=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844},device_scale_factor=2);ctx.route('https://ntfy.sh/**',mk(tid))
@@ -87,12 +87,12 @@ try:
   # ---------- people: freeform + host-confirmed links, under-16 by nickname ----------
   L.fill('#csname','TEST casual night');L.fill('#cstype','Joe');L.dispatch_event('#cstype','input');L.wait_for_timeout(200)
   sug=L.inner_text('#cssug')
-  chk('typing Joe offers to link Joseph by his nickname only (under 16)','Link Joey' in sug and 'Snook' not in sug and 'Joseph' not in sug)
+  chk('typing Joe offers to link Joseph by his nickname only (under 16)','Link Joey' in sug and 'Archer' not in sug and 'Joseph' not in sug)
   chk('nothing links until the host taps the chip',L.evaluate("csDraft().ppl.length")==0)
   L.evaluate("document.getElementById('cssug').scrollIntoView({block:'center'})");L.wait_for_timeout(100);shot(L,'03-setup-suggestion')
   L.click('[data-cslink="joseph"]');L.wait_for_timeout(200)
   chk('host tapped: Joey linked',L.evaluate("csDraft().ppl")==[{'tid':'joseph'}])
-  L.fill('#cstype','Joseph Snook');L.click('#csaddn');L.wait_for_timeout(200)
+  L.fill('#cstype','Jo Archer');L.click('#csaddn');L.wait_for_timeout(200)
   chk('a tester full name can\'t be added as a name only (privacy)','app member' in L.inner_text('#csmsg') and len(L.evaluate("csDraft().ppl"))==1)
   L.fill('#cstype','Sam');L.click('#csaddn');L.wait_for_timeout(200)
   chk('Sam added as a name-only friend (no account)',L.evaluate("csDraft().ppl")[1]=={'n':'Sam'} and 'name only' in L.inner_text('#cssetup'))
@@ -109,7 +109,7 @@ try:
   J.click(f'[data-csacc="{code}"]');J.wait_for_timeout(500);ct(J,L)
   chk('Joseph\'s phone has the shoot with 3 people',J.evaluate(f"csGet('{code}').ppl.length")==3)
   vt=J.inner_text('#csview')
-  chk('Joseph\'s view: nicknames, no real surnames, no ranking words','Snook' not in vt and 'Wolfe' not in vt and 'Zap' in vt and 'Sam' in vt and not any(w in vt.lower() for w in ['rank','leaderboard','1st']))
+  chk('Joseph\'s view: nicknames, no real surnames, no ranking words','Archer' not in vt and 'Archer' not in vt and 'Zap' in vt and 'Sam' in vt and not any(w in vt.lower() for w in ['rank','leaderboard','1st']))
   chk('Joseph can only score himself',J.evaluate("[...document.querySelectorAll('#csentry [data-csid]')].length")==0 and J.evaluate(f"csKey('{code}',csGet('{code}').ppl.find(p=>!p.tid).id,'X')")==False and J.evaluate(f"csKey('{code}','logan','X')")==False)
   # ---------- scoring: host for himself and Sam, Joseph on his own phone ----------
   L.evaluate(f"csView('{code}')");L.wait_for_timeout(200)
@@ -240,7 +240,7 @@ try:
   chk('Not me: host keeps Tahuri as a name only (nickname shown), and Tahuri\'s phone drops it',L.evaluate(f"csGet('{c3}').ppl[1].tid")==None and L.evaluate(f"csNm(csGet('{c3}'),'tahuri')")=='Taz' and T.evaluate(f"!csGet('{c3}')"))
   # ---------- relay payload privacy ----------
   allmsg=json.dumps(RELAY)
-  chk('relay never carries tester real surnames',all(s not in allmsg for s in ['Snook','Wolfe','Burney','Stride']))
+  chk('relay never carries tester real surnames',all(s not in allmsg for s in ['Archer','Archer','Archer','Stride']))
   chk('no page errors',not errs)
   if errs:print(errs[:5])
   b.close()

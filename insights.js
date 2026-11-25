@@ -17,7 +17,7 @@ window.profileExtraCard=function(){const y=new Date().getFullYear(),ys=[];for(le
  <div class="row" style="gap:8px"><label style="flex:1">Birth year<select id="pxby"><option value="">Not set</option>${ys.map(v=>`<option ${v==S.birthYear?'selected':''}>${v}</option>`).join('')}</select></label>
  <label style="flex:1">I shoot<select id="pxh"><option value="R" ${hand()=='R'?'selected':''}>Right-handed</option><option value="L" ${hand()=='L'?'selected':''}>Left-handed</option></select></label></div></div>`};
 window.bindProfileExtra=function(after){const a=$('#pxby'),h=$('#pxh');if(a)a.onchange=()=>{S.birthYear=a.value?+a.value:null;save();after&&after()};if(h)h.onchange=()=>{S.hand=h.value;save();after&&after()}};
-const _me=me;me=function(){_me.apply(this,arguments);const c=$('#coachcard');if(c&&!$('#pxcard')){c.insertAdjacentHTML('beforebegin',profileExtraCard());bindProfileExtra()}};
+const _me=me;me=function(){_me.apply(this,arguments);const c=$('#coachcard')||$('#parentcard');if(c&&!$('#pxcard')){c.insertAdjacentHTML('beforebegin',profileExtraCard());bindProfileExtra()}};
 /* ---------- shared helpers ---------- */
 const keysFor=r=>/field|bugs/i.test(r)?['6','5','4','3']:['X','10','9','8','7'];
 function faceMM(s){const q=window.shotPts&&plotted(s).find(p=>p.mm);if(q)return{mm:q.mm,known:true,size:q.mm/5};const R=ROUNDS[s.round]||{};const ff=(s.ff||[]).find(Boolean);if(ff&&!s.bugs)return{mm:ff.f*5,known:true,size:ff.f};const F=faceR(R,0)||{};const m=String(F.face||R.face||'').match(/(\d+)cm/);return m&&!/field/i.test(F.face||'')?{mm:+m[1]*5,known:true,size:+m[1]}:{mm:610,known:false,size:122}}
@@ -203,7 +203,7 @@ const _rs=renderShare;renderShare=function(){_rs.apply(this,arguments);let D;try
 const GM={last:'Last round',best:'My best',avg:'My average',off:'Best official',top:'Top ranked',pick:'Choose who'};
 /* Top-ranked ghosts: real end-by-end official scoresheets of archers on the official AA Open compound top-10 lists, best score on this round
    since the rankings window. An archer with only a published total is a 'total only' ghost compared at the end; totals are never split into ends. */
-let GT=null,GTl=false;const isMeP=()=>{const p=String(S.profile||'').toLowerCase();return p.includes('stride')&&p.includes('nath')};
+let GT=null,GTl=false;const isMeP=()=>true; /* 25 Nov 2026: the public top-10 list is offered to every archer, not one profile */
 const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return+dd+' '+'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[m-1]+' '+y.slice(2)};
 /* only archers of my own gender and age class, the same as the rankings; ranks recounted inside that list (equal scores share) */
 const myGC=()=>{const d=(findReal(S.profile||'').filter(x=>x.division).slice(-1)[0]||{}).division||'';return{g:(d.match(/\b(Male|Female)\b/)||[])[1]||null,c:(d.match(/Open|50\+|60\+|70\+|Under \d+/)||['Open'])[0]}};window.ghostGC=myGC;

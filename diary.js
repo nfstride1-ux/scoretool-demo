@@ -1,4 +1,4 @@
-/* ScoreTool demo: Shooting diary + Bow & setup diary. Tracker only: records the archer's own words, adds no advice. */
+/* ScoreTool: Shooting diary + Bow & setup diary. Tracker only: records the archer's own words, adds no advice. */
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const mine=a=>(a||[]).filter(x=>x.archer==S.profile);
 const SETUP_CATS=['Arrows','Points','Nocks','Fletching','Bow/limbs','Draw length','Draw weight','String/cables','Peep','Sight','Rest','Release','Stabilisers','Other'];

@@ -22,8 +22,8 @@ def mk(tid):
     since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
     route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
   return relay
-NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','dana':'Dana Chapman-Bureny','nathe':'Nathaniel Stride','steven':'Steven Snook','michael':'Michael Choong'}
-REALN=['Snook','Wolfe','Chapman','Stride','Choong','Nathaniel','Joseph','Arthur','Cronje']
+NAMES={'joseph':'Jo Archer','logan':'Lee Archer','dana':'Dee Archer','nathe':'Nathaniel Stride','steven':'Sam Archer','michael':'Mik Archer'}
+REALN=['Archer','Archer','Chapman','Stride','Archer','Nathaniel','Joseph','Archer','Archer']
 errs=[];DLG=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',mk(tid))
@@ -65,10 +65,10 @@ try:
   chk('final rules shown before a league is created','Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).' in lc)
   H.click('#lgnew summary')
   tk=H.evaluate("[...document.querySelectorAll('#lgnew .h2htk')].map(l=>l.textContent.trim())")
-  chk("league setup lists testers by real name",'Logan Wolfe' in tk and 'Estiaan Cronje' in tk and not any(x.startswith('Tester ') for x in tk))
-  chk('Phill Arthur is not in the league archer list',not any('Phill' in x for x in tk) and H.locator('#lgnew [data-lgop="phill"]').count()==0)
+  chk("league setup lists testers by real name",'Lee Archer' in tk and 'Eli Archer' in tk and not any(x.startswith('Tester ') for x in tk))
+  chk('Pat Archer is not in the league archer list',not any('Phill' in x for x in tk) and H.locator('#lgnew [data-lgop="phill"]').count()==0)
   H.click('#h2hnew summary');tk2=H.evaluate("[...document.querySelectorAll('#h2hnew .h2htk')].map(l=>l.textContent.trim())")
-  chk("match setup lists real names, Phill still available there",'Phill Arthur' in tk2 and 'Logan Wolfe' in tk2 and not any(x.startswith('Tester ') for x in tk2))
+  chk("match setup lists real names, Phill still available there",'Pat Archer' in tk2 and 'Lee Archer' in tk2 and not any(x.startswith('Tester ') for x in tk2))
   H.click('#h2hnew summary')
   chk('go-live: league name has no default (host types it)',H.input_value('#lgname')=='')
   H.fill('#lgname','Onion Shed Challenge')

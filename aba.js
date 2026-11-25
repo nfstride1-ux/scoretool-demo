@@ -159,14 +159,8 @@ function evBind(s,again){const p=$('#abaevpick');if(p)p.onclick=async()=>{EVO=!E
  const o=$('#abaevoff');if(o)o.onchange=()=>{const e=evOf(s);if(!e)return;e.official=o.checked?1:0;e.fun=o.checked?0:1;window.calSetEv(s.id,e);again()};
  app.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{const x=((EVL&&EVL.on[s.date])||[]).find(y=>y.id==b.dataset.ev);if(!x)return;
   window.calSetEv(s.id,{id:x.id,name:String(x.name).replace(/\s+–\s+/g,' - '),club:x.org||x.host||'',date:s.date,fun:1,send:1});EVO=false;again()})}
-/* Nathe's 17 May 2025 Interclub, typed from his paper sheet (every value read clearly; halves add to 392 and 390). Zones follow from the
-   points: 20 can only be arrow 1 A and 18 only arrow 1 B. Saved once on his phone, marked as from a paper sheet. */
-const P3=[20,20,20,20,20,20,18,20,20,18, 20,18,20,18,20,20,20,20,20,20],P1=[20,20,18,18,20,20,20,20,20,18, 20,18,20,18,20,20,20,20,20,20];
-const NOTE="Typed from the paper ABA Interclub sheet. Block subtotals 196 + 196 = 392 (3-arrow half) and 194 + 196 = 390 (1-arrow half), total 782; every target score matches the paper. The running total here restarts at each 10-target block, as on the paper's 1A columns. On the paper, the 3A targets 11-20 column carried on from 196 instead, with a slip after target 14 (274, should be 272).";
-function seed(){migrate();const p=String(S.profile||'').toLowerCase();if(!(p.includes('stride')&&p.includes('nath'))||S.abaSeeded)return;const all=[...P3,...P1];
- S.sessions.push({id:'aba20250517',date:'2025-05-17',round:IC,ends:all.map(v=>[String(v)]),pos:[],note:'',finished:true,src:'paper',
-  aba:all.map(v=>({m:0,k:1,z:v==20?'A':'B'})),abaHead:{name:'Nathaniel Stride',no:'63268',div:'TBA',grade:'',target:''},
-  abaNote:NOTE});S.abaSeeded=true;save()}
+/* 25 Nov 2026: the old one-off seed of one archer's paper sheet is removed (it stays on the phone it was saved to). No-op kept for callers. */
+function seed(){migrate()}
 window.abaSeed=seed;window.abaMigrate=migrate;try{if(typeof S!='undefined'&&S&&S.sessions)migrate()}catch(e){}
 /* Stats: ABA 3D card */
 const _st=stats;stats=function(){seed();_st.apply(this,arguments);const ss=done().filter(s=>s.round==window._r||(!window._r&&false));if(!isAba(window._r)||!ss.length||$('#abastats'))return;const X=abaStats(ss),last=ss[ss.length-1],L=abaStats([last]),LH=halves(last);

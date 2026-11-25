@@ -50,7 +50,7 @@ try:
   P.reload(wait_until='load');P.wait_for_timeout(2200);P.evaluate("cur=null;sv='sheet';nav('score')");P.wait_for_timeout(300);P.click('#pgopen');P.wait_for_timeout(300)
   chk('offline: reload keeps the Peel scores',P.evaluate("pgTot(pgEv().days[0].a[1].s)")==32 and P.locator('[data-pga]').count()==3)
   Q=cx.new_page();Q.on('pageerror',lambda e:errs.append('estiaan: '+str(e)));Q.goto(U+'?tester=estiaan',wait_until='load');Q.wait_for_timeout(1500)
-  Q.evaluate("S.unlocked=true;if(!S.profile)S.profile='Estiaan Cronje';save()");Q.reload(wait_until='load');Q.wait_for_timeout(3000)
+  Q.evaluate("S.unlocked=true;if(!S.profile)S.profile='Eli Archer';save()");Q.reload(wait_until='load');Q.wait_for_timeout(3000)
   chk("offline: another tester's link opens, with his data files from the cache",Q.evaluate("TESTER.id")=='estiaan' and Q.evaluate("findReal(S.profile).length")==16)
   Q.close()
   # ---------- back online: a new deploy still updates ----------

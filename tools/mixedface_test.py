@@ -26,7 +26,7 @@ def mk(tid):
     since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
     route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
   return relay
-NAMES={'logan':'Logan Wolfe','joseph':'Joseph Snook','nathe':'Nathaniel Stride'}
+NAMES={'logan':'Lee Archer','joseph':'Jo Archer','nathe':'Nathaniel Stride'}
 errs=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True,is_mobile=True);ctx.route('https://ntfy.sh/**',mk(tid))

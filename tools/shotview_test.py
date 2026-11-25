@@ -1,4 +1,4 @@
-# Arrow plot, this shoot vs usual, Finish session (23 Oct 2026, Steven Snook, iPhone 14, dark mode).
+# Arrow plot, this shoot vs usual, Finish session (23 Oct 2026, Sam Archer, iPhone 14, dark mode).
 # Seeds a throwaway local copy of steven with 3 earlier Vegas 300s and today's (plotted on the Vegas 3-spot) in a test browser only;
 # no network (relay, ntfy) so nothing leaves this machine. Checks: dots at real places on one WA spot (no grid squares), group centre,
 # sight guide direction, comparisons vs earlier shoots, Past sessions Open shows the same view, Finish session saves nothing.

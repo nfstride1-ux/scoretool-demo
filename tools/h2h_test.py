@@ -20,7 +20,7 @@ def relay(route,req):
     N[0]+=1;L.append({'id':'m%06d'%N[0],'event':'message','topic':topic,'message':req.post_data or ''});return route.fulfill(status=200,body='{}',headers={'access-control-allow-origin':'*'})
   since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
   route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
-NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny','nathe':'Nathaniel Stride','phill':'Phill Arthur','steven':'Steven Snook','michael':'Michael Choong','tahuri':'Tahuri Burney'}  # internal profile keys only, never shown
+NAMES={'joseph':'Jo Archer','logan':'Lee Archer','nate':'Nate Evans','dana':'Dee Archer','nathe':'Nathaniel Stride','phill':'Pat Archer','steven':'Sam Archer','michael':'Mik Archer','tahuri':'Tai Archer'}  # internal profile keys only, never shown
 errs=[];DLG=[]
 def phone(b,tid):
   ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay)
@@ -136,7 +136,7 @@ try:
   J.evaluate("S.squad.members=S.squad.members.filter(m=>m.id!='m_estiaan'&&m.id!='m_steven');S.presetTop='all-testers';save()");J.reload();J.wait_for_timeout(2200);J.evaluate("nav('squad')");J.wait_for_timeout(400)
   mm=J.evaluate("S.squad.members.map(m=>m.id)");chk('a phone topped up before Estiaan joined gets him once; an admin removal still sticks','m_estiaan' in mm and 'm_steven' not in mm and len(mm)==9)
   # ---------- display names through the relay ----------
-  REALN=['Nathaniel','Stride','Arthur','Wolfe','Snook','Choong','Chapman','Bureny','Burney','Engelen','Evans','Matete','George Philip']
+  REALN=['Nathaniel','Stride','Archer','Archer','Archer','Archer','Chapman','Archer','Archer','Archer','Evans','Archer','George Philip']
   msgs=[json.loads(m['message']) for L_ in RELAY.values() for m in L_]
   chk('relay never carries a real name',not any(n.lower() in json.dumps(msgs).lower() for n in REALN))
   inv=[m for m in msgs if m.get('k')=='inv'];st=[m for m in msgs if m.get('k')=='st']
@@ -144,7 +144,7 @@ try:
   chk('match state carries only id, code, round, scores and display name',st and all(set(m)<= {'k','code','by','round','mode','a','b','ends','done','nm','nt','t'} for m in st))
   dirm=RELAY.get('scoretool-h2h-q7m4-names',[]);dm=[json.loads(m['message']) for m in dirm]
   chk('names directory topic: id + display name only',dm and all(set(m)<={'k','id','n','nt','t'} for m in dm) and {m['id']:m['n'] for m in dm}.get('joseph')=='Joey')
-  chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Snookie')
+  chk('Logan learned Joey from the relay (not a real name)',L.evaluate("testerName('joseph')")=='Joey' and L.evaluate("testerName('steven')")=='Sporty')
   J.evaluate("cur=null;nav('home')");J.wait_for_timeout(300);chk("personal: Joseph's home greets him by real name","G'day Joseph" in J.text_content('#app'))
   for nm_,pg_ in (('Joseph',J),('Logan',L)):
     for v,sel in (('score','#h2hcard'),('squad','#app'),('rewards','#leaguecard')):

@@ -26,7 +26,7 @@ PREP = """() => {
   localStorage.setItem('scoretool.whatsnew.seen','v2026-11-17-1830-live');
   try{localStorage.setItem('scoretool.cal.steven.prompted','1')}catch(e){}
   try{localStorage.setItem('scoretool.cal.nathe.prompted','1')}catch(e){}
-  if(typeof S!=='undefined' && S){S.unlocked=true; if(!S.profile)S.profile='Steven Snook'; save()}
+  if(typeof S!=='undefined' && S){S.unlocked=true; if(!S.profile)S.profile='Sam Archer'; save()}
 }"""
 
 def contrast(page, sel):
@@ -303,7 +303,7 @@ try:
             not still.get('hash') and 'not right' in still.get('msg','').lower(), str(still))
         pg.fill('#lkpin', '2468')
         pg.fill('#lkpin2', '2468')
-        pg.fill('#lkpw', 'Kana26')
+        pg.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         pg.locator('#lkpwgo').click()
         pg.wait_for_selector('#lkassigned, #lgentry', timeout=5000)
         chk('the right passcode sets the PIN and logs in',
