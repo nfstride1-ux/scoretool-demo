@@ -138,6 +138,7 @@ function csKey(code,id,k,xy){const cs=csGet(code);if(!cs||!csCanScore(cs,id)||cs
   if(E.length==R.ape){const xv=csXV(cs),pre=[...E],preP=[...P],o=E.map((_,j)=>j).sort((a,b)=>csArrow(E[b],xv)-csArrow(E[a],xv)||(E[b]=='X')-(E[a]=='X')||a-b),E2=o.map(j=>E[j]),P2=o.map(j=>P[j]||null);E.splice(0,E.length,...E2);P.splice(0,P.length,...P2);if(window.stOrd)stOrd.set('cs|'+cs.code+'|'+id,ix,pre,preP,E,P)}}
  else {const xv=csXV(cs);E.sort((a,b)=>csArrow(b,xv)-csArrow(a,xv)||(b=='X')-(a=='X'))}e.u=Date.now();e.by=csMe();cs.dirty=1;
  if(E.length==R.ape){const ids=cs.ppl.map(p=>p.id).filter(x=>csCanScore(cs,x)),s=ids.indexOf(id);window._csAct=null;const mine=csEnds(cs,id).filter(e=>e.length==R.ape).length;for(let j=1;j<=ids.length;j++){const n=ids[(s+j)%ids.length];if(csDoneP(cs,n))continue;const en=csEnt(cs,n)||{e:[]},last=(en.e||[])[en.e.length-1],part=!!(last&&last.length&&last.length<R.ape),nEnds=csEnds(cs,n).filter(e=>e.length==R.ape).length;if(part||nEnds<mine){window._csAct=n;break}}if(!window._csAct)window._csAct=csWavePick(cs,ids)}
+ if(window.plotAfterFlag)plotAfterFlag(E.length==R.ape);
  csAfter(cs);return true}
 function csFxDelete(code,id){const cs=csGet(code),fx=csFxFor('cs|'+code+'|'+id);window._csFx=null;if(!cs||!fx||!csCanScore(cs,id)||csLocked(cs)||cs.fin)return false;const e=csEnt(cs,id);if(!e||!csFxDel(e,fx))return false;e.u=Date.now();e.by=csMe();cs.dirty=1;csAfter(cs);return true}
 /* one archer's face: only before their first arrow. The host sets it for themselves and name-only friends (cs.fa); a linked archer sets their own (cs.sc[id].f) */
@@ -529,6 +530,7 @@ function csEntryScreen(code){
   if($('#csentundo'))$('#csentundo').onclick=()=>{window._csAct=id;window._csFx=null;window._csHold=null;csUndo(code,id);csEntryScreen(code)};
   if($('#csentfixdone'))$('#csentfixdone').onclick=()=>{window._csFx=null;csEntryScreen(code)};
   if($('#csentdelarrow'))$('#csentdelarrow').onclick=()=>{window._csAct=id;csFxDelete(code,id);window._csFx=null;window._csHold=null;csEntryScreen(code)};
+  if(window.plotAfterApply)plotAfterApply();
 }
 /* Next archer who still needs this end (partial, or fewer complete ends than whoever just finished).
    Once nobody is left to catch up, the end is complete for the whole group: push the group's updated
@@ -658,7 +660,7 @@ function csView(code){const cs=csGet(code);if(!cs)return;
   q('#csvadd').onclick=()=>{const e=csAdd(code,{n:vt.value});if(e){q('#csvmsg').textContent=e;return}window._csMore=1;csView(code)};if(window._csMore){q('#csmore').open=true;window._csMore=0}}
  q('#csrf').onclick=()=>csTick(true);q('#csback').onclick=()=>{window._csv=null;nav('score')};
  if(q('#csdel'))q('#csdel').onclick=()=>{if(!confirm('Remove this casual shoot from this phone? Other phones keep it.'))return;S.casual=csAll().filter(x=>x.code!=code);S.matches=h2hAll().filter(x=>x.code!=csMpCode(cs));save();window._csv=null;nav('score')};
- if(!(window.csAdFit&&q('#csad')&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0)}
+ if(!(window.csAdFit&&q('#csad')&&q('#csad .ad-pad')&&csAdFit()))scrollTo(0,0);if(window.plotAfterApply)plotAfterApply()}
 window.csView=csView;
 /* leaving the shoot view by the tabs clears it */
 const _csNav=nav;nav=function(v){if(v!='score'){window._csMode=null;window._csSeen=0}window._csv=null;return _csNav.apply(this,arguments)};

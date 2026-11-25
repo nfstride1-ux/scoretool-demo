@@ -3,6 +3,15 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+## v2026-11-25-1619-autoscroll: After a plot, centre the target; after the last arrow, scroll to Next
+- After each plotted arrow (while the end is still open), if the face is zoomed, the pan jumps back to the centre of the active target — or the next spot, when the end auto-advances — and the page scrolls so Arrow size, the spot tabs and the plotting box sit fully on screen. You no longer have to re-centre by hand after every arrow.
+- After the last arrow of an end is plotted, the page scrolls down to Back and Next.
+- Applies to every plotting scorer that shares this face: Just me (including practice and vs ghost), match nights / H2H, Casual and League when they show a plot face, and all face types (single, triangle and vertical 3-spot, field, Bugs Eyes, clout-size 122 cm). Casual button-only scoring still gets the scroll to Next. Lingkana (values only) is unchanged.
+- Cache version is `v2026-11-25-1619-autoscroll`. Not merged until go-live.
+
+### Files
+app.js, casual.js, league.js, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-25-1539-zoomroom: Bigger plotting area when zoomed, magnifier stays on screen
 - When you zoom in on a plotting face, the target area grows with the zoom (up to most of the screen). The compact size at 1x is unchanged.
 - The magnifier stays visible when you aim near the top or bottom edge. Score keys and Back/Next stay in the page — scroll to them if needed.
