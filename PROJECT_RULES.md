@@ -29,7 +29,8 @@ These already work. A change that breaks one of them is not finished.
 - Onion Shed stays removed. The coach screens stay hidden (`COACH_ON` stays false).
 - League scoring stays free for league archers.
 - Stripe tiers stay off until Nathe says to turn them on.
-- Keep pull requests small. Checks stay green. Nathe approves go-live by merging. Do not merge your own pull request.
+- Keep pull requests small. Checks stay green.
+- **Who can ship.** Jarvis is the lead and the default builder. Claude, OpenAI, and Grok Bot may also ship code. Every change goes through a pull request that passes `safety-smoke` and `privacy-scan`, and the person who did the work adds a signed entry to [HANDOFF.md](HANDOFF.md) using `[Jarvis]`, `[Claude]`, `[OpenAI]`, or `[Grok Bot]`. Nothing goes live without Nathe's own OK. Do not merge a pull request unless Nathe has approved that merge.
 
 ## File map
 
