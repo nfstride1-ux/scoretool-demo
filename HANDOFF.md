@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 14:20 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR #79 (`cursor/lk-reg-suggest`) updated onto current main (merged main, including the live #80 score gate and #82; no force push). Cache `v2026-11-25-1420-suggest2`. The same 2+ letter name suggestions now also run on the Score tonight / Login to Event name box (`#lkscorer`): up to 8 tap buttons (start of the name or of any word, any case, iPhone-safe plain buttons). A tap fills the exact name and moves to the PIN on the existing login screen. Suggestions include registered names already on the phone plus Nathe (Nathaniel Stride) and Nate Evans. Blue (registered tonight, unpaid) and green (paid) tick boxes on the host Registered Archers and Club pot lists are unchanged. New test `tools/lk_score_suggest_test.py` (relay posts are caught, never sent). No existing test changed. Lingkana league data was not written to. This PR removes nothing.
+- Half-done: PR only, not merged; waits for Nathe's "go live".
+- Decision: viewing stays open; scoring still needs a name+PIN, the passcode, or the host phone.
+
 ## 25 Nov 2026, 13:58 AWST — [Jarvis]
 
 - Who: Jarvis.
@@ -48,6 +55,19 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Not in the repo: no personal data. The export files are kept outside every repo. `privacy_scan` passes.
 - Half-done: no PR yet; Nathe reviews the evidence first. Only Nathe's file is built.
 - Note: `safety_smoke` fails about 1 run in 8 at the casual Score-tab wait, on main too (pre-existing flake).
+
+## 25 Nov 2026, 13:29 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Lingkana `#lk-register` "Already registered": typing 2+ letters lists matching registered names (start of the name or of any word, any case, up to 8) as tap buttons; a tap fills the exact name and moves to the PIN. Names come from the league already on the phone (`lkKnownRegistrants`), no new public file. Plain buttons, not `<datalist>`, so it works on iPhone Safari. Cache `v2026-11-25-1329-regsuggest`. New test `tools/lk_reg_suggest_test.py` (needs `LK_SNAPSHOT`, a private league copy; posts nothing to the relay). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.
+
+## 25 Nov 2026, 13:39 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done (same PR #79, Nathe's ask): host "Registered Archers" list and the Club pot "Tick who paid" list show a night's paid box BLUE when that archer signed up for that night and is not ticked paid yet. Tapping it ticks paid exactly as before (`lkSetPaid`, host phone only, `lg.paid[night][id]`); paid boxes show a green tick; boxes for nights the archer is not on stay plain white. Who counts as signed up for a night: `lkNightRegd` in `lingkana.js` — rows from a night-by-night sign-up now carry `nr`; rows already on phones count if their sign-up time is after PR #74 went live (2026-11-25 03:07:58 UTC); the old "every night" registrations do not; a PIN-only update is not a sign-up and no longer moves the row's sign-up time; Nathe and Nate count on every night. Existing paid ticks are read and stored unchanged. Cache `v2026-11-25-1339-paidblue`. New test `tools/lk_roster_paid_test.py` (needs `LK_SNAPSHOT`; relay posts are caught, never sent). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.
+- Next: after go-live, a host phone that synced before shows blue for today's night-2 sign-ups from their sign-up time; nothing to migrate.
 
 ## 25 Nov 2026, 14:02 AWST — [Jarvis]
 
