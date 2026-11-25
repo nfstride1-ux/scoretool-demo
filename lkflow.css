@@ -249,3 +249,13 @@ body.lk-flow #lktheme{position:fixed;top:calc(8px + env(safe-area-inset-top,0px)
 [data-theme=dark] body.lk-flow .card h2,
 [data-theme=dark] body.lk-flow .card h3,
 [data-theme=dark] body.lk-flow .card label{color:#eef2f8}
+
+/* 25 Nov 2026: Registered Archers paid boxes. Blue = registered for that night, not paid yet; green tick = paid. */
+.lk-paidbox{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin:2px;border:2px solid #9ca3af;border-radius:6px;background:#fff;vertical-align:middle;cursor:pointer}
+.lk-paidbox.lk-regd{background:#3b82f6;border-color:#1d4ed8;box-shadow:0 0 0 2px #bfdbfe}
+.lk-paidbox:checked{background:#16a34a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat;border-color:#15803d;box-shadow:none}
+.lk-paidbox:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
+.lk-key{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px}
+.lk-key-reg{background:#3b82f6;border:2px solid #1d4ed8}
+.lk-key-paid{background:#16a34a;border:2px solid #15803d}
+.lk-regdot{color:#2563eb}

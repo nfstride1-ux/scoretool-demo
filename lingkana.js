@@ -764,11 +764,15 @@ function lkApplyReg(rec,lg){
   }
   const nameKey=name.toLowerCase();
   let alreadyAll=true;
+  /* 25 Nov 2026: a real sign-up for chosen nights marks that night's row (nr) so the host's Registered Archers list can show it blue.
+     A PIN-only update keeps the row's sign-up time. */
+  const perNight=Array.isArray(rec.nights)&&!rec.allNights&&!rec.pinOnly;
   nights.forEach(night=>{
     lg.reg[night]=lg.reg[night]||[];
     const row=lg.reg[night].find(r=>r&&(r.id===id||lkCleanName(r.name).toLowerCase()===nameKey));
-    if(row){row.id=row.id||id;row.name=name;row.at=rec.at||row.at||Date.now();if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;lkCopyPin(row,rec);id=row.id||id}
-    else{const fresh={id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''};lkCopyPin(fresh,rec);lg.reg[night].push(fresh);alreadyAll=false}
+    if(row&&perNight)row.nr=1;
+    if(row){row.id=row.id||id;row.name=name;row.at=rec.pinOnly?(row.at||rec.at||Date.now()):(rec.at||row.at||Date.now());if(rec.bow)row.bow=rec.bow;if(rec.email)row.email=rec.email;if(rec.phone)row.phone=rec.phone;lkCopyPin(row,rec);id=row.id||id}
+    else{const fresh={id,name,at:rec.at||Date.now(),bow:rec.bow||'',email:rec.email||'',phone:rec.phone||''};if(perNight)fresh.nr=1;lkCopyPin(fresh,rec);lg.reg[night].push(fresh);alreadyAll=false}
   });
   lg.dirty=1;if(typeof save==='function')save();
   return{ok:true,id,first:first&&!alreadyAll?1:0,night:nights[0],nights,already:alreadyAll,name};
@@ -776,6 +780,17 @@ function lkApplyReg(rec,lg){
 /* 25 Nov 2026 (Nathe): archers sign up night by night with their PIN. A record with a nights list covers only those nights.
    Older records (allNights, or no nights list: registrations and PIN updates from before this change) still cover every night,
    so nobody already on the list loses a night. */
+/* 25 Nov 2026 (Nathe): did this archer sign up for this night themselves (night-by-night sign-up), as opposed to the old
+   "every night" registration that put everyone on all six nights? Rows from a night sign-up carry nr; rows this phone took in
+   before nr existed count when their sign-up time is after night-by-night sign-up went live (PR #74). The hosts count on every night. */
+const LK_NIGHTREG_FROM=Date.UTC(2026,10,25,3,7,58);
+function lkNightRegd(lg,night,id,name){
+  const k=LK_DATES.includes(night)?night:lkNightKey(lg,night);
+  if(!k)return false;
+  if(id===LK_COHOST_ID||lkIsHostAccount(id)||lkIsHostRegName(name))return true; /* Nathe and Nate are on every night */
+  const key=lkCleanName(name).toLowerCase();
+  return(((lg&&lg.reg)||{})[k]||[]).some(r=>r&&((id&&r.id===id)||(key&&lkCleanName(r.name).toLowerCase()===key))&&(r.nr||(+r.at||0)>=LK_NIGHTREG_FROM));
+}
 function lkRecNights(lg,rec){
   const all=lkShootDates(lg);
   if(!rec||rec.allNights||!Array.isArray(rec.nights))return all;
@@ -952,6 +967,14 @@ function lkBootReg(){
   if(typeof lkRegisterView==='function'){lkRegisterView();return true}
   return false;
 }
+function lkNameSuggestHits(q,names){
+  const query=(typeof lkCleanName==='function'?lkCleanName(q):String(q||'').trim()).toLowerCase();
+  if(query.length<2)return [];
+  return (names||[]).filter(Boolean).filter(n=>{
+    const l=String(n).toLowerCase();
+    return l.startsWith(query)||l.split(/[\s\-']+/).some(w=>w.startsWith(query));
+  }).slice(0,8);
+}
 function lkKnownRegistrants(lg){
   lg=lg||lkGet()||(typeof lkEnsure==='function'&&lkEnsure())||null;
   const by=new Map();
@@ -1059,7 +1082,8 @@ function lkRegisterView(){
     <form id="lkretform" autocomplete="on">
       <h2>2. Already registered</h2>
       <label for="lkretname">Name</label>
-      <input id="lkretname" name="name" maxlength="24" autocomplete="name" placeholder="Your name as registered">
+      <input id="lkretname" name="name" maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your name">
+      <div class="lk-search-list" id="lkretsugg" role="listbox" aria-label="Matching names" hidden></div>
       <label for="lkretpin">Your 4-digit PIN</label>
       <input id="lkretpin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
       <button class="btn lk-go" type="submit" id="lkretgo" style="margin-top:10px">Sign up for this night</button>
@@ -1158,6 +1182,23 @@ function lkRegisterView(){
         lkRegisterView();
     }).catch(()=>{fail('Could not save that PIN on this phone.');});
   };
+  /* 25 Nov 2026 (Nathe): typing 2+ letters lists the registered names that match (start of the name or of any word); tap one, then the PIN. */
+  const retName=appEl.querySelector('#lkretname'),sugg=appEl.querySelector('#lkretsugg');
+  if(retName&&sugg){
+    const names=lkKnownRegistrants(lg).map(a=>a.name).filter(Boolean);
+    const draw=()=>{
+      const q=lkCleanName(retName.value).toLowerCase();
+      const hit=lkNameSuggestHits(retName.value,names);
+      if(hit.length===1&&hit[0].toLowerCase()===q){sugg.hidden=true;sugg.innerHTML='';return}
+      sugg.innerHTML=hit.map(n=>`<button type="button" data-retname="${h(n)}">${h(n)}</button>`).join('');
+      sugg.hidden=!hit.length;
+      sugg.querySelectorAll('[data-retname]').forEach(b=>{
+        b.onpointerdown=e=>e.preventDefault();
+        b.onclick=()=>{retName.value=b.getAttribute('data-retname');sugg.hidden=true;sugg.innerHTML='';const pin=appEl.querySelector('#lkretpin');if(pin)pin.focus()};
+      });
+    };
+    retName.oninput=draw;retName.onchange=draw;retName.onkeyup=draw;
+  }
   const ret=appEl.querySelector('#lkretform');
   if(ret)ret.onsubmit=e=>{
     e.preventDefault();
@@ -1496,7 +1537,8 @@ function lkPotHTML(lg){
     const rec=signups.find(r=>r&&String(r.id)===String(id));
     const nm=h((rec&&rec.name)||(typeof lgName==='function'&&lgName(id))||id);
     const on=!!paid[id];
-    const box=host?`<input type="checkbox" data-lkpaid="${h(id)}" ${on?'checked':''}>`:(on?'Paid':'—');
+    const regd=lkNightRegd(lg,night,id,(rec&&rec.name)||lkArcherName(lg,id)); /* 25 Nov 2026: blue = signed up for this night, not paid yet */
+    const box=host?`<input type="checkbox" class="lk-paidbox${regd&&!on?' lk-regd':''}" data-lkpaid="${h(id)}" ${on?'checked':''} title="${on?'Paid':(regd?'Registered, not paid yet':'Not registered for this night')}">`:(on?'Paid':(regd?'<span class="lk-regdot">Registered</span>':'—'));
     const ask=host&&window._lkDropAsk===id;
     const cohostRow=String(id)===LK_COHOST_ID||String(id)==='lkhost:nate'||lkIsCoHostName((rec&&rec.name)||lkArcherName(lg,id));
     const drop=host&&!cohostRow?(ask?`<span class="lk-dropask">Remove ${nm}?<button type="button" class="lk-remove" data-lkdrop="${h(id)}" data-go="1">Remove</button><button type="button" class="lk-cancel" data-lkdropcancel="1">Cancel</button></span>`:`<button type="button" class="lk-remove" data-lkdrop="${h(id)}">Remove</button>`):'';
@@ -1512,7 +1554,7 @@ function lkPotHTML(lg){
     <div class="lg-wrap"><table class="ad-tab" id="lkpotnights"><thead><tr><th></th><th>Night</th><th>Paid</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>${nightRows}</tbody></table></div>
     <label for="lkpotnight" style="margin-top:8px">Tick who paid on</label>
     <select id="lkpotnight">${LK_DATES.slice(0,6).map((d,i)=>`<option value="${i+1}" ${i+1===Math.min(w,6)?'selected':''}>${h(lkFmtD(d).replace(/,?\s*\d{4}/,''))}</option>`).join('')}</select>
-    <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them.</p>
+    <p class="small muted">$${LK_ENTRY_FEE} each. A no-show is not charged until you tick them.${host?' <span class="lk-key lk-key-reg"></span> Blue = registered for this night, not paid yet.':''}</p>
     <div id="lkpaidlist">${rows}</div>
     </div>`;
 }
@@ -1957,10 +1999,10 @@ addEventListener('hashchange',()=>{if(lkIsRegHash())lkBootReg();else if(lkIsHome
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0));
 else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
-Object.assign(window,{
+Object.assign(window,{lkNightRegd,
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkNameSuggestHits,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkScoringAllowed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
 });
 })();

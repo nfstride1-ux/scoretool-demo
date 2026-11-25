@@ -378,7 +378,21 @@
     if(typeof lkIsCoHostName!=='function'||!names.some(n=>lkIsCoHostName(n.name))){
       names.push({id:(typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate', name:(typeof LK_COHOST_NAME==='string'&&LK_COHOST_NAME)||'Nate Evans'});
     }
+    const suggested=window._lkSuggestPick||null;
+    window._lkSuggestPick=null;
+    if(suggested&&suggested.name){
+      const want=String(suggested.name).trim().toLowerCase();
+      const already=names.find(n=>String(n.id)===String(suggested.id||'')||String(n.name||'').trim().toLowerCase()===want);
+      if(!already){
+        names.push({id:String(suggested.id||('lkpick:'+want)),name:suggested.name});
+      }
+    }
     names.sort((a,b)=>String(a.name).localeCompare(String(b.name),'en'));
+    if(suggested&&suggested.name){
+      const want=String(suggested.name).trim().toLowerCase();
+      const rec=names.find(n=>String(n.id)===String(suggested.id||'')||String(n.name||'').trim().toLowerCase()===want);
+      if(rec)window._lkLoginId=rec.id;
+    }
     const hostPhone=typeof lkHostPhone==='function'&&lkHostPhone(lg);
     /* Nate Evans is a host. A scorer phone does not ask him for a PIN before the paid ticks. */
     const cohostRec=rec=>!!rec&&(String(rec.id)===((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate')||(typeof lkIsCoHostName==='function'&&lkIsCoHostName(rec.name)));
@@ -542,6 +556,7 @@
     wireNames();
     if(window._lkLoginId&&el.querySelectorAll('[data-lkscorer]').length>1)onlyPicked(true);
     fitList();
+    const pinFocus=$id('lkpin');if(pinFocus&&suggested)setTimeout(()=>pinFocus.focus(),0);
     if($id('lkfind')){
       /* A phone keyboard's own autofill/suggestion bar can insert the full name without firing
          input, so this also redraws on change and blur to catch that. */
@@ -651,7 +666,8 @@
       <label for="lknight">Shoot night</label>
       <select id="lknight">${nightChoices(lg,w)}</select>
       <label for="lkscorer">Your name (optional, shown to the group)</label>
-      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="${esc(myName()||'')}">
+      <input id="lkscorer" type="text" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your name" value="${esc(myName()||'')}">
+      <div class="lk-search-list" id="lkscoresugg" role="listbox" aria-label="Matching names" hidden></div>
       <p class="small muted">To score, sign in with a registered name and PIN, or the scoring passcode. Anyone can still review scores, the ladder, the pot and who is registered from the event home.</p>
       <label for="lkscorepw">Scoring passcode (or sign in with a PIN)</label>
       <input id="lkscorepw" type="password" autocomplete="current-password">
@@ -682,6 +698,47 @@
     $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     if($id('lkscorepw'))$id('lkscorepw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
     if($id('lknight'))$id('lknight').onchange=()=>{setNight(+$id('lknight').value);login()};
+    /* Same 2+ letter name suggestions as Already registered: tap a match, then the PIN. */
+    (function bindScoreSuggest(){
+      const inp=$id('lkscorer'),sugg=$id('lkscoresugg');if(!inp||!sugg)return;
+      const people=[];
+      const seen=new Set();
+      const add=(id,name)=>{
+        const n=(typeof lkCleanName==='function'?lkCleanName(name):String(name||'').trim());
+        if(n.length<2)return;
+        const key=n.toLowerCase();
+        if(seen.has(key))return;
+        seen.add(key);
+        people.push({id:id||null,name:n});
+      };
+      if(typeof lkKnownRegistrants==='function')(lkKnownRegistrants(lg)||[]).forEach(a=>add(a.id,a.name));
+      add((typeof LK_HOST_REG_ID==='string'&&LK_HOST_REG_ID)||'lkhost:nathe',(typeof LK_HOST_REG_NAME==='string'&&LK_HOST_REG_NAME)||'Nathaniel Stride');
+      add((typeof LK_COHOST_ID==='string'&&LK_COHOST_ID)||'lkhost:nate',(typeof LK_COHOST_NAME==='string'&&LK_COHOST_NAME)||'Nate Evans');
+      (nightSignups(lg,w)||[]).forEach(r=>{if(r)add(r.id,r.name||((typeof lgName==='function'&&lgName(r.id))||''))});
+      const draw=()=>{
+        const names=people.map(a=>a.name);
+        const hit=(typeof lkNameSuggestHits==='function'?lkNameSuggestHits(inp.value,names):[]);
+        const q=(typeof lkCleanName==='function'?lkCleanName(inp.value):String(inp.value||'').trim()).toLowerCase();
+        if(hit.length===1&&hit[0].toLowerCase()===q){sugg.hidden=true;sugg.innerHTML='';return}
+        sugg.innerHTML=hit.map(n=>`<button type="button" data-scorename="${esc(n)}">${esc(n)}</button>`).join('');
+        sugg.hidden=!hit.length;
+        sugg.querySelectorAll('[data-scorename]').forEach(b=>{
+          b.onpointerdown=e=>e.preventDefault();
+          b.onclick=()=>{
+            const name=b.getAttribute('data-scorename')||'';
+            const rec=people.find(a=>a.name===name);
+            inp.value=name;
+            sugg.hidden=true;sugg.innerHTML='';
+            if(name)setMyName(name);
+            window._lkSuggestPick={id:rec&&rec.id||null,name};
+            if(rec&&rec.id)window._lkLoginId=rec.id;
+            window._lkNamesOpen=1;
+            Promise.resolve(lkFullLogin()).then(()=>{const pin=$id('lkpin');if(pin)pin.focus()});
+          };
+        });
+      };
+      inp.oninput=draw;inp.onchange=draw;inp.onkeyup=draw;
+    })();
   }
 
   function hostPw(){
@@ -1499,15 +1556,20 @@
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
     const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
     const nights=lg&&typeof lkShootDates==='function'?lkShootDates(lg):[];
+    /* 25 Nov 2026 (Nathe): a box is BLUE when the archer signed up for that night (night-by-night sign-up, lkNightRegd) and is not ticked paid yet. Tapping it marks
+       paid exactly as before (lkSetPaid, host phone only). Paid ticks are read and stored the same way. */
+    const regOn=(r,n)=>typeof lkNightRegd==='function'&&lkNightRegd(lg,n,r.id,r.name);
     const paidCell=(r,n)=>{
       const bag=(lg&&lg.paid&&lg.paid[n])||{};
       const on=!!bag[r.id];
-      return host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''}>`:(on?'●':'');
+      const reg=regOn(r,n);
+      const tip=on?'Paid':(reg?'Registered, not paid yet':'Not registered for this night');
+      return host?`<input type="checkbox" class="lk-paidbox${reg&&!on?' lk-regd':''}" data-reg="${reg?1:0}" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''} aria-label="${esc(r.name)}: ${tip}" title="${tip}">`:(on?'●':(reg?'<span class="lk-regdot" title="Registered" aria-label="Registered">●</span>':''));
     };
     const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td>${nights.map(n=>`<td style="text-align:center">${paidCell(r,n)}</td>`).join('')}${host?`<td><button type="button" class="lk-host" data-lkremove="${esc(r.id)}">Remove</button></td>`:''}</tr>`;
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
-      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. Tick a night to mark paid.</p>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. ${host?'<span class="lk-key lk-key-reg"></span> Blue = registered for that night, not paid yet. Tap it to mark paid <span class="lk-key lk-key-paid"></span>.':'<span class="lk-regdot">●</span> = registered for that night.'}</p>
       <div style="overflow-x:auto"><table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th>${nights.map((n,i)=>`<th>N${i+1}</th>`).join('')}${host?'<th></th>':''}</tr></thead>
       <tbody>${list.map(row).join('')||`<tr><td colspan="${2+nights.length+(host?1:0)}">No archers registered yet.</td></tr>`}</tbody></table></div>
       <p class="lk-msg" id="lkrostermsg" role="alert"></p>
@@ -1516,6 +1578,7 @@
     $id('lkrosterback').onclick=()=>home(evCode());
     if(host)el.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
       if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),box.getAttribute('data-lknight'),box.checked);
+      box.classList.toggle('lk-regd',box.getAttribute('data-reg')==='1'&&!box.checked);
     });
     if(host)el.querySelectorAll('[data-lkremove]').forEach(b=>b.onclick=()=>{
       const id=b.getAttribute('data-lkremove');

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""390px: ranking card (saved list, and a list that includes a WA rank) and the results paste."""
+"""390px: ranking card (saved list, and a list that includes a WA rank) and results saved by the old results page."""
 import json, os, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 import guard
@@ -21,7 +21,6 @@ WA = {
  "states": {"WA": {"outdoor": [{"name": "Nathaniel Stride", "club": "Gosnells Archers Inc", "state": "Western Australia", "rank": 12, "class_rank": 8, "class_size": 22, "age_class": "Open", "gender": "Male", "division": "Compound", "rating": "44.5", "discipline": "outdoor"}], "indoor": [], "field": [], "clout": []}},
  "archers": {}
 }
-PASTE = "Discipline\tRound\tDivision\tScore\tDate\tEvent\nOutdoor\tWA 70/720\tOpen Male Compound\t650\t12/03/2026\tState Target\nIndoor\tDiary Barebow Round\tBarebow\t540\t04/07/2026\tIndoor champs\n"
 try:
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox', '--headless=new'])
@@ -30,7 +29,7 @@ try:
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.goto('http://127.0.0.1:'+PORT+'/?tester=nathe')
         pg.wait_for_timeout(1200)
-        pg.evaluate("""()=>{localStorage.setItem('scoretool.resultsSource.nathe', JSON.stringify({body:'aa', url:'https://archery.org.au/', member:'24601'})); if(typeof S!=='undefined'){S.unlocked=true; if(!S.profile)S.profile='Nathaniel Stride'; save();} }""")
+        pg.evaluate("""()=>{if(typeof S!=='undefined'){S.unlocked=true; if(!S.profile)S.profile='Nathaniel Stride'; save();} }""")
         pg.click('nav [data-v=myarch]')
         pg.wait_for_timeout(400)
         pg.click('[data-go=lab_ranks]')
@@ -49,27 +48,13 @@ try:
         pg.click('nav [data-v=home]')
         pg.wait_for_timeout(400)
         chk('home has no ranking card', pg.locator('#rank-slot').count()==0)
-        pg.click('nav [data-v=tools]')
-        pg.wait_for_timeout(300)
-        pg.click('[data-go=lab_results]')
-        pg.wait_for_timeout(500)
-        chk('diary opens in a new tab', pg.get_attribute('#rsdiaryopen', 'href')=='https://www.archersdiary.com/Performance.aspx' and pg.get_attribute('#rsdiaryopen', 'target')=='_blank')
-        chk('saved AA number is shown with copy', pg.locator('#rsaa').inner_text()=='24601' and pg.locator('#rscopy').count()==1)
-        pg.fill('#rsdiarypaste', PASTE)
-        pg.click('#rsdiaryread')
-        pg.wait_for_timeout(400)
-        prev = pg.locator('#rsdiarypreview').inner_text()
-        chk('preview shows both bests', 'WA 70/720' in prev and '650' in prev and 'Barebow' in prev and '540' in prev)
-        chk('paste screen fits 390px', pg.evaluate('document.documentElement.scrollWidth')<=390)
-        pg.screenshot(path=os.path.join(ART, 'results-paste-390.png'))
-        # a non-diary import must survive the confirm
-        pg.evaluate("""()=>{const k='scoretool.imported.nathe'; localStorage.setItem(k, JSON.stringify([{id:'keep', round:'Holt', date:'2026-01-02', score:800, event:'Typed', imported:true}]));}""")
-        pg.click('#rsdiaryconfirm')
-        pg.wait_for_timeout(400)
-        saved = pg.evaluate("""()=>{const a=JSON.parse(localStorage.getItem('scoretool.imported.nathe')||'[]'); return a.map(r=>[r.round, r.score, r.division, r.discipline, !!r.diary]);}""")
-        chk('confirm saves diary rows and keeps the other import', any(r[0]=='Holt' and r[4] is False for r in saved))
-        chk('compound and barebow both saved', any(r[0]=='WA 70/720' and r[2]=='Open Male Compound' and r[3]=='Outdoor' for r in saved) and any(r[0]=='Diary Barebow Round' and r[2]=='Barebow' for r in saved))
-        chk('confirm note', 'replaces' in pg.locator('#rsdiarydone').inner_text().lower())
+        # Tools > My results source was removed (25 Nov 2026, Nathe). Rows it saved earlier stay on the phone and still count:
+        # seed them as that page saved them, then check personal bests.
+        pg.evaluate("""()=>{localStorage.setItem('scoretool.imported.nathe', JSON.stringify([
+          {id:'keep', round:'Holt', date:'2026-01-02', score:800, event:'Typed', imported:true},
+          {id:'d1', round:'WA 70/720', date:'2026-03-12', score:650, event:'State Target', imported:true, diary:true, division:'Open Male Compound', discipline:'Outdoor'},
+          {id:'d2', round:'Diary Barebow Round', date:'2026-07-04', score:540, event:'Indoor champs', imported:true, diary:true, division:'Barebow', discipline:'Indoor'}]));}""")
+        chk('My results source is not in Tools', pg.locator('[data-go=lab_results]').count()==0)
         pg.click('nav [data-v=myarch]')
         pg.wait_for_timeout(300)
         pg.click('[data-go=lab_analysis]')
@@ -80,29 +65,6 @@ try:
         pg.wait_for_timeout(500)
         rec = pg.locator('#bscard').inner_text()
         chk('barebow tab shows the barebow import', 'Diary Barebow Round' in rec and 'WA 70/720' not in rec)
-        pg.click('nav [data-v=tools]')
-        pg.wait_for_timeout(300)
-        pg.click('[data-go=lab_results]')
-        pg.wait_for_timeout(400)
-        # second paste replaces the diary rows and does not duplicate
-        pg.fill('#rsdiarypaste', "Round\tDate\tScore\tDivision\tDiscipline\tEvent\nDiary Compound Round\t01/02/2026\t600\tCompound\tOutdoor\tClub\n")
-        pg.click('#rsdiaryread')
-        pg.wait_for_timeout(300)
-        pg.click('#rsdiaryconfirm')
-        pg.wait_for_timeout(300)
-        saved2 = pg.evaluate("""()=>JSON.parse(localStorage.getItem('scoretool.imported.nathe')||'[]').map(r=>r.round)""")
-        chk('re-import replaces diary rows', saved2.count('Diary Compound Round')==1 and 'WA 70/720' not in saved2 and 'Diary Barebow Round' not in saved2 and 'Holt' in saved2)
-        pg.click('#rssyncpaste')
-        pg.wait_for_timeout(300)
-        chk('sync paste still finds the csv box', pg.locator('#rsimport').count()==1 and pg.locator('#rspaste').count()==1)
-        pg.click('nav [data-v=myarch]')
-        pg.wait_for_timeout(300)
-        pg.click('[data-go=lab_analysis]')
-        pg.wait_for_timeout(900)
-        bows2 = pg.locator('#bscard [data-bsb]').all_inner_texts()
-        chk('barebow tab leaves when that division is replaced', not any('Barebow' in t for t in bows2))
-        has = pg.evaluate("""()=>[...document.querySelectorAll('#bssel option')].some(o=>o.textContent.includes('Diary Compound Round'))""")
-        chk('compound personal bests include the pasted round', has)
         b.close()
     # second page: fixture with a WA rank, so the card can show both numbers
     with sync_playwright() as p:

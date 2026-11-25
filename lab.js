@@ -138,14 +138,13 @@ LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
  row('lab_tune','🎯','Tune helper','Paper, torque, draw weight and spine, cut length, bare shaft, node, creep, Dudley'),
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
- row('lab_results','📋','My results source','Country or body, member number, and scores you confirm yourself'),
  row('lab_rounds','◎','Rounds','Distances and faces when a club names the round'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO, ASA and IFAA, with sources'),
  row('lab_mydata','📥','Import my data','Your own scoresheets, results and sight marks, from the file you were sent')]);
 LABSEC.lab_mydata='tools';if(window.MYDATA_VIEW)E.lab_mydata=window.MYDATA_VIEW;
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
-LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_results='tools';LABSEC.lab_rounds='tools';
+LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_rounds='tools';
 /* Schedule 9A reference: searchable list, tap a name for the distances and faces. Nothing here is saved. */
 E.lab_rounds=function(){const esc=h;app.innerHTML=`<p class="small" id="aaintro">Clubs often name the round and leave out the distances and the face. Tap a name to see them.</p><label class="small" for="aaq">Find a round</label><input id="aaq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Name, distance or face" value="${esc(window._aaQ||'')}"><div id="aalist"></div><p class="small muted" id="aacite">${esc(window.AA_CITE||'')}. In that table, + is the 122 cm face and * is the 80 cm face.</p><p class="small muted">${esc(window.AA_NOTE||'')} Those are not listed here until a club names them.</p>`;
  bar('Rounds','tools','Tools');

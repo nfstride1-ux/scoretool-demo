@@ -4,6 +4,20 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 15:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Updated `cursor/score-tab-no-league` (PR #81) onto current main (merged #79 name suggestions and #82 My results source; no force push). Cache `v2026-11-25-1505-noleaguetab`, newer than live `v2026-11-25-1420-suggest2`. Score tab is still Just me and Casual shoot only. Clubs → Leagues → Lingkana, the scoring gate, and name suggestions are kept from main. Relay data was not written to.
+- Half-done: Nathe said go live on PR #81; merge follows once required checks are green.
+- Decision: this PR still removes only the Score-tab League shoot option and its helper. Nothing else is merged with it.
+
+## 25 Nov 2026, 14:20 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR #79 (`cursor/lk-reg-suggest`) updated onto current main (merged main, including the live #80 score gate and #82; no force push). Cache `v2026-11-25-1420-suggest2`. The same 2+ letter name suggestions now also run on the Score tonight / Login to Event name box (`#lkscorer`): up to 8 tap buttons (start of the name or of any word, any case, iPhone-safe plain buttons). A tap fills the exact name and moves to the PIN on the existing login screen. Suggestions include registered names already on the phone plus Nathe (Nathaniel Stride) and Nate Evans. Blue (registered tonight, unpaid) and green (paid) tick boxes on the host Registered Archers and Club pot lists are unchanged. New test `tools/lk_score_suggest_test.py` (relay posts are caught, never sent). No existing test changed. Lingkana league data was not written to. This PR removes nothing.
+- Half-done: PR only, not merged; waits for Nathe's "go live".
+- Decision: viewing stays open; scoring still needs a name+PIN, the passcode, or the host phone.
+
 ## 25 Nov 2026, 13:59 AWST — [Jarvis]
 
 - Who: Jarvis.
@@ -56,3 +70,23 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Not in the repo: no personal data. The export files are kept outside every repo. `privacy_scan` passes.
 - Half-done: no PR yet; Nathe reviews the evidence first. Only Nathe's file is built.
 - Note: `safety_smoke` fails about 1 run in 8 at the casual Score-tab wait, on main too (pre-existing flake).
+
+## 25 Nov 2026, 13:29 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Lingkana `#lk-register` "Already registered": typing 2+ letters lists matching registered names (start of the name or of any word, any case, up to 8) as tap buttons; a tap fills the exact name and moves to the PIN. Names come from the league already on the phone (`lkKnownRegistrants`), no new public file. Plain buttons, not `<datalist>`, so it works on iPhone Safari. Cache `v2026-11-25-1329-regsuggest`. New test `tools/lk_reg_suggest_test.py` (needs `LK_SNAPSHOT`, a private league copy; posts nothing to the relay). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.
+
+## 25 Nov 2026, 13:39 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done (same PR #79, Nathe's ask): host "Registered Archers" list and the Club pot "Tick who paid" list show a night's paid box BLUE when that archer signed up for that night and is not ticked paid yet. Tapping it ticks paid exactly as before (`lkSetPaid`, host phone only, `lg.paid[night][id]`); paid boxes show a green tick; boxes for nights the archer is not on stay plain white. Who counts as signed up for a night: `lkNightRegd` in `lingkana.js` — rows from a night-by-night sign-up now carry `nr`; rows already on phones count if their sign-up time is after PR #74 went live (2026-11-25 03:07:58 UTC); the old "every night" registrations do not; a PIN-only update is not a sign-up and no longer moves the row's sign-up time; Nathe and Nate count on every night. Existing paid ticks are read and stored unchanged. Cache `v2026-11-25-1339-paidblue`. New test `tools/lk_roster_paid_test.py` (needs `LK_SNAPSHOT`; relay posts are caught, never sent). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.
+- Next: after go-live, a host phone that synced before shows blue for today's night-2 sign-ups from their sign-up time; nothing to migrate.
+
+## 25 Nov 2026, 14:02 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/remove-myresults-source` (cache `v2026-11-25-1410-noresultsrc`). Nathe (t1160u, t1165u): Tools > My results source removed from the live app and from `/test/`, with all its tools: results region + member number + Open my results, Archer's Diary "Paste my results", "Paste a table or a CSV", "Add an official result" with photo/screenshot reading (Tesseract OCR), and the switched-off Sync now card. Deleted `results.js`, `diarypaste.js`, `vendor/ocr/`, `test/results.js`, `test/vendor/ocr/`, `tools/diary_paste_test.py`; removed the Tools row/section in `lab.js` and `test/lab.js`, `lab_results` in `test/tiers.js`, the script tags, the `test/sw.js` entry, and the What's new notes about the page. `window.importedShoots`/`window.officialAdded` moved into `mydata.js` (read only), so results already saved on a phone by that page still show in PBs, Stats and calendar sync. `tools/rankings_card_test.py`: only its My results source steps changed (it seeds the saved rows instead of pasting). Import my data unchanged.
+- Not in the repo: a copy of the removed page (live and `/test/`) is kept in the private backup on Jarvis's box, not published.
+- Half-done: PR only, not merged; waits for Nathe's "go live". The Archer's Diary Export (.xlsx) import is not built.

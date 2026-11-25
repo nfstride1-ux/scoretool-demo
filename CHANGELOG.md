@@ -3,11 +3,11 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
-## v2026-11-25-1359-noleaguetab: League shoot removed from the Score tab
+## v2026-11-25-1505-noleaguetab: League shoot removed from the Score tab
 - The Score tab "What are you shooting?" card is now Just me and Casual shoot only.
 - League scoring stays in Clubs → Leagues (Lingkana League, Score my week). The helper text that said league shoots are scored below on this tab is gone.
 - A phone that still had League shoot selected falls back to Just me with no error. The Clubs hint under the card is unchanged.
-- Cache version is `v2026-11-25-1359-noleaguetab`. Not merged.
+- Cache version is `v2026-11-25-1505-noleaguetab`, built on main after PR #79 and PR #82. Not merged until go-live.
 
 ### Files
 casual.js, lab.js, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.

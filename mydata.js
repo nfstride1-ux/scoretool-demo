@@ -9,6 +9,22 @@ const MKEY=id=>'scoretool.mydata.'+id,LKEY=id=>'scoretool.mydata.last.'+id;
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
 let MD=PID()?read(MKEY(PID())):null;
 window.myData=()=>MD;
+/* Results already saved on this phone by the old Tools > My results source page (removed 25 Nov 2026, Nathe t1165u):
+   pasted or CSV rows (scoretool.imported.<profile>) and typed official results (scoretool.official.<profile>).
+   Nothing new is written to these keys; they are only read so those results keep showing in PBs, Stats and the calendar. */
+const OWHO=()=>(typeof TESTER!='undefined'&&TESTER&&TESTER.id)||'guest';
+const IKEY=()=>'scoretool.imported.'+OWHO(),OKEY=()=>'scoretool.official.'+OWHO();
+function imports(){const a=read(IKEY());return Array.isArray(a)?a:[]}
+window.importedShoots=function(){return imports().filter(r=>r&&r.imported&&r.date&&r.round&&r.score>0).map(r=>({
+ id:r.id,date:r.date,round:r.round,score:+r.score,ends:[],dists:[],flagged:0,src:'imported',inc:false,
+ event:r.event||'',club:'',rating:null,url:'',field:/field/i.test(r.round)||/field/i.test(r.discipline||''),imported:true,
+ division:r.division||'',discipline:r.discipline||'',diary:!!r.diary}))};
+function officials(){const a=read(OKEY());return Array.isArray(a)?a:[]}
+/* C4: a finished official round the archer typed in. Not a scored session, so it cannot replace one. */
+window.officialAdded=function(){return officials().filter(r=>r&&r.official&&r.finished&&r.date&&r.round&&r.score>0).map(r=>({
+ id:r.id,date:r.date,round:r.round,score:+r.score,max:r.max>0?+r.max:null,tens:r.tens===0||r.tens>0?+r.tens:null,xs:r.xs===0||r.xs>0?+r.xs:null,
+ ends:Array.isArray(r.ends)?r.ends:[],event:r.event||'',official:true,finished:true,src:'official'}))};
+
 window.myDataHas=k=>!!(MD&&MD[k]&&(k!='sheets'||(Array.isArray(MD.sheets.sheets)&&MD.sheets.sheets.length)));
 /* a profile with imported sheets loads them like the old built-in profiles did */
 if(MD&&typeof TESTER!='undefined'&&TESTER&&myDataHas('sheets')){TESTER.data=true;if(MD.bow)TESTER.bow=MD.bow}
