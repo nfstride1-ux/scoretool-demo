@@ -4,6 +4,16 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 17:22 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1722-plans`). Nathe t1191u: real Stripe payment flow for the general ScoreTool paid tier, Plans screen in the live app, and `#plans` link target for archerycalendars.com. Built on PR #9 (`cursor/stripe-entitlement-6bd3`, 17 Nov): `plans.js`, `supabase/functions/stripe-entitlement/` and `supabase/scoretool_entitlements.sql` brought over; `test/tiers.js` used as the reference for which screens are Plus and Pro. `entitlementVerify()` now asks the deployed edge function for the signed-in email's plan (it used to grant nothing).
+- Tiers: Free = Score tab (every round, plotting, saving), Latest shoot, Practice arrows, Rankings, Setups & sight marks, Leagues, Match play, Lingkana (#lk-*), Rounds, Rules, Import my data, Settings. Plus = Analysis, Diary, Squads, Event scoring, adding photos. Pro = My bows, My arrows, Arrow chooser, Tune helper, Arrow optimiser, Calculators.
+- Nobody loses access: founding profiles are Pro for life; every profile already on a phone when this build first loads is kept on full access (`scoretool.paid.early`); only profiles made after that are Free until they pay. Saved data is never rewritten. Lingkana scoring, relay data and Lingkana's own pilot pricing are untouched.
+- Verified: `tools/paid_tier_test.py` 49/49 at 390x844; safety smoke 15/15; privacy scan pass; edge core unit tests 13/13. Live-mode end-to-end at A$0 (100%-off one-use coupon, no card, nothing charged): subscription -> webhook -> `scoretool_entitlements` row -> email-link sign-in on a fresh profile -> Analysis opens, Tune stays Pro -> portal opens -> cancel -> webhook -> relocked.
+- Half-done: PR only, not merged; waits for Nathe's "go live". Blockers before go-live are in the PR body (tax-exclusive prices show A$5.49 at Stripe, PropGuard name on Checkout, sign-in email has no code, Supabase token expired).
+- Decision: no What's new entry and no announcement until Nathe confirms a real paid purchase.
+
 ## 25 Nov 2026, 16:19 AWST — [Grok Bot]
 
 - Who: Grok Bot.

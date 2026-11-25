@@ -54,9 +54,8 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
  ['diary','setup','bows'].forEach(k=>{if(S[k])S[k]=S[k].filter(x=>!isS(x)&&!/^SAMPLE/i.test(x.text||'')&&!/\(SAMPLE\)/.test(x.name||''))});
  if(S.squad){if(/\(SAMPLE\)/.test(S.squad.name||''))delete S.squad;else{S.squad.members=(S.squad.members||[]).filter(m=>!m.sample);S.squad.adults=(S.squad.adults||[]).filter(a=>!a.sample)}}
  delete S.diarySeeded;delete S.bowsSeeded;S.sampleCleaned=1;save()})();
-/* Payment isn't connected anywhere yet (entitlementVerify grants nothing, see below): every tester except
-   Nathe unlocked for free already, so a fresh device under his own name should not be the one profile
-   that hits the "Not open yet" paywall. Unlock everyone until a real payment flow ships. */
+/* S.unlocked means "this profile is set up" (calendar sync, photos, names and others wait for it). It is not a plan:
+   Free, Plus and Pro come from plans.js (founding profiles, early access, or a server-checked Stripe plan). */
 if(TESTER&&!S.profile){S.profile=TESTER.name;S.unlocked=true;save()}
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
@@ -204,19 +203,13 @@ function targetSVG(pts){const rings=[['#fff','#333'],['#fff','#333'],['#111','#f
 let view=/^#plot/.test(location.hash)?'score':'home',cur=null;
 function nav(v){if(v=='plot')v='score';view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v==v));render();scrollTo(0,0)}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>nav(b.dataset.v));
-/* No Lemon Squeezy store and no server on this static site. Empty means the check is off:
-   entitlementVerify calls nothing and never grants access. It does not read or write S.unlocked.
-   See docs/lemonsqueezy-entitlement.md. */
-const SCORETOOL_ENTITLEMENT_URL='';
-async function entitlementVerify(){const base=String(SCORETOOL_ENTITLEMENT_URL||'').trim();
- if(!base)return {ok:false,reason:'no-server'};
- try{const r=await fetch(base.replace(/\/$/,'')+'/entitlement/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'});
-  if(!r.ok)return {ok:false,reason:'rejected'};
-  const j=await r.json();
-  /* A valid reply is recorded only as this return value. Nothing here sets S.unlocked. */
-  if(j&&j.valid===true&&j.server===true)return {ok:true,exp:j.exp||0};
-  return {ok:false,reason:'rejected'}}
- catch(e){return {ok:false,reason:'unreachable'}}}
+/* Stripe Checkout, the webhook and the entitlement table live on the Archery Calendar Supabase project
+   (edge function stripe-entitlement). This URL is public; no secret is in this file. See docs/stripe-entitlement.md.
+   entitlementVerify asks the server for the signed-in email's plan (plans.js). It does not read or write S.unlocked. */
+const SCORETOOL_ENTITLEMENT_URL='https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/stripe-entitlement';
+async function entitlementVerify(){
+ if(typeof scoretoolEntitlementVerify==='function')return scoretoolEntitlementVerify();
+ return {ok:false,reason:'no-server'}}
 window.entitlementVerify=entitlementVerify;
 function pickProfile(){return`<div class="card"><span class="kicker">Welcome</span><h1>Who's shooting?</h1><p class="muted">Pick an archer to load their past competition results.</p>
 ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${n}">${n}</button>`).join('')}${csvNote()}</div>`}

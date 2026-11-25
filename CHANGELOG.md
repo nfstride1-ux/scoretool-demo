@@ -3,6 +3,12 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+
+## v2026-11-25-1722-plans: Plans (Stripe) — Free, Plus and Pro
+- New Plans screen (Me > Plans, Settings, and the "See plans" button on a locked screen; `#plans` opens it directly). Plus A$4.99 a month or A$49 a year; Pro A$7.99 a month or A$79 a year. Checkout is Stripe Checkout; the plan is read back from the server after signing in with the payment email (code or link), and Manage subscription opens the Stripe portal.
+- Free stays free: the score card with plotting and saving, basic stats, setups and sight marks, leagues, match play and Lingkana scoring.
+- Profiles already on a phone keep everything they had. Founding members stay Pro, free for life. Saved scores are not changed.
+
 ## v2026-11-25-1619-autoscroll: After a plot, centre the target; after the last arrow, scroll to Next
 - After each plotted arrow (while the end is still open), if the face is zoomed, the pan jumps back to the centre of the active target — or the next spot, when the end auto-advances — and the page scrolls so Arrow size, the spot tabs and the plotting box sit fully on screen. You no longer have to re-centre by hand after every arrow.
 - After the last arrow of an end is plotted, the page scrolls down to Back and Next.
