@@ -3,6 +3,15 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+## v2026-11-25-1539-zoomroom: Bigger plotting area when zoomed, magnifier stays on screen
+- When you zoom in on a plotting face, the target area grows with the zoom (up to most of the screen). The compact size at 1x is unchanged.
+- The magnifier stays visible when you aim near the top or bottom edge. Score keys and Back/Next stay in the page — scroll to them if needed.
+- Applies to every plotting scorer that shares this zoom: Just me (including practice and vs ghost), match nights / H2H, Casual and League when they show a plot face, all face types (single, triangle and vertical 3-spot, field, Bugs Eyes, clout-size 122 cm). Casual button-only scoring and Lingkana (values only) are unchanged.
+- Cache version is `v2026-11-25-1539-zoomroom`. Not merged until go-live.
+
+### Files
+app.js, casual.js, insights.js, style.css, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-25-1515-practicefp: Practice arrows no longer shows Fair Play
 - My archery > Practice arrows no longer shows the Fair Play card. Arrows you add there count in today's total and daily goal straight away.
 - The negative "from rounds" figure (for example -3 from rounds + 6 added today) was a display bug and is fixed.
@@ -11,6 +20,7 @@ Newest first. Each entry names the version tag shown in Settings.
 
 ### Files
 fairplay.js, app.js, test/fairplay.js, test/app.js, index.html, sw.js, version.json, whatsnew.js, tools/practicefp_test.py, CHANGELOG.md, HANDOFF.md.
+
 
 ## v2026-11-25-1505-noleaguetab: League shoot removed from the Score tab
 - The Score tab "What are you shooting?" card is now Just me and Casual shoot only.
