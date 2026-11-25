@@ -41,3 +41,9 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Not in the repo: no personal data. The export files are kept outside every repo. `privacy_scan` passes.
 - Half-done: no PR yet; Nathe reviews the evidence first. Only Nathe's file is built.
 - Note: `safety_smoke` fails about 1 run in 8 at the casual Score-tab wait, on main too (pre-existing flake).
+
+## 25 Nov 2026, 13:29 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Lingkana `#lk-register` "Already registered": typing 2+ letters lists matching registered names (start of the name or of any word, any case, up to 8) as tap buttons; a tap fills the exact name and moves to the PIN. Names come from the league already on the phone (`lkKnownRegistrants`), no new public file. Plain buttons, not `<datalist>`, so it works on iPhone Safari. Cache `v2026-11-25-1329-regsuggest`. New test `tools/lk_reg_suggest_test.py` (needs `LK_SNAPSHOT`, a private league copy; posts nothing to the relay). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.

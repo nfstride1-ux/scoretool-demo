@@ -1059,7 +1059,8 @@ function lkRegisterView(){
     <form id="lkretform" autocomplete="on">
       <h2>2. Already registered</h2>
       <label for="lkretname">Name</label>
-      <input id="lkretname" name="name" maxlength="24" autocomplete="name" placeholder="Your name as registered">
+      <input id="lkretname" name="name" maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your name">
+      <div class="lk-search-list" id="lkretsugg" role="listbox" aria-label="Matching names" hidden></div>
       <label for="lkretpin">Your 4-digit PIN</label>
       <input id="lkretpin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
       <button class="btn lk-go" type="submit" id="lkretgo" style="margin-top:10px">Sign up for this night</button>
@@ -1158,6 +1159,23 @@ function lkRegisterView(){
         lkRegisterView();
     }).catch(()=>{fail('Could not save that PIN on this phone.');});
   };
+  /* 25 Nov 2026 (Nathe): typing 2+ letters lists the registered names that match (start of the name or of any word); tap one, then the PIN. */
+  const retName=appEl.querySelector('#lkretname'),sugg=appEl.querySelector('#lkretsugg');
+  if(retName&&sugg){
+    const names=lkKnownRegistrants(lg).map(a=>a.name).filter(Boolean);
+    const draw=()=>{
+      const q=lkCleanName(retName.value).toLowerCase();
+      const hit=q.length<2?[]:names.filter(n=>{const l=n.toLowerCase();return l.startsWith(q)||l.split(/[\s\-']+/).some(w=>w.startsWith(q))}).slice(0,8);
+      if(hit.length===1&&hit[0].toLowerCase()===q){sugg.hidden=true;sugg.innerHTML='';return}
+      sugg.innerHTML=hit.map(n=>`<button type="button" data-retname="${h(n)}">${h(n)}</button>`).join('');
+      sugg.hidden=!hit.length;
+      sugg.querySelectorAll('[data-retname]').forEach(b=>{
+        b.onpointerdown=e=>e.preventDefault();
+        b.onclick=()=>{retName.value=b.getAttribute('data-retname');sugg.hidden=true;sugg.innerHTML='';const pin=appEl.querySelector('#lkretpin');if(pin)pin.focus()};
+      });
+    };
+    retName.oninput=draw;retName.onchange=draw;retName.onkeyup=draw;
+  }
   const ret=appEl.querySelector('#lkretform');
   if(ret)ret.onsubmit=e=>{
     e.preventDefault();
