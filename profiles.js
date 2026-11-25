@@ -9,11 +9,19 @@ const TESTERS=[];
  /* a phone left in the old read-only "viewing as" mode goes back to its owner's own profile */
  if(localStorage.getItem('scoretool.adminReturn')=='nathe')localStorage.setItem('scoretool.tester','nathe');
  const cur=localStorage.getItem('scoretool.tester');
+ /* 25 Nov 2026 (fix): the name for a profile from before testing ended comes ONLY from what this phone already saved for that id:
+    its own score file's profile name, then its own display-name pick, then the name cache. Last resort: the id itself, capitalised. */
+ const idCap=id=>String(id).charAt(0).toUpperCase()+String(id).slice(1);
+ const phoneName=id=>{const J=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
+  const d=J(id=='nathe'?'scoretool.v1':'scoretool.v1.'+id),o=J('scoretool.dname.'+id),D=J('scoretool.names')||{};
+  const c=[d&&typeof d.profile=='string'?d.profile:'',o&&typeof o.n=='string'?o.n:'',D[id]&&typeof D[id].n=='string'?D[id].n:''].map(x=>String(x||'').trim()).find(x=>x.length>=2&&!/^(tester|archer)\s*\d*$/i.test(x));
+  return String(c||idCap(id)).slice(0,40)};
  if(cur&&!A.some(a=>a&&a.id===cur)){
-  let nm='';try{const d=JSON.parse(localStorage.getItem(cur=='nathe'?'scoretool.v1':'scoretool.v1.'+cur)||'null');nm=d&&typeof d.profile=='string'?d.profile:''}catch(e){}
-  nm=String(nm||cur.charAt(0).toUpperCase()+cur.slice(1)).slice(0,40);
+  const nm=phoneName(cur);
   A.push({id:cur,name:nm,short:nm.split(/\s+/)[0],bow:'Compound',founding:true}); /* an archer from before testing ended: keeps the free-for-life promise (19 Nov 2026) */localStorage.setItem('scoretool.archers',JSON.stringify(A));
  }
+ /* a profile the first clean-up build already turned into just the capitalised id gets its own saved name, if the phone has one */
+ let up=false;A.forEach(a=>{if(a&&a.founding&&a.id&&a.name===idCap(a.id)){const nm=phoneName(a.id);if(nm!==a.name){a.name=nm;a.short=nm.split(/\s+/)[0];up=true}}});if(up)localStorage.setItem('scoretool.archers',JSON.stringify(A));
  A.forEach(a=>{if(!a||!a.id||TESTERS.some(t=>t.id===a.id))return;
   const name=String(a.name||'Archer').slice(0,40);
   TESTERS.push({id:String(a.id),name,short:String(a.short||name).split(/\s+/)[0],bow:a.bow||'Compound',data:false,custom:!a.founding,founding:!!a.founding,junior:!!a.junior})});
@@ -23,7 +31,9 @@ const TESTERS=[];
 window.ADMIN_VIEW=false;
 const isGuest=t=>!!(t&&t.guest);window.isGuest=isGuest;
 const TESTER=(function(){const q=new URLSearchParams(location.search).get('tester');let id=(q||'').toLowerCase();
- if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else id=localStorage.getItem('scoretool.tester');
+ if(TESTERS.some(t=>t.id==id))localStorage.setItem('scoretool.tester',id);else{id=localStorage.getItem('scoretool.tester');
+  /* an old ?tester= link for a profile that isn't on this phone: drop it from the address and carry on as usual (own profile or sign-up) */
+  if(q)try{const u=new URL(location.href);u.searchParams.delete('tester');history.replaceState(history.state,'',u.toString())}catch(e){}}
  return TESTERS.find(t=>t.id==id)||null})();
 function setTester(id){localStorage.setItem('scoretool.tester',id);const u=new URL(location.href);u.searchParams.delete('tester');u.hash='';location.href=u.toString()}
 function testerLink(id){return location.origin+location.pathname+'?tester='+id}
