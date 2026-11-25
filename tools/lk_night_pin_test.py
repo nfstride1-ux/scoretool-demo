@@ -26,15 +26,15 @@ try:
   N=pg.evaluate("lkShootDates(lkEnsure())")
   base=pg.evaluate("()=>{const lg=lkEnsure();return {reg:JSON.parse(JSON.stringify(lg.reg)),sc:JSON.stringify(lg.sc),grp:JSON.stringify(lg.grp),paid:JSON.stringify(lg.paid||{}),pot:JSON.stringify(lkPot(lg)),table:JSON.stringify(lkTable(lg))}}")
   pg.evaluate("location.hash='#lk-register'");pg.wait_for_timeout(300);pg.evaluate("lkRegisterView()");pg.wait_for_timeout(400)
-  chk('#lk-register shows night picker, returning form and new-archer form',pg.locator('#lknights input[name=lkregn]').count()==6 and pg.locator('#lkretform').count()==1 and pg.locator('#lkregpass').count()==1)
+  chk('#lk-register shows night picker, returning form, new-archer form (no passcode box) and the link wording',pg.locator('#lknights input[name=lkregn]').count()==6 and pg.locator('#lkretform').count()==1 and pg.locator('#lkregpass').count()==0 and 'Anyone with this link can register' in pg.inner_text('#lkregpage'))
   def ticks(nights):
     pg.evaluate("ns=>document.querySelectorAll('input[name=lkregn]').forEach(x=>{if(!x.disabled)x.checked=ns.includes(x.value)})",nights)
   def onN(name):return pg.evaluate("n=>Object.keys(lkEnsure().reg).filter(k=>(lkEnsure().reg[k]||[]).some(r=>r&&r.name===n))",name)
   # new archer: wrong passcode refused
-  ticks([N[1]]);pg.fill('#lkregname','Testy Newarcher');pg.fill('#lkregbow','Recurve');pg.fill('#lkregpass','wrong-pass');pg.fill('#lkregpin','4321');pg.fill('#lkregpin2','4321');pg.click('#lkreggo');pg.wait_for_timeout(1500)
-  chk('new archer: wrong passcode refused',('not right' in pg.inner_text('#lkregmsg')) and onN('Testy Newarcher')==[],pg.inner_text('#lkregmsg'))
-  pg.fill('#lkregpass',PW);pg.click('#lkreggo');pg.wait_for_timeout(2500)
-  chk('new archer: passcode + PIN registers for the picked night only (night 2)',onN('Testy Newarcher')==[N[1]],onN('Testy Newarcher'))
+  ticks([N[1]]);pg.fill('#lkregname','Testy Newarcher');pg.fill('#lkregbow','Recurve');pg.fill('#lkregpin','4321');pg.fill('#lkregpin2','4322');pg.click('#lkreggo');pg.wait_for_timeout(800)
+  chk('new archer: mismatched PINs refused',('do not match' in pg.inner_text('#lkregmsg')) and onN('Testy Newarcher')==[],pg.inner_text('#lkregmsg'))
+  pg.fill('#lkregpin2','4321');pg.click('#lkreggo');pg.wait_for_timeout(2000)
+  chk('new archer: link + name + PIN (no passcode) registers for the picked night only (night 2)',onN('Testy Newarcher')==[N[1]],onN('Testy Newarcher'))
   chk('new archer: confirmation shown',pg.locator('#lkregok').count()==1 and 'Night 2' in pg.inner_text('#lkregok'),pg.inner_text('body')[:200])
   # returning archer: wrong PIN refused
   ticks([N[2]]);pg.fill('#lkretname','Testy Newarcher');pg.fill('#lkretpin','9999');pg.click('#lkretgo');pg.wait_for_timeout(800)
@@ -44,7 +44,7 @@ try:
   # existing registered archer with a PIN can't re-register as new
   withpin=pg.evaluate("()=>{const lg=lkEnsure();for(const id of lg.order){const p=lkPinOf(lg,id);if(p&&p.pinHash&&!lkIsHostPerson(id,p.name))return p.name}return null}")
   if withpin:
-    ticks([N[3]]);pg.fill('#lkregname',withpin);pg.fill('#lkregbow','x');pg.fill('#lkregpass',PW);pg.fill('#lkregpin','1111');pg.fill('#lkregpin2','1111');pg.click('#lkreggo');pg.wait_for_timeout(800)
+    ticks([N[3]]);pg.fill('#lkregname',withpin);pg.fill('#lkregbow','x');pg.fill('#lkregpin','1111');pg.fill('#lkregpin2','1111');pg.click('#lkreggo');pg.wait_for_timeout(800)
     chk('existing archer with a PIN is sent to Already registered',('already registered' in pg.inner_text('#lkregmsg')),pg.inner_text('#lkregmsg'))
   # a PIN change does not sign anyone up for more nights
   pg.evaluate("()=>{const lg=lkEnsure();const id=lkFindArcher(lg,'Testy Newarcher');lkSetPin(lg,id,'Testy Newarcher','ab','cd')}")
@@ -74,6 +74,13 @@ try:
   chk('home Event Registration button opens the register page',pg.locator('#lkretform').count()==1 and pg.locator('#lkregform').count()==1)
   q=c.new_page();q.goto('http://127.0.0.1:8991/#lk-register');q.wait_for_timeout(2500)
   chk('poster/#lk-register link opens the register page directly',q.locator('#lkregform').count()==1 and q.locator('#lkretform').count()==1)
+  nopin=pg.evaluate("()=>{const lg=lkEnsure();for(const id of lg.order){const p=lkPinOf(lg,id);const n=(lg.gn[id]||{}).n;if(n&&!(p&&p.pinHash)&&!lkIsHostPerson(id,n))return n}return null}")
+  if nopin:
+    pg.evaluate("lkRegisterView()");pg.wait_for_timeout(300);ticks([N[3]]);pg.fill('#lkregname',nopin);pg.fill('#lkregbow','x');pg.fill('#lkregpin','2222');pg.fill('#lkregpin2','2222');pg.click('#lkreggo');pg.wait_for_timeout(800)
+    chk('a listed name with no PIN cannot be claimed from the open link',('without a PIN' in pg.inner_text('#lkregmsg')),pg.inner_text('#lkregmsg'))
+  # login still checks the event passcode (host/scoring path unchanged)
+  r1=pg.evaluate("async pw=>String(await lkUnlock(pw))",PW);r0=pg.evaluate("async()=>String(await lkUnlock('wrong-guess-1'))")
+  chk('scoring login: passcode still accepted, wrong one refused',r1=='' and 'not right' in r0,r0)
   chk('no page errors',not errs,errs)
   chk('passcode never posted to relay',not any(PW in x for x in posts))
   b.close()

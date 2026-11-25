@@ -3,10 +3,10 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
-## v2026-11-25-1059-nightpin2: Lingkana sign-up night by night with your PIN
+## v2026-11-25-1100-nightpin3: Lingkana sign-up night by night with your PIN
 - The register page (poster QR, #lk-register, and Event Registration on the event home) asks for the night first.
 - Already registered: name and your own 4-digit PIN signs you up for the ticked night. No passcode. Wrong PINs lock out like the login.
-- New archer: name, bow, the event passcode once, and a new PIN, for the ticked nights.
+- New archer: the link is enough. Name, bow and a new PIN, for the ticked nights. No passcode. A name already on the list without a PIN sets its PIN at login on the night (with the passcode).
 - A night's login list, group picker and paid list show only the archers signed up for that night, plus Nathe and Nate (all nights) and anyone already ticked paid or grouped that night.
 - Existing registrations are kept as they are (everyone registered before this stays on all six nights). Old relay records keep working; per-night sign-ups use a new message kind (lkreg2) that older app versions ignore. A PIN change no longer re-adds an archer to every night.
 

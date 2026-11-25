@@ -1022,7 +1022,7 @@ async function lkRegisterNight(opts){
   const who=lkRegWho(lg,name);
   if(!who)return{msg:'That name is not registered yet. Use New archer below.'};
   if(lkIsHostPerson(who.id,who.name))return{msg:'Hosts are on every night already.'};
-  if(!who.pin)return{msg:'No PIN is saved for that name yet. Use New archer below with the event passcode to set one.'};
+  if(!who.pin)return{msg:'No PIN is saved for that name yet. Log in on the night to set your PIN (the host has the passcode).'};
   const left=lkPinLocked(who.id);
   if(left)return{msg:'Too many wrong PINs. Try again in '+Math.ceil(left/60000)+' min.'};
   let ok=false;
@@ -1050,8 +1050,8 @@ function lkRegisterView(){
     ${okMsg?`<p class="lk-ok" id="lkregok" role="status">${h(okMsg)}</p>`:''}
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
-    <p>Sign up for each night you are shooting. Already registered? Pick the night and use your name and PIN. New here? Fill in New archer once (with the event passcode) and set your PIN.</p>
-    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">New archers: get the event passcode from the host. Already registered? Use your PIN. Up to 52 archers. Print the QR for walk-ins at the venue.</p>'}
+    <p>Sign up for each night you are shooting. Already registered? Pick the night and use your name and PIN. New here? Fill in New archer once and set your PIN.</p>
+    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers. Already registered? Use your name and PIN. Print the QR for walk-ins at the venue.</p>'}
     <div id="lknights" role="group" aria-label="Nights">
       <h2>1. Pick your night</h2>
       ${lkShootDates(lg).map((d,i)=>{const past=d<today;return`<label class="lk-tick"><input type="checkbox" name="lkregn" value="${h(d)}" ${d===def&&!past?'checked':''} ${past?'disabled':''}> Night ${i+1} · ${h(typeof lkFmtD==='function'?lkFmtD(d):d)}${past?' (done)':''}</label>`}).join('')}
@@ -1075,8 +1075,6 @@ function lkRegisterView(){
       <input id="lkregemail" name="email" type="email" maxlength="80" autocomplete="email">
       <label for="lkregphone">Phone <span class="muted">(optional)</span></label>
       <input id="lkregphone" name="phone" maxlength="24" autocomplete="tel">
-      <label for="lkregpass">Event passcode <span class="muted">(ask the host)</span></label>
-      <input id="lkregpass" type="password" autocomplete="off" maxlength="40">
       <label for="lkregpin">Choose a 4-digit PIN</label>
       <input id="lkregpin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
       <label for="lkregpin2">PIN again</label>
@@ -1142,24 +1140,22 @@ function lkRegisterView(){
     const pin=(appEl.querySelector('#lkregpin')||{}).value||'';
     const pin2=(appEl.querySelector('#lkregpin2')||{}).value||'';
     const nights=lkPickedNights(appEl);
-    const pass=(appEl.querySelector('#lkregpass')||{}).value||'';
     if(!nights.length){fail('Tick the night (or nights) you are shooting.');return}
     if(lkCleanName(name).length<2){fail('Type a name (at least 2 characters).');return}
     if(!String(bow||'').trim()){fail('Enter your bow type.');return}
     const cur=lg&&lkRegWho(lg,name);
     if(cur&&cur.pin){fail('That name is already registered. Use Already registered above with your PIN.');return}
+    /* a name already on the list with no PIN is not claimed here: it sets its PIN at login on the night, with the event passcode */
+    if(cur&&!cur.pin){fail('That name is already on the list without a PIN. Log in on the night to set your PIN (the host has the passcode).');return}
     if(!/^\d{4}$/.test(pin)){fail('Enter a 4-digit PIN.');return}
     if(pin!==pin2){fail('Those PINs do not match.');return}
     const salt=lkPinSalt();
-    lkPassOk(pass).then(ok=>{
-      if(!ok){fail('That passcode is not right.');return}
-      return lkPinHash(name,pin,salt).then(pinHash=>{
-        const last=lkRegister({name,bow,email,phone,pinHash,pinSalt:salt,pinAt:Date.now(),nights,id:cur&&cur.id});
+    lkPinHash(name,pin,salt).then(pinHash=>{
+        const last=lkRegister({name,bow,email,phone,pinHash,pinSalt:salt,pinAt:Date.now(),nights});
         if(last){fail(last);return}
         window._lkRetPick=null;
         window._lkRegOk=lkRegOkText(nights)+' Next time, sign up for a night with your name and PIN.';
         lkRegisterView();
-      });
     }).catch(()=>{fail('Could not save that PIN on this phone.');});
   };
   const ret=appEl.querySelector('#lkretform');
