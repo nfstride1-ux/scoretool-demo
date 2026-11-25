@@ -1051,7 +1051,7 @@ function lkRegisterView(){
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
     <p>Sign up for each night you are shooting. Already registered? Pick the night and use your name and PIN. New here? Fill in New archer once (with the event passcode) and set your PIN.</p>
-    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers. Print the QR for walk-ins at the venue.</p>'}
+    ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">New archers: get the event passcode from the host. Already registered? Use your PIN. Up to 52 archers. Print the QR for walk-ins at the venue.</p>'}
     <div id="lknights" role="group" aria-label="Nights">
       <h2>1. Pick your night</h2>
       ${lkShootDates(lg).map((d,i)=>{const past=d<today;return`<label class="lk-tick"><input type="checkbox" name="lkregn" value="${h(d)}" ${d===def&&!past?'checked':''} ${past?'disabled':''}> Night ${i+1} · ${h(typeof lkFmtD==='function'?lkFmtD(d):d)}${past?' (done)':''}</label>`}).join('')}

@@ -3,7 +3,7 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
-## v2026-11-25-1058-nightpin: Lingkana sign-up night by night with your PIN
+## v2026-11-25-1059-nightpin2: Lingkana sign-up night by night with your PIN
 - The register page (poster QR, #lk-register, and Event Registration on the event home) asks for the night first.
 - Already registered: name and your own 4-digit PIN signs you up for the ticked night. No passcode. Wrong PINs lock out like the login.
 - New archer: name, bow, the event passcode once, and a new PIN, for the ticked nights.
