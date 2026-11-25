@@ -3,11 +3,11 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
-## v2026-11-25-1505-practicefp: Practice arrows no longer shows Fair Play
+## v2026-11-25-1515-practicefp: Practice arrows no longer shows Fair Play
 - My archery > Practice arrows no longer shows the Fair Play card. Arrows you add there count in today's total and daily goal straight away.
 - The negative "from rounds" figure (for example -3 from rounds + 6 added today) was a display bug and is fixed.
 - Fair Play still gates XP and badges until you confirm, and still appears on Latest shoot. League scoring is unchanged.
-- Cache version is `v2026-11-25-1505-practicefp`. Not merged until go-live.
+- Cache version is `v2026-11-25-1515-practicefp`. Not merged until go-live.
 
 ### Files
 fairplay.js, app.js, test/fairplay.js, test/app.js, index.html, sw.js, version.json, whatsnew.js, tools/practicefp_test.py, CHANGELOG.md, HANDOFF.md.
