@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 16:19 AWST — [Grok Bot]
+
+- Who: Grok Bot.
+- Done: Branch `cursor/plot-autoscroll` (cache `v2026-11-25-1619-autoscroll`). Nathe t1183u and t1184u. After the last arrow of an end is plotted, the page scrolls to Back/Next. After any earlier plot, when the face is zoomed, the pan re-centres on the active target (or the next spot if the end auto-advances) and the page scrolls so Arrow size, the spot tabs and the plotting box sit fully on screen; the zoomed box is fitted to the space left above the tab bar so the target centre is in the visible face, not below it. Shared helpers (`plotAfterFlag`, `plotAfterApply`, `plotScrollNext`, `plotScrollBox`) in `app.js`, hooked from Just me `putArrow`/`score()` (practice and vs ghost included), Casual `csKey`/`csView`/`csEntryScreen`, and League `lgKey`/`lgView`. No existing test was edited. Lingkana was not written to. This PR removes nothing.
+- Half-done: PR only, not merged; waits for Nathe's "go live". Verified at 390x844: after a mid-end plot at Z2 (3x) the pan offset returns to 0, Arrow size is fully visible, the face top is on screen and the target centre sits in the visible box; after the last arrow of a triangle Vegas end, Back and Next are on screen above the tab bar. Same centre-after-plot on a 122 cm full face, and on Spot 1 auto-advancing to Spot 2.
+- Decision: one pull request covering both follow-ups, not merged from here.
+
 ## 25 Nov 2026, 15:39 AWST — [Jarvis]
 
 - Who: Jarvis.
