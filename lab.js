@@ -84,11 +84,12 @@ E.myarch=()=>menu('My archery',[
  row('lab_latest','⭐','Latest shoot','How your last shoot went, wins of the day, notes'),
  row('lab_arrows','➕','Practice arrows','Today\'s arrow count and weekly progress'),
  row('lab_diary','📝','Diary','Shooting diary in your own words'),
+ row('lab_coach','🧑‍🏫','Coach','Share a round or add your coach'),
  row('lab_gear','🏹','Setups & sight marks','Bow setups, sight marks by distance, scores per setup'),
  row('lab_ranks','🏅','Rankings & classification','Real AA rankings and classification progress')]);
 sub('lab_latest','myarch','Latest shoot','myarch','My archery',()=>_home(),(e,t,i)=>i<3||/FROM YOUR NOTES/.test(t));
 sub('lab_arrows','myarch','Practice arrows','myarch','My archery',()=>_home(),(e,t,i)=>i==0||/TODAY'S ARROWS/.test(t));
-sub('lab_diary','myarch','Diary','myarch','My archery',()=>diary(),(e,t)=>/SHOOTING DIARY|TIMELINE/.test(t));
+sub('lab_diary','myarch','Diary','myarch','My archery',()=>diary(),(e,t)=>/SHOOTING DIARY|TIMELINE|COACH DRILLS|COACH NOTES/.test(t));
 sub('lab_ranks','myarch','Rankings & classification','myarch','My archery',()=>E.rewards(),e=>e.id=='realrank'||e.id=='c-class'||e.id=='rankcard'||e.id=='rank-slot',()=>{
  if(typeof aaRankCard!='function'||document.getElementById('rank-slot'))return;
  const html=aaRankCard((typeof S!='undefined'&&S&&S.profile)||'');

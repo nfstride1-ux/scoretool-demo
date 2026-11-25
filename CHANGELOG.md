@@ -4,6 +4,16 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-26-0555-coaching: Coaching (Plus & Pro) — preview only
+- Plus and Pro archers can share a one-off link for a round: scores, arrow plots, analysis and that day's diary. The coach opens it without an account.
+- Plus and Pro archers can add a coach with a short code or link. The coach's first code runs one sign-up that covers ScoreTool and Archery Calendar, then the how-to for adding ScoreTool to the phone's home screen. Every later archer code goes straight into the coach's Archers list. The archer can remove the coach at any time, and the link stops straight away.
+- The coach's Archers list shows each archer's last round, average and trend, and a flag when something new comes in. The coach gets the same analysis (group plot, end by end, heatmap, averages) with a layout saved for the coach only (turn charts on or off, reorder them, and set defaults for round, distance and how many rounds). Coaches can add their own charts and compare two rounds or two archers side by side. This never changes the archer's screen.
+- Coaches can pin notes on a round, an end or a diary entry, typed as a tuning suggestion (the archer records what they changed), a blank bale or close target drill (the archer ticks it off in the diary), or form or mental. The coach sees everything, including the diary. The archer can't hide the diary.
+- Not in this build: goals and training plans. League scoring stays free. Lingkana data is not changed. The old hidden demo coach screens stay hidden.
+- Plans: Plus now also lists "Share with a coach".
+- Privacy: a new Coaching paragraph on the privacy page. Contact is still nfshold@gmail.com.
+- Preview only — nothing is live until Nathe says go. Ongoing coach sync between phones starts when the additive Supabase tables in `supabase/scoretool_coaching.sql` are applied at go-live. One-off share links already work from the link itself.
+
 ## v2026-11-26-0458-plansmanage: Plans — manage or cancel, copy fixes
 - Signed-in paid members now see "Your plan" at the top of Plans with a "Manage or cancel subscription" button (opens the billing page where they can change card or cancel). The same button is on the home plan card. Their current plan's button says "Your plan".
 - Back from checkout, Plans opens and keeps checking with the server for about 20 seconds until the new plan shows (the payment confirmation can land a few seconds after the return). If not signed in, it asks to sign in to finish.

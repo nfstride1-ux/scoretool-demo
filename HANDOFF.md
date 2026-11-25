@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 26 Nov 2026, 06:00 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/coaching` (cache `v2026-11-26-0555-coaching`). Coaching feature as a PR only, nothing live. Nathe (via Grok Bot, 26 Nov 5:43am): "One more thing then yes" on the coaching plan. (1) Plus/Pro one-off share link: scores, plots, analysis and that day's diary, no coach account. (2) Coach code: first open runs one ScoreTool + Archery Calendar sign-up, then add-to-home-screen how-to; later codes go straight into the Archers list; the archer can remove the coach and the link stops. (3) Coach view: Archers list (last round, average, trend, new flag), same analysis with a coach-saved layout (toggle, reorder, defaults), custom charts, side-by-side compare; layout never changes the archer's screen. (4) Notes on a round, end or diary entry: tuning (archer logs the change), blank bale/close target drill (diary tick-off), form/mental. The coach sees everything; the archer can't hide the diary. Goals and training plans are not in this build. League scoring stays free. Lingkana data untouched. Old `COACH_ON=false` demo screens stay hidden. Preview uses localStorage and URL hashes so it works without applying schema. Additive RLS schema is in `supabase/scoretool_coaching.sql` for go-live only. New `tools/coach_feature_test.py`. Plus copy adds "Share with a coach". Privacy page adds a Coaching paragraph (contact remains nfshold@gmail.com). No refund or Stripe wording. Under-16 names are not hidden.
+- Half-done: PR only, not merged. Needs Nathe's "go" after he checks the preview. Ongoing two-phone sync waits for the schema to be applied at go-live. Apple sign-in for coaches waits until Apple activates the developer account (Google is used, same as paid sign-in).
+- Decision: coaching stays off live until Nathe OKs the preview. R3 and AC1–AC5 are not in this PR (separate work).
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.
