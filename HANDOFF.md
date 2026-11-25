@@ -4,6 +4,36 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 19:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1855-privacy`). Nathe t1200u: new `privacy.html` (Privacy, with Terms at `#terms`), the page Google's OAuth branding will point at. It covers data on the phone, the ntfy.sh relay for leagues and match play, optional Archery Calendar sync (Supabase), Google or Apple sign-in for paid plans (email only, to match the plan), payments by the payment processor (no card details stored), Microsoft Clarity analytics (typing hidden), Help feedback through FormSubmit, contact nfshold@gmail.com, and owner Nathaniel Stride (Archery Calendar), Western Australia. Terms: free features, subscriptions incl. GST that renew until cancelled through Manage, fair use, as is, WA law and Australian Consumer Law. No refund wording. Small "Privacy · Terms" links on Plans and on the Settings plan card. The Your data note now says the free app has no account or payment details, that paid plans add Google or Apple sign-in, and links the page (backup_test's phrase is kept).
+- Half-done: PR only, not merged.
+
+## 25 Nov 2026, 18:33 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1833-oauth`). Nathe (via t1196u answer): paid sign-in is Sign in with Google or Apple. Plans > Restore now shows only "Continue with Google" and "Continue with Apple"; the emailed code/magic-link restore is removed from the app. Supabase OAuth (implicit flow): the app checks `/auth/v1/settings` first and says "Google/Apple sign-in isn't available yet." if a provider is off, otherwise goes to `/auth/v1/authorize?provider=...&redirect_to=<app>/?plans=1`. On return the session in the fragment is saved, the account email is read from `/auth/v1/user`, the plan is checked with the edge function, and Plans opens. A refused sign-in shows "Sign-in didn't work. Try again." Get Plus/Pro passes the signed-in email to Checkout so the plan matches the account.
+- Half-done: PR only, not merged. Google and Apple providers are off in Supabase (checked via the public settings endpoint); enabling them is a dashboard step. Apple "Hide my email" gives a relay address, which only matches a plan bought while signed in with that Apple account.
+- Decision: return address uses `?plans=1`, not `#plans`, because the OAuth session comes back in the `#` fragment.
+
+## 25 Nov 2026, 18:27 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1827-plans2`). Nathe t1193u: the Plans screen shows only each tier (Free, Plus, Pro), its price (monthly/yearly) and what it offers, with Get Plus / Get Pro, plus small Restore (email + code) and Manage buttons. No refund, Stripe or sign-in wording; the locked-screen, Settings and home plan cards lost their explanation lines. Stripe: the four existing live prices were set to tax_behavior=inclusive (same price ids, so the deployed edge function needs no change); Checkout now shows A$4.99 per month for Plus and A$79 per year for Pro.
+- Half-done: PR only, not merged. Supabase sign-in email templates still need `{{ .Token }}` (token on the box expired).
+- Decision: grandfathering unchanged; Checkout name stays PropGuard for now.
+
+## 25 Nov 2026, 17:22 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1722-plans`). Nathe t1191u: real Stripe payment flow for the general ScoreTool paid tier, Plans screen in the live app, and `#plans` link target for archerycalendars.com. Built on PR #9 (`cursor/stripe-entitlement-6bd3`, 17 Nov): `plans.js`, `supabase/functions/stripe-entitlement/` and `supabase/scoretool_entitlements.sql` brought over; `test/tiers.js` used as the reference for which screens are Plus and Pro. `entitlementVerify()` now asks the deployed edge function for the signed-in email's plan (it used to grant nothing).
+- Tiers: Free = Score tab (every round, plotting, saving), Latest shoot, Practice arrows, Rankings, Setups & sight marks, Leagues, Match play, Lingkana (#lk-*), Rounds, Rules, Import my data, Settings. Plus = Analysis, Diary, Squads, Event scoring, adding photos. Pro = My bows, My arrows, Arrow chooser, Tune helper, Arrow optimiser, Calculators.
+- Nobody loses access: founding profiles are Pro for life; every profile already on a phone when this build first loads is kept on full access (`scoretool.paid.early`); only profiles made after that are Free until they pay. Saved data is never rewritten. Lingkana scoring, relay data and Lingkana's own pilot pricing are untouched.
+- Verified: `tools/paid_tier_test.py` 49/49 at 390x844; safety smoke 15/15; privacy scan pass; edge core unit tests 13/13. Live-mode end-to-end at A$0 (100%-off one-use coupon, no card, nothing charged): subscription -> webhook -> `scoretool_entitlements` row -> email-link sign-in on a fresh profile -> Analysis opens, Tune stays Pro -> portal opens -> cancel -> webhook -> relocked.
+- Half-done: PR only, not merged; waits for Nathe's "go live". Blockers before go-live are in the PR body (tax-exclusive prices show A$5.49 at Stripe, PropGuard name on Checkout, sign-in email has no code, Supabase token expired).
+- Decision: no What's new entry and no announcement until Nathe confirms a real paid purchase.
+
 ## 25 Nov 2026, 16:19 AWST — [Grok Bot]
 
 - Who: Grok Bot.
