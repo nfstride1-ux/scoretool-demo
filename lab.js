@@ -140,7 +140,9 @@ E.tools=()=>menu('Tools',[
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
  row('lab_results','📋','My results source','Country or body, member number, and scores you confirm yourself'),
  row('lab_rounds','◎','Rounds','Distances and faces when a club names the round'),
- row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO, ASA and IFAA, with sources')]);
+ row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO, ASA and IFAA, with sources'),
+ row('lab_mydata','📥','Import my data','Your own scoresheets, results and sight marks, from the file you were sent')]);
+LABSEC.lab_mydata='tools';if(window.MYDATA_VIEW)E.lab_mydata=window.MYDATA_VIEW;
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
 LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_results='tools';LABSEC.lab_rounds='tools';

@@ -97,8 +97,8 @@ async function loadSheets(){const T=TESTER;if(!T||!T.data)return;let j;try{const
  REAL[nm]=RL;const ok=T.id=='nathe'?Object.keys(OFF).find(isNatheName):aliasKey(OFF,T.name)||aliasKey(OFF,adn);if(ok)delete OFF[ok];OFF[nm]=OL;window._excluded=ex;window._sheetsFor=nm;csvState=RL.length?'ok':csvState}
 async function _loadReal(){await __loadReal();await loadSheets()}
 async function __loadReal(){await loadArrows();
- /* 25 Nov 2026: no shared per-person results file is shipped any more, so nothing is fetched (same for every archer). */
- try{const r=null;throw 0;
+ /* 25 Nov 2026: no results file is shipped any more; this address is answered from the archer's own imported file (mydata.js), else 404 */
+ try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
    round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowclass','bowtype','class','category']),notes:pick(h,['notes']),
