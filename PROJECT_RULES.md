@@ -26,7 +26,7 @@ These already work. A change that breaks one of them is not finished.
 - Never reset or regenerate an existing Lingkana PIN.
 - No personal scoresheets and no sight marks in public files. That includes `data/sheets_*.json` and `sightseed_` files.
 - The owner's gmail address from the 25 Nov audit stays out of public files. The privacy scan looks for it.
-- Onion Shed stays removed. The coach screens stay hidden (`COACH_ON` stays false).
+- Onion Shed stays removed. The old demo coach screens stay hidden (`COACH_ON` stays false). The coaching feature in `coach.js` is in a pull request and stays off the live app until Nathe says go.
 - League scoring stays free for league archers.
 - Stripe tiers stay off until Nathe says to turn them on.
 - Keep pull requests small. Checks stay green.

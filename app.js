@@ -216,6 +216,7 @@ ${ARCHERS.map(n=>`<button class="btn ghost full" style="margin:6px 0" data-p="${
 function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class="small muted">No scores yet. Score a round or log practice and it will show here.</p>`;return csvState=='ok'?`<p class="small"><span class="real">Official</span> competition results loaded.</p>`:
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The past competition results are still being collected, so official results will appear here once it's added.</p>`}
 function render(){cbSync();seedNotes();regCustom();
+ if(typeof coachRoute==='function'&&coachRoute()) return;
  if(location.hash.startsWith('#share=')) return renderShare();
  if(COACH_ON&&location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(location.hash.startsWith('#sheet=')) return renderSheetLink();
@@ -948,7 +949,7 @@ function renderSheetLink(){$('#tabs').hidden=true;let D;try{D=JSON.parse(decodeU
 /* 31 Oct 2026: wait until every script on the page has run before the first draw. On a slow connection the results fetch could
    finish while later scripts (squads.js, lab.js...) were still loading, and the draw then failed with "Can't find variable: squad". */
 Promise.all([loadReal(),document.readyState=='loading'?new Promise(r=>addEventListener('DOMContentLoaded',r,{once:true})):null]).then(()=>{nav(view);if(window.restoreAfterUpdate)restoreAfterUpdate()});
-addEventListener('hashchange',()=>{if(location.hash.startsWith('#share=')||location.hash.startsWith('#coach=')||location.hash.startsWith('#sheet='))render();else nav(location.hash=='#plot'?'score':'home')});
+addEventListener('hashchange',()=>{const h=location.hash||'';if(h.startsWith('#share=')||h.startsWith('#coach')||h.startsWith('#sheet='))render();else nav(h=='#plot'?'score':'home')});
 
 /* ---------- scoring screen scroll bar (custom, so it shows on iOS too) ----------
    Small blue square thumb on a thin track, inset from the screen edge. Its only job: scroll past the target without touching it.

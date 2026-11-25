@@ -404,3 +404,33 @@ label.lk-paidrow input[type=checkbox]{
 .planlist{margin:4px 0 10px;padding-left:20px}
 .planlist li{margin:2px 0}
 #planrest input{margin:6px 0}
+
+/* Coaching: royal blue and neon blue, no purple */
+.ch-code{font:800 36px var(--disp);letter-spacing:.12em;text-align:center;color:#38e1ff;background:#1a2a44;border-radius:12px;padding:16px;margin:12px 0}
+.ch-steps{margin:8px 0 8px 1.3em;padding:0;line-height:1.55}
+.ch-plot{display:block;max-width:320px;margin:8px auto;background:#0b0f17;border-radius:12px}
+.ch-ends{display:flex;flex-direction:column;gap:6px}
+.ch-end{display:grid;grid-template-columns:64px 1fr 40px;gap:8px;align-items:center}
+.ch-bar{height:10px;background:#1a2a44;border-radius:99px;overflow:hidden}
+.ch-bar i{display:block;height:100%;border-radius:99px}
+.ch-heat{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;text-align:center}
+.ch-heat div{background:#1a2a44;border-radius:8px;padding:8px 4px;position:relative;overflow:hidden}
+.ch-heat i{position:absolute;left:0;right:0;bottom:0;height:4px}
+.ch-new{display:inline-block;margin-left:6px;background:#38e1ff;color:#0b0f17;font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px;text-transform:uppercase}
+.ch-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ch-tog{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0}
+.ch-tog label{display:flex;gap:6px;align-items:center;font-size:14px}
+.ch-note{border-left:3px solid #1d4ed8;padding-left:10px}
+#chdemobar .kicker{color:#38e1ff}
+
+.ch-fold{border:1px solid var(--line,#1a2a44);border-radius:12px;padding:0;margin:8px 0;background:var(--card,#0f1724)}
+.ch-fold>summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:650;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.ch-fold>summary::-webkit-details-marker{display:none}
+.ch-fold>summary::after{content:'▾';margin-left:auto;color:#5ab0ff;font-weight:800}
+.ch-fold[open]>summary::after{content:'▴'}
+.ch-fold>summary + *,.ch-fold .ch-plot,.ch-fold p,.ch-fold table,.ch-fold .ch-itemnotes,.ch-fold label,.ch-fold .row{margin-left:12px;margin-right:12px}
+.ch-fold > :last-child{margin-bottom:12px}
+.ch-note{border-left:3px solid #1d4ed8;padding-left:0;margin:8px 0}
+.ch-alert{background:#1d4ed8;color:#fff;border-radius:10px;padding:10px 12px;font-weight:650;margin:0 0 10px}
+#challnotesbox #chnoteview{margin-top:8px}
+.labrow .ch-new{margin-left:6px}
