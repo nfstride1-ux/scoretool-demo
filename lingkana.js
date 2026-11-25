@@ -523,7 +523,11 @@ function lkRegSame(a,b){const league=x=>String((x&&x.league)||LK_CODE);
 /* Same name (trimmed, case-insensitive) + night + league updates the first match in place.
    Older extra copies of that same key are left in the list. Nothing is deleted. */
 function lkRegPush(rec){const box=lkRegInbox();const i=box.findIndex(r=>lkRegSame(r,rec));let stored;
- if(i>=0){const prev=box[i]||{};stored=Object.assign({},prev,rec,{id:rec.id||prev.id,at:rec.at||Date.now()});box[i]=stored}
+ if(i>=0){const prev=box[i]||{};stored=Object.assign({},prev,rec,{id:rec.id||prev.id,at:rec.at||Date.now()});
+  /* 25 Nov 2026: per-night sign-ups add nights; an older all-nights record stays all-nights */
+  if(prev.allNights){stored.allNights=1;delete stored.nights}
+  else if(Array.isArray(prev.nights)||Array.isArray(rec.nights))stored.nights=[...new Set([].concat(prev.nights||[],rec.nights||[]))];
+  box[i]=stored}
  else{stored=rec;box.push(rec)}
  try{localStorage.setItem(LK_REG_KEY,JSON.stringify(box))}catch(e){}
  return {box,stored}}
@@ -699,8 +703,10 @@ function lkSetPin(lg,id,name,hash,salt){
   }catch(e){}
   try{
     if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
-      const rec={name:lkCleanName(name)||'',id:who||null,at,pinHash,pinSalt,pinAt:at,allNights:1};
-      Promise.resolve(h2hPost(lgTopic(lg.code),{k:'lkreg',code:lg.code||LK_CODE,rec,t:at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+      /* a PIN change only updates the nights this archer is already on; it never signs them up for more */
+      const on=Object.keys(lg.reg||{}).filter(n=>(lg.reg[n]||[]).some(r=>r&&((who&&String(r.id)===who)||(name&&lkCleanName(r.name).toLowerCase()===lkCleanName(name).toLowerCase()))));
+      const rec={name:lkCleanName(name)||'',id:who||null,at,pinHash,pinSalt,pinAt:at,nights:on,pinOnly:1};
+      Promise.resolve(h2hPost(lgTopic(lg.code),{k:'lkreg2',code:lg.code||LK_CODE,rec,t:at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
     }
   }catch(e){}
   return at;
@@ -724,8 +730,13 @@ function lkResetPin(id){
 function lkApplyReg(rec,lg){
   lg=lg||(typeof lkEnsure==='function'?lkEnsure():null);if(!lg||!rec)return {ok:false,msg:'The league is not on this phone yet.'};
   const name=lkCleanName(rec.name);if(name.length<2)return{ok:false,msg:'Type a name (at least 2 characters).'};
-  const nights=lkShootDates(lg);
-  if(!nights.length)return{ok:false,msg:'The league has no shoot nights yet.'};
+  const nights=lkRecNights(lg,rec);
+  if(!lkShootDates(lg).length)return{ok:false,msg:'The league has no shoot nights yet.'};
+  if(!nights.length&&rec.pinOnly&&rec.id){
+    lg.pins=lg.pins||{};const cur=lg.pins[rec.id]||{name};lkCopyPin(cur,rec);cur.name=cur.name||name;lg.pins[rec.id]=cur;
+    lg.dirty=1;if(typeof save==='function')save();return{ok:true,id:rec.id,nights:[],already:false,name};
+  }
+  if(!nights.length)return{ok:false,msg:'Pick a night.'};
   const closed=lkRegClosed(lg,name,rec.id||lkFindArcher(lg,name));
   if(closed)return{ok:false,msg:closed};
   const dropId=lkDropHit(lg,rec.id,name);
@@ -761,6 +772,14 @@ function lkApplyReg(rec,lg){
   });
   lg.dirty=1;if(typeof save==='function')save();
   return{ok:true,id,first:first&&!alreadyAll?1:0,night:nights[0],nights,already:alreadyAll,name};
+}
+/* 25 Nov 2026 (Nathe): archers sign up night by night with their PIN. A record with a nights list covers only those nights.
+   Older records (allNights, or no nights list: registrations and PIN updates from before this change) still cover every night,
+   so nobody already on the list loses a night. */
+function lkRecNights(lg,rec){
+  const all=lkShootDates(lg);
+  if(!rec||rec.allNights||!Array.isArray(rec.nights))return all;
+  return all.filter(n=>rec.nights.includes(n));
 }
 function lkDropHit(lg,id,name){
   const bag=(lg&&lg.drop)||{};
@@ -833,7 +852,8 @@ function lkPullReg(lg){
   for(const rec of box){
     if(!rec)continue;
     const name=lkCleanName(rec.name).toLowerCase();
-    const onAll=nights.length&&nights.every(night=>((lg.reg||{})[night]||[]).some(r=>r&&((rec.id&&r.id===rec.id)||lkCleanName(r.name).toLowerCase()===name)));
+    const want=lkRecNights(lg,rec);
+    const onAll=want.length&&want.every(night=>((lg.reg||{})[night]||[]).some(r=>r&&((rec.id&&r.id===rec.id)||lkCleanName(r.name).toLowerCase()===name)));
     /* A row marked applied can still be missing after a strip or a stale snapshot. Put it back. */
     if(rec._applied&&onAll)continue;
     const r=lkApplyReg(rec,lg);
@@ -849,8 +869,11 @@ function lkRegister(opts){
   const lgNow=typeof lkEnsure==='function'?lkEnsure():lkGet();
   const closed=lgNow&&lkRegClosed(lgNow,name,opts.id||lkFindArcher(lgNow,name));
   if(closed)return closed;
-  /* One registration covers every shoot night. The night is chosen later, on the login page. */
-  const rec={name,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,allNights:1,poster:1};
+  /* 25 Nov 2026: a registration covers the nights picked (opts.nights). Without a nights list it still covers every night (old callers). */
+  const per=Array.isArray(opts.nights);
+  const rec={name,at:Date.now(),bow:String(opts.bow||'').slice(0,24),email:String(opts.email||'').slice(0,80),phone:String(opts.phone||'').slice(0,24),league:LK_CODE,poster:1};
+  if(per){rec.nights=opts.nights.map(String).filter(Boolean);if(!rec.nights.length)return 'Pick a night.'}else rec.allNights=1;
+  if(opts.id)rec.id=String(opts.id);
   if(opts.pinHash){rec.pinHash=String(opts.pinHash);rec.pinSalt=String(opts.pinSalt||'');rec.pinAt=+opts.pinAt||rec.at}
   const put=lkRegPush(rec);
   if(typeof S!=='undefined'&&S){
@@ -863,9 +886,11 @@ function lkRegister(opts){
   }
   try{
     if(typeof h2hPost==='function'&&typeof lgTopic==='function'){
-      const posted={name:rec.name,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,allNights:1,poster:1};
+      const posted={name:rec.name,at:rec.at,bow:rec.bow,email:rec.email,phone:rec.phone,id:rec.id||null,poster:1};
+      if(per)posted.nights=rec.nights;else posted.allNights=1;
       if(rec.pinHash){posted.pinHash=rec.pinHash;posted.pinSalt=rec.pinSalt||'';posted.pinAt=rec.pinAt||rec.at}
-      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:'lkreg',code:LK_CODE,rec:posted,t:rec.at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
+      /* per-night sign-ups use their own message kind, so a phone still on the old version ignores them instead of adding every night */
+      Promise.resolve(h2hPost(lgTopic(LK_CODE),{k:per?'lkreg2':'lkreg',code:LK_CODE,rec:posted,t:rec.at,by:lkPaidAuthority()||(typeof h2hMe==='function'&&h2hMe())||''})).catch(function(){});
     }
   }catch(e){}
   return '';
@@ -888,7 +913,17 @@ function lkPickerOrder(lg,w){
   const night=lkNightSignups(lg,w).map(r=>r.id);
   const seen=new Set();const out=[];
   for(const id of night){if(!seen.has(id)){seen.add(id);out.push(id)}}
-  for(const id of (lg&&lg.order)||[]){if(!seen.has(id)){seen.add(id);out.push(id)}}
+  /* 25 Nov 2026: only archers signed up for this night, plus the hosts (Nathe, Nate) and anyone already ticked paid or put in a group
+     this night, so nothing already recorded disappears from the list. */
+  const k=lkNightKey(lg,w);
+  const PM=(typeof lkPaidMap==='function'&&lg?lkPaidMap(lg):(lg&&lg.paid))||{};
+  const paid=PM[k]||PM[String(w)]||{};
+  const grouped=new Set([].concat(...((((lg&&lg.grp)||{})[w]||{}).g||[])).map(String));
+  for(const id of (lg&&lg.order)||[]){
+    if(seen.has(id))continue;
+    const n=((lg.gn||{})[id]&&(lg.gn||{})[id].n)||'';
+    if(paid[id]||grouped.has(String(id))||lkIsHostPerson(id,n)||lkIsHostAccount(id)){seen.add(id);out.push(id)}
+  }
   return out;
 }
 function lkDefaultNight(){
@@ -965,12 +1000,47 @@ function lkRegOkText(nights){
   if(ns.length>2)return `You're registered for ${ns.slice(0,-1).map(n=>'Night '+n).join(', ')} and Night ${ns[ns.length-1]} ✓`;
   return `You're registered ✓`;
 }
+function lkPickedNights(el){return [...(el||document).querySelectorAll('input[name=lkregn]:checked')].map(x=>x.value)}
+/* who is this name in the league: id, registered name, and whether a PIN is saved */
+function lkRegWho(lg,name){
+  const key=lkCleanName(name).toLowerCase();if(!key||!lg)return null;
+  let id=lkFindArcher(lg,name);let nm='';
+  if(!id){const k=lkKnownRegistrants(lg).find(a=>lkCleanName(a.name).toLowerCase()===key);if(k){id=k.id;nm=k.name}}
+  if(!id)return null;
+  const p=lkPinOf(lg,id);
+  return{id,name:nm||(p&&p.name)||lkCleanName(name),pin:!!(p&&p.pinHash),info:p};
+}
+/* 25 Nov 2026 (Nathe): an archer already registered signs up for each night with their name and own PIN. No passcode. */
+async function lkRegisterNight(opts){
+  opts=opts||{};
+  const lg=typeof lkEnsure==='function'?lkEnsure():lkGet();
+  if(!lg)return{msg:'The league is not on this phone yet.'};
+  const nights=(opts.nights||[]).filter(Boolean);
+  if(!nights.length)return{msg:'Tick the night (or nights) you are shooting.'};
+  const name=lkCleanName(opts.name);
+  if(name.length<2)return{msg:'Type your name as registered.'};
+  const who=lkRegWho(lg,name);
+  if(!who)return{msg:'That name is not registered yet. Use New archer below.'};
+  if(lkIsHostPerson(who.id,who.name))return{msg:'Hosts are on every night already.'};
+  if(!who.pin)return{msg:'No PIN is saved for that name yet. Use New archer below with the event passcode to set one.'};
+  const left=lkPinLocked(who.id);
+  if(left)return{msg:'Too many wrong PINs. Try again in '+Math.ceil(left/60000)+' min.'};
+  let ok=false;
+  try{ok=await lkPinOk(who.info.name||who.name,String(opts.pin||''),who.info.pinSalt,who.info.pinHash)}catch(e){ok=false}
+  if(!ok){lkPinFail(who.id);return{msg:'That PIN is not right.'}}
+  lkPinClearFails(who.id);
+  const row=Object.values(lg.reg||{}).flat().find(r=>r&&String(r.id)===String(who.id))||{};
+  const msg=lkRegister({name:who.info.name||who.name,id:who.id,bow:row.bow||'',nights});
+  if(msg)return{msg};
+  return{ok:true,nights};
+}
 function lkRegisterView(){
   const appEl=typeof app!=='undefined'?app:(typeof $==='function'&&$('#app'));
   if(!appEl)return;
   if(typeof lkEnsure==='function')lkEnsure();
   const lg=lkGet();
   const def=lkDefaultNight();
+  const today=(typeof window!=='undefined'&&window._lgToday)||(typeof lgToday==='function'&&lgToday())||new Date().toLocaleDateString('en-CA');
   const okMsg=window._lkRegOk||'';window._lkRegOk='';
   const qrUrl=lkRegisterUrl();
   const regCount=lkKnownRegistrants(lg).length;
@@ -980,9 +1050,23 @@ function lkRegisterView(){
     ${okMsg?`<p class="lk-ok" id="lkregok" role="status">${h(okMsg)}</p>`:''}
     <p class="small">${h(LK_VENUE)}</p>
     <p class="small muted">${h(LK_HOURS)}</p>
-    <p>Put your name down once. It stays on the list for every shoot night. You choose the night when you log in to score.</p>
+    <p>Sign up for each night you are shooting. Already registered? Pick the night and use your name and PIN. New here? Fill in New archer once (with the event passcode) and set your PIN.</p>
     ${leagueFull?'<p id="lkregfull">This league already has 52 archers. Registration is closed.</p>':'<p class="small muted">Anyone with this link can register, up to 52 archers. Print the QR for walk-ins at the venue.</p>'}
+    <div id="lknights" role="group" aria-label="Nights">
+      <h2>1. Pick your night</h2>
+      ${lkShootDates(lg).map((d,i)=>{const past=d<today;return`<label class="lk-tick"><input type="checkbox" name="lkregn" value="${h(d)}" ${d===def&&!past?'checked':''} ${past?'disabled':''}> Night ${i+1} · ${h(typeof lkFmtD==='function'?lkFmtD(d):d)}${past?' (done)':''}</label>`}).join('')}
+    </div>
+    <form id="lkretform" autocomplete="on">
+      <h2>2. Already registered</h2>
+      <label for="lkretname">Name</label>
+      <input id="lkretname" name="name" maxlength="24" autocomplete="name" placeholder="Your name as registered">
+      <label for="lkretpin">Your 4-digit PIN</label>
+      <input id="lkretpin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
+      <button class="btn lk-go" type="submit" id="lkretgo" style="margin-top:10px">Sign up for this night</button>
+      <p class="small lk-err" id="lkretmsg" role="alert"></p>
+    </form>
     <form id="lkregform" autocomplete="on">
+      <h2>Or: New archer</h2>
       <label for="lkregname">Name</label>
       <input id="lkregname" name="name" required maxlength="24" autocomplete="name" placeholder="Your name">
       <label for="lkregbow">Bow type</label>
@@ -991,7 +1075,9 @@ function lkRegisterView(){
       <input id="lkregemail" name="email" type="email" maxlength="80" autocomplete="email">
       <label for="lkregphone">Phone <span class="muted">(optional)</span></label>
       <input id="lkregphone" name="phone" maxlength="24" autocomplete="tel">
-      <label for="lkregpin">4-digit PIN</label>
+      <label for="lkregpass">Event passcode <span class="muted">(ask the host)</span></label>
+      <input id="lkregpass" type="password" autocomplete="off" maxlength="40">
+      <label for="lkregpin">Choose a 4-digit PIN</label>
       <input id="lkregpin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
       <label for="lkregpin2">PIN again</label>
       <input id="lkregpin2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">
@@ -1055,17 +1141,38 @@ function lkRegisterView(){
     const phone=(appEl.querySelector('#lkregphone')||{}).value;
     const pin=(appEl.querySelector('#lkregpin')||{}).value||'';
     const pin2=(appEl.querySelector('#lkregpin2')||{}).value||'';
+    const nights=lkPickedNights(appEl);
+    const pass=(appEl.querySelector('#lkregpass')||{}).value||'';
+    if(!nights.length){fail('Tick the night (or nights) you are shooting.');return}
+    if(lkCleanName(name).length<2){fail('Type a name (at least 2 characters).');return}
     if(!String(bow||'').trim()){fail('Enter your bow type.');return}
+    const cur=lg&&lkRegWho(lg,name);
+    if(cur&&cur.pin){fail('That name is already registered. Use Already registered above with your PIN.');return}
     if(!/^\d{4}$/.test(pin)){fail('Enter a 4-digit PIN.');return}
     if(pin!==pin2){fail('Those PINs do not match.');return}
     const salt=lkPinSalt();
-    lkPinHash(name,pin,salt).then(pinHash=>{
-      const last=lkRegister({name,bow,email,phone,pinHash,pinSalt:salt,pinAt:Date.now()});
-      if(last){fail(last);return}
-      window._lkRetPick=null;
-      window._lkRegOk="You're registered for the Lingkana League.";
-      lkRegisterView();
+    lkPassOk(pass).then(ok=>{
+      if(!ok){fail('That passcode is not right.');return}
+      return lkPinHash(name,pin,salt).then(pinHash=>{
+        const last=lkRegister({name,bow,email,phone,pinHash,pinSalt:salt,pinAt:Date.now(),nights,id:cur&&cur.id});
+        if(last){fail(last);return}
+        window._lkRetPick=null;
+        window._lkRegOk=lkRegOkText(nights)+' Next time, sign up for a night with your name and PIN.';
+        lkRegisterView();
+      });
     }).catch(()=>{fail('Could not save that PIN on this phone.');});
+  };
+  const ret=appEl.querySelector('#lkretform');
+  if(ret)ret.onsubmit=e=>{
+    e.preventDefault();
+    const box=appEl.querySelector('#lkretmsg'),go=appEl.querySelector('#lkretgo');
+    if(go)go.disabled=true;
+    const fail=t=>{if(box)box.textContent=t;if(go)go.disabled=false};
+    lkRegisterNight({name:(appEl.querySelector('#lkretname')||{}).value,pin:(appEl.querySelector('#lkretpin')||{}).value,nights:lkPickedNights(appEl)}).then(r=>{
+      if(r&&r.msg){fail(r.msg);return}
+      window._lkRegOk=lkRegOkText(r.nights);
+      lkRegisterView();
+    }).catch(()=>fail('Could not sign up on this phone.'));
   };
   const back=appEl.querySelector('#lkregback');
   if(back)back.onclick=()=>{window._lkRetPick=null;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}if(typeof lkFlowHome==='function')lkFlowHome(LK_CODE);else if(typeof lkView==='function'&&lkGet())lkView(LK_CODE);else if(typeof nav==='function')nav('lab_leagues')};
@@ -1339,7 +1446,7 @@ async function lkSyncOnce(){
         if(!d)continue;
         lg.since=d._id;
         if(typeof lgMerge==='function'&&lgMerge(lg,d))ch=true;
-        else if(d.k==='lkreg'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)&&lkRegKept(lg,(d.rec&&d.rec.at)||0)){
+        else if((d.k==='lkreg'||d.k==='lkreg2')&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.t||(d.rec&&d.rec.at)||0)>=lg.fresh)&&lkRegKept(lg,(d.rec&&d.rec.at)||0)){
           const r=lkApplyReg(d.rec||d,lg);
           if(r&&r.ok&&!r.already)ch=true;
         }else if(d.k==='lkdrop'&&(d.code===lg.code||d.code===LK_CODE)&&(!(lg.fresh)||+(d.at||d.t||0)>=lg.fresh)){
@@ -1847,6 +1954,6 @@ Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
   LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
-  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
+  lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkPotView,lkPotBack,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY,lkRegisterNight,lkRegWho,lkRecNights,lkFindArcher,lkIsHostRegName,lkNightKey
 });
 })();
