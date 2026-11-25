@@ -47,3 +47,10 @@ Before you stop, add a signed entry in Australia/Perth time. Say who you are, wh
 - Who: Jarvis.
 - Done: Lingkana `#lk-register` "Already registered": typing 2+ letters lists matching registered names (start of the name or of any word, any case, up to 8) as tap buttons; a tap fills the exact name and moves to the PIN. Names come from the league already on the phone (`lkKnownRegistrants`), no new public file. Plain buttons, not `<datalist>`, so it works on iPhone Safari. Cache `v2026-11-25-1329-regsuggest`. New test `tools/lk_reg_suggest_test.py` (needs `LK_SNAPSHOT`, a private league copy; posts nothing to the relay). No existing test changed.
 - Half-done: PR open, not merged; Nathe approves go-live.
+
+## 25 Nov 2026, 13:39 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done (same PR #79, Nathe's ask): host "Registered Archers" list and the Club pot "Tick who paid" list show a night's paid box BLUE when that archer signed up for that night and is not ticked paid yet. Tapping it ticks paid exactly as before (`lkSetPaid`, host phone only, `lg.paid[night][id]`); paid boxes show a green tick; boxes for nights the archer is not on stay plain white. Who counts as signed up for a night: `lkNightRegd` in `lingkana.js` — rows from a night-by-night sign-up now carry `nr`; rows already on phones count if their sign-up time is after PR #74 went live (2026-11-25 03:07:58 UTC); the old "every night" registrations do not; a PIN-only update is not a sign-up and no longer moves the row's sign-up time; Nathe and Nate count on every night. Existing paid ticks are read and stored unchanged. Cache `v2026-11-25-1339-paidblue`. New test `tools/lk_roster_paid_test.py` (needs `LK_SNAPSHOT`; relay posts are caught, never sent). No existing test changed.
+- Half-done: PR open, not merged; Nathe approves go-live.
+- Next: after go-live, a host phone that synced before shows blue for today's night-2 sign-ups from their sign-up time; nothing to migrate.

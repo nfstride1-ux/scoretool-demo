@@ -1455,15 +1455,20 @@
     const list=(typeof lkKnownRegistrants==='function'&&lkKnownRegistrants(lg))||[];
     const host=lg&&typeof lkCanHost==='function'&&lkCanHost(lg);
     const nights=lg&&typeof lkShootDates==='function'?lkShootDates(lg):[];
+    /* 25 Nov 2026 (Nathe): a box is BLUE when the archer signed up for that night (night-by-night sign-up, lkNightRegd) and is not ticked paid yet. Tapping it marks
+       paid exactly as before (lkSetPaid, host phone only). Paid ticks are read and stored the same way. */
+    const regOn=(r,n)=>typeof lkNightRegd==='function'&&lkNightRegd(lg,n,r.id,r.name);
     const paidCell=(r,n)=>{
       const bag=(lg&&lg.paid&&lg.paid[n])||{};
       const on=!!bag[r.id];
-      return host?`<input type="checkbox" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''}>`:(on?'●':'');
+      const reg=regOn(r,n);
+      const tip=on?'Paid':(reg?'Registered, not paid yet':'Not registered for this night');
+      return host?`<input type="checkbox" class="lk-paidbox${reg&&!on?' lk-regd':''}" data-reg="${reg?1:0}" data-lkpaid="${esc(r.id)}" data-lknight="${esc(n)}" ${on?'checked':''} aria-label="${esc(r.name)}: ${tip}" title="${tip}">`:(on?'●':(reg?'<span class="lk-regdot" title="Registered" aria-label="Registered">●</span>':''));
     };
     const row=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.bow||'')}</td>${nights.map(n=>`<td style="text-align:center">${paidCell(r,n)}</td>`).join('')}${host?`<td><button type="button" class="lk-host" data-lkremove="${esc(r.id)}">Remove</button></td>`:''}</tr>`;
     el.innerHTML=`<div class="lkf" id="lkrosterpage">
       <h1>Registered Archers</h1>
-      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. Tick a night to mark paid.</p>
+      <p class="small muted">${list.length} archer${list.length===1?'':'s'} registered. ${host?'<span class="lk-key lk-key-reg"></span> Blue = registered for that night, not paid yet. Tap it to mark paid <span class="lk-key lk-key-paid"></span>.':'<span class="lk-regdot">●</span> = registered for that night.'}</p>
       <div style="overflow-x:auto"><table class="lk-tab"><thead><tr><th>Name</th><th>Bow</th>${nights.map((n,i)=>`<th>N${i+1}</th>`).join('')}${host?'<th></th>':''}</tr></thead>
       <tbody>${list.map(row).join('')||`<tr><td colspan="${2+nights.length+(host?1:0)}">No archers registered yet.</td></tr>`}</tbody></table></div>
       <p class="lk-msg" id="lkrostermsg" role="alert"></p>
@@ -1472,6 +1477,7 @@
     $id('lkrosterback').onclick=()=>home(evCode());
     if(host)el.querySelectorAll('[data-lkpaid]').forEach(box=>box.onchange=()=>{
       if(typeof lkSetPaid==='function')lkSetPaid(box.getAttribute('data-lkpaid'),box.getAttribute('data-lknight'),box.checked);
+      box.classList.toggle('lk-regd',box.getAttribute('data-reg')==='1'&&!box.checked);
     });
     if(host)el.querySelectorAll('[data-lkremove]').forEach(b=>b.onclick=()=>{
       const id=b.getAttribute('data-lkremove');
