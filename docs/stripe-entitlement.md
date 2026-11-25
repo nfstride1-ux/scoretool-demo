@@ -53,7 +53,7 @@ Free, with no sign-in and no payment:
 - Basic stats: totals, averages, and past sessions
 - League and Lingkana scoring
 
-Plus (paid): analysis, diary, photos, squads, and group scoring.
+Plus (paid): analysis, diary, photos and group scoring.
 
 Pro (paid): bows, arrows, and the Tune helper, as well as Plus.
 

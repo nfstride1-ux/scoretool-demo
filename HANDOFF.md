@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 26 Nov 2026, 05:00 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/plans-manage-subscription` (cache `v2026-11-26-0458-plansmanage`). Nathe t1206u–t1209u after the live A$4.99 test: (1) "Manage or cancel subscription" button for signed-in paid members on Plans and the home plan card (billing portal via the stripe-entitlement function's /portal); before this the small "Manage" button only showed if the cached plan had a customer id, and the return from checkout could check the server before the webhook landed and then wait 10 minutes, so it never appeared. Now the return from checkout retries for ~20 s and opening Plans re-checks. (2) Plus copy drops Squads (removed feature). (3) Free copy says "League scoring", no Lingkana. (4) New tools/tier_gate_test.py: Free/Plus/Pro x 21 features x (nav, back button, ?p= deep link): 195/195 on this branch. New tools/plans_manage_test.py 18/18. paid_tier_test 59/59 unchanged.
+- Live A$4.99 test (Nathe's Apple Pay, 26 Nov ~04:38): paid, webhook delivered, entitlement row went active plus, then refunded in full and subscription cancelled; row now canceled.
+- Half-done: PR only, not merged. Needs Nathe's "go".
+- Decision: the hidden Squads view (lab_squad) stays gated as Plus; it has no menu entry.
+
 ## 25 Nov 2026, 19:05 AWST — [Jarvis]
 
 - Who: Jarvis.
