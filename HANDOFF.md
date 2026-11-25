@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 18:27 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1827-plans2`). Nathe t1193u: the Plans screen shows only each tier (Free, Plus, Pro), its price (monthly/yearly) and what it offers, with Get Plus / Get Pro, plus small Restore (email + code) and Manage buttons. No refund, Stripe or sign-in wording; the locked-screen, Settings and home plan cards lost their explanation lines. Stripe: the four existing live prices were set to tax_behavior=inclusive (same price ids, so the deployed edge function needs no change); Checkout now shows A$4.99 per month for Plus and A$79 per year for Pro.
+- Half-done: PR only, not merged. Supabase sign-in email templates still need `{{ .Token }}` (token on the box expired).
+- Decision: grandfathering unchanged; Checkout name stays PropGuard for now.
+
 ## 25 Nov 2026, 17:22 AWST — [Jarvis]
 
 - Who: Jarvis.

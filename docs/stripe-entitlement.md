@@ -1,6 +1,6 @@
 # ScoreTool entitlement (Stripe)
 
-> 25 Nov 2026 status: the function, table, webhook (`we_1UcdcD47VzymlfXoBUfARAAA`) and portal config (`bpc_1UcdR947VzymlfXocxw9O9mT`) are deployed and live. A live A$0 end-to-end run passed (see HANDOFF.md). The Pages app calls the function from `plans.js`. Open items before taking money: tax behaviour of the four prices (Stripe Tax adds 10% GST on top today), the Checkout/portal business name (PropGuard), and Supabase email templates (the signup email carries only a link, no code).
+> 25 Nov 2026 status: the function, table, webhook (`we_1UcdcD47VzymlfXoBUfARAAA`) and portal config (`bpc_1UcdR947VzymlfXocxw9O9mT`) are deployed and live. A live A$0 end-to-end run passed (see HANDOFF.md). The Pages app calls the function from `plans.js`. Open items before taking money: the Checkout/portal business name (PropGuard), and Supabase email templates (the signup email carries only a link, no code).
 
 ScoreTool is a static GitHub Pages site. It cannot hold `STRIPE_SECRET_KEY`. Checkout and the webhook run as a Supabase Edge Function on the Archery Calendar project that this app already uses for photos and score sync:
 
@@ -14,7 +14,7 @@ Nothing in this repository is a live secret. The names to set on the function ar
 
 ## Prices (live, AUD, created 17 Nov 2026)
 
-| Plan | Product | Lookup key | Price id | Amount |
+| Plan | Product | Lookup key | Price id | Amount (GST inclusive since 25 Nov 2026) |
 |---|---|---|---|---|
 | Plus monthly | `prod_VdtwwWYJwFWqDc` | `scoretool_plus_month` | `price_1Ucc9647VzymlfXogT6DXroB` | A$4.99 |
 | Plus yearly | `prod_VdtwwWYJwFWqDc` | `scoretool_plus_year` | `price_1Ucc9847VzymlfXoq1xyPpvY` | A$49 |

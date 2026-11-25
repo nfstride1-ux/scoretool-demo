@@ -94,13 +94,16 @@ try:
         pg.click('#billyear'); pg.wait_for_timeout(100)
         chk('Plans: yearly A$49 and A$79', pg.inner_text('#plusprice') == 'A$49 a year' and pg.inner_text('#proprice') == 'A$79 a year' and pg.get_attribute('#buypro', 'data-lookup') == 'scoretool_pro_year')
         shot(pg, '07-plans-yearly')
-        pg.locator('#planemail').scroll_into_view_if_needed(); shot(pg, '08-plans-restore')
+        chk('Plans has no refund, Stripe or sign-in wording', not any(w in pg.inner_text('#plans').lower() for w in ('refund','stripe','link','sign in','already paid')))
+        chk('Free tier listed with Lingkana', 'Lingkana' in pg.inner_text('#planfree'))
+        pg.click('#planrestore'); pg.wait_for_timeout(150); chk('Restore opens email and code', pg.locator('#planemail').is_visible() and pg.locator('#plancode').is_visible())
+        pg.locator('#planrest').scroll_into_view_if_needed(); shot(pg, '08-plans-restore')
         # checkout request goes to the function with the chosen key (stubbed; no Stripe call)
         sent = []
         pg.route(FN + '/checkout', lambda r: (sent.append(r.request.post_data), r.fulfill(status=200, content_type='application/json', body='{"ok":true,"url":"' + BASE + '?checkout=success"}')))
-        pg.fill('#planemail', 'buyer@example.com'); pg.click('#buyplus'); pg.wait_for_timeout(800)
+        pg.click('#buyplus'); pg.wait_for_timeout(800)
         d = json.loads(sent[0]) if sent else {}
-        chk('Continue to checkout sends the Plus yearly key, email and this app as return', d.get('lookup_key') == 'scoretool_plus_year' and d.get('email') == 'buyer@example.com' and d.get('success_url', '').startswith(BASE))
+        chk('Get Plus sends the Plus yearly key and this app as return', d.get('lookup_key') == 'scoretool_plus_year' and d.get('success_url', '').startswith(BASE))
         pg.wait_for_selector('#app'); welcome(pg)
         # hand-written cache, not signed in -> nothing opens
         pg.evaluate("""()=>localStorage.setItem('scoretool.stripe.entitlement',JSON.stringify({server:true,valid:true,tier:'pro',status:'active',current_period_end:'2099-01-01T00:00:00Z'}))""")

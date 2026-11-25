@@ -4,8 +4,8 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
-## v2026-11-25-1722-plans: Plans (Stripe) — Free, Plus and Pro
-- New Plans screen (Me > Plans, Settings, and the "See plans" button on a locked screen; `#plans` opens it directly). Plus A$4.99 a month or A$49 a year; Pro A$7.99 a month or A$79 a year. Checkout is Stripe Checkout; the plan is read back from the server after signing in with the payment email (code or link), and Manage subscription opens the Stripe portal.
+## v2026-11-25-1827-plans2: Plans (Stripe) — Free, Plus and Pro
+- New Plans screen (Me > Plans, Settings, and the "See plans" button on a locked screen; `#plans` opens it directly). Plus A$4.99 a month or A$49 a year; Pro A$7.99 a month or A$79 a year. The screen shows only each tier, its prices and what it offers; Restore and Manage are small buttons. Prices include GST.
 - Free stays free: the score card with plotting and saving, basic stats, setups and sight marks, leagues, match play and Lingkana scoring.
 - Profiles already on a phone keep everything they had. Founding members stay Pro, free for life. Saved scores are not changed.
 

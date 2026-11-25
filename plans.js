@@ -11,6 +11,9 @@
 const SB='https://sllsqpfqwckwtljzjxli.supabase.co';
 const KEY_PUB='sb_publishable_t2g3KYdoGeTtcXTO-URK9g_Nf69SEFq';
 const AUTH='scoretool.stripe.auth',ENT='scoretool.stripe.entitlement';
+const FREE_LIST=['Score card: every round, plotting and saving','Basic stats, personal bests and practice arrows','Setups and sight marks','League, match play and Lingkana scoring'];
+const PLUS_LIST=['Everything in Free','Analysis','Diary','Photos','Squads','Group event scoring'];
+const PRO_LIST=['Everything in Plus','My bows and My arrows','Arrow chooser','Tune helper and calculators'];
 const PLANS={
  plus:{name:'Plus',month:['scoretool_plus_month','A$4.99 a month'],year:['scoretool_plus_year','A$49 a year'],line:'Analysis, diary, photos, squads and group scoring.'},
  pro:{name:'Pro',month:['scoretool_pro_month','A$7.99 a month'],year:['scoretool_pro_year','A$79 a year'],line:'Bows, arrows and the Tune helper, as well as Plus.'}
@@ -80,48 +83,48 @@ window.scoretoolEntitlementVerify=scoretoolEntitlementVerify;
 function planMsg(t){const n=document.getElementById('planmsg');if(n)n.textContent=t||''}
 async function startCheckout(lookup){
  const root=base();
- if(!root){planMsg('Checkout is not connected on this copy. This phone stays locked.');return}
+ if(!root){planMsg('Not available.');return}
  const here=location.origin+location.pathname+location.search;
  const email=(document.getElementById('planemail')||{}).value||'';
- planMsg('Opening Stripe Checkout…');
+ planMsg('Opening…');
  try{
   const r=await fetch(root+'/checkout',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({lookup_key:lookup,success_url:here,cancel_url:here,email})});
   const j=await r.json();
   if(j&&j.url){location.href=j.url;return}
-  planMsg('Checkout did not start. Nothing was charged, and this phone is still locked.')}
- catch(e){planMsg('Checkout could not be reached. Nothing was charged, and this phone is still locked.')}}
+  planMsg('Try again.')}
+ catch(e){planMsg('Try again.')}}
 async function sendCode(){
  const email=((document.getElementById('planemail')||{}).value||'').trim();
- if(!email){planMsg('Enter the email on the payment.');return}
- planMsg('Sending the email…');
+ if(!email){planMsg('Enter your email.');return}
+ planMsg('Sending…');
  try{
   const back=location.origin+location.pathname+location.search;
   const r=await fetch(SB+'/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({email,create_user:true,options:{email_redirect_to:back}})});
-  planMsg(r.ok?'Check that email for a code and a link.':'The sign-in email could not be sent.')}
- catch(e){planMsg('The sign-in email could not be sent.')}}
+  planMsg(r.ok?'Code sent.':'Try again.')}
+ catch(e){planMsg('Try again.')}}
 async function confirmCode(){
  const email=((document.getElementById('planemail')||{}).value||'').trim();
  const token=((document.getElementById('plancode')||{}).value||'').replace(/\s/g,'');
- if(!email||!token){planMsg('Enter the email and the code.');return}
- planMsg('Checking the code…');
+ if(!email||!token){planMsg('Enter your email and code.');return}
+ planMsg('Checking…');
  try{
   const r=await fetch(SB+'/auth/v1/verify',{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({type:'email',email,token})});
   const j=await r.json();
-  if(!r.ok||!j.access_token){planMsg('That code was not accepted.');return}
+  if(!r.ok||!j.access_token){planMsg('Wrong code.');return}
   saveAuth({access_token:j.access_token,refresh_token:j.refresh_token||'',email:(j.user&&j.user.email)||email});
   const v=await scoretoolEntitlementVerify();
   if(v.ok){planMsg('');if(typeof render==='function')render()}
-  else planMsg('Signed in. There is no paid plan on that email yet.')}
- catch(e){planMsg('The code could not be checked.')}}
+  else planMsg('No plan on that email.')}
+ catch(e){planMsg('Try again.')}}
 async function openPortal(){
  const root=base(),auth=read(AUTH);
- if(!root||!auth||!auth.access_token){planMsg('Sign in with the payment email first.');return}
+ if(!root||!auth||!auth.access_token){planMsg('Tap Restore first.');return}
  try{
   const r=await fetch(root+'/portal',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+auth.access_token},body:JSON.stringify({return_url:location.origin+location.pathname+location.search})});
   const j=await r.json();
   if(j&&j.url){location.href=j.url;return}
-  planMsg('The subscription page did not open.')}
- catch(e){planMsg('The subscription page did not open.')}}
+  planMsg('Try again.')}
+ catch(e){planMsg('Try again.')}}
 function paintPrices(){
  const k=bill==='year'?'year':'month';
  const p=document.getElementById('plusprice'),r=document.getElementById('proprice');
@@ -134,22 +137,19 @@ function paintPrices(){
  if(m)m.setAttribute('aria-pressed',k==='month'?'true':'false');
  if(y)y.setAttribute('aria-pressed',k==='year'?'true':'false')}
 function plansInner(){
- const e=read(ENT)||{},manage=e.customer_id?'<button class="btn ghost full" id="planmanage" type="button">Manage subscription</button>':'';
- const note=window._planNotice?'<p id="plannotice">'+esc(window._planNotice)+'</p>':'';
- return `<div class="card dark" id="plans"><span class="kicker">ScoreTool</span><h1>Plans</h1>
- ${note}
- <p>The score card, plotting, saving, basic stats and league scoring (Lingkana included) are free. Plus and Pro are paid with Stripe, in Australian dollars. A refund is made only if you ask. Nothing is refunded automatically.</p>
+ const e=read(ENT)||{},manage=e.customer_id?'<button class="btn ghost" id="planmanage" type="button">Manage</button>':'';
+ const li=a=>'<ul class="planlist">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+ return `<div class="card dark" id="plans"><h1>Plans</h1>
  <div class="labseg" role="group" aria-label="Billing period"><button type="button" id="billmonth" aria-pressed="true">Monthly</button><button type="button" id="billyear" aria-pressed="false">Yearly</button></div>
- <div class="card" id="planplus"><h2 style="margin:0">Plus</h2><p class="planprice" id="plusprice">A$4.99 a month</p><p>${PLANS.plus.line}</p><button class="btn full" id="buyplus" type="button" data-lookup="scoretool_plus_month">Continue to Plus checkout</button></div>
- <div class="card" id="planpro"><h2 style="margin:0">Pro</h2><p class="planprice" id="proprice">A$7.99 a month</p><p>${PLANS.pro.line}</p><button class="btn alt full" id="buypro" type="button" data-lookup="scoretool_pro_month">Continue to Pro checkout</button></div>
+ <div class="card" id="planfree"><h2 style="margin:0">Free</h2><p class="planprice">A$0</p>${li(FREE_LIST)}</div>
+ <div class="card" id="planplus"><h2 style="margin:0">Plus</h2><p class="planprice" id="plusprice">A$4.99 a month</p>${li(PLUS_LIST)}<button class="btn full" id="buyplus" type="button" data-lookup="scoretool_plus_month">Get Plus</button></div>
+ <div class="card" id="planpro"><h2 style="margin:0">Pro</h2><p class="planprice" id="proprice">A$7.99 a month</p>${li(PRO_LIST)}<button class="btn alt full" id="buypro" type="button" data-lookup="scoretool_pro_month">Get Pro</button></div>
  <p id="planmsg" role="status"></p>
- ${manage}
- <h2>Already paid?</h2>
- <label for="planemail">Email on the payment</label><input id="planemail" type="email" autocomplete="email" inputmode="email">
- <button class="btn ghost full" id="plansend" type="button">Email me a code</button>
- <label for="plancode">Code from the email</label><input id="plancode" inputmode="numeric" autocomplete="one-time-code" aria-describedby="planhint">
- <button class="btn full" id="planconfirm" type="button">Unlock this phone</button>
- <p class="small" id="planhint">The email has a code and a link. Either one signs this phone in, then the app checks the plan on the server. A phone that was already opened stays open.</p></div>`}
+ <div class="row" id="planctl" style="gap:8px;justify-content:flex-start"><button class="btn ghost" id="planrestore" type="button" aria-expanded="false">Restore</button>${manage}</div>
+ <div id="planrest" hidden><input id="planemail" type="email" autocomplete="email" inputmode="email" placeholder="Email" aria-label="Email">
+ <button class="btn ghost full" id="plansend" type="button">Send code</button>
+ <input id="plancode" inputmode="numeric" autocomplete="one-time-code" placeholder="Code" aria-label="Code">
+ <button class="btn full" id="planconfirm" type="button">Restore</button></div></div>`}
 function plansGateHTML(){return '<div id="gate">'+plansInner()+'</div>'}
 window.plansGateHTML=plansGateHTML;
 function plansBind(){
@@ -160,21 +160,23 @@ function plansBind(){
  const bp=document.getElementById('buyplus'),br=document.getElementById('buypro');
  if(bp)bp.onclick=()=>startCheckout(bp.dataset.lookup);
  if(br)br.onclick=()=>startCheckout(br.dataset.lookup);
- const s=document.getElementById('plansend'),c=document.getElementById('planconfirm'),g=document.getElementById('planmanage');
+ const s=document.getElementById('plansend'),c=document.getElementById('planconfirm'),g=document.getElementById('planmanage'),rs=document.getElementById('planrestore'),rb=document.getElementById('planrest');
+ if(rs&&rb)rs.onclick=()=>{rb.hidden=!rb.hidden;rs.setAttribute('aria-expanded',String(!rb.hidden))};
+ if(rb&&window._planNotice){rb.hidden=false;if(rs)rs.setAttribute('aria-expanded','true')}
  if(s)s.onclick=sendCode;if(c)c.onclick=confirmCode;if(g)g.onclick=openPortal}
 window.plansBind=plansBind;
 function planHomeHTML(){
  const e=read(ENT)||{};
  const manage=e.customer_id?'<button class="btn ghost" id="planmanage" type="button">Manage subscription</button> ':'';
- return `<div class="card" id="planhome"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">${esc(tierLabel(e.tier))}</h2><p class="small" style="margin:0 0 8px">This phone is unlocked on ${esc(tierLabel(e.tier))}.</p>${manage}<button class="btn ghost" id="plansee" type="button">See plans</button></div>`}
+ return `<div class="card" id="planhome"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">${esc(tierLabel(e.tier))}</h2>${manage}<button class="btn ghost" id="plansee" type="button">See plans</button></div>`}
 function bindHomePlan(){
  const m=document.getElementById('planmanage'),s=document.getElementById('plansee');
  if(m)m.onclick=openPortal;if(s)s.onclick=()=>nav('plans')}
 if(typeof home==='function'){const _home=home;home=function(){_home.apply(this,arguments);if(!paidOpen()||document.getElementById('planhome'))return;const html=planHomeHTML();if(app.firstElementChild)app.firstElementChild.insertAdjacentHTML('beforebegin',html);else app.insertAdjacentHTML('beforeend',html);bindHomePlan()}}
 const E=window.EXTRA_VIEWS=window.EXTRA_VIEWS||{};
 E.plans=function(){app.innerHTML='<button class="btn ghost" id="planback" type="button">Back</button>'+plansInner();plansBind();document.getElementById('planback').onclick=()=>nav('home')};
-if(E.lab_me){const baseMe=E.lab_me;E.lab_me=function(){baseMe.apply(this,arguments);const menu=app.querySelector('.labmenu');if(!menu||document.getElementById('planrow'))return;menu.insertAdjacentHTML('beforeend','<button class="labrow" id="planrow" type="button"><span><b>Plans</b><small>Free score card. Plus and Pro add more.</small></span><span class="go" aria-hidden="true">›</span></button>');document.getElementById('planrow').onclick=()=>nav('plans')}}
-if(E.lab_settings){const baseSet=E.lab_settings;E.lab_settings=function(){baseSet.apply(this,arguments);if(document.getElementById('plancard'))return;const host=document.getElementById('themecard')||document.getElementById('settingscard');if(!host)return;host.insertAdjacentHTML('beforebegin','<div class="card" id="plancard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">'+esc(tierLabel())+'</h2><p class="small" style="margin:0 0 8px">The score card is free. Plus and Pro add more. Open Plans to upgrade, or the Stripe page to cancel or update the card.</p><button class="btn" id="plansee" type="button">See plans</button></div>');document.getElementById('plansee').onclick=()=>nav('plans')}}
+if(E.lab_me){const baseMe=E.lab_me;E.lab_me=function(){baseMe.apply(this,arguments);const menu=app.querySelector('.labmenu');if(!menu||document.getElementById('planrow'))return;menu.insertAdjacentHTML('beforeend','<button class="labrow" id="planrow" type="button"><span><b>Plans</b><small>Free, Plus and Pro</small></span><span class="go" aria-hidden="true">›</span></button>');document.getElementById('planrow').onclick=()=>nav('plans')}}
+if(E.lab_settings){const baseSet=E.lab_settings;E.lab_settings=function(){baseSet.apply(this,arguments);if(document.getElementById('plancard'))return;const host=document.getElementById('themecard')||document.getElementById('settingscard');if(!host)return;host.insertAdjacentHTML('beforebegin','<div class="card" id="plancard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">'+esc(tierLabel())+'</h2><button class="btn" id="plansee" type="button">See plans</button></div>');document.getElementById('plansee').onclick=()=>nav('plans')}}
 /* #plans opens Plans straight away (the link from archerycalendars.com), with or without a profile on this phone. */
 if(typeof render==='function'){const _render=render;render=function(){
  if(location.hash==='#plans'){window._plansHash=1;const t=document.getElementById('tabs');if(t)t.hidden=!(typeof TESTER!=='undefined'&&TESTER&&S&&S.profile);
@@ -192,7 +194,7 @@ nav=function(v){
   view=v;$('#tabs').hidden=false;
   const sec={stats:'myarch',analytics:'myarch',lab_analysis:'myarch',diary:'myarch',lab_diary:'myarch',lab_squad:'clubs',squad:'clubs',lab_group:'clubs',lab_mybows:'myarch',lab_myarrows:'myarch',lab_chooser:'tools',lab_tune:'tools',lab_opt:'tools',lab_calc:'tools'}[v]||'home';
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===sec?'true':'false'));
-  app.innerHTML=`<div class="card" id="tierlock"><span class="kicker">Plan</span><h2>Available on ${need==='pro'?'Pro':'Plus'}</h2><p>This stays on the menu. Your scores on this phone are unchanged.</p><button class="btn" id="tierplans" type="button">See plans</button></div><button class="btn ghost" id="tierback" type="button">Back</button>`;
+  app.innerHTML=`<div class="card" id="tierlock"><span class="kicker">Plan</span><h2>Available on ${need==='pro'?'Pro':'Plus'}</h2><button class="btn" id="tierplans" type="button">See plans</button></div><button class="btn ghost" id="tierback" type="button">Back</button>`;
   document.getElementById('tierplans').onclick=()=>nav('plans');
   document.getElementById('tierback').onclick=()=>nav('home');
   scrollTo(0,0);return}
@@ -205,7 +207,7 @@ document.addEventListener('click',function(ev){
 document.addEventListener('click',function(ev){const b=ev.target.closest&&ev.target.closest('[data-plans]');if(!b)return;ev.preventDefault();nav('plans')});
 (function boot(){
  const q=new URLSearchParams(location.search);
- window._planNotice=q.get('checkout')==='success'?'Stripe has the payment. Sign in with the same email to unlock this phone.':q.get('checkout')==='cancel'?'Checkout was cancelled. Nothing was charged.':'';
+ window._planNotice=q.get('checkout')==='success'?'1':'';
  const h=new URLSearchParams((location.hash||'').replace(/^#/,''));
  if(!h.get('access_token')){
   /* signed-in phone: re-check the plan with the server on open (at most every 10 minutes), so a cancel or a lapse relocks */
