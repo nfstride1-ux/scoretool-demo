@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 13:59 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR branch `cursor/score-tab-no-league` (cache `v2026-11-25-1359-noleaguetab`). Removed the Score tab "League shoot" option and its helper text ("League shoots are scored inside your league, below. Open your league and tap Score my week."). Just me and Casual shoot stay. The hint "Leagues, match play and group cards are in Clubs" stays. If `_csMode` is still `'league'` (in-memory only; it was never saved to localStorage), the tab falls back to Just me with no error. Clubs → Leagues → Lingkana League and Score my week were not changed. Relay, pot, members, scores, paid ticks and groups were not touched. `/test/` staging was left as it is. No tests were edited.
+- Half-done: not merged; Nathe approves go-live. These tests still assert the old Score-tab League shoot button or `#lgcard` on Score when `_csMode` is `'league'`, and will fail if run: `tools/casual_test.py` (the type-picker checks), `tools/audit_2026_11_25_test.py` ("Score tab offers Just me, Casual, League"), and `tools/nopreset_test.py` (`card()` reads `#lgcard` after setting `_csMode='league'` and `nav('score')`). None of those are in the pull-request CI gate (`safety-smoke` + `privacy-scan`).
+- Decision: one pull request, not merged from here.
+
+
 ## 25 Nov 2026, 11:26 AWST — [Grok Bot]
 
 - Who: Grok Bot.

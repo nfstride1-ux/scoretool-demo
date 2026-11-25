@@ -69,7 +69,7 @@ home=function(){addMe();let last='';try{const L=latestShoot();if(L)last=`Last sh
 /* ---------- Score: just the scoring ---------- */
 const _score=score;
 score=function(){_score();if((typeof cur!=='undefined'&&cur)||view!='score')return;
- (window._csMode=='league'?['#h2hcard','#pgcard','#ifaacard','#ifaagencard']:['#h2hcard','#lgcard','#pgcard','#ifaacard','#ifaagencard']).forEach(s=>{const e=app.querySelector(s);if(e)e.remove()});
+ ['#h2hcard','#lgcard','#pgcard','#ifaacard','#ifaagencard'].forEach(s=>{const e=app.querySelector(s);if(e)e.remove()});
  const b=typeof curBow=='function'&&curBow();const first=app.firstElementChild;
  const note=`<p class="small muted" style="margin:6px 0 0">Setup: <b>${b?h(b.name):'none yet'}</b> · <a href="#" data-go="lab_gear">change</a> &nbsp;·&nbsp; Leagues, match play and group cards are in <a href="#" data-go="clubs">Clubs</a></p>`;
  if(first)first.insertAdjacentHTML('beforeend',note);app.querySelectorAll('a[data-go]').forEach(a=>a.onclick=e=>{e.preventDefault();nav(a.dataset.go)})};

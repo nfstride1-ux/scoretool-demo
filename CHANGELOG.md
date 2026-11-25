@@ -3,6 +3,15 @@
 Newest first. Each entry names the version tag shown in Settings.
 
 
+## v2026-11-25-1359-noleaguetab: League shoot removed from the Score tab
+- The Score tab "What are you shooting?" card is now Just me and Casual shoot only.
+- League scoring stays in Clubs → Leagues (Lingkana League, Score my week). The helper text that said league shoots are scored below on this tab is gone.
+- A phone that still had League shoot selected falls back to Just me with no error. The Clubs hint under the card is unchanged.
+- Cache version is `v2026-11-25-1359-noleaguetab`. Not merged.
+
+### Files
+casual.js, lab.js, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-25-1103-nightpin4: Lingkana sign-up night by night with your PIN
 - The register page (poster QR, #lk-register, and Event Registration on the event home) asks for the night first.
 - Already registered: name and your own 4-digit PIN signs you up for the ticked night. No passcode. Wrong PINs lock out like the login.
