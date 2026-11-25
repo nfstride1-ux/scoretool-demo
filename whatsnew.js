@@ -3,6 +3,8 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
+  {v:'v2026-11-25-1425-caldel',d:'2026-11-25',items:[
+   ['calendar',"Deleted scores come off your Archery Calendar","If you delete a score in ScoreTool, it is removed from My events on archerycalendars.com too, including the Scores I shot list and the score-shot marks on the day. Scores you already deleted drop the next time ScoreTool can reach the calendar."]]},
   {v:'v2026-11-25-1410-noresultsrc',d:'2026-11-25',items:[
    ['trophy',"Import my data replaces My results source","Tools no longer has My results source. To add your official results, use Tools, Import my data. Results you already pasted or typed in there stay on this phone and still count in your personal bests and stats."]]},
   {v:'v2026-11-25-1025-audit2',d:'2026-11-25',items:[
