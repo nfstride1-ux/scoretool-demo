@@ -5,8 +5,10 @@
      (6-arrow end: under 60 s; 3-arrow end: under 30 s). Shooting, walking and scoring an end takes minutes.
      The first end of a session isn't timed. Editing a past arrow isn't timed.
    - Added arrows (+6/+12/+36/+72 or "set today's total"): more than 150 arrows added within 10 minutes.
-   Nothing is blocked: the arrows are saved and shown. Only the flagged burst is left out of XP, league,
-   streaks and badges until the archer taps "Yes, I shot these". */
+   Nothing is blocked: the arrows are saved and shown. Only the flagged burst is left out of XP,
+   streaks and badges until the archer taps "Yes, I shot these". Added arrows never go into league
+   scores. The Fair Play card is not shown on My archery > Practice arrows; that page counts every
+   arrow logged today, including ones still held back from XP and badges. */
 const FP_END_SEC_PER_ARROW=10,FP_VOL_WINDOW_MIN=10,FP_VOL_MAX=150;
 const fpHolds=()=>(S.fpHold=S.fpHold||[]);
 const fpOpen=()=>fpHolds().filter(h=>!h.ok);
@@ -36,11 +38,11 @@ putArrow=function(k,xy){const editing=!!fix,s=cur,before=s?s.ends.length+':'+(s.
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-vol],#vsave');if(!b)return;const t=today(),before=(S.vol||{})[t]||0;
  setTimeout(()=>{const add=((S.vol||{})[t]||0)-before;if(add<=0)return;S.volLog=(S.volLog||[]).filter(x=>Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4);S.volLog.push({t:Date.now(),n:add});
   const sum=S.volLog.reduce((a,x)=>a+x.n,0);if(sum>FP_VOL_MAX){const h={kind:'vol',date:t,n:sum,t:Date.now()};
-   S.fpHold=fpHolds().filter(x=>!(x.kind=='vol'&&!x.ok&&Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4));fpHolds().push(h);S.volLog=[];save();if(!S.fpVolShown){S.fpVolShown=today();fpModal(h)}}else save()},0)},true);
+   S.fpHold=fpHolds().filter(x=>!(x.kind=='vol'&&!x.ok&&Date.now()-x.t<FP_VOL_WINDOW_MIN*6e4));fpHolds().push(h);S.volLog=[];save();if(!S.fpVolShown&&!(typeof view!=='undefined'&&view=='lab_arrows')){S.fpVolShown=today();fpModal(h)}}else save()},0)},true);
 document.addEventListener('click',ev=>{if(ev.target.id=='fpall'){fpOpen().forEach(h=>h.ok=true);save();render()}});
 /* Rewards read only counted arrows */
 const _dayMap=dayMap;dayMap=function(name){return name==S.profile?rewardDayArrows():_dayMap(name)};
 const _allEnds=allEnds;allEnds=function(name){const E=_allEnds(name);if(name!=S.profile||!fpOpen().length)return E;
  const out=[];(S.sessions||[]).filter(s=>!s.sample).forEach(s=>s.ends.forEach((e,i)=>{if(!fpHeldEnd(s.id,i))out.push({date:s.date,arrows:e.map(String),src:'session'})}));return out.concat(E.filter(x=>x.src!='session'))};
 if(window.volBadges){const _vb=volBadges;volBadges=function(mm){return _vb(mm||rewardDayArrows())}}
-const _home=home;home=function(){_home.apply(this,arguments);const c=fpCard();if(c)app.insertAdjacentHTML('afterbegin',c)};
+const _home=home;home=function(){_home.apply(this,arguments);if(typeof view!=='undefined'&&view=='lab_arrows')return;const c=fpCard();if(c)app.insertAdjacentHTML('afterbegin',c)};
