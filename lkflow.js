@@ -1088,7 +1088,7 @@
       };
       let msg='';
       if(on&&typeof lkRegister==='function'){
-        msg=lkRegister({posterCode:LK_POSTER_CODE,name:rec.name,night:rec.night,bow:rec.className})||'';
+        msg=lkRegister({posterCode:LK_POSTER_CODE,name:rec.name,night:rec.night,nights:[rec.night],bow:rec.className})||'';
       }else if(!on){
         /* season list only */
         if(typeof lkAddGuest==='function'&&!pick.id)msg=lkAddGuest(rec.name,false)||'';
