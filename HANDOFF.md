@@ -4,6 +4,16 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 26 Nov 2026, 06:50 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-0643-tuning`), separate from coaching PR #90. Nathe 26 Nov 6:25am "Yes, build the tuning preview": tuning sessions get delete-with-confirm, one bow + one arrow picker (no "Use my arrow setup", no Face), the Concept X 40 vs 37 bow mismatch fixed in bowSnap (fixSpec, display only, saved specs untouched), paper-tune tear keypad, crosshair plots (torque vertical, Dudley horizontal, others both), What I changed (Coach's 26 Nov ~6:13 lists, compound/recurve filter, George marks only where Coach marked), Arrow setup collapsed. New tools/tuning_test.py 41/41. safety-smoke 15/15, privacy-scan pass, plans_manage 18/18, paid_tier 58/59 (line 98 known stale).
+- Found: R3 (bare shaft verdict) and AC1-AC5 were already on main (commits 2eb62ef..96361f8 and the R3 bareVerdict in lab.js); kept and re-checked, not rebuilt.
+- Easton plunger direction: the Tuning and Maintenance Guide has no walk-back test. Its only in/out rule is broadheads p. 12 (RH: left/stiff -> in toward the bow; right/weak -> out). Recurve past setup: spring tension only, not in/out (pp. 8, 14). So no walk-back drift-to-plunger hint is coded.
+- Paper left/right rest direction uses Easton p. 7 (RH release: nock-left tear -> rest right), not Coach's "toward the tear" wording.
+- Half-done: PR only, not merged. Needs Nathe's "go".
+- Note: older Playwright tests that use the retired tester picker (mybows, arrowpick, arrowchooser, ac1-ac5) already time out on main; not touched.
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.

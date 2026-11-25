@@ -4,6 +4,22 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-26-0643-tuning: Tuning sessions — tear keypad, crosshair, What I changed
+- **Past sessions can be deleted.** Each past tuning session has a Delete button, with a confirm ("Delete … from <date>? This can't be undone."). Cancel keeps it.
+- **One bow picker and one arrow picker** on a new session. The bow picker lists your setups and shows the bow's published figures under it. The arrow picker lists your Arrow chooser setup and your My arrows sets.
+- **Bow mismatch fixed:** a setup named "Hoyt concept x 40" showed "Bow specs: Concept X 37" because the specs saved on it came from another list entry. When a setup's name names a different bow on the list, that bow's published figures are used (Hoyt Concept X 40: IBO/ATA 327 fps, 40" axle to axle, 7.25" brace) and your own draw weight, draw length and let-off are kept. Fixed in the tuning form, the Arrow chooser and the Calculators. Saved specs are not rewritten.
+- **Paper tune:** no target face. A keypad of tear shapes laid out like the scoring pad (nock high-left, high, high-right / left, bullet hole, right / low-left, low, low-right). One tap per arrow, any number of arrows, with Undo and Clear. Shows the count per tear and fix hints for the most common tear (compound or recurve, right- or left-handed).
+- **Other tunes plot on a crosshair** (5 cm grid): Torque tune shows the vertical line only, Dudley / yoke tune the horizontal line only, Group tune and the rest both lines.
+- **What I changed** card on every session: what (dropdown), direction, amount and note, filtered by a Compound / Recurve switch. Lists from Archery Coach (26 Nov, about 6:13am Perth) for paper, bare shaft vs fletched, torque, Dudley / yoke, group and walk-back. Yoke twists can be logged without a rest move. Items are marked George only where Coach marked them.
+- **Arrow setup** (Before / After table) is now an optional section, closed unless you open it.
+- **Walk-back:** Easton's guide has no walk-back test, so the app doesn't say which way to move the plunger from a walk-back line. It quotes Easton's only in/out rule (broadheads, p. 12) and Easton's recurve rule to change spring tension only past setup (pp. 8, 14).
+- Bare shaft vs fletched (R3 verdict + next step) and Arrow chooser AC1-AC5 were already live; they are kept and re-checked here. The bare-shaft verdict now uses the session's Compound / Recurve switch.
+- **Removed:** the "Use my arrow setup" tick box, the Face choice on tuning sessions (old sessions keep their face and are shown at its scale), the separate "Bow specs for this session" and "Arrow set for this session" pickers (replaced by one Bow and one Arrows picker), and "Rest or nock height", "Cam timing or shims" and "Group test" as session types ("Group test" is now "Group tune"; rest, nock and cam changes are logged under What I changed). Old sessions with those names still open. The line "It gives no tuning advice; that's your coach's job." is gone now that the app shows fix hints.
+- Cache version is `v2026-11-26-0643-tuning`. Not merged until go-live.
+
+### Files
+lab.js, lab.css, bows.js, arrows.js, tune.js, tools/tuning_test.py (new), index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-26-0458-plansmanage: Plans — manage or cancel, copy fixes
 - Signed-in paid members now see "Your plan" at the top of Plans with a "Manage or cancel subscription" button (opens the billing page where they can change card or cancel). The same button is on the home plan card. Their current plan's button says "Your plan".
 - Back from checkout, Plans opens and keeps checking with the server for about 20 seconds until the new plan shows (the payment confirmation can land a few seconds after the return). If not signed in, it asks to sign in to finish.

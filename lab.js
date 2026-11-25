@@ -150,59 +150,155 @@ E.lab_rounds=function(){const esc=h;app.innerHTML=`<p class="small" id="aaintro"
  bar('Rounds','tools','Tools');
  const paint=()=>{const box=$('#aalist');if(box&&window.aaRoundsList)box.innerHTML=aaRoundsList();app.querySelectorAll('[data-aa]').forEach(b=>b.onclick=()=>{window._aaOpen=window._aaOpen===b.dataset.aa?'':b.dataset.aa;paint()})};
  const q=$('#aaq');if(q)q.oninput=()=>{window._aaQ=q.value;paint()};paint()};
-const CHANGES=['Just a group','Bare shaft vs fletched','Paper tune','Walk-back','Group test','Rest or nock height','Cam timing or shims','Other'];
-const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};
+/* Tuning sessions (26 Nov 2026, Nathe via Grok Bot, "Yes, build the tuning preview"):
+   - one bow picker and one arrow picker on a new session (the 'Use my arrow setup' tick box and the Face choice are gone);
+   - Paper tune is a keypad of tear shapes laid out like the scoring pad, one tap per arrow, any number of arrows;
+   - every other tune plots on a crosshair: Torque = vertical line only, Dudley = horizontal line only, the rest both lines;
+   - 'What I changed' per tune: item + direction + amount + note, filtered by a Compound / Recurve switch (lists from Archery Coach,
+     26 Nov ~6:13am Perth; George items marked only where Coach marked them), with tear-to-fix hints on Paper tune;
+   - the Arrow setup table is an optional, closed section; past sessions can be deleted (with a confirm).
+   Stored data: new sessions add their own fields (bt, span, paper, changes, bowSpec, arrow). Old sessions keep their face and plots
+   and are shown on the crosshair at their old face's scale; nothing old is rewritten. Lingkana data is never read or written here. */
+const TUNES=['Paper tune','Bare shaft vs fletched','Torque tune','Dudley / yoke tune','Group tune','Walk-back','Just a group','Other'];
+const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};/* old sessions only: the face they were plotted on */
+const SPAN=20;/* new crosshair: centre to edge = 20 cm, grid every 5 cm */
 function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length;
  const mr=P.reduce((a,p)=>a+Math.hypot(p[0]-cx,p[1]-cy),0)/P.length;let es=0;P.forEach(a=>P.forEach(b=>{es=Math.max(es,Math.hypot(a[0]-b[0],a[1]-b[1]))}));
  return{n:P.length,cx:cx*rcm,cy:cy*rcm,mr:mr*rcm,es:es*rcm}}
 const cm=v=>(Math.round(v*10)/10).toFixed(1);
 const dir=(x,y)=>`${cm(Math.abs(x))} cm ${x>=0?'right':'left'}, ${cm(Math.abs(y))} cm ${y>=0?'low':'high'}`;
+const tKind=T=>T.face?'legacy':({'Paper tune':'paper','Bare shaft vs fletched':'bare','Torque tune':'torque','Dudley / yoke tune':'dudley','Group tune':'group','Group test':'group','Walk-back':'walk'})[T.change]||'group';
+const tScale=T=>T.face?(FACES[T.face]||20):(T.span||SPAN);
+/* 'What I changed' lists: Archery Coach, 26 Nov 2026 ~6:13am Perth. [label, directions, bow c/r/b, George] */
+const DIRS={ud:['Up','Down'],lr:['Left','Right'],io:['In (toward the bow)','Out (away from the bow)'],sp:['More tension','Less tension'],tw:['Add twists','Take out twists'],hl:['Higher','Lower'],id:['Increase','Decrease'],ar:['Heavier point','Lighter point','Stiffer spine','Weaker spine','Cut shorter'],pt:['Heavier','Lighter'],len:['Shorter','Longer'],et:['Earlier','Later'],any:['Changed']};
+const WHAT={
+ paper:[['Rest up/down','ud','c'],['Rest left/right (centre shot)','lr','c'],['Nocking point / D-loop up/down','ud','c'],['Yoke twists (cam lean)','lr','c'],['Cam timing (cable/string twists)','tw','c'],['Drop-away timing','et','c'],['Spine / point weight / cut length','ar','c'],['Grip / hand pressure (torque)','any','c'],
+  ['Nocking point up/down','ud','r'],['Plunger in/out (centre shot)','io','r'],['Plunger spring tension','sp','r'],['Brace height','hl','r'],['Tiller','id','r'],['Point weight / spine / length','ar','r'],['Draw weight (limb bolts)','ud','r']],
+ bare:[['Nocking point up/down','ud','b'],['Rest height','ud','c'],['Rest left/right','lr','c'],['Yoke twists (no rest move)','lr','c'],['Plunger in/out','io','r'],['Plunger spring tension','sp','r'],['Point weight','pt','b'],['Cut length','len','b'],['Draw weight','ud','b']],
+ torque:[['Sight one click left/right','lr','b',1],['Yoke / cam lean','lr','c'],['Grip','any','b']],
+ dudley:[['Sight left/right (close, about 2.5 yd, 60 yd pin)','lr','c',1],['Arrow rest left/right (far, 60 yd)','lr','c',1],['Yoke twists (no rest move)','lr','c']],
+ group:[['Nocking point (small steps)','ud','b'],['Rest height','ud','b'],['Point weight','pt','b'],['Draw weight','ud','b'],['Brace height','hl','b'],['Tiller','id','r'],['Plunger spring','sp','r'],['Yoke twists','lr','c'],['Cam timing','tw','c']],
+ walk:[['Plunger in/out (centre shot)','io','r',1],['Plunger spring tension','sp','r',1],['Nocking point (only if the vertical spread is bad)','ud','r']]};
+const tWhat=k=>(WHAT[k]||WHAT.group).concat([['Other','any','b']]);
+const GEO='<span class="tgeo">George</span>';
+function eastonLink(p){const S2=window.ARROW_SRC||{},t=S2.eastonTM;return t?`<a href="${t[1]}" target="_blank" rel="noopener">Easton Arrow Tuning and Maintenance Guide</a>${p?', '+p:''}`:`Easton Arrow Tuning and Maintenance Guide${p?', '+p:''}`}
+/* How to read each tune: Coach's lines; Easton cited where it is Easton */
+function readNote(k){const W={
+ paper:`Stand about 5 ft from the paper. ${GEO} Errors show from 0 to 12 ft before the vanes correct them, and a bullet hole means straight flight, not accuracy.`,
+ torque:`Torque-in and torque-out groups both on the line = done. ${GEO} Confusing results usually mean you torqued too hard.`,
+ dudley:`${GEO} (credit John Dudley) Close miss = move the sight. Far miss = move the rest and leave the sight alone. Near and far both on the line = done. If the rest would end up well off centre, use yoke twists instead.`,
+ group:`Keep whichever change gives the tightest group. ${GEO} Works best if you can group at about 60 m, and you can bias it slightly so the setup forgives some human variation.`,
+ walk:`Arrows at every distance on one vertical line = done. Arrows spread left and right at the same distance = spring tension. ${GEO} mentions it briefly: all distances on a vertical line, using plunger in/out and spring.</p><p class="small" id="walkeaston" style="margin:6px 0 0"><b>Which way to move the plunger:</b> Easton's guide has no walk-back test, so ScoreTool does not say which way to move the plunger from a walk-back line. Easton's only in/out rule is for broadheads (right-handed archer): a group to the left acts stiff, move the rest or plunger <b>in toward the bow</b>; to the right acts weak, move it <b>out away from the bow</b>, 1/32" at a time (p. 12). For recurve tuning past the setup stage Easton says to change plunger spring tension only, not the in/out position (pp. 8 and 14).<span class="labsrc" style="display:block">${eastonLink('pp. 8, 12, 14')}</span>`};return W[k]?`<p class="small tread" style="margin:6px 0 0">${W[k]}</p>`:''}
+/* Paper tune keypad: laid out like the scoring pad, 3 x 3. Tear = where the nock end tore, from the point hole. */
+const TEAR=[['ul','Nock high-left'],['u','Nock high'],['ur','Nock high-right'],['l','Nock left'],['b','Bullet hole'],['r','Nock right'],['dl','Nock low-left'],['d','Nock low'],['dr','Nock low-right']];
+const tearName=c=>(TEAR.find(x=>x[0]==c)||[0,c])[1];
+function tearSvg(c){const v={u:[0,-1],d:[0,1],l:[-1,0],r:[1,0],ul:[-.7,-.7],ur:[.7,-.7],dl:[-.7,.7],dr:[.7,.7]}[c];
+ if(!v)return`<svg viewBox="-20 -20 40 40" aria-hidden="true"><circle r="6" fill="currentColor"/><path d="M0 -11v-5M9.5 5.5l4.3 2.5M-9.5 5.5l-4.3 2.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+ const[x,y]=v,ex=x*13,ey=y*13,px=-y,py=x;
+ return`<svg viewBox="-20 -20 40 40" aria-hidden="true"><path d="M0 0L${ex} ${ey}" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M${ex} ${ey}l${(x*4+px*5).toFixed(1)} ${(y*4+py*5).toFixed(1)}M${ex} ${ey}l${(x*4-px*5).toFixed(1)} ${(y*4-py*5).toFixed(1)}M${ex} ${ey}l${(x*6).toFixed(1)} ${(y*6).toFixed(1)}" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle r="5" fill="currentColor"/></svg>`}
+/* tear -> fix hints: Archery Coach's list (right-handed); the rest direction for left/right tears is Easton's (pp. 7-8) */
+function tearHint(c,bt,lh){if(c=='b')return`<li><b>Bullet hole:</b> no change. Log it as your baseline. ${GEO} Paper after setup so you know your normal tear.</li>`;
+ const v=c[0]=='u'||c[0]=='d'?c[0]:'',hz=/[lr]$/.test(c)?c.slice(-1):'',comp=bt!='r',out=[];
+ if(v&&hz)out.push(`<li>Two things at once: fix the up/down part first, then the left/right (Easton: correct the vertical pattern, the nocking point, first, then the horizontal).</li>`);
+ if(v=='u')out.push(`<li><b>Nock high:</b> lower the nocking point or raise the rest.${comp?` Also check the drop-away isn't lifting late. ${GEO} A blade rest that's too stiff can tear high.`:''}</li>`);
+ if(v=='d')out.push(`<li><b>Nock low:</b> raise the nocking point or lower the rest. Check vane clearance${comp?' and drop-away timing':''}.${comp?` ${GEO} A blade that's too weak can tear low or vary vertically.`:''}</li>`);
+ if(hz){const L=hz=='l',rh=lh?!L:L;/* rh = reads as a right-handed nock-left tear */
+  out.push(comp?`<li><b>Nock ${L?'left':'right'}:</b> move the rest to the <b>${(L?!lh:lh)?'right':'left'}</b> (Easton, release aid${lh?', mirrored for a left-handed archer':', right-handed'}), or use yoke twists instead (yoke alone is fine, the rest can stay at centre), then spine / point weight, then grip torque.</li>`
+   :`<li><b>Nock ${L?'left':'right'}:</b> spine first: this reads <b>${rh?'stiff':'weak'}</b>${lh?' (left-handed, so mirrored)':''}. Then plunger spring or position, point weight, draw weight.</li>`)}
+ return out.join('')}
+function paperBlock(T,g){const P=T.paper=T.paper||{before:[],after:[]},L=P[g]||[],cnt={};L.forEach(c=>cnt[c]=(cnt[c]||0)+1);
+ const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0],last=L[L.length-1];
+ const pad=`<div class="tpad" id="tpad" role="group" aria-label="Tear shapes. Tap one per arrow.">${TEAR.map(([c,n])=>`<button type="button" data-tear="${c}" aria-label="${n}">${tearSvg(c)}<span>${n.replace('Nock ','')}${cnt[c]?` <b class="tpc">${cnt[c]}</b>`:''}</span></button>`).join('')}</div>`;
+ const list=L.length?`<p class="small" id="tearlist" style="margin:8px 0 0">${L.length} arrow${L.length==1?'':'s'}: ${Object.entries(cnt).map(([c,n])=>`${h(tearName(c))} ×${n}`).join(', ')}</p>`:`<p class="small muted" id="tearlist" style="margin:8px 0 0">Tap the tear shape for each arrow.</p>`;
+ return{pad,list,top:top?top[0]:null,last}}
+function paperHints(T,code){if(!code)return'';return`<div class="lab-note" id="tearhint"><p style="margin:0"><b>Most common tear: ${h(tearName(code))}</b> <span class="small muted">(${T.bt=='r'?'recurve':'compound'}${T.hand=='L'?', left-handed':', right-handed'})</span></p><ul style="margin:6px 0 0;padding-left:18px">${tearHint(code,T.bt,T.hand=='L')}</ul><p class="small muted" style="margin:6px 0 0">Change one thing at a time, then shoot through the paper again. Items marked George are from George Ryles' seminar notes; the rest is general tuning guidance. Easton: release aid archers sometimes need the opposite adjustment.</p><p class="labsrc">${eastonLink('pp. 7-8')}</p></div>`}
+function crossSvg(T,rcm,k){const s=rcm/(T.face?rcm:SPAN),lines=k=='torque'?'v':k=='dudley'?'h':'vh',grid=[];
+ const step=5/rcm;for(let i=step;i<1.05;i+=step){grid.push(`<path d="M${i} -1.05V1.05M${-i} -1.05V1.05M-1.05 ${i}H1.05M-1.05 ${-i}H1.05" stroke="var(--tgrid,#cbd5e1)" stroke-width="0.004"/>`)}
+ const L=(lines.includes('v')?`<path d="M0 -1.05V1.05" stroke="#1d4ed8" stroke-width="0.016"/>`:'')+(lines.includes('h')?`<path d="M-1.05 0H1.05" stroke="#1d4ed8" stroke-width="0.016"/>`:'');
+ const dots=T.before.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="0.035" fill="#1d4ed8" stroke="#fff" stroke-width="0.01"/>`).join('')+T.after.map(p=>`<rect x="${p[0]-.032}" y="${p[1]-.032}" width="0.064" height="0.064" fill="#00c8ff" stroke="#0b1f4d" stroke-width="0.01"/>`).join('');
+ const lbl=lines=='v'?'a vertical line':lines=='h'?'a horizontal line':'a crosshair';
+ return`<svg class="tface tcross" id="tface" data-lines="${lines}" viewBox="-1.05 -1.05 2.1 2.1" role="img" aria-label="Tuning plot on ${lbl}, grid every 5 cm. Tap where each arrow landed."><rect x="-1.05" y="-1.05" width="2.1" height="2.1" fill="var(--tbg,#fff)"/>${grid.join('')}${L}${dots}</svg>`}
+function whatCard(T,k){const bt=T.bt||'c',all=tWhat(k),L=all.filter(x=>x[2]=='b'||x[2]==bt),use=L.length>1?L:all,ch=T.changes||[];
+ const other=bt=='c'?'recurve':'compound',none=L.length<=1?`<p class="small muted" style="margin:0 0 6px">Coach's list for this tune is for ${other} bows; showing it anyway.</p>`:'';
+ const it=use[0];
+ return`<div class="card" id="whatcard"><span class="kicker">What I changed</span>
+ <div class="labseg" role="group" aria-label="Bow type" id="wbt"><button data-bt="c" aria-pressed="${bt=='c'}">Compound</button><button data-bt="r" aria-pressed="${bt=='r'}">Recurve</button></div>${none}
+ ${ch.length?`<ul class="tchg" id="tchg">${ch.map((c,i)=>`<li><span><b>${h(c.item)}</b>${c.dir&&c.dir!='Changed'?' · '+h(c.dir):''}${c.amt?' · '+h(c.amt):''}${c.note?`<br><span class="small">${h(c.note)}</span>`:''}<br><span class="small muted">${h(c.date||'')}</span></span><button class="btn ghost" data-wdel="${i}" aria-label="Remove ${h(c.item)}">Remove</button></li>`).join('')}</ul>`:`<p class="small muted" style="margin:6px 0">Nothing logged yet.</p>`}
+ <div class="labgrid2"><div><label for="wi">What</label><select id="wi">${use.map((x,i)=>`<option value="${i}">${h(x[0])}${x[3]?' (George)':''}</option>`).join('')}</select></div>
+ <div><label for="wd">Direction</label><select id="wd">${DIRS[it[1]].map(d=>`<option>${h(d)}</option>`).join('')}</select></div>
+ <div><label for="wa">Amount</label><input id="wa" maxlength="30" placeholder="e.g. 1/16 in, 1 click, 1/8 turn"></div>
+ <div><label for="wn">Note</label><input id="wn" maxlength="200" placeholder="optional"></div></div>
+ <button class="btn alt" id="wadd" style="margin-top:8px">Add change</button>
+ <p class="small muted" style="margin:6px 0 0">Items marked George are from George Ryles' seminar notes. The rest is general tuning guidance from Archery Coach's list.</p></div>`}
+function whatWire(T,k){const bt=T.bt||'c',all=tWhat(k),L=all.filter(x=>x[2]=='b'||x[2]==bt),use=L.length>1?L:all;
+ app.querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{T.bt=b.dataset.bt;save();render()});
+ const wi=$('#wi');if(wi)wi.onchange=()=>{$('#wd').innerHTML=DIRS[use[+wi.value][1]].map(d=>`<option>${h(d)}</option>`).join('')};
+ const wa=$('#wadd');if(wa)wa.onclick=()=>{const x=use[+$('#wi').value];T.changes=T.changes||[];T.changes.push({item:x[0],dir:$('#wd').value,amt:$('#wa').value.trim(),note:$('#wn').value.trim(),bt,george:!!x[3],date:new Date().toLocaleDateString('en-CA')});save();render()};
+ app.querySelectorAll('[data-wdel]').forEach(b=>b.onclick=()=>{if(confirm('Remove this change?')){T.changes.splice(+b.dataset.wdel,1);save();render()}})}
+function bowLine(id){const s=id&&window.bowSnap?bowSnap(id):null;if(!s)return'';return[s.name,s.type=='compound'&&s.speed?({ATA:'ATA','IBO/ATA':'IBO/ATA',actual:'Measured','':'Speed'}[s.kind]??'IBO')+' '+s.speed+' fps':'',s.ata?s.ata+'" axle to axle':'',s.bh?s.bh+'" brace':''].filter(Boolean).join(' · ')}
 E.lab_opt=function(){S.tune=S.tune||[];const mine=S.tune.filter(t=>t.archer==S.profile),T=mine.find(t=>t.id==S._tuneId);
- if(!T){const b=typeof curBow=='function'&&curBow();
-  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>What are you changing?</h2>
-  <div class="labgrid2"><div><label for="tn">Name</label><input id="tn" placeholder="e.g. Paper tune after new rest"></div>
-  <div><label for="tc">Change</label><select id="tc">${CHANGES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+ if(!T){window._tarwOpen=false;if(typeof seedBows=='function')seedBows();const bows=typeof myBows=='function'?myBows():[],cb=typeof curBow=='function'&&curBow();
+  const sets=window.myArrows?myArrows():[],acs=window.arrowSetup&&arrowSetup(),asel=(S.arrowSel||{})[S.profile];
+  const bopt=b=>{const s=window.bowSnap&&bowSnap(b.id),nm=String(b.name||'Bow').trim(),low=nm.toLowerCase();return`<option value="${b.id}"${cb&&b.id==cb.id?' selected':''}>${h(nm)}${s&&s.model&&!low.includes(String(s.model).toLowerCase())?' ('+h(s.name)+')':''}</option>`};
+  const sdef=acs?'ac':(sets.find(a=>a.id==asel&&(a.shaft||a.spine||a.len))||sets.find(a=>a.shaft||a.spine||a.len)||{}).id||'';
+  const snap0=cb&&window.bowSnap&&bowSnap(cb.id);
+  app.innerHTML=`<div class="card"><span class="kicker">New tuning session</span><h2>Which tune?</h2>
+  <div class="labgrid2"><div><label for="tc">Tune</label><select id="tc">${TUNES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+  <div><label for="tn">Name</label><input id="tn" placeholder="e.g. Paper tune after new rest"></div>
   <div><label for="td">Distance</label><input id="td" placeholder="e.g. 18m or 20yd"></div>
-  <div><label for="tf">Face</label><select id="tf">${Object.keys(FACES).map(f=>`<option ${f=='40cm'?'selected':''}>${f}</option>`).join('')}</select></div></div>
-  <p class="small muted">Setup: ${b?h(b.name):'none (add one in My archery › Setups & sight marks)'}</p>
-  ${(()=>{const a=window.arrowSetup&&arrowSetup();return a?`<label class="row" style="gap:8px;justify-content:flex-start;align-items:center;margin:4px 0 8px"><input type="checkbox" id="tarw" style="width:22px;height:22px" checked> <span>Use my arrow setup <span class="small muted">(${h(arwSum(a))})</span></span></label>`:`<p class="small muted">Arrow setup: none yet. <button class="btn ghost" data-go="lab_chooser" style="min-height:32px;padding:4px 10px">Arrow chooser</button></p>`})()}
-  <div id="thandw" hidden><label for="thand">Bow hand</label><select id="thand"><option value="R">Right-handed archer</option><option value="L">Left-handed archer</option></select></div>
-  <button class="btn alt full" id="tgo">Start plotting</button></div>
-  ${mine.length?`<div class="card"><span class="kicker">Past sessions</span>${mine.slice().reverse().map(t=>{const B=gstats(t.before,FACES[t.face]),A=gstats(t.after,FACES[t.face]);return row('x" data-tune="'+t.id,'🎯',t.name||t.change,`${t.date} · ${t.change}${t.dist?' · '+t.dist:''} · ${B?B.n:0} before${A?' / '+A.n+' after':''}`)}).join('')}</div>`:''}
-  <p class="small muted">Records where your arrows land. It gives no tuning advice; that's your coach's job.</p>`;
+  <div><label>Bow type</label><div class="labseg" role="group" aria-label="Bow type" id="tbt"><button data-nbt="c" aria-pressed="${!(snap0&&snap0.type!='compound')}">Compound</button><button data-nbt="r" aria-pressed="${!!(snap0&&snap0.type!='compound')}">Recurve</button></div></div>
+  <div><label for="t_mybow">Bow</label>${bows.length?`<select id="t_mybow"><option value="">None</option>${bows.map(bopt).join('')}</select>`:`<p class="small muted" id="t_mybow_none" style="margin:4px 0">No bow saved yet. Add one in My archery › Setups &amp; sight marks.</p>`}<p class="small muted" id="t_bowline" style="margin:4px 0 0">${h(bowLine(cb&&cb.id))}</p></div>
+  <div><label for="t_myarr">Arrows</label><select id="t_myarr"><option value="">None</option>${acs?`<option value="ac"${sdef=='ac'?' selected':''}>Arrow chooser: ${h(arwSum(acs))}</option>`:''}${sets.map(a=>`<option value="${h(a.id)}"${a.id==sdef?' selected':''}>${h(a.name||'Arrows')}</option>`).join('')}</select></div>
+  <div id="thandw"><label for="thand">Bow hand</label><select id="thand"><option value="R">Right-handed archer</option><option value="L">Left-handed archer</option></select></div></div>
+  <button class="btn alt full" id="tgo" style="margin-top:8px">Start</button></div>
+  ${mine.length?`<div class="card" id="tpast"><span class="kicker">Past sessions</span>${mine.slice().reverse().map(t=>{const k=tKind(t),rc=tScale(t),B=k=='paper'?null:gstats(t.before,rc),A=k=='paper'?null:gstats(t.after,rc),pn=t.paper?(t.paper.before||[]).length+(t.paper.after||[]).length:0;
+   return`<div class="tpastrow">${row('x" data-tune="'+t.id,'🎯',t.name||t.change,`${t.date} · ${t.change}${t.dist?' · '+t.dist:''} · ${k=='paper'?pn+' arrow'+(pn==1?'':'s'):(B?B.n:0)+' before'+(A?' / '+A.n+' after':'')}`)}<button class="btn ghost tpastdel" data-tdel="${t.id}" aria-label="Delete ${h(t.name||t.change)} from ${h(t.date)}">Delete</button></div>`}).join('')}</div>`:''}
+  <p class="small muted">Records where your arrows land and what you changed.</p>`;
   bar('Arrow optimizer','tools','Tools');
-  const tcs=()=>{$('#thandw').hidden=$('#tc').value!='Bare shaft vs fletched'};$('#tc').onchange=tcs;tcs();
-  $('#tgo').onclick=()=>{const t={id:'t'+Date.now(),archer:S.profile,date:new Date().toLocaleDateString('en-CA'),name:$('#tn').value.trim(),change:$('#tc').value,dist:$('#td').value.trim(),face:$('#tf').value,bow:b?b.id:null,bowName:b?b.name:'',before:[],after:[],grp:'before'};
-   /* new sessions only: a snapshot of the Arrow chooser setup, and the bow hand for a bare-shaft test. Old sessions are never rewritten. */
-   const aw=$('#tarw');if(aw&&aw.checked&&window.arrowSetup){const a=arrowSetup();if(a)t.arrow=a}if(t.change=='Bare shaft vs fletched')t.hand=$('#thand').value;
-   S.tune.push(t);S._tuneId=t.id;save();render()};
-  app.querySelectorAll('[data-tune]').forEach(x=>x.onclick=()=>{S._tuneId=x.dataset.tune;save();render()});return}
- const rcm=FACES[T.face]||20,g=T.grp||'before',B=gstats(T.before,rcm),A=gstats(T.after,rcm),one=T.change=='Just a group',bare=T.change=='Bare shaft vs fletched';
+  let nbt=snap0&&snap0.type!='compound'?'r':'c';
+  app.querySelectorAll('[data-nbt]').forEach(b=>b.onclick=()=>{nbt=b.dataset.nbt;app.querySelectorAll('[data-nbt]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.nbt==nbt))});
+  const tcs=()=>{$('#thandw').hidden=!['Bare shaft vs fletched','Paper tune'].includes($('#tc').value)};$('#tc').onchange=tcs;tcs();
+  const pb=$('#t_mybow');if(pb)pb.onchange=()=>{$('#t_bowline').textContent=bowLine(pb.value);const s=pb.value&&window.bowSnap&&bowSnap(pb.value);if(s){nbt=s.type=='compound'?'c':'r';app.querySelectorAll('[data-nbt]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.nbt==nbt))}};
+  $('#tgo').onclick=()=>{const bid=pb?pb.value:'',b=bows.find(x=>x.id==bid),c=$('#tc').value;
+   const t={id:'t'+Date.now(),archer:S.profile,date:new Date().toLocaleDateString('en-CA'),name:$('#tn').value.trim(),change:c,dist:$('#td').value.trim(),span:SPAN,bt:nbt,bow:b?b.id:null,bowName:b?b.name:'',before:[],after:[],grp:'before',changes:[]};
+   if(c=='Paper tune')t.paper={before:[],after:[]};
+   const snap=b&&window.bowSnap&&bowSnap(b.id);if(snap)t.bowSpec=snap;
+   const av=$('#t_myarr').value;if(av=='ac'&&acs)t.arrow=acs;else if(av&&window.arrowSnapOf&&window.myArrow){const o=myArrow(av);if(o)t.arrow=arrowSnapOf(o)}
+   if(['Bare shaft vs fletched','Paper tune'].includes(c))t.hand=$('#thand').value;
+   S.tune.push(t);S._tuneId=t.id;save();render();scrollTo(0,0)};
+  app.querySelectorAll('[data-tune]').forEach(x=>x.onclick=()=>{S._tuneId=x.dataset.tune;save();render();scrollTo(0,0)});
+  app.querySelectorAll('[data-tdel]').forEach(x=>x.onclick=e=>{e.stopPropagation();const t=S.tune.find(y=>y.id==x.dataset.tdel&&y.archer==S.profile);if(!t)return;
+   if(confirm(`Delete "${t.name||t.change}" from ${t.date}? This can't be undone.`)){S.tune=S.tune.filter(y=>y!==t);save();render()}});return}
+ const k=tKind(T),rcm=tScale(T),g=T.grp||'before',paper=k=='paper',one=T.change=='Just a group',bare=k=='bare';
+ const B=paper?null:gstats(T.before,rcm),A=paper?null:gstats(T.after,rcm);
  const LB=bare?'Fletched':'Before',LA=bare?'Bare':'After';
- const rings=[...Array(10)].map((_,i)=>`<circle cx="0" cy="0" r="${(10-i)/10}" fill="${i>=8?'#ffd84d':'#fff'}" stroke="${i%2?'#94a3b8':'#1e293b'}" stroke-width="0.006"/>`).join('');
- const dots=T.before.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="0.035" fill="#1d4ed8" stroke="#fff" stroke-width="0.01"/>`).join('')+T.after.map(p=>`<rect x="${p[0]-.032}" y="${p[1]-.032}" width="0.064" height="0.064" fill="#111" stroke="#fff" stroke-width="0.01"/>`).join('');
- const cen=(S2,c)=>S2?`<path d="M${S2.cx/rcm-.06} ${S2.cy/rcm}h.12M${S2.cx/rcm} ${S2.cy/rcm-.06}v.12" stroke="${c}" stroke-width="0.012"/>`:'';
  const line=(nm,s)=>s?`<tr><th>${nm}</th><td>${s.n}</td><td>${cm(s.mr*2)} cm</td><td>${cm(s.es)} cm</td><td>${dir(s.cx,s.cy)}</td></tr>`:`<tr><th>${nm}</th><td colspan="4" class="muted">No arrows yet</td></tr>`;
- let cmp='';if(bare)cmp=bareVerdict(T,B,A);else if(B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
- app.innerHTML=`<div class="card"><span class="kicker">${h(T.date)} · ${h(T.change)}${T.dist?' · '+h(T.dist):''} · ${h(T.face)} face${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||T.change)}</h2>
- <div class="labgrid2"><div>
- ${one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">● ${LB}</button><button data-g="after" aria-pressed="${g=='after'}">■ ${LA}</button></div>`}
- <svg class="tface" id="tface" viewBox="-1.05 -1.05 2.1 2.1" role="img" aria-label="Tuning face. Tap where each arrow landed.">${rings}${dots}${cen(B,'#1d4ed8')}${cen(A,'#111')}</svg>
- <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${one?'group':g}</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">🗑 Delete</button></div>
- </div><div>
- <table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● '+LB,B)}${one?'':line('■ '+LA,A)}</tbody></table>
- ${bare?`<label for="tvhand">Bow hand</label><select id="tvhand"><option value=""${T.hand?'':' selected'}>Not set</option><option value="R"${T.hand=='R'?' selected':''}>Right-handed archer</option><option value="L"${T.hand=='L'?' selected':''}>Left-handed archer</option></select>`:''}${cmp}<p class="small muted">Tap where each arrow landed. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows. Sizes use the ${h(T.face)} face.</p>
- <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>${arwCard(T,one)}${bare?bareCard(T,B,A):''}`;
+ let cmp='';if(bare)cmp=bareVerdict(T,B,A);else if(!paper&&B&&A&&B.n>1&&A.n>1){const d=Math.round((1-A.mr/B.mr)*100);cmp=`<p class="lab-note">After the change the group is <b>${Math.abs(d)}% ${d>=0?'tighter':'wider'}</b> (average spread ${cm(B.mr*2)} → ${cm(A.mr*2)} cm) and its centre moved ${dir(A.cx-B.cx,A.cy-B.cy)}.</p>`}
+ const pp=paper?paperBlock(T,g):null;
+ const seg=one?'':`<div class="labseg" role="group" aria-label="Which group"><button data-g="before" aria-pressed="${g=='before'}">${paper?'':'● '}${LB}</button><button data-g="after" aria-pressed="${g=='after'}">${paper?'':'■ '}${LA}</button></div>`;
+ const plot=paper?pp.pad+pp.list:crossSvg(T,rcm,k);
+ const stats=paper?paperHints(T,pp.top):`<table class="labtbl"><thead><tr><th></th><th>Arrows</th><th>Avg spread</th><th>Widest</th><th>Centre</th></tr></thead><tbody>${line(one?'● Group':'● '+LB,B)}${one?'':line('■ '+LA,A)}</tbody></table>`;
+ const help=paper?'':`<p class="small muted">Tap where each arrow landed. Grid squares are 5 cm${T.face?` (this older session uses its ${h(T.face)} face's scale)`:''}. Avg spread = twice the average distance from the group centre. Widest = the two furthest-apart arrows.</p>`;
+ app.innerHTML=`<div class="card"><span class="kicker">${h(T.date)} · ${h(T.change)}${T.dist?' · '+h(T.dist):''}${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||T.change)}</h2>
+ <div class="labgrid2"><div>${seg}${plot}
+ <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${one?'group':h((g=='before'?LB:LA).toLowerCase())}</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">Delete session</button></div>
+ </div><div>${stats}
+ ${bare||paper?`<label for="tvhand">Bow hand</label><select id="tvhand"><option value=""${T.hand?'':' selected'}>Not set</option><option value="R"${T.hand=='R'?' selected':''}>Right-handed archer</option><option value="L"${T.hand=='L'?' selected':''}>Left-handed archer</option></select>`:''}${cmp}${readNote(k)}${help}
+ <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div></div></div>${whatCard(T,k)}${arwCard(T,one)}${bare?bareCard(T,B,A):''}`;
  bar('Tuning session','lab_opt','Arrow optimizer');
- const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;(one||g=='before'?T.before:T.after).push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()};
+ const grp=()=>one||g=='before'?'before':'after';
+ if(paper){app.querySelectorAll('[data-tear]').forEach(b=>b.onclick=()=>{T.paper=T.paper||{before:[],after:[]};(T.paper[grp()]=T.paper[grp()]||[]).push(b.dataset.tear);save();render()})}
+ else{const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2.1-1.05,y=(e.clientY-r.top)/r.height*2.1-1.05;T[grp()].push([+x.toFixed(3),+y.toFixed(3),new Date().toLocaleDateString('en-CA')]);save();render()}}
  app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{T.grp=b.dataset.g;save();render()});
- $('#tun').onclick=()=>{(one||g=='before'?T.before:T.after).pop();save();render()};
- $('#tclr').onclick=()=>{if(confirm('Clear these arrows?')){if(one||g=='before')T.before=[];else T.after=[];save();render()}};
+ $('#tun').onclick=()=>{if(paper)(T.paper[grp()]||[]).pop();else T[grp()].pop();save();render()};
+ $('#tclr').onclick=()=>{if(confirm('Clear these arrows?')){if(paper)T.paper[grp()]=[];else T[grp()]=[];save();render()}};
  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
- $('#tdel').onclick=()=>{if(confirm('Delete this tuning session?')){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
+ $('#tdel').onclick=()=>{if(confirm(`Delete "${T.name||T.change}" from ${T.date}? This can't be undone.`)){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;save();render()}};
  $('#tnote').onchange=e=>{T.note=e.target.value;save()};
  const th=$('#tvhand');if(th)th.onchange=()=>{if(th.value)T.hand=th.value;else delete T.hand;save();render()};
- const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;save();render()}};arwWire(T);
+ whatWire(T,k);
+ const ad=$('#tarwcard');if(ad)ad.addEventListener('toggle',()=>{window._tarwOpen=ad.open});
+ const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;window._tarwOpen=true;save();render()}};arwWire(T);
  app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go))};
 /* Arrow setup in a tuning session (22 Oct 2026, Nathe): new sessions carry a snapshot of the Arrow chooser setup (t.arrow);
    'Use my current arrow setup for After' adds t.arrowAfter, so the session shows exactly what changed. Old sessions show nothing. */
@@ -221,11 +317,11 @@ function arwCard(T,one){const a=T.arrow||null,b=T.arrowAfter||null,L=window.arro
   return`<td><input id="${id}" class="ta_in" data-ta="${side}:${k}" ${u=='text'?'maxlength="30"':'inputmode="decimal"'} value="${h(String(v))}" aria-label="${side=='b'?(one?'Arrow':'Before'):'After'} ${TA_F.find(x=>x[0]==k)[1]}${u!='text'?' ('+u+')':''}"${m?` aria-invalid="true" aria-describedby="${id}_bad"`:''}>${m?`<p class="labbad" id="${id}_bad" role="alert">${h(m)}</p>`:''}</td>`};
  const rows=TA_F.map(([k,n,u])=>`<tr><th>${n}${u!='text'?` <span class="muted small">(${u})</span>`:''}</th>${cell('b',a,k,u)}${one?'':cell('a',b,k,u)}</tr>`).join('');
  const sum=x=>x?h(arwSum(x)):'';
- return`<div class="card" id="tarwcard"><span class="kicker">Arrow setup</span>${a&&b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
+ return`<details class="card" id="tarwcard"${window._tarwOpen?' open':''}><summary><span class="kicker">Arrow setup (optional)</span> <span class="small muted">${a&&b?'Before and after':'Only if you changed arrows'}</span></summary>${a&&b?`<p style="margin:2px 0 8px">${changed.length?'What changed: <b>'+h(changed.join(', '))+'</b>':'Nothing changed between Before and After.'}</p>`:''}
  ${a&&arwSum(a)?`<p class="small" style="margin:0 0 6px">${one?'Arrow':'Before'}: ${sum(a)}${b&&arwSum(b)?`<br>After: ${sum(b)}`:''}</p>`:''}
  <table class="labtbl tarwtbl"><thead><tr><th></th><th>${one?'Arrow':'Before'}</th>${one?'':'<th>After</th>'}</tr></thead><tbody>${rows}</tbody></table>
  <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-top:8px">${!a&&window.arrowSetup&&arrowSetup()?`<button class="btn ghost" id="tarwbefore">Use my current arrow setup for ${one?'this group':'Before'}</button>`:''}${one?'':`<button class="btn ghost" id="tarwafter">${b?'Update After to my current setup':'Use my current arrow setup for After'}</button>`}<button class="btn ghost" data-go="lab_chooser">Arrow chooser</button></div>
- <p class="small muted" style="margin:6px 0 0">Type in any box to correct it. Changes are kept with this session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved.</p></div>`}
+ <p class="small muted" style="margin:6px 0 0">Type in any box to correct it. Changes are kept with this session only; your Arrow chooser, My bows and My arrows are not changed. A figure outside the usual range is pointed out and not saved.</p></details>`}
 function arwWire(T){app.querySelectorAll('[data-ta]').forEach(x=>x.onchange=()=>{const[side,k]=x.dataset.ta.split(':'),u=TA_F.find(f=>f[0]==k)[2],raw=x.value.trim(),pk=T.id+':'+side+':'+k;
   if(u!='text'&&raw!==''&&window.arrowLim&&arrowLim(k,raw)){TA_PEND[pk]=raw;render();return}
   delete TA_PEND[pk];
@@ -240,7 +336,7 @@ function arwWire(T){app.querySelectorAll('[data-ta]').forEach(x=>x.onchange=()=>
    so a compound (release aid) session gets a note to paper tune first. Uses the same spread rule as the Bare shaft reading card. */
 function bareVerdict(T,B,A){if(!B||!A||B.n<3||A.n<2)return`<p class="lab-note" id="bareverdict">Plot at least 3 fletched (●) and 2 bare (■) arrows to see the verdict.</p>`;
  const dx=A.cx-B.cx,dy=A.cy-B.cy,sp=B.mr,hd=T.hand,lh=hd=='L',side=Math.abs(dx)<=sp?'ok':(lh?dx<0:dx>0)?'weak':'stiff',vert=Math.abs(dy)<=sp?'':dy<0?'high':'low';
- const comp=(T.arrow&&T.arrow.bow=='compound')||/compound/i.test(T.bowName||'');
+ const comp=T.bt?T.bt=='c':((T.arrow&&T.arrow.bow=='compound')||/compound/i.test(T.bowName||''));
  const parts=[];let next=[];
  if(!hd&&side!='ok')parts.push(`bare shafts ${cm(Math.abs(dx))} cm ${dx>0?'right':'left'} of the fletched group; choose the bow hand to see weak or stiff`);
  else if(side=='ok')parts.push('side to side the bare shafts are with the fletched group, so spine looks right');

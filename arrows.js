@@ -96,12 +96,7 @@ const _ch=E.lab_chooser;if(_ch)E.lab_chooser=function(){_ch();const K='scoretool
   localStorage.setItem(K,JSON.stringify(R));render()}};
 /* Arrow optimizer: a new session can carry a snapshot of a My arrows set (t.arrow, the same shape the Arrow setup card shows) */
 const snapOf=o=>({bow:'',name:o.name,setId:o.id,spine:o.spine?String(o.spine):'',model:o.shaft||'',len:isFinite(num(o.len))?num(o.len):null,pt:isFinite(num(o.pt))?num(o.pt):null,foc:o.foc,tw:o.weight||null,fps:isFinite(num(o.fps))?Math.round(num(o.fps)):null,fpsSrc:isFinite(num(o.fps))?'measured':''});
-const _op=E.lab_opt;if(_op)E.lab_opt=function(){_op();const g=$('#tgo');if(!g)return;
- g.insertAdjacentHTML('beforebegin',apick('t_myarr','','Arrow set for this session'));bindA();
- const p=$('#t_myarr'),aw=$('#tarw');if(p)p.onchange=()=>{const w=$('#t_myarrnote');if(w)w.remove();const o=p.value?window.myArrow(p.value):null;if(o){if(aw)aw.checked=false;note('t_myarr','This session will save '+o.name+': '+(sum(o)||'no details yet')+'.')}};
- if(aw)aw.addEventListener('change',()=>{if(aw.checked&&p)p.value=''});
- const o0=g.onclick;g.onclick=function(){const o=p&&p.value?window.myArrow(p.value):null;const n0=(S.tune||[]).length;o0.apply(this,arguments);
-  if(o&&(S.tune||[]).length>n0){const t=S.tune[S.tune.length-1];if(t&&t.id==S._tuneId&&!t.arrow){t.arrow=snapOf(o);save();render()}}}};
+window.arrowSnapOf=snapOf;/* the tuning form in lab.js has the one arrow picker (26 Nov 2026) */
 /* My archery menu: a My arrows row after My bows */
 const _ma=E.myarch;if(_ma)E.myarch=function(){_ma();const g=app.querySelector('[data-go=lab_mybows]')||app.querySelector('[data-go=lab_gear]');if(g&&!app.querySelector('[data-go=lab_myarrows]')){
  g.insertAdjacentHTML('afterend',`<button class="labrow" data-go="lab_myarrows"><span class="i" aria-hidden="true">${ic('arrow')}</span><span><b>My arrows</b><small>Each arrow set once: shaft, spine, length, weights, fletching and FOC</small></span><span class="go" aria-hidden="true">›</span></button>`);
