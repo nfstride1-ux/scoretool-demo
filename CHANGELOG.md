@@ -4,6 +4,13 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-26-0458-plansmanage: Plans — manage or cancel, copy fixes
+- Signed-in paid members now see "Your plan" at the top of Plans with a "Manage or cancel subscription" button (opens the billing page where they can change card or cancel). The same button is on the home plan card. Their current plan's button says "Your plan".
+- Back from checkout, Plans opens and keeps checking with the server for about 20 seconds until the new plan shows (the payment confirmation can land a few seconds after the return). If not signed in, it asks to sign in to finish.
+- Opening Plans while signed in re-checks the plan straight away.
+- Copy (Nathe t1207u, t1208u): Plus no longer lists Squads (Squads was removed from the app). Free says "League scoring" and no tier names Lingkana.
+- Removed from the Plans copy only: the "Squads" line on Plus and the words "match play and Lingkana" on Free. No app feature is removed; gating is unchanged.
+
 ## v2026-11-25-1833-oauth: Plans (Stripe) — Free, Plus and Pro
 - New Plans screen (Me > Plans, Settings, and the "See plans" button on a locked screen; `#plans` opens it directly). Plus A$4.99 a month or A$49 a year; Pro A$7.99 a month or A$79 a year. The screen shows only each tier, its prices and what it offers; Restore and Manage are small buttons; Restore signs in with Google or Apple. Prices include GST.
 - Free stays free: the score card with plotting and saving, basic stats, setups and sight marks, leagues, match play and Lingkana scoring.
