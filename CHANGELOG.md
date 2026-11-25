@@ -4,6 +4,17 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-26-0714-testscores: Copy live scores onto the test page
+- **Nathaniel's test / preview page can show his live scores**, so analysis has something to work with. The live app, preview links and the in-app `/test/` page do not share saved scores (the test page keeps its own copy, and a preview opened in Safari is separate from the home-screen app).
+- On the live app: Me, then Settings, then **Copy my scores to the test page**. One tap copies them onto the in-app test page and opens it. Live scores are left as they are.
+- On a preview (including scoretool-lab): the first screen has **Load scores from a backup file**. In the ScoreTool home-screen app, save a backup file (Me, then Settings), then load it here. If you had already created a new empty profile, the backup still loads as Nathaniel and does not refuse it.
+- `?tester=nathaniel` or `?tester=nathe` still opens the Nathaniel profile. Scores already saved under the original live key are hooked back up to that profile.
+- Copying does not change live scores, Lingkana data, or anything in the database. Official scoresheets are not shipped in the app (privacy). If those were already imported on the live app, they are included in the copy or the backup.
+- Cache version is `v2026-11-26-0714-testscores`. Not merged until go-live.
+
+### Files
+backup.js, profiles.js, stats2.js, mydata.js (copied into test/), test/teststore.js, test/backup.js, test/testers.js, test/index.html, tools/testscores_test.py (new), index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-26-0458-plansmanage: Plans — manage or cancel, copy fixes
 - Signed-in paid members now see "Your plan" at the top of Plans with a "Manage or cancel subscription" button (opens the billing page where they can change card or cancel). The same button is on the home plan card. Their current plan's button says "Your plan".
 - Back from checkout, Plans opens and keeps checking with the server for about 20 seconds until the new plan shows (the payment confirmation can land a few seconds after the return). If not signed in, it asks to sign in to finish.

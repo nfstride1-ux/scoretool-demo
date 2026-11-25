@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 26 Nov 2026, 07:14 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/test-scores` (cache `v2026-11-26-0714-testscores`). Nathe 26 Nov 6:58am: the Nathaniel test page needs all his scores so he can test analytics. Coaching PR #90 was not changed. Live scores live on the phone (ScoreTool localStorage, and for the home-screen app they are separate from Safari). Calendar sync has 13 finished-round totals only (2025-05-17 to 2026-11-06), not end-by-end data. Official scoresheets are not shipped in previews (privacy-scan / preview_export). So this adds a one-tap copy onto `/test/` and a backup-file load for lab previews, plus hooking the Nathaniel profile back up (`?tester=nathaniel` / orphaned `scoretool.v1`). Live data, Lingkana and the database are not written.
+- Tests: tools/testscores_test.py 13/13 (Chromium, 390x844). safety-smoke 15/15, privacy-scan pass. backup_test.py could not be launched here (WebKit host libraries missing); the new suite covers the mismatch-refuse path and the empty-profile adopt path.
+- Half-done: PR only, not merged. Needs Nathe's "go". On his phone: if he is testing the in-app `/test/` page from the home-screen app, one tap (Settings, Copy my scores to the test page). If he is testing a lab preview in Safari, save a backup in the home-screen app, then load that file on the preview.
+- Decision: no personal scoresheets were added to the repo or the lab preview (privacy). Official history already imported on the live app is carried in the copy/backup.
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.
