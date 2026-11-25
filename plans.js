@@ -85,7 +85,7 @@ async function startCheckout(lookup){
  const root=base();
  if(!root){planMsg('Not available.');return}
  const here=location.origin+location.pathname+location.search;
- const email=(document.getElementById('planemail')||{}).value||'';
+ const email=((read(AUTH)||{}).email)||'';
  planMsg('Opening…');
  try{
   const r=await fetch(root+'/checkout',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({lookup_key:lookup,success_url:here,cancel_url:here,email})});
@@ -93,32 +93,23 @@ async function startCheckout(lookup){
   if(j&&j.url){location.href=j.url;return}
   planMsg('Try again.')}
  catch(e){planMsg('Try again.')}}
-async function sendCode(){
- const email=((document.getElementById('planemail')||{}).value||'').trim();
- if(!email){planMsg('Enter your email.');return}
- planMsg('Sending…');
+/* Paid sign-in is Google or Apple only (Nathe, 25 Nov 2026). Supabase OAuth, implicit flow: the session comes back in the
+   address fragment (#access_token=...), so the return address uses ?plans=1, not #plans. */
+async function oauth(provider){
+ const name=provider==='apple'?'Apple':'Google';
+ planMsg('Opening…');
  try{
-  const back=location.origin+location.pathname+location.search;
-  const r=await fetch(SB+'/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({email,create_user:true,options:{email_redirect_to:back}})});
-  planMsg(r.ok?'Code sent.':'Try again.')}
- catch(e){planMsg('Try again.')}}
-async function confirmCode(){
- const email=((document.getElementById('planemail')||{}).value||'').trim();
- const token=((document.getElementById('plancode')||{}).value||'').replace(/\s/g,'');
- if(!email||!token){planMsg('Enter your email and code.');return}
- planMsg('Checking…');
- try{
-  const r=await fetch(SB+'/auth/v1/verify',{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+KEY_PUB},body:JSON.stringify({type:'email',email,token})});
-  const j=await r.json();
-  if(!r.ok||!j.access_token){planMsg('Wrong code.');return}
-  saveAuth({access_token:j.access_token,refresh_token:j.refresh_token||'',email:(j.user&&j.user.email)||email});
-  const v=await scoretoolEntitlementVerify();
-  if(v.ok){planMsg('');if(typeof render==='function')render()}
-  else planMsg('No plan on that email.')}
- catch(e){planMsg('Try again.')}}
+  const r=await fetch(SB+'/auth/v1/settings',{headers:{apikey:KEY_PUB}});
+  const j=r.ok?await r.json():null;
+  if(!j||!j.external||j.external[provider]!==true){planMsg(name+' sign-in isn’t available yet.');return}
+ }catch(e){planMsg('Try again.');return}
+ const back=location.origin+location.pathname+'?plans=1';
+ location.href=SB+'/auth/v1/authorize?provider='+provider+'&redirect_to='+encodeURIComponent(back)}
+window.scoretoolOAuth=oauth;
+async function authUserEmail(token){try{const r=await fetch(SB+'/auth/v1/user',{headers:{apikey:KEY_PUB,Authorization:'Bearer '+token}});if(!r.ok)return '';const u=await r.json();return String(u&&u.email||'')}catch(e){return ''}}
 async function openPortal(){
  const root=base(),auth=read(AUTH);
- if(!root||!auth||!auth.access_token){planMsg('Tap Restore first.');return}
+ if(!root||!auth||!auth.access_token){planMsg('Tap Restore first.');const rb=document.getElementById('planrest'),rs=document.getElementById('planrestore');if(rb)rb.hidden=false;if(rs)rs.setAttribute('aria-expanded','true');return}
  try{
   const r=await fetch(root+'/portal',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',apikey:KEY_PUB,Authorization:'Bearer '+auth.access_token},body:JSON.stringify({return_url:location.origin+location.pathname+location.search})});
   const j=await r.json();
@@ -144,12 +135,10 @@ function plansInner(){
  <div class="card" id="planfree"><h2 style="margin:0">Free</h2><p class="planprice">A$0</p>${li(FREE_LIST)}</div>
  <div class="card" id="planplus"><h2 style="margin:0">Plus</h2><p class="planprice" id="plusprice">A$4.99 a month</p>${li(PLUS_LIST)}<button class="btn full" id="buyplus" type="button" data-lookup="scoretool_plus_month">Get Plus</button></div>
  <div class="card" id="planpro"><h2 style="margin:0">Pro</h2><p class="planprice" id="proprice">A$7.99 a month</p>${li(PRO_LIST)}<button class="btn alt full" id="buypro" type="button" data-lookup="scoretool_pro_month">Get Pro</button></div>
- <p id="planmsg" role="status"></p>
+ <p id="planmsg" role="status">${window._planNotice&&window._planNotice!=='1'?esc(window._planNotice):''}</p>
  <div class="row" id="planctl" style="gap:8px;justify-content:flex-start"><button class="btn ghost" id="planrestore" type="button" aria-expanded="false">Restore</button>${manage}</div>
- <div id="planrest" hidden><input id="planemail" type="email" autocomplete="email" inputmode="email" placeholder="Email" aria-label="Email">
- <button class="btn ghost full" id="plansend" type="button">Send code</button>
- <input id="plancode" inputmode="numeric" autocomplete="one-time-code" placeholder="Code" aria-label="Code">
- <button class="btn full" id="planconfirm" type="button">Restore</button></div></div>`}
+ <div id="planrest" hidden><button class="btn ghost full" id="plangoogle" type="button">Continue with Google</button>
+ <button class="btn ghost full" id="planapple" type="button">Continue with Apple</button></div></div>`}
 function plansGateHTML(){return '<div id="gate">'+plansInner()+'</div>'}
 window.plansGateHTML=plansGateHTML;
 function plansBind(){
@@ -160,10 +149,10 @@ function plansBind(){
  const bp=document.getElementById('buyplus'),br=document.getElementById('buypro');
  if(bp)bp.onclick=()=>startCheckout(bp.dataset.lookup);
  if(br)br.onclick=()=>startCheckout(br.dataset.lookup);
- const s=document.getElementById('plansend'),c=document.getElementById('planconfirm'),g=document.getElementById('planmanage'),rs=document.getElementById('planrestore'),rb=document.getElementById('planrest');
+ const s=document.getElementById('plangoogle'),c=document.getElementById('planapple'),g=document.getElementById('planmanage'),rs=document.getElementById('planrestore'),rb=document.getElementById('planrest');
  if(rs&&rb)rs.onclick=()=>{rb.hidden=!rb.hidden;rs.setAttribute('aria-expanded',String(!rb.hidden))};
  if(rb&&window._planNotice){rb.hidden=false;if(rs)rs.setAttribute('aria-expanded','true')}
- if(s)s.onclick=sendCode;if(c)c.onclick=confirmCode;if(g)g.onclick=openPortal}
+ if(s)s.onclick=()=>oauth('google');if(c)c.onclick=()=>oauth('apple');if(g)g.onclick=openPortal}
 window.plansBind=plansBind;
 function planHomeHTML(){
  const e=read(ENT)||{};
@@ -179,7 +168,7 @@ if(E.lab_me){const baseMe=E.lab_me;E.lab_me=function(){baseMe.apply(this,argumen
 if(E.lab_settings){const baseSet=E.lab_settings;E.lab_settings=function(){baseSet.apply(this,arguments);if(document.getElementById('plancard'))return;const host=document.getElementById('themecard')||document.getElementById('settingscard');if(!host)return;host.insertAdjacentHTML('beforebegin','<div class="card" id="plancard"><span class="kicker">Plan</span><h2 style="margin:2px 0 6px">'+esc(tierLabel())+'</h2><button class="btn" id="plansee" type="button">See plans</button></div>');document.getElementById('plansee').onclick=()=>nav('plans')}}
 /* #plans opens Plans straight away (the link from archerycalendars.com), with or without a profile on this phone. */
 if(typeof render==='function'){const _render=render;render=function(){
- if(location.hash==='#plans'){window._plansHash=1;const t=document.getElementById('tabs');if(t)t.hidden=!(typeof TESTER!=='undefined'&&TESTER&&S&&S.profile);
+ if(location.hash==='#plans'||window._plansHash){window._plansHash=1;const t=document.getElementById('tabs');if(t)t.hidden=!(typeof TESTER!=='undefined'&&TESTER&&S&&S.profile);
   app.innerHTML='<button class="btn ghost" id="planback" type="button">Back</button>'+plansInner();plansBind();
   document.getElementById('planback').onclick=()=>{window._plansHash=0;history.replaceState(null,'',location.pathname+location.search);_render()};return}
  return _render.apply(this,arguments)}}
@@ -188,7 +177,7 @@ window._plansBoot=location.hash==='#plans'; /* the app's first nav after load sh
 const _nav=nav;
 nav=function(v){
  if(window._plansBoot){window._plansBoot=0;return _nav.apply(this,arguments)}
- if(window._plansHash&&location.hash==='#plans'&&v!=='plans'){window._plansHash=0;history.replaceState(null,'',location.pathname+location.search)}
+ if(window._plansHash&&v!=='plans'){window._plansHash=0;if(location.hash==='#plans')history.replaceState(null,'',location.pathname+location.search)}
  const need=PRO.has(v)?'pro':PLUS.has(v)?'plus':null;
  if(need&&!tierHas(need)){
   view=v;$('#tabs').hidden=false;
@@ -209,6 +198,15 @@ document.addEventListener('click',function(ev){const b=ev.target.closest&&ev.tar
  const q=new URLSearchParams(location.search);
  window._planNotice=q.get('checkout')==='success'?'1':'';
  const h=new URLSearchParams((location.hash||'').replace(/^#/,''));
+ if(q.get('plans')==='1'||q.get('error')||h.get('error')){
+  /* back from Google/Apple: open Plans; a refused or failed sign-in gets one short line */
+  if(q.get('error')||h.get('error'))window._planNotice='Sign-in didn’t work. Try again.';
+  const tok=h.get('access_token'),rt=h.get('refresh_token')||'';
+  if(tok)saveAuth({access_token:tok,refresh_token:rt,email:''});
+  const u=new URL(location.href);['plans','error','error_code','error_description'].forEach(k=>u.searchParams.delete(k));
+  history.replaceState(null,'',u.pathname+u.search+'#plans');window._plansBoot=1;
+  if(tok)authUserEmail(tok).then(function(em){saveAuth({access_token:tok,refresh_token:rt,email:em});return scoretoolEntitlementVerify()}).then(function(){if(typeof render==='function')render()});
+  return}
  if(!h.get('access_token')){
   /* signed-in phone: re-check the plan with the server on open (at most every 10 minutes), so a cancel or a lapse relocks */
   const a=read(AUTH),last=+(localStorage.getItem('scoretool.stripe.checked')||0);

@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 18:33 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/stripe-paid-tier` (cache `v2026-11-25-1833-oauth`). Nathe (via t1196u answer): paid sign-in is Sign in with Google or Apple. Plans > Restore now shows only "Continue with Google" and "Continue with Apple"; the emailed code/magic-link restore is removed from the app. Supabase OAuth (implicit flow): the app checks `/auth/v1/settings` first and says "Google/Apple sign-in isn't available yet." if a provider is off, otherwise goes to `/auth/v1/authorize?provider=...&redirect_to=<app>/?plans=1`. On return the session in the fragment is saved, the account email is read from `/auth/v1/user`, the plan is checked with the edge function, and Plans opens. A refused sign-in shows "Sign-in didn't work. Try again." Get Plus/Pro passes the signed-in email to Checkout so the plan matches the account.
+- Half-done: PR only, not merged. Google and Apple providers are off in Supabase (checked via the public settings endpoint); enabling them is a dashboard step. Apple "Hide my email" gives a relay address, which only matches a plan bought while signed in with that Apple account.
+- Decision: return address uses `?plans=1`, not `#plans`, because the OAuth session comes back in the `#` fragment.
+
 ## 25 Nov 2026, 18:27 AWST — [Jarvis]
 
 - Who: Jarvis.

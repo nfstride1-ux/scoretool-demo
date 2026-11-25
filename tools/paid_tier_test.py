@@ -96,7 +96,7 @@ try:
         shot(pg, '07-plans-yearly')
         chk('Plans has no refund, Stripe or sign-in wording', not any(w in pg.inner_text('#plans').lower() for w in ('refund','stripe','link','sign in','already paid')))
         chk('Free tier listed with Lingkana', 'Lingkana' in pg.inner_text('#planfree'))
-        pg.click('#planrestore'); pg.wait_for_timeout(150); chk('Restore opens email and code', pg.locator('#planemail').is_visible() and pg.locator('#plancode').is_visible())
+        pg.click('#planrestore'); pg.wait_for_timeout(150); chk('Restore shows Google and Apple only, no email code', pg.locator('#plangoogle').is_visible() and pg.locator('#planapple').is_visible() and pg.locator('#planemail').count() == 0 and pg.locator('#plancode').count() == 0)
         pg.locator('#planrest').scroll_into_view_if_needed(); shot(pg, '08-plans-restore')
         # checkout request goes to the function with the chosen key (stubbed; no Stripe call)
         sent = []
@@ -137,6 +137,38 @@ try:
         pg.click('#planback'); pg.wait_for_timeout(500)
         chk('Back from #plans goes to the profile picker', pg.locator('#whopick').count() == 1 and '#plans' not in pg.url)
         chk('no JS errors (#plans)', not errs, errs[:2]); c.close()
+        # 3c. Google / Apple sign-in
+        SBU = 'https://sllsqpfqwckwtljzjxli.supabase.co'
+        c, pg, errs = ctx("localStorage.setItem('scoretool.whatsnew.seen','x')")
+        pg.route(SBU + '/auth/v1/settings', lambda r: r.fulfill(status=200, content_type='application/json', body='{"external":{"google":false,"apple":false,"email":true}}'))
+        pg.goto(BASE + '#plans'); pg.wait_for_selector('#plans', timeout=15000)
+        pg.click('#planrestore'); pg.click('#plangoogle'); pg.wait_for_timeout(600)
+        chk('Google not switched on: short message, stays on Plans', 'not available' in pg.inner_text('#planmsg').lower() or 'isn’t available' in pg.inner_text('#planmsg'))
+        pg.click('#planapple'); pg.wait_for_timeout(600)
+        chk('Apple not switched on: short message', 'Apple' in pg.inner_text('#planmsg'))
+        shot(pg, '19-restore-google-apple')
+        pg.unroute(SBU + '/auth/v1/settings')
+        pg.route(SBU + '/auth/v1/settings', lambda r: r.fulfill(status=200, content_type='application/json', body='{"external":{"google":true,"apple":true}}'))
+        went = []
+        pg.route(SBU + '/auth/v1/authorize**', lambda r: (went.append(r.request.url), r.fulfill(status=200, body='ok')))
+        pg.click('#plangoogle'); pg.wait_for_timeout(1200)
+        from urllib.parse import urlparse, parse_qs
+        qd = parse_qs(urlparse(went[0]).query) if went else {}
+        chk('Google on: goes to Supabase authorize with provider google and redirect ?plans=1', qd.get('provider') == ['google'] and qd.get('redirect_to', [''])[0] == BASE + '?plans=1', went[:1])
+        c.close()
+        c, pg, errs = ctx("localStorage.setItem('scoretool.whatsnew.seen','x')")
+        pg.route(SBU + '/auth/v1/user', lambda r: r.fulfill(status=200, content_type='application/json', body='{"email":"buyer@example.com"}'))
+        pg.route(FN + '/entitlement', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps({'valid': True, 'server': True, 'tier': 'pro', 'status': 'active', 'current_period_end': '2099-01-01T00:00:00Z', 'customer_id': 'cus_x'})))
+        pg.goto(BASE + '?plans=1#access_token=' + 'a' * 40 + '&refresh_token=r1&token_type=bearer'); pg.wait_for_selector('#plans', timeout=15000)
+        try: pg.wait_for_function("()=>{const e=JSON.parse(localStorage.getItem('scoretool.stripe.entitlement')||'{}');return e.tier==='pro'&&!!document.querySelector('#planmanage')}", timeout=8000)
+        except Exception: pass
+        auth = json.loads(pg.evaluate("localStorage.getItem('scoretool.stripe.auth')") or '{}')
+        chk('back from Google: session saved with the account email, token removed from the address', auth.get('access_token') == 'a' * 40 and auth.get('email') == 'buyer@example.com' and 'access_token' not in pg.url and pg.locator('#plans').count() == 1, pg.url)
+        chk('back from Google: plan read from the server, Manage shown', json.loads(pg.evaluate("localStorage.getItem('scoretool.stripe.entitlement')") or '{}').get('tier') == 'pro' and pg.locator('#planmanage').count() == 1)
+        shot(pg, '20-back-from-google-pro')
+        pg.goto(BASE + '?plans=1&error=access_denied&error_description=x'); pg.wait_for_selector('#plans', timeout=15000)
+        chk('a refused sign-in shows one short line', 'Try again' in pg.inner_text('#planmsg') and 'error' not in pg.url)
+        chk('no JS errors (OAuth)', not errs, errs[:2]); c.close()
         # 4. Lingkana is free and unchanged for a new phone
         c, pg, errs = ctx("localStorage.setItem('scoretool.paid.early',JSON.stringify({ids:[]}))")
         pg.goto(BASE + '?v=home#lk-home'); pg.wait_for_selector('#lkhome', timeout=15000)

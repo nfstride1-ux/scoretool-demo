@@ -99,3 +99,11 @@ Do these in order. The function does nothing useful until they are done. This pu
 8. Refunds: leave refunds manual. When a customer asks, refund the payment in the Stripe Dashboard and cancel that subscription (immediately if the refund should stop access now). Do not add a refund webhook. Cancel sends `customer.subscription.deleted`, which records `canceled`.
 
 After the function is deployed, the Pages site can call it. Merging and deploying the site is a separate step. Do not merge this pull request from the agent.
+
+## Sign-in for paid members (25 Nov 2026)
+
+Google or Apple only (Supabase Auth OAuth). The emailed code / magic link is no longer offered in the app.
+
+- Supabase > Authentication > URL configuration > Redirect URLs must include `https://nfstride1-ux.github.io/scoretool-demo/?plans=1` (or `https://nfstride1-ux.github.io/scoretool-demo/**`).
+- Google Cloud OAuth client (Web application): Authorized redirect URI `https://sllsqpfqwckwtljzjxli.supabase.co/auth/v1/callback`; Authorized JavaScript origin `https://nfstride1-ux.github.io`.
+- Apple: Services ID with Sign in with Apple, domain `sllsqpfqwckwtljzjxli.supabase.co`, Return URL `https://sllsqpfqwckwtljzjxli.supabase.co/auth/v1/callback`; Supabase needs the Services ID, Team ID, Key ID and the .p8 key (secret generated from them, renew every 6 months).
