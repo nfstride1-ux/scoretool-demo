@@ -3,7 +3,7 @@
    To add a release: put a new entry at the TOP with v = the version written to version.json by tools/build_sw.py.
    The Home card shows once when WHATSNEW[0].v is newer than the one this phone has seen (key scoretool.whatsnew.seen). */
 window.WHATSNEW=[
-  {v:'v2026-11-25-0948-audit',d:'2026-11-25',items:[
+  {v:'v2026-11-25-1025-audit2',d:'2026-11-25',items:[
    ['lock',"ScoreTool is out of testing","Testing is finished and everyone now uses ScoreTool the same way, free. Your scores stay on your phone exactly as before. The app is now just called ScoreTool. The coach option is hidden for now.",'audit']]},
   {v:'v2026-11-24-0930-regions',d:'2026-11-24',items:[
    ['trophy',"Your results region","Tools, My results source, lists the Archer's Diary regions, World Archery results, and Other. Other lets you save a name and a results website on this phone. Open my results opens that page.",'b06759c']]},

@@ -12,11 +12,11 @@ const TESTERS=[];
  if(cur&&!A.some(a=>a&&a.id===cur)){
   let nm='';try{const d=JSON.parse(localStorage.getItem(cur=='nathe'?'scoretool.v1':'scoretool.v1.'+cur)||'null');nm=d&&typeof d.profile=='string'?d.profile:''}catch(e){}
   nm=String(nm||cur.charAt(0).toUpperCase()+cur.slice(1)).slice(0,40);
-  A.push({id:cur,name:nm,short:nm.split(/\s+/)[0],bow:'Compound'});localStorage.setItem('scoretool.archers',JSON.stringify(A));
+  A.push({id:cur,name:nm,short:nm.split(/\s+/)[0],bow:'Compound',founding:true}); /* an archer from before testing ended: keeps the free-for-life promise (19 Nov 2026) */localStorage.setItem('scoretool.archers',JSON.stringify(A));
  }
  A.forEach(a=>{if(!a||!a.id||TESTERS.some(t=>t.id===a.id))return;
   const name=String(a.name||'Archer').slice(0,40);
-  TESTERS.push({id:String(a.id),name,short:String(a.short||name).split(/\s+/)[0],bow:a.bow||'Compound',data:false,custom:true,junior:!!a.junior})});
+  TESTERS.push({id:String(a.id),name,short:String(a.short||name).split(/\s+/)[0],bow:a.bow||'Compound',data:false,custom:!a.founding,founding:!!a.founding,junior:!!a.junior})});
  /* the old read-only "viewing as" mode is gone */
  localStorage.removeItem('scoretool.adminReturn');
 }catch(e){}})();
