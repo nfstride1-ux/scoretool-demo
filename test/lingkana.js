@@ -25,8 +25,11 @@ const LK_REGISTER_HASH='#lk-register';
 const LK_HOME_HASH='#lk-home';
 /* Kept so older event QR codes that contain this text still open Lingkana. It does not gate registration. */
 const LK_POSTER_CODE='lk-onion26';
-/* Shared scoring passcode. Hardcoded. The old hash is not checked. */
-const LK_PASSCODE='Kana26';
+/* Shared scoring passcode (25 Nov 2026). The passcode itself is not in this file. Login checks a salted PBKDF2-SHA-256 key
+   (600,000 rounds, WebCrypto). Make new values with tools/lk_passhash.py. */
+const LK_PASS_SALT='5090b49045ff5d44ba03cc0339b764d5';
+const LK_PASS_DK='856ab847da18a7d3f82ed1603a2a2f7bb3d54bdf1d61cabafa24715653a27cdc';
+const LK_PASS_ITER=600000;
 /* Default scoring password hash (SHA-256 of salt + NUL + the default). Left on the record for older phones. Login does not read it. */
 const LK_PW_SALT='c16go1a2';
 const LK_PW_HASH='0b2b4ba61065596219e55c1d32631b22f19943d13a8f23ade80336cce4aacee1';
@@ -423,7 +426,7 @@ function lkView(code){
   const testers=(typeof TESTERS!=='undefined'?TESTERS:[]).filter(t=>t.id!==me&&t.id!==lg.host&&!(lg.order||[]).includes(t.id));
   const hostUI=lkCanHost(lg)?`<div class="card" id="lkhost"><span class="kicker">Host</span><h3>Invite or add a shooter</h3>
     <p class="small muted">Invite someone who uses ScoreTool, or add a name-only shooter you will score on this phone. Nobody can join with the league code alone.</p>
-    <label for="lkivid">Invite a tester</label>
+    <label for="lkivid">Invite an archer</label>
     <div class="row" style="gap:6px"><select id="lkivid" style="flex:1">${testers.map(t=>`<option value="${h(t.id)}">${h(t.name||t.id)}</option>`).join('')||'<option value="">No one left to invite</option>'}</select>
     <button class="btn alt" id="lkivgo">Invite</button></div>
     <p class="small" id="lkivmsg" role="alert"></p>
@@ -1632,9 +1635,20 @@ function lkMarkAuth(lg){
 async function lkSetPassword(){
   return 'The scoring passcode is fixed for this league.';
 }
+async function lkPassOk(pw){
+  pw=String(pw||'');if(!pw)return false;
+  try{
+    const enc=new TextEncoder(),salt=new Uint8Array(LK_PASS_SALT.match(/../g).map(x=>parseInt(x,16)));
+    const key=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:LK_PASS_ITER},key,256);
+    const hex=[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    let d=hex.length^LK_PASS_DK.length;for(let i=0;i<hex.length;i++)d|=hex.charCodeAt(i)^LK_PASS_DK.charCodeAt(i);
+    return d===0;
+  }catch(e){return false}
+}
 async function lkUnlock(pw){
   const lg=lkEnsure();if(!lg)return 'The league is not on this phone yet.';
-  if(String(pw||'')!==LK_PASSCODE)return 'That passcode is not right.';
+  if(!(await lkPassOk(pw)))return 'That passcode is not right.';
   lkMarkAuth(lg);return '';
 }
 function lkUnlockView(lg){
@@ -1789,7 +1803,7 @@ else setTimeout(()=>{lkBootReg()||lkBootHome()||lkBootResults()},0);
 
 Object.assign(window,{
   LK_CODE,LK_NAME,LK_VENUE,LK_HOURS,LK_R,LK_DATES,LK_NIGHTS,LK_CAP,LK_HOST,
-  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_PASSCODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
+  LK_PUBLIC_BASE,LK_REGISTER_HASH,LK_HOME_HASH,LK_POSTER_CODE,LK_LANES,LK_REG_CAP,LK_COHOST_NAME,LK_COHOST_ID,LK_HOST_REG_ID,LK_HOST_REG_NAME,LK_REG_KEY,LK_FEE,LK_FRESH,LK_CLEAR,lkFresh,lkClearLive,lkSeedHost,lkRegKept,
   lkIs,lkNights,lkRound,lkNight7,lkDate,lkLabel,lkRecord,lkSeed,lkEnsure,lkGet,lkView,lkFmtD,lkDecorateCard,lkJoinGuard,lkInvite,lkAccept,lkAddGuest,lkIsMember,lkIsCoHostName,lkCoHostOn,lkMarkCoHost,lkCanHost,LK_RULES,lkRulesHTML,
   lkEventHomeUrl,lkRegisterUrl,lkQrSvg,lkPosterOk,lkRegister,lkRegClosed,lkAlreadyRegistered,lkDeviceRegistered,lkIsHomeHash,lkBootHome,lkIsHostPerson,lkIsOrganiser,lkSeedCoHost,lkDropHostIfUnregistered,lkStripHostEntries,lkApplyReg,lkApplyDrop,lkDropArcher,lkStripDropped,lkPullReg,lkNightSignups,lkPickerOrder,lkDefaultNight,lkKnownRegistrants,lkRegisterView,lkBootReg,lkIsRegHash,lkRegInbox,lkNormName,lkMergeNight,lkPickBest,lkTable,lkTableHTML,lkLastScoredNight,lkStandSubtitle,lkBindStandUI,lkPrintStandings,lkStandingsPng,lkShareStandings,lkTens,lkNightPaid,lkPot,lkPaidCount,lkSetPaid,lkPublishPaid,lkSyncOnce,lkSyncStart,lkPotHTML,lkPaidTonight,lkPriorRows,lkHasPriorResult,lkOrderPaid,lkGroupSizes,lkChunkFour,lkAssignGroups,lkSetGroups,lkAddToGroup,lkScoreGroup,lkGroupHTML,lkHashPw,lkAuthed,lkMarkAuth,lkSetPassword,lkUnlock,lkUnlockView,lkPwHTML,lkResultsUrl,lkResultsView,lkShareResults,lkBootResults,lkIsResHash,lkNightScores,lkShootDates,lkPaidAuthority,lkMineIds,lkRememberArcher,lkHostPhone,lkPinSalt,lkPinHash,lkPinOk,lkPinOf,lkPinLocked,lkPinFail,lkPinClearFails,lkSetPin,lkResetPin,lkPublicReg,LK_MINE_KEY
 });

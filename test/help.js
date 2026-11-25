@@ -95,7 +95,6 @@ const HELP_GUIDES=[
  {id:'settings',i:'gear',t:'Settings, light or dark, and help',shot:'settings',steps:[
   'Tap your name at the top, then <b>Settings &amp; help</b>.',
   'Pick <b>Light</b> or <b>Dark</b>. The target-face button at the top switches too.',
-  'If you switch to look at another tester, a bar under the top says <b>Viewing as</b> that name. Tap <b>Back to my profile</b> to return to your own. While you are looking, nothing is saved on their profile.',
   '<b>Add to my Archery Calendar</b> links your scores to your My events.',
   'The <b>Calendar</b> tile on Home opens your My events on archerycalendars.com.',
   'A tick turns on colour-blind safe colours.',
@@ -125,16 +124,16 @@ addEventListener('afterprint',()=>{const L=[...document.querySelectorAll('detail
 function suggestView(){const who=TESTER?TESTER.name:'',tabs=['Home','Score','My archery','Clubs','Tools','Me','Help','Other'],SEC={home:'Home',score:'Score',myarch:'My archery',stats:'My archery',analytics:'My archery',diary:'My archery',badges:'My archery',recap:'My archery',rewards:'My archery',clubs:'Clubs',squad:'Clubs',follow:'Clubs',tools:'Tools',me:'Me',profile:'Me',whatsnew:'Help'},lt=lastTab||'home',cur=SEC[lt]||(/^lab_(opt|chooser|calc|rules)/.test(lt)?'Tools':/^lab_(squad|leagues|match|group)/.test(lt)?'Clubs':/^lab_(me|profile|people|settings)/.test(lt)?'Me':/^lab_/.test(lt)?'My archery':'Other');
  app.innerHTML=`<div class="card"><span class="kicker">Suggestions</span><h1>Send a suggestion</h1><p class="small muted">Goes straight to Nathe by email.</p>
  <form id="sgForm" method="POST" enctype="multipart/form-data" action="${FORM_URL}" target="sgFrame">
- <input type="hidden" name="_subject" value="[ScoreTool tester] suggestion from ${who}"><input type="hidden" name="_template" value="table"><input type="hidden" name="_captcha" value="false">
+ <input type="hidden" name="_subject" value="[ScoreTool] suggestion from ${who}"><input type="hidden" name="_template" value="table"><input type="hidden" name="_captcha" value="false">
  <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
- <label>Your name<input name="tester" required value="${who}"></label>
+ <label>Your name<input name="archer" required value="${who}"></label>
  <label>Which part of the app?<select name="page">${tabs.map(t=>`<option${t==cur?' selected':''}>${t}</option>`).join('')}</select></label>
  <label>Your suggestion or problem<textarea name="message" rows="5" required placeholder="What would make it better? What went wrong?"></textarea></label>
  <label>Screenshot (optional)<input type="file" name="attachment" accept="image/*"></label>
  <input type="hidden" name="app_version" value="${(window.WHATSNEW&&WHATSNEW[0]?WHATSNEW[0].v:'scoretool')}"><input type="hidden" name="device" value="${navigator.userAgent.replace(/"/g,'')}">
  <button class="btn full" id="sgSend" style="margin-top:10px">Send suggestion</button></form><iframe name="sgFrame" style="display:none"></iframe><div id="sgOut"></div></div>`;
  const f=$('#sgForm');f.onsubmit=e=>{if(!f.message.value.trim()){e.preventDefault();f.message.focus();return}
-  f._subject.value='[ScoreTool tester] suggestion from '+(f.tester.value.trim()||'a tester');
+  f._subject.value='[ScoreTool] suggestion from '+(f.archer.value.trim()||'an archer');
   if(!navigator.onLine){e.preventDefault();location.href=`mailto:nfshold@gmail.com?subject=${encodeURIComponent(f._subject.value)}&body=${encodeURIComponent('Page: '+f.page.value+'\n\n'+f.message.value)}`;return}
   $('#sgSend').textContent='Sending…';$('#sgSend').disabled=true;
   setTimeout(()=>{f.hidden=true;$('#sgOut').innerHTML='<h2>Thanks!</h2><p>Your suggestion has been sent to Nathe.</p><button class="btn ghost" onclick="nav(\'suggest\')">Send another</button>'},1500)}}

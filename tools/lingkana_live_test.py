@@ -62,7 +62,7 @@ try:
 
         names = page.evaluate("""() => {
           const lg = {format:'lingkana', code:'LINGKN26', order:['nathe','gabcdef','dana','phill'],
-            gn:{gabcdef:{n:'Sam Archer',j:0,t:1}, dana:{n:'Dana Chapman-Bureny',t:1}},
+            gn:{gabcdef:{n:'Sam Archer',j:0,t:1}, dana:{n:'Dee Archer',t:1}},
             sc:{nathe:{1:{e:Array.from({length:20},()=>['10','10','10']),u:1}},
                 gabcdef:{1:{e:Array.from({length:20},()=>['10','9','9']),u:1}}}};
           const rows = lkTable(lg);
@@ -76,8 +76,8 @@ try:
         }""")
         chk('standings show Nathaniel Stride, not a short name', names['nathe']=='Nathaniel Stride')
         chk('standings show registered full name', names['guest']=='Sam Archer')
-        chk('standings show Dana Chapman-Bureny in full', names['dana']=='Dana Chapman-Bureny')
-        chk('standings show Phill Arthur in full (tester official name)', names['phill']=='Phill Arthur')
+        chk('standings show Dee Archer in full', names['dana']=='Dee Archer')
+        chk('standings show Pat Archer in full (tester official name)', names['phill']=='Pat Archer')
         chk('standings HTML has no email or phone', (not names['hasEmail']) and (not names['hasPhone']))
         chk('contact details are stripped from a stored name', names['stripped']=='Pat Lee')
 

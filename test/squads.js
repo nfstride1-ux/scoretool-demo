@@ -4,13 +4,9 @@ const AVATARS=['🦊','🐨','🦘','🐧','🦉','🐢','🐬','🦅'];
 const who=m=>window.initDisc?initDisc(m):`<span style="font-size:22px">${m.avatar||''}</span>`;
 /* testers show by their chosen display name only (names.js); others keep 'First L.' */
 const shortName=n=>{const d=window.dispName?dispName(n):n;if(d!==n)return d;const p=(n||'').trim().split(/\s+/);return p[0]+(p[1]?' '+p[1][0]+'.':'')};
-/* Preset squad: every tester (20 Oct 2026, Nathe: all testers in ScoreTool Testers). Same code and members on every tester profile; data is still per phone (no server).
-   Names are the tester profile names (testers.js) so each member's real data and points line up. */
-const PRESET_SQ={preset:'st-testers-1',name:'ScoreTool Testers',code:'STRIDE-3T7',admin:'Nathaniel Stride',rawRank:false,
- members:(typeof TESTERS!='undefined'?TESTERS:[{id:'nathe',name:'Nathaniel Stride'},{id:'phill',name:'Phill Arthur'},{id:'logan',name:'Logan Wolfe'}]).filter(t=>!t.guest).map(t=>({id:{nathe:'mN',phill:'mP',logan:'mL'}[t.id]||'m_'+t.id,name:t.name,status:'active'})),
- adults:[{id:'aN',name:'Nathaniel Stride',role:'Admin'}]};
+/* old shared preset squad retired (25 Nov 2026) */
+const PRESET_SQ={preset:'st-testers-1',name:'',code:'',admin:'',rawRank:false,members:[],adults:[]};
 /* an already-seeded tester squad gets any tester it is missing, once (cheers and settings kept; a later admin removal sticks) */
-/* 'all-testers-2' (20 Oct 2026): Estiaan joined after phones were topped up, so they get him once too (other removals still stick) */
 function presetTopUp(){if(S.presetTop=='all-testers-2')return;const only=S.presetTop=='all-testers'?['m_estiaan']:null;S.presetTop='all-testers-2';const M=S.squad.members=S.squad.members||[];let n=0;PRESET_SQ.members.filter(m=>!only||only.includes(m.id)).forEach(m=>{if(!M.some(x=>x.name==m.name||x.id==m.id)){M.push({...m});n++}});save()}
 function seedPreset(){if(S.squad&&S.squad.preset==PRESET_SQ.preset){S.presetSeeded=PRESET_SQ.preset;presetTopUp();return}if(S.presetSeeded==PRESET_SQ.preset)return;S.presetSeeded=PRESET_SQ.preset;if(S.squad&&S.squad.members&&S.squad.members.length)S.squadBefore=S.squad;
  S.squad=JSON.parse(JSON.stringify(PRESET_SQ));S.squad.cheers={};save()}
@@ -32,7 +28,7 @@ function seedSquad(){if(!liveScoreHost()){if(testerSquad(S.squad)){delete S.squa
 const isAdmin=()=>S.squad&&S.squad.admin==S.profile;
 const myAdult=()=>((S.squad&&S.squad.adults)||[]).find(a=>a.name==S.profile);
 const ROLE_TAG=r=>`<span class="sample" style="background:${r=='Admin'?'#fef3c7':r=='Coach'?'#dcfce7':'#e0e7ff'};color:#0f172a">${r}</span>`;
-/* Logan's numbers come from his real data; sample kids use fixed numbers. */
+/* real archers' numbers come from their own data; sample kids use fixed numbers. */
 function memberStats(m){if(m.sample)return m;const real=realFor(m.name).filter(r=>!r.incomplete);
  const wk=weekArrows(m.name);
  const rts=real.map(r=>{const c=aaCategory(r.division);return c?aaRating(r.score,r.round,c.bow=='Compound'&&r.round=='WA Indoor 18m'):null}).filter(x=>x!=null);

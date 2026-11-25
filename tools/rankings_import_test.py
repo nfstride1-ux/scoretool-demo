@@ -16,7 +16,7 @@ out = tempfile.mkdtemp()
 dest = os.path.join(out, 'rankings.json')
 # start from the old shape so the tool must keep those archers when a new page is added
 old = {'as_of': '2026-01-01', 'source': 'old', 'archers': {
-    'Logan Wolfe': [{'class_rank': 4, 'class_size': 28, 'overall_rank': 146, 'age_class': 'Under 16', 'gender': 'Male', 'division': 'Compound', 'rating': '74.0', 'discipline': 'field'}]}}
+    'Lee Archer': [{'class_rank': 4, 'class_size': 28, 'overall_rank': 146, 'age_class': 'Under 16', 'gender': 'Male', 'division': 'Compound', 'rating': '74.0', 'discipline': 'field'}]}}
 json.dump(old, open(dest, 'w'))
 proc = subprocess.run([sys.executable, TOOL, '--out', dest,
     '--page', 'national', 'outdoor', os.path.join(FIX, 'national-outdoor.html'),
@@ -42,8 +42,8 @@ chk('WA list is separate', len(wa)==3 and wa[('Nathaniel Stride', 'Compound')]['
 chk('WA rating from the text file', wa[('Nathaniel Stride', 'Compound')]['rating']=='40.0')
 indoor = data['national']['indoor']
 chk('tsv indoor', len(indoor)==2 and indoor[0]['name']=='Nathaniel Stride' and indoor[0]['rating']=='52.8')
-chk('a discipline that was not in the saved pages is kept', any(r['name']=='Logan Wolfe' and r['discipline']=='field' for r in data['national']['field']))
-chk('replaced discipline is only the saved page', all(r['name']!='Logan Wolfe' for r in data['national']['outdoor']))
+chk('a discipline that was not in the saved pages is kept', any(r['name']=='Lee Archer' and r['discipline']=='field' for r in data['national']['field']))
+chk('replaced discipline is only the saved page', all(r['name']!='Lee Archer' for r in data['national']['outdoor']))
 chk('archers map still groups national rows by name', 'Nathaniel Stride' in data['archers'] and any(r['discipline']=='indoor' for r in data['archers']['Nathaniel Stride']))
 chk('untouched state disciplines stay empty lists', data['states']['WA']['clout']==[] and data['national']['clout']==[])
 print('rankings import: PASS', len(ok), 'FAIL', len(bad), bad[:8])

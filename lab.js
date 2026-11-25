@@ -122,15 +122,15 @@ E.lab_squad=function(){squad();const n=app.children.length,tab=S._labsq||'board'
 LABSEC.lab_me='me';
 /* 22 Oct 2026 (Nathe): the switch-archer card is for the admin (Nathe, tester id 'nathe') only. Other archers never see it or any switch. */
 const isAdmin=()=>typeof TESTER!='undefined'&&!!TESTER&&TESTER.id=='nathe';
-const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='undefined'||!(isAdmin()||window.ADMIN_VIEW))return'';const nm=t=>typeof testerName=='function'?testerName(t.id):t.short;
+const whoCard=()=>{if(typeof TESTER=='undefined'||!TESTER||typeof TESTERS=='undefined'||TESTERS.length<2)return'';const nm=t=>typeof testerName=='function'?testerName(t.id):t.short;
  return`<div class="card" id="whocard"><span class="kicker">Whose app</span><h2 style="margin:2px 0 6px">This is ${h(nm(TESTER))}'s app</h2><p class="small muted" style="margin:0 0 8px">On a shared phone, switch to your own name. Each archer's scores stay separate.</p>${window.ADMIN_VIEW?`<button class="btn full" id="whoback" data-tester="nathe" style="margin:0 0 8px">Back to my profile</button>`:''}<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start">${TESTERS.filter(t=>t.id!=TESTER.id&&!(window.ADMIN_VIEW&&t.id=='nathe')).map(t=>`<button class="btn ghost" data-tester="${t.id}">${h(nm(t))}</button>`).join('')}</div></div>`};
 E.lab_me=()=>{menuMe();const w=whoCard();if(w){app.querySelector('.labbar').insertAdjacentHTML('afterend',w);if(typeof bindTesterPicker=='function')bindTesterPicker(app)}};
 const menuMe=()=>menu('Me',[
  row('lab_profile','🪪','Profile','Display name and best moments'),
- row('lab_people','🧑‍🏫','Coaches & parents','Your details, coach access, parent link'),
+ row('lab_people','🧑‍🏫',(typeof COACH_ON!='undefined'&&COACH_ON?'Coaches & parents':'Parents'),(typeof COACH_ON!='undefined'&&COACH_ON?'Your details, coach access, parent link':'Your details, parent link')),
  row('lab_settings','⚙️','Settings & help','Settings, linked apps, help guides')]);
 sub('lab_profile','me','Profile & card','lab_me','Me',()=>me(),(e,t)=>['nmcard'].includes(e.id)||e.classList.contains('pcard')||/^BADGES|MY BEST MOMENTS/.test(t));
-sub('lab_people','me','Coaches & parents','lab_me','Me',()=>me(),e=>['pxcard','coachcard','parentcard'].includes(e.id));
+sub('lab_people','me',(typeof COACH_ON!='undefined'&&COACH_ON?'Coaches & parents':'Parents'),'lab_me','Me',()=>me(),e=>['pxcard','coachcard','parentcard'].includes(e.id));
 sub('lab_settings','me','Settings & help','lab_me','Me',()=>me(),(e,t)=>['settingscard','oapps'].includes(e.id)||/^HELP|^TESTER|RESET MY TEST DATA/.test(t),()=>{const t=curTheme();app.insertAdjacentHTML('afterbegin',`<div class="card" id="themecard"><span class="kicker">Appearance</span><h2>Light or dark</h2><div class="labseg" role="group" aria-label="Theme"><button data-th="light" aria-pressed="${t=='light'}">${themeIcon('light')} Light</button><button data-th="dark" aria-pressed="${t=='dark'}">${themeIcon('dark')} Dark</button></div><p class="small muted" style="margin:0">Also on the target-face button at the top. Target faces keep their real colours in both.</p></div>`);app.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{setTheme(b.dataset.th);render()});if(window.calCard){$('#themecard').insertAdjacentHTML('afterend',calCard());calBind()}});
 
 /* ---------- Tools ---------- */

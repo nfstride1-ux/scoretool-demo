@@ -18,8 +18,8 @@ def relay(route,req):
     N[0]+=1;L.append({'id':'m%06d'%N[0],'event':'message','topic':topic,'message':req.post_data or ''});return route.fulfill(status=200,body='{}',headers={'access-control-allow-origin':'*'})
   since=parse_qs(u.query).get('since',['all'])[0];out=[m for m in L if since=='all' or m['id']>since]
   route.fulfill(status=200,body='\n'.join(json.dumps(m) for m in out)+('\n' if out else ''),headers={'access-control-allow-origin':'*'})
-NAMES={'joseph':'Joseph Snook','logan':'Logan Wolfe','nate':'Nate Evans','dana':'Dana Chapman-Bureny','nathe':'Nathaniel Stride','phill':'Phill Arthur','steven':'Steven Snook','michael':'Michael Choong','tahuri':'Tahuri Burney'}
-REALN=['Snook','Wolfe','Evans','Chapman','Stride','Arthur','Choong','Burney','Nathaniel','Joseph','Tahuri']
+NAMES={'joseph':'Jo Archer','logan':'Lee Archer','nate':'Nate Evans','dana':'Dee Archer','nathe':'Nathaniel Stride','phill':'Pat Archer','steven':'Sam Archer','michael':'Mik Archer','tahuri':'Tai Archer'}
+REALN=['Archer','Archer','Evans','Chapman','Stride','Archer','Archer','Archer','Nathaniel','Joseph','Tahuri']
 errs=[];DLG=[]
 def phone(b,tid,offline=False):
   ctx=b.new_context(viewport={'width':390,'height':844});ctx.route('https://ntfy.sh/**',relay)

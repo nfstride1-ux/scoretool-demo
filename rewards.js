@@ -1,4 +1,4 @@
-/* ScoreTool demo: teen rewards (rarity badges, ranks, cheers, cards, league, seasons, recap).
+/* ScoreTool: teen rewards (rarity badges, ranks, cheers, cards, league, seasons, recap).
    Uses only real stored data: the archer's own logged sessions, added arrows, notes, and official
    results/arrows from official competition results (data/*.csv, read-only). No sample people, no fake numbers. */
 const SVGI=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;

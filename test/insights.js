@@ -203,7 +203,7 @@ const _rs=renderShare;renderShare=function(){_rs.apply(this,arguments);let D;try
 const GM={last:'Last round',best:'My best',avg:'My average',off:'Best official',top:'Top ranked',pick:'Choose who'};
 /* Top-ranked ghosts: real end-by-end official scoresheets of archers on the official AA Open compound top-10 lists, best score on this round
    since the rankings window. An archer with only a published total is a 'total only' ghost compared at the end; totals are never split into ends. */
-let GT=null,GTl=false;const isMeP=()=>{const p=String(S.profile||'').toLowerCase();return p.includes('stride')&&p.includes('nath')};
+let GT=null,GTl=false;const isMeP=()=>true;
 const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return+dd+' '+'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[m-1]+' '+y.slice(2)};
 /* only archers of my own gender and age class, the same as the rankings; ranks recounted inside that list (equal scores share) */
 const myGC=()=>{const d=(findReal(S.profile||'').filter(x=>x.division).slice(-1)[0]||{}).division||'';return{g:(d.match(/\b(Male|Female)\b/)||[])[1]||null,c:(d.match(/Open|50\+|60\+|70\+|Under \d+/)||['Open'])[0]}};window.ghostGC=myGC;

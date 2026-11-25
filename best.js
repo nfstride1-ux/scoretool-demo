@@ -5,7 +5,7 @@
 let BS=null;
 /* 22 Oct 2026: every tester with data gets the card from his own sheets (data/sheets_<id>.json; Nathe data/my_scoresheets.json).
    Testers without sheets (data:false) don't get the card. Display only, nothing stored. */
-const SID=(typeof TESTER!='undefined'&&TESTER)?(TESTER.data?TESTER.id:null):'nathe';
+const SID=(typeof TESTER!='undefined'&&TESTER)?(TESTER.data?TESTER.id:null):null;
 window._bsReady=!SID;
 const isMe=()=>!!BS;
 if(SID)fetch(SID=='nathe'?'data/my_scoresheets.json':'data/sheets_'+SID+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{BS=j&&Array.isArray(j.sheets)?j:null;window._bsReady=true;if(typeof view!='undefined'&&(((view=='stats'||view=='lab_analysis')&&$('#bscard'))||view=='scorecards'))render()}).catch(()=>{window._bsReady=true;if(typeof view!='undefined'&&view=='scorecards')render()});

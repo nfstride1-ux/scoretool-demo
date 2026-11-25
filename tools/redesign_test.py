@@ -139,7 +139,7 @@ try:
   E("S.sessions=S.sessions.filter(s=>!/^t_/.test(s.id));save()")
   # other testers
   pg2=b.new_page(viewport={'width':390,'height':844});pg2.on('pageerror',lambda e:errs.append(str(e)));pg2.on('console',lambda m:m.type=='error' and errs.append(m.text))
-  E("localStorage.removeItem('scoretool.tester')");login(pg2,'Logan Wolfe');pg2.click('nav [data-v=stats]');pg2.wait_for_timeout(900)
+  E("localStorage.removeItem('scoretool.tester')");login(pg2,'Lee Archer');pg2.click('nav [data-v=stats]');pg2.wait_for_timeout(900)
   chk('Logan: Stats works, no coach read',pg2.locator('#srd').count()==1 and pg2.locator('#c-last').count()==1 and pg2.locator('#coachread').count()==0)
   pg2.click('#moredet');pg2.wait_for_timeout(400);chk('Logan: More detail works',pg2.locator('#c-compare').count()==1)
   chk('no console errors',not errs)

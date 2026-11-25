@@ -58,9 +58,6 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
    Nathe unlocked for free already, so a fresh device under his own name should not be the one profile
    that hits the "Not open yet" paywall. Unlock everyone until a real payment flow ships. */
 if(TESTER&&!S.profile){S.profile=TESTER.name;S.unlocked=true;save()}
-/* a tester renamed to his name in the official results (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
-if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
-if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
@@ -86,7 +83,7 @@ const SHEET_ALIAS={'2014 AWA Field Course Red':'WA Field 24Mk Red','Field 24Mk R
 const isNatheName=n=>{n=String(n||'').toLowerCase();return n.includes('stride')&&n.includes('nath')};
 /* Every tester with data loads his own sheets the same way (data/sheets_<id>.json, built from scores.db); only his main bow feeds stats. */
 const sheetFile=id=>id=='nathe'?'data/my_scoresheets.json':'data/sheets_'+id+'.json';
-async function loadSheets(){const T=TESTER||{id:'nathe',bow:'Compound',data:true};if(!T.data)return;let j;try{const r=await fetch(sheetFile(T.id),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
+async function loadSheets(){const T=TESTER;if(!T||!T.data)return;let j;try{const r=await fetch(sheetFile(T.id),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
  const adn=j.archer||T.ad||T.name,nm=T.id=='nathe'?(Object.keys(REAL).find(isNatheName)||'Nathaniel Stride'):(Object.keys(REAL).find(k=>k.toLowerCase()==adn.toLowerCase())||adn),csv=REAL[nm]||[],ex={};const bw=new RegExp('^'+(T.bow||'Compound')+'$','i'),okBow=d=>bw.test(String(d||'').replace(/^.*\b(Male|Female)\s+/i,'').trim())||bw.test(d||'');
  csv.filter(r=>!okBow(r.division)).forEach(r=>{ex['csv '+(r.division||'?')]=(ex['csv '+(r.division||'?')]||0)+1});
  const RL=[],OL=[];(j.sheets||[]).forEach(x=>{if(!okBow(x.div)){ex[x.div]=(ex[x.div]||0)+1;return}if(!(x.sc>0))return;
@@ -100,7 +97,7 @@ async function loadSheets(){const T=TESTER||{id:'nathe',bow:'Compound',data:true
  REAL[nm]=RL;const ok=T.id=='nathe'?Object.keys(OFF).find(isNatheName):aliasKey(OFF,T.name)||aliasKey(OFF,adn);if(ok)delete OFF[ok];OFF[nm]=OL;window._excluded=ex;window._sheetsFor=nm;csvState=RL.length?'ok':csvState}
 async function _loadReal(){await __loadReal();await loadSheets()}
 async function __loadReal(){await loadArrows();
- try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
+ try{const r=null;throw 0; /* no per-person results file */
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
    round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowclass','bowtype','class','category']),notes:pick(h,['notes']),
@@ -111,8 +108,8 @@ async function __loadReal(){await loadArrows();
   csvState=Object.keys(REAL).length?'ok':'empty';
  }catch(e){csvState='missing'}}
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
-const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
-/* 22 Oct 2026: a name that doesn't match is retried with the tester's other names (names.js NM_VARIANTS, e.g. 'Joe Snook' -> Joseph Snook) */
+const ARCHERS=TESTER?[TESTER.name]:[];
+/* 22 Oct 2026: a name that doesn't match is retried with the tester's other names (names.js NM_VARIANTS) */
 const nmAlts=n=>{const l=String(n||'').trim().toLowerCase();if(!l||typeof TESTERS=='undefined')return[];const V=typeof NM_VARIANTS!='undefined'?NM_VARIANTS:{};
  const all=t=>[t.name,t.ad,...(V[t.id]||[])].filter(Boolean),t=TESTERS.find(t=>all(t).some(x=>x.toLowerCase()==l));return t?all(t).filter(x=>x.toLowerCase()!=l):[]};
 const aliasKey=(O,n)=>{const k=aliasKey1(O,n);if(k)return k;for(const a of nmAlts(n)){const x=aliasKey1(O,a);if(x)return x}return undefined};
@@ -948,9 +945,8 @@ sbarSync();
    - coach invites are seeded here for the demo (a real invite would come from the coach's app through a backend),
    - Accept / Decline / Remove only change this phone,
    - the coach view link opens a landing page; the real view needs a coach membership and the coach app (later build).
-   Phill is the coach in the demo. His squad is Steven Snook, Michael Choong, Nathe, Dana, Tahuri Engelen-Burney, Danie Oosthuizen and Joseph Snook;
-   of those, only Nathe is a tester profile in this app, so only Nathe's profile gets the pending invite. Everyone else sees the empty state. */
-const COACH_SEED={id:'ci-phill-2026-10',coach:'Phill Arthur',squad:"Phill's compound squad",sent:'2026-10-17',for:['nathe']};
+   No coach invite is seeded. */
+const COACH_SEED={id:'none',coach:'',squad:'',sent:'',for:[]};
 function seedCoach(){S.coachInvites=S.coachInvites||[];S.coaches=S.coaches||[];
  if(S.coachSeeded==COACH_SEED.id)return;S.coachSeeded=COACH_SEED.id;
  if(TESTER&&COACH_SEED.for.includes(TESTER.id)&&!S.coaches.some(c=>c.id==COACH_SEED.id))S.coachInvites.push({id:COACH_SEED.id,coach:COACH_SEED.coach,squad:COACH_SEED.squad,sent:COACH_SEED.sent});save()}

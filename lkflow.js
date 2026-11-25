@@ -190,19 +190,12 @@
 
 
   function evCode(code){
-    const onion=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
-    const lk=(typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
-    const c=String(code||window._lkEvent||'').toUpperCase();
-    if(c===onion||c==='ONIONSHD'||c==='ONION SHED CHALLENGE')return onion;
-    return lk;
+    return (typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
   }
-  function isOnion(code){
-    const onion=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
-    return evCode(code)===onion;
-  }
+  /* 25 Nov 2026: the old second league is removed; every event here is Lingkana. */
+  function isOnion(){return false}
   function setEv(code){window._lkEvent=evCode(code);return window._lkEvent}
   function evName(code){
-    if(isOnion(code))return (typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.name)||'Onion Shed Challenge';
     return (typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League';
   }
   function backToList(){
@@ -305,8 +298,8 @@
     const el=appEl();if(!el)return;
     const onion=isOnion();
     const sess=!onion&&activeSession();
-    const logo=onion?'img/onion-shed-logo.jpg':'img/lingkana-logo.png';
-    const alt=onion?'Onion Shed Championships':'Lingkana Indoor Archery';
+    const logo='img/lingkana-logo.png';
+    const alt='Lingkana Indoor Archery';
     const lgp=!onion&&typeof lkGet==='function'?lkGet():null;
     const pot=lgp&&typeof lkPot==='function'?lkPot(lgp):null;
     el.innerHTML=`<div class="lkf" id="lkhome" data-ev="${esc(evCode())}">
@@ -349,7 +342,6 @@
      identity (e.g. to review their own past sessions). Ordinary scoring on the night does not need
      this any more: see login() below, which is the scorer-facing entry point. */
   async function lkFullLogin(){
-    if(isOnion())return osLogin();
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -570,6 +562,8 @@
           const again=($id('lkpin2')&&$id('lkpin2').value)||'';
           if(!/^\d{4}$/.test(typed)){if(msg)msg.textContent='Enter a 4-digit PIN.';return}
           if(typed!==again){if(msg)msg.textContent='Those PINs do not match.';return}
+          /* 25 Nov 2026: a first PIN is only saved after the event passcode checks out */
+          {const pm=typeof lkUnlock==='function'?await lkUnlock(pw):'Scoring is not available on this phone.';if(pm){if(msg)msg.textContent=pm;return}}
           try{
             const salt=lkPinSalt();
             const hash=await lkPinHash(rec.name,typed,salt);
@@ -612,13 +606,11 @@
   }
 
   /* Scorer-facing sign-in: pick a lane, see who is already on it, tick who you are scoring with.
-     No roster search and no personal PIN for ordinary scoring, the same way Onion Shed's osLogin
-     already works, just with a Lingkana night picker. This is now the entry point from the home
+     No roster search and no personal PIN for ordinary scoring, with a Lingkana night picker. This is now the entry point from the home
      screen's Login to Event button. lkFullLogin() (above) is kept for the host, for Nate Evans'
      co-host session, and for anyone who wants their own PIN-protected identity; it is reachable
      from the link on this screen. */
   async function login(){
-    if(isOnion())return osLogin();
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -679,7 +671,7 @@
   }
 
 
-  const LK_TARGETS=13; /* Lingkana: 13 shooting lanes. Onion Shed: Nathe, 12 Nov 8:09am, also a max of 13 lanes. */
+  const LK_TARGETS=13; /* Lingkana: 13 shooting lanes. */
   function eventLg(){
     if(isOnion()){
       if(typeof lgSeed==='function')lgSeed();
@@ -760,7 +752,7 @@
     if(typeof scoreScreen==='function')scoreScreen();
   }
 
-  /* Lingkana picker only. Onion Shed has no paid tick, so null means "do not filter".
+  /* Lingkana picker only. null means "do not filter".
      Filters the list on screen. Does not drop anyone out of a group already being scored. */
   function paidPickerIds(lg,w){
     if(isOnion())return null;
@@ -1421,7 +1413,6 @@
   }
 
   async function review(){
-    if(isOnion())return osReview();
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function'){try{await lkSyncOnce()}catch(e){}}
     const lg=typeof lkEnsure==='function'?lkEnsure():null;
@@ -1446,7 +1437,6 @@
   }
 
   function regEntry(){
-    if(isOnion())return osRegister();
     hideChrome(true);
     if(typeof lkSyncStart==='function')lkSyncStart();
     if(typeof lkSyncOnce==='function')lkSyncOnce();
@@ -1497,15 +1487,8 @@
   function rules(){
     hideChrome(true);
     const el=appEl();if(!el)return;
-    const onion=isOnion();
-    const title=onion?'Onion Shed Challenge rules':'About';
-    let body='';
-    if(onion){
-      const R=(typeof LG_RULES!=='undefined'&&LG_RULES)||[];
-      body=`<ul>${R.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
-    }else{
-      body=typeof lkRulesHTML==='function'?lkRulesHTML():'';
-    }
+    const title='About';
+    const body=typeof lkRulesHTML==='function'?lkRulesHTML():'';
     el.innerHTML=`<div class="lkf lk-rules" id="lkrulespage">
       <h1>${esc(title)}</h1>
       ${body}
@@ -1513,175 +1496,6 @@
     </div>`;
     $id('lkruleback').onclick=()=>home(evCode());
   }
-
-  function osLogin(){
-    if(typeof lgSeed==='function')lgSeed();
-    hideChrome(true);
-    const el=appEl();if(!el)return;
-    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
-    const ev=evName();
-    el.innerHTML=`<div class="lkf" id="lkloginpage" data-ev="${esc(code)}">
-      <h1>Login</h1>
-      <label for="lkevent">Select Event</label>
-      <select id="lkevent"><option value="${esc(code)}" selected>${esc(ev)}</option></select>
-      <label for="lkscorer">Scorer Full Name</label>
-      <input id="lkscorer" type="text" maxlength="40" autocomplete="name" value="">
-      <label for="lkcode">League code</label>
-      <input id="lkcode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" value="">
-      <label for="lkpw">Password</label>
-      <input id="lkpw" type="password" autocomplete="off" value="">
-      <p class="small muted">This is a demo league. Login and password can be left blank — no code or scoring password is required.</p>
-      <p class="lk-msg" id="lkpwmsg" role="alert"></p>
-      ${bar(btn('lkloginback','Back','grey'),btn('lkpwgo','Login','green'))}
-    </div>`;
-    const go=()=>{
-      const n=($id('lkscorer').value||'').trim();
-      if(n)setMyName(n);
-      window._lkTarget=0;window._lkPicked=[];
-      selectArchers();
-    };
-    $id('lkpwgo').onclick=go;
-    $id('lkloginback').onclick=()=>home(code);
-    $id('lkscorer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
-    $id('lkcode').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
-    $id('lkpw').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
-  }
-
-  function osKnown(lg){
-    const out=[];
-    const add=(id,name)=>{
-      const n=String(name||(id&&typeof lgName==='function'&&lgName(id))||id||'').trim();
-      if(!n)return;
-      let rec=id&&out.find(x=>x.id===id);
-      if(!rec)rec=out.find(x=>x.name.toLowerCase()===n.toLowerCase());
-      if(!rec){rec={id:id||null,name:n,nights:[]};out.push(rec)}
-      if(id&&!rec.id)rec.id=id;
-      if(n&&rec.name!==n){
-        const looksLikeId=rec.name.toLowerCase()===(rec.id||'').toLowerCase();
-        if(looksLikeId||n.length>rec.name.length)rec.name=n;
-      }
-      rec.nights=rec.nights||[];
-      for(let w=1;w<=6;w++){
-        if(!rec.nights.includes(w)&&((lg.reg||{})[String(w)]||[]).some(r=>r&&((id&&r.id===id)||String(r.name||'').toLowerCase()===n.toLowerCase())))rec.nights.push(w);
-      }
-    };
-    for(const k in ((lg&&lg.reg)||{})){
-      ((lg.reg[k])||[]).forEach(r=>{if(r)add(r.id,r.name)});
-    }
-    ((lg&&lg.order)||[]).forEach(id=>add(id,(typeof lgName==='function'&&lgName(id))||id));
-    const hostId=(lg&&lg.host)||'nathe';
-    return out.filter(a=>{
-      const n=String(a.name||'').trim().toLowerCase();
-      if(a.id===hostId||a.id==='nathe')return false;
-      if(n==='nathe'||n==='nathaniel stride')return false;
-      return true;
-    });
-  }
-  function osSaveNights(lg,id,name,weeks){
-    if(!lg)return 'The league is not on this phone yet.';
-    lg.reg=lg.reg||{};
-    const who=id||name;
-    for(const w of weeks){
-      const k=String(w);
-      lg.reg[k]=lg.reg[k]||[];
-      if(!lg.reg[k].some(r=>r&&(r.id===id||(name&&String(r.name||'').toLowerCase()===String(name).toLowerCase())))){
-        lg.reg[k].push({id:id||null,name,at:Date.now()});
-      }
-    }
-    lg.dirty=1;
-    if(typeof save==='function')save();
-    return '';
-  }
-  function osRegister(){
-    if(typeof lgSeed==='function')lgSeed();
-    hideChrome(true);
-    const el=appEl();if(!el)return;
-    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
-    const lg=typeof lgGet==='function'?lgGet(code):null;
-    const can=!!(lg&&typeof lgCanEd==='function'&&lgCanEd(lg));
-    const known=lg?osKnown(lg):[];
-    const pick=window._osRegPick||null;
-    const weekBoxes=[1,2,3,4,5,6].map(w=>{
-      const d=(lg&&lg.weeks&&lg.weeks[w-1])||'';
-      const lab=w<6?('Week '+w):'Day 6 (together)';
-      const on=pick&&(pick.nights||[]).includes(w);
-      return `<label class="lk-tick"><input type="checkbox" data-osw="${w}" ${on?'checked':''}> ${esc(lab)}${d?' · '+esc(d):''}</label>`;
-    }).join('');
-    const names=known.length?`<div class="lk-known" id="osknown"><p class="small muted">If you have already registered, tap your name, tick the weeks you will shoot and save.</p>${known.map(a=>`<button type="button" class="lk-known-btn${pick&&pick.id===a.id?' on':''}" data-osid="${esc(a.id)}">${esc(a.name)}</button>`).join('')}</div>`:'';
-    el.innerHTML=`<div class="lkf" id="lkregpage" data-ev="${esc(code)}">
-      <h1>Event Registration</h1>
-      <p class="small muted">${esc(evName())}. Weeks 1 to 5 are a 300, in person or over FaceTime. Day 6 is a 300 together in the Onion Shed, then the shoot-up.</p>
-      ${names}
-      ${pick?`<p id="ospicked">Signing in as <b>${esc(pick.name)}</b>.</p>`:`<label for="lkgname">Name</label>
-        <input id="lkgname" maxlength="24" autocomplete="name" placeholder="Your name">
-        ${can?`<label class="h2htk" style="margin-top:6px"><input type="checkbox" id="lkgjr"> Under 16 (nickname only)</label>`:''}`}
-      <p class="small" style="margin-top:10px">Weeks</p>
-      <div id="osweeks">${weekBoxes}</div>
-      <p class="lk-msg" id="lkregmsg" role="alert"></p>
-      ${bar(btn('lkregback','Back','grey'),btn('lkreggo',pick?'Save':'Register','green'))}
-      ${!can&&!known.length?'<p class="small muted">Ask the host to add you to this league if your name is not listed.</p>':''}
-    </div>`;
-    $id('lkregback').onclick=()=>{window._osRegPick=null;home(code)};
-    el.querySelectorAll('[data-osid]').forEach(b=>b.onclick=()=>{
-      const a=known.find(x=>x.id===b.getAttribute('data-osid'));
-      window._osRegPick=a||null;
-      osRegister();
-    });
-    $id('lkreggo').onclick=()=>{
-      const msg=$id('lkregmsg');
-      const weeks=[...el.querySelectorAll('[data-osw]:checked')].map(x=>+x.getAttribute('data-osw'));
-      if(!weeks.length){if(msg)msg.textContent='Tick the weeks you will shoot.';return}
-      let id=pick&&pick.id, name=pick&&pick.name;
-      if(!pick){
-        name=(($id('lkgname')||{}).value||'').trim();
-        if(name.length<2){if(msg)msg.textContent='Type a name.';return}
-        if(can&&typeof lgAddGuest==='function'){
-          const already=known.find(a=>a.name.toLowerCase()===name.toLowerCase());
-          if(!already){
-            const jr=!!($id('lkgjr')&&$id('lkgjr').checked);
-            const out=lgAddGuest(code,name,jr);
-            if(out){if(msg)msg.textContent=out;return}
-          }
-        }else if(!known.some(a=>a.name.toLowerCase()===name.toLowerCase())){
-          if(msg)msg.textContent='Ask the host to add you to this league first.';return
-        }
-        const fresh=typeof lgGet==='function'?lgGet(code):lg;
-        const got=(typeof osKnown==='function'&&osKnown(fresh)||[]).find(a=>a.name.toLowerCase()===name.toLowerCase());
-        if(got){id=got.id;name=got.name}
-      }
-      const L=typeof lgGet==='function'?lgGet(code):lg;
-      const err=osSaveNights(L,id,name,weeks);
-      if(err){if(msg)msg.textContent=err;return}
-      window._osRegPick=null;
-      if(msg)msg.textContent='You are registered for those weeks. Tap your name next time — you will not need to type it again.';
-      setTimeout(()=>osRegister(),400);
-    };
-  }
-
-
-  function osReview(){
-    if(typeof lgSeed==='function')lgSeed();
-    hideChrome(true);
-    const el=appEl();if(!el)return;
-    const code=(typeof LG_PRESET!=='undefined'&&LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
-    const lg=typeof lgGet==='function'?lgGet(code):null;
-    if(!lg||typeof lgTable!=='function'){
-      el.innerHTML=`<div class="lkf" id="lkreviewpage"><h1>Review Scoresheets</h1><p>This league is not on this phone yet.</p>${bar(btn('lkrevback','Back','grey'),'')}</div>`;
-      $id('lkrevback').onclick=()=>home(code);
-      return;
-    }
-    const rows=lgTable(lg);
-    const tab=`<div class="lg-wrap"><table class="ad-tab lg-tab" id="ostab"><thead><tr><th></th><th>Archer</th>${[1,2,3,4,5,6].map(k=>`<th>W${k}</th>`).join('')}<th>Total</th><th>X</th></tr></thead><tbody>${rows.map((r,k)=>`<tr class="${k==0&&r.t>0&&!r.tie?'lead':''}"><td>${r.tie?'=':''}${r.rk}</td><td>${esc(r.nm)}</td>${r.W.map(c=>`<td>${c?(c.d?c.s:`<i class="muted">${c.s}</i>`):'-'}</td>`).join('')}<td><b>${r.t}</b></td><td>${r.x}</td></tr>`).join('')||'<tr><td colspan="9">No scores yet.</td></tr>'}</tbody></table></div>
-      <p class="small muted">Max 1800. Ties split on X count. '-' = not shot; italics = still shooting.</p>`;
-    el.innerHTML=`<div class="lkf" id="lkreviewpage">
-      <h1>Review Scoresheets</h1>
-      <p class="small muted">${esc(evName())}. Running total of all six 300s.</p>
-      <div class="card">${tab}</div>
-      ${bar(btn('lkrevback','Back','grey'),'')}
-    </div>`;
-    $id('lkrevback').onclick=()=>home(code);
-  }
-
 
   function enter(code){
     if(typeof lkEnsure==='function')lkEnsure();

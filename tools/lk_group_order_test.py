@@ -106,7 +106,7 @@ try:
         page.on('pageerror', lambda e: errs.append(str(e)[:200]))
         page.goto(f'{BASE}/?tester=steven#lk-home', wait_until='domcontentloaded')
         page.wait_for_selector('#lkhome', timeout=8000)
-        page.evaluate("""() => { S.unlocked=true; if(!S.profile)S.profile='Steven Snook'; save(); localStorage.setItem('scoretool.whatsnew.seen','v2099'); }""")
+        page.evaluate("""() => { S.unlocked=true; if(!S.profile)S.profile='Sam Archer'; save(); localStorage.setItem('scoretool.whatsnew.seen','v2099'); }""")
 
         two = ['Nate', 'Nathe']
         seeded = seed_lk(page, two)

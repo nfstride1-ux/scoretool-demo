@@ -1,6 +1,7 @@
 {
-  "name": "ScoreTool demo",
+  "name": "ScoreTool",
   "short_name": "ScoreTool",
+  "description": "Free archery scoring app: score rounds, track practice and run club leagues. Works offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

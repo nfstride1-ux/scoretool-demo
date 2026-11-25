@@ -188,13 +188,13 @@ try:
         page.locator('#lkscorernames .lk-namebtn', has_text='Alex River').click()
         page.fill('#lkpin', '4321')
         page.fill('#lkpin2', '4321')
-        page.fill('#lkpw', 'kana26')
+        page.fill('#lkpw', os.environ['LK_TEST_PASSCODE'].lower())
         page.locator('#lkpwgo').click()
         page.wait_for_timeout(400)
-        chk('a passcode other than Kana26 is refused',
+        chk('a passcode other than the real one is refused',
             'not right' in (page.inner_text('#lkpwmsg') or '').lower() and page.locator('#lkassigned').count()==0)
         page.fill('#lkpin', '4321')
-        page.fill('#lkpw', 'Kana26')
+        page.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkassigned', timeout=5000)
         group = page.inner_text('#lkassigned')
@@ -233,7 +233,7 @@ try:
             page.fill('#lkpin2', '2580')
         elif page.locator('#lkpin').count():
             page.fill('#lkpin', '2580')
-        page.fill('#lkpw', 'Kana26')
+        page.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkpaidlist input[data-lkpaid]', timeout=5000)
         nate = page.inner_text('#lkpot')
@@ -484,7 +484,7 @@ try:
         if pb.locator('#lkpin2').count():
             pb.fill('#lkpin', '1111')
             pb.fill('#lkpin2', '1111')
-        pb.fill('#lkpw', 'Kana26')
+        pb.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         pb.click('#lkpwgo')
         pb.wait_for_selector('#lkpaidlist', timeout=8000)
         for nm in ('Sync Ada','Sync Bea'):

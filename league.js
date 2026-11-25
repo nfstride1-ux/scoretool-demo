@@ -1,4 +1,4 @@
-/* Onion Shed Challenge league (20 Oct 2026, rules from Nathe).
+/* Leagues (20 Oct 2026).
    Six rounds of 'Vegas 300 (18 m)': 30 arrows, 10 ends of 3, vertical 3-spot only, X 10 9 8 7 6 M, X = 10, max 300 each.
    Weeks 1-5: one 300 per archer per week. Day 6: everyone shoots the 6th 300 together. Ranking: cumulative total (max 1800), ties on X.
    When every archer's day-6 300 is in, the totals seed ONE shoot-up final (shootup.js, league rule set: 3 ends of 3, total, X = 10,
@@ -9,8 +9,8 @@
    Sync (ntfy, messages expire after 12 h, a league runs 6 weeks): every phone keeps the whole league locally and re-posts a full
    snapshot (every archer's weekly ends, totals follow) when it opens, every 6 hours and after scoring; phones merge by the newest entry
    per archer per week, so a phone that's been away catches up from whoever opens next. A post that fails (offline) stays queued and is
-   sent when the phone is back online. Payloads: tester ids, nicknames, ends only. Phill is not offered in the league archer list. */
-const LG_R='Vegas 300 (18 m)',LG_W=6,LG_SNAP=6*36e5,LG_EXCL=['phill'],LG_KEYS=['X','10','9','8','7','6','M'],LG_FACE='Vertical 3-spot';
+   sent when the phone is back online. Payloads: archer ids, nicknames, ends only. */
+const LG_R='Vegas 300 (18 m)',LG_W=6,LG_SNAP=6*36e5,LG_EXCL=[],LG_KEYS=['X','10','9','8','7','6','M'],LG_FACE='Vertical 3-spot';
 /* shown text: the league round is '300 (18 m)', never 'Vegas' (Coach re-test, 20 Oct). The ROUNDS key stays for stored data. */
 const LG_RL='300 (18 m)',rdLabel=r=>r==LG_R?LG_RL:r;window.rdLabel=rdLabel;
 const LG_FINTXT='Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).';
@@ -265,7 +265,7 @@ setInterval(()=>{if(!document.hidden)lgTick()},30000);setTimeout(()=>lgTick(true
 /* invites + join */
 window.lgInvite=function(d){const me=h2hMe();if(d.to!=me||d.from==me||!d.code||lgIsPresetCode(d.code)||lgGet(d.code)||(d.t||0)<H2H_RESET||LG_EXCL.includes(me))return false;if(d.nm)nmLearn(d.from,d.nm,d.nt,d.t);
  lgAll().push({code:d.code,name:nmClean(String(d.name||'League')).slice(0,40),host:d.from,order:[d.from,me],sc:{},status:'invite',created:d.t||Date.now()});save();return true};
-function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h2hCode(),lg={code,name:nmClean(name||'').slice(0,40)||'Onion Shed Challenge',host:me,order:[me,...T.filter(id=>id!=me&&!LG_EXCL.includes(id))].slice(0,H2H_MAX),
+function lgCreate(name,T,weeks){const me=h2hMe();if(!me)return null;const code=h2hCode(),lg={code,name:nmClean(name||'').slice(0,40)||'My league',host:me,order:[me,...T.filter(id=>id!=me&&!LG_EXCL.includes(id))].slice(0,H2H_MAX),
  weeks:(weeks||[]).slice(0,LG_W),wt:Date.now(),cw:1,cwt:0,grp:{},sc:{},status:'active',created:Date.now(),dirty:1};lgAll().push(lg);save();
  for(const to of lg.order.slice(1))h2hPost(h2hInbox(to),{k:'lginv',code,name:lg.name,from:me,to,...h2hNm(),t:Date.now()});lgTick(true);if(window.calNudgeLeague)window.calNudgeLeague();return lg}
 async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const me=h2hMe();if(typeof lkJoinGuard==='function'){const block=lkJoinGuard(code,me);if(block)return block}if(code.length!=8)return'Type the 8-character league code.';if(lgIsPresetCode(code))return'No league found with that code yet. Ask the host to open the league, then try again.';if(lgGet(code)){lgView(code);if(window.calNudgeLeague)window.calNudgeLeague();return''}
@@ -273,53 +273,27 @@ async function lgJoin(raw){const code=String(raw||'').toUpperCase().replace(/[^A
  const lg={code,name:'League',host:null,order:[],sc:{},status:'active',created:Date.now(),dirty:1};s.forEach(d=>{lg.since=d._id;lgMerge(lg,d)});if(!lg.order.includes(me)&&lg.order.length<h2hCap(lg))lg.order.push(me);
  lgAll().push(lg);save();lgTick(true);lgView(code);if(window.calNudgeLeague)window.calNudgeLeague();return''}
 window.lgCreate=lgCreate;window.lgJoin=lgJoin;window.lgKey=lgKey;window.lgUndo=lgUndo;window.lgTake=lgTake;window.lgSetGroups=lgSetGroups;window.lgForce=lgForce;window.lgTick=lgTick;window.lgTable=lgTable;window.lgMerge=lgMerge;window.lgWeek=lgWeek;window.lgSnapParts=lgSnapParts;
-/* Onion Shed Challenge (22 Oct 2026, Nathe): before the go-live change the league card was titled 'Onion Shed Challenge' for everyone,
-   but no league record was ever stored or synced, so when the card became a generic 'Your leagues' list it vanished. It is now a
-   fixed league record (one code, host Nathe) ADDED once to each member's own leagues list, never replacing anything: skipped when the
-   phone already has this code or a league with the same name, and not re-added if the member removes it. Phill and anyone who is
-   not a member (new users) never get it. Scores, weeks and standings sync on the league's own ntfy topic like any other league. */
-const LG_OLD=['ONIONSHD','ONIONSH2'];/* league records hidden: ONIONSHD on 26 Oct 2026, ONIONSH2 on 19 Nov 2026 (needs a bigger rework). Kept in storage exactly as saved, never listed, never edited, never re-joined */
-const LG_PRESET={code:'ONIONSH2',name:'Onion Shed Challenge',host:'nathe',members:['nathe','logan','steven','joseph','michael','dana','tahuri','estiaan','nate','darnie'],
- /* 22 Oct 2026 (Nathe): Danie (darnie) joins and scores himself; Leslie Anderson is an added shooter scored by the host, with a fixed id so every phone agrees */
- gn:{gleslie:{n:'Leslie Anderson',j:0,t:Date.UTC(2026,9,22,13,45),by:'nathe'}},
- /* relay posts older than this are ignored (this league's code is new on 27 Oct 2026, so there are none; the old ONIONSHD record keeps its 22 Oct cut-off) */
- since:Date.UTC(2026,9,27,10,0)};
-const LG_SINCE={ONIONSHD:Date.UTC(2026,9,22,12,52),ONIONSH2:LG_PRESET.since};
-const lgIsPresetCode=c=>c==LG_PRESET.code||LG_OLD.includes(c);
-/* 27 Oct 2026 (Nathe): the Onion Shed Challenge is back, same name, same rules, same members (Nathe, Logan, Steven, Joseph, Michael, Dana, Tahuri,
-   Estiaan, Nate, Danie) plus Leslie Anderson (no app, scored by the host). It is a fresh league record under a NEW code, so the old test scores in the
-   hidden 26 Oct record (ONIONSHD) stay saved but never mix into the real league. ADDED once to each member's own leagues list, never replacing anything:
-   skipped when the phone already has this code or a visible league with the same name, and not re-added if the member removes it. Phill and anyone who is
-   not a member never get it. Scores, weeks and standings sync on the league's own ntfy topic like any other league. */
+/* 25 Nov 2026: the old preset league and its member list are removed. Its two old codes stay hidden on any phone that still holds
+   a copy (kept in storage as saved, never listed, never re-joined). */
+const LG_OLD=['ONIONSHD','ONIONSH2'];
+const LG_PRESET={code:'',name:'',host:'',members:[],gn:{},since:0};
+const LG_SINCE={ONIONSHD:Date.UTC(2026,9,22,12,52),ONIONSH2:Date.UTC(2026,9,27,10,0)};
+const lgIsPresetCode=c=>LG_OLD.includes(c);
 const lgPresetHidden=lg=>!!lg&&LG_OLD.includes(lg.code);
-function lgPresetRecord(code){const P=LG_PRESET;return{code:code||'ONIONSHD',name:P.name,host:P.host,order:P.members.slice().concat(Object.keys(P.gn)),weeks:[],wt:0,cw:1,cwt:0,grp:{},gn:JSON.parse(JSON.stringify(P.gn)),sc:{},status:'active',created:Date.now(),preset:1}}
-/* additive, idempotent: a phone that already holds this league gets any preset member or added shooter it is missing, appended to the
-   end of order (nothing removed or reordered, scores untouched). order and gn only ever grow in lgMerge, so an older host snapshot can't drop them. */
-function lgPresetFix(){if(typeof S=='undefined'||!S||!Array.isArray(S.leagues))return false;const P=LG_PRESET;let ch=false;
- for(const lg of S.leagues){if(!lg||lg.code!=P.code)continue;lg.order=lg.order||[];
-  for(const id of P.members)if(!LG_EXCL.includes(id)&&!lg.order.includes(id)){lg.order.push(id);ch=true}
-  for(const id in P.gn){lg.gn=lg.gn||{};if(!lg.gn[id]){lg.gn[id]={...P.gn[id]};ch=true}if(!lg.order.includes(id)){lg.order.push(id);ch=true}}
-  if(ch)lg.dirty=1}
- return ch}
-function lgSeed(){if(!TESTER||typeof S=='undefined'||!S)return;const me=TESTER.id,P=LG_PRESET;if(lgPresetFix())save();if(!P.members.includes(me)||LG_EXCL.includes(me)||S.lgPreset==P.code)return;
- const L=S.leagues=S.leagues||[];S.lgPreset=P.code;
- if(!L.some(l=>l.code==P.code||(!lgPresetHidden(l)&&String(l.name||'').trim().toLowerCase()==P.name.toLowerCase())))L.push(Object.assign(lgPresetRecord(P.code),{order:P.members.slice()})),lgPresetFix();
- save()}
-try{lgSeed()}catch(e){console.error(e)}
+function lgPresetRecord(){return null}
+function lgPresetFix(){return false}
+function lgSeed(){}
 window.lgSeed=lgSeed;window.lgPresetRecord=lgPresetRecord;window.LG_PRESET=LG_PRESET;
-/* The rules as Nathe set them on 20 Oct 2026 (plain text), shown on the Onion Shed Challenge league screen. */
-const LG_RULES=['Six 300s at 18 m on the vertical 3-spot.','Each week for 5 weeks everyone shoots a 300 round, in person or over FaceTime.','On the 6th day they all shoot another 300 together in person in the Onion Shed.','The running total of all six 300s (maximum 1800, ties split on X count) sets the league table.','Shoot-up match play happens on day 6 only, starting once everyone\'s day-6 300 is in. Final: 3 ends of 3 arrows, X = 10, no 12 dot. Ties: 1 arrow each, closest to the middle wins (host picks).','Entry is $10 each night, winner takes all, minus a jokey 75%.'];
-const lgRulesCard=lg=>lg&&lg.code==LG_PRESET.code?`<div class="card" id="lgrules2"><h3 style="margin:0 0 6px">League rules</h3><ul class="small" style="margin:0;padding-left:18px;line-height:1.45">${LG_RULES.map(x=>`<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ul></div>`:'';
+const LG_RULES=[];
+const lgRulesCard=lg=>'';
 /* ---------- screens ---------- */
 /* Known venue events: each appears once, with its flyer as the card background. Opening goes to the event home. */
 function lgEventCode(kind){
   if(kind==='lingkana')return (typeof LK_CODE==='string'&&LK_CODE)||'LINGKN26';
-  if(kind==='onion')return (LG_PRESET&&LG_PRESET.code)||'ONIONSH2';
   return'';
 }
 function lgEventKnown(){
   const lk=lgEventCode('lingkana');
-  /* Onion Shed Challenge needs a bigger rework before it's shown again - not removed, just off the browse list for now. */
   return[
     {code:lk,kind:'lingkana',name:(typeof LK_NAME==='string'&&LK_NAME)||'Lingkana League',flyer:'img/lingkana-flyer.jpg',sub:''}
   ];
@@ -353,7 +327,7 @@ function lgBindCard(){const c=$('#lgcard');if(!c)return;
  c.querySelectorAll('[data-lgopen]').forEach(b=>b.onclick=()=>lgView(b.dataset.lgopen));
  c.querySelectorAll('[data-lgacc]').forEach(b=>b.onclick=()=>{const lg=lgGet(b.dataset.lgacc);lg.status='active';lg.dirty=1;save();lgTick(true);lgView(lg.code);if(window.calNudgeLeague)window.calNudgeLeague()});
  c.querySelectorAll('[data-lgno]').forEach(b=>b.onclick=()=>{S.leagues=lgAll().filter(l=>l.code!=b.dataset.lgno);save();score()});
- const tp=$('#lgtpl');if(tp)tp.onclick=()=>{c.querySelectorAll('[data-lgop]').forEach(x=>{x.checked=LG_PRESET.members.includes(x.dataset.lgop)})};
+ 
  const g=$('#lggo');if(g)g.onclick=()=>{if(lgAll().filter(l=>!lgPresetHidden(l)&&l.host==h2hMe()&&!lgFinDone(l)).length>=3)return;const T=[...c.querySelectorAll('[data-lgop]:checked')].map(x=>x.dataset.lgop);if(T.length>H2H_MAX-1)return;
   const lg=lgCreate($('#lgname').value,T,[1,2,3,4,5,6].map(w=>($('#lgd'+w)||{}).value||''));if(lg)lgView(lg.code)};
  const j=$('#lgjgo');if(j)j.onclick=async()=>{const msg=await lgJoin($('#lgjc').value);const e=$('#lgjmsg');if(e&&msg)e.textContent='⚠ '+msg}}

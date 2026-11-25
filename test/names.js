@@ -15,7 +15,7 @@ const NM_DIR='scoretool.names',NM_SINCE='scoretool.names.since',nmOwnKey=id=>'sc
    it can't show on any phone; the relay copies expire by themselves within 12 hours. */
 const NM_RESET=H2H_RESET;
 const NM_HINT='Pick a nickname, not your full real name.';
-const NM_VARIANTS={phill:['Phil Arthur'],joseph:['Joe Snook'],dana:['Dana Matete'],tahuri:['Tahuri Engelen-Burney','Tahuri Burney','Tahuri Engelen'],darnie:['Darnie']};
+const NM_VARIANTS={};
 /* small built-in rude list. SUB: blocked anywhere in the name. WORD: blocked as a whole word (so Cassie, Grape, Hitchcock are fine). */
 const NM_SUB=['fuck','fuk','fck','shit','cunt','bitch','wank','twat','slut','whore','nigg','faggot','bastard','bollock','asshole','arsehole','penis','vagina','porn','dildo','retard','spastic','motherf','jizz','boner'];
 const NM_WORD=['ass','arse','asses','dick','dicks','cock','cocks','tit','tits','piss','rape','sex','sexy','hoe','hoes','nazi','crap','kys','poo','fag','fags','cum','prick','knob','bum'];
@@ -35,7 +35,7 @@ const nmIdx=id=>TESTERS.findIndex(t=>t.id==id);
 /* Default nicknames (Nathe, 20 Oct 2026): pre-set on every phone, so no 'Tester N' shows anywhere. A tester can still pick their
    own in Me; a real pick (own phone or relay, after NM_RESET) wins over the default. 'Tester N' stays only as a last resort for an
    id with no default. */
-const NM_DEF={nathe:'Nathe',phill:'Phill',logan:'Logan',steven:'Snookie',joseph:'Joe',michael:'Choongy',dana:'Dana',tahuri:'Tahuri',estiaan:'Estiaan',nate:'Nate',darnie:'Danie'};
+const NM_DEF={};
 const nmDef=id=>NM_DEF[id]||null;
 const nmNeutral=id=>{if(NM_DEF[id])return NM_DEF[id];const i=nmIdx(id);return i<0?'Archer':'Archer '+(i+1)};
 window.NM_DEF=NM_DEF;
@@ -59,21 +59,20 @@ function nmClash(id){const D=nmDir(),e=D[id];if(!e||!e.n)return false;const o=nm
 /* learn a name from the relay (directory, invite or match state). u = when it was posted: the newest post from an id always
    replaces that id's older one (one entry per id, so an id's own past names can never clash with it). nt = when it was picked,
    which decides clashes BETWEEN ids. */
-function nmLearn(id,n,nt,u){if(!id||nmIdx(id)<0||typeof n!='string')return false;const me=TESTER&&TESTER.id;if(id==me)return false;
+function nmLearn(id,n,nt,u){if(!id||typeof n!='string')return false;const me=TESTER&&TESTER.id;if(id==me)return false;
  u=+u||0;if(u<NM_RESET)return false;const c=nmCheck(n,id,false);if(!c.ok)return false;const D=nmDir(),e=D[id];
  if(e&&(e.u||e.nt||0)>u)return false;const ch=!e||e.n!=c.n;D[id]={n:c.n,nt:+nt||u,u};nmSaveDir(D);return ch}
 /* a clear entry {k:'nm',id,clr:1} newer than the cached name removes it */
 function nmForget(id,u){u=+u||0;if(u<NM_RESET||(TESTER&&TESTER.id==id))return false;const D=nmDir(),e=D[id];if(!e||(e.u||e.nt||0)>u)return false;delete D[id];nmSaveDir(D);return true}
 /* --- what the app shows --- */
-/* 22 Oct 2026 (Nathe): Darnie is shown by his real name Danie. A 'Darnie' already saved on a phone or on the relay is swapped at display time only. */
-const nmFix=(id,n)=>id=='darnie'&&typeof n=='string'&&/^darnie$/i.test(n.trim())?'Danie':n;
+const nmFix=(id,n)=>n;
 function testerName(id){return nmFix(id,testerName0(id))}
 function testerName0(id){const me=TESTER&&TESTER.id,o=id?nmOwn(id):null;if(id&&id==me)return o?o.n:nmNeutral(id);
  const e=nmDir()[id];if(e&&e.n&&nmCheck(e.n,id,false).ok&&!nmClash(id))return e.n;
  /* a name picked on this same phone (another tester profile) */if(o&&nmCheck(o.n,id,false).ok&&!(e&&e.n))return o.n;return nmNeutral(id)}
 const myName=()=>TESTER?testerName(TESTER.id):'You';
 const nmEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-/* every real-name variant -> tester id, longest first so 'Tahuri Engelen-Burney' beats 'Tahuri Engelen' */
+/* every real-name variant -> tester id, longest first so a longer variant beats a shorter one */
 const NM_VAR=(()=>{const L=[];NM_REAL.full.forEach(([id,n])=>{L.push([id,n]);const p=n.split(/\s+/);if(p.length>1){L.push([id,p[0]+' '+p[p.length-1][0]+'.']);L.push([id,p[0]+' '+p[1][0]+'.'])}});
  const seen=new Set();return L.filter(([i,n])=>{const k=n.toLowerCase();if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>b[1].length-a[1].length)})();
 const NM_RX=new RegExp('('+NM_VAR.map(([,n])=>nmEsc(n)).join('|')+')(?![A-Za-z])','gi');

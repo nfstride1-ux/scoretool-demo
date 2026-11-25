@@ -21,9 +21,9 @@ srv = subprocess.Popen([sys.executable, '-m', 'http.server', PORT], cwd=str(ROOT
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(0.5)
 
-NAMES = ['Alex River','Casey Ng','Dana Chapman','Estiaan Cronje','Jordan Lee','Joseph Snook',
-         'Leslie Anderson','Logan Wolfe','Michael Choong','Riley Chen','Sam Archer','Snooky',
-         'Tahuri Burney','Xavier Clark']
+NAMES = ['Alex River','Casey Ng','Dana Chapman','Eli Archer','Jordan Lee','Jo Archer',
+         'Lou Archer','Lee Archer','Mik Archer','Riley Chen','Sam Archer','Sporty',
+         'Tai Archer','Xavier Clark']
 
 SEED = """(names) => {
   const lg = lkEnsure();

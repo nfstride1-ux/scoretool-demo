@@ -1,4 +1,4 @@
-/* ScoreTool demo v1. Static, localStorage only. No real payments. */
+/* ScoreTool. Static, scores kept on this phone. No payments. */
 const $=s=>document.querySelector(s), app=$('#app');
 /* one plural rule app-wide: '1 adult', '2 adults', '1.0 points' */
 const plN=(n,s,p)=>n+' '+(String(n)==='1'?s:p);window.plN=plN;
@@ -58,9 +58,6 @@ const cbSync=()=>{if(document.body)document.body.classList.toggle('cb',CB())};cb
    Nathe unlocked for free already, so a fresh device under his own name should not be the one profile
    that hits the "Not open yet" paywall. Unlock everyone until a real payment flow ships. */
 if(TESTER&&!S.profile){S.profile=TESTER.name;S.unlocked=true;save()}
-/* a tester renamed to his name in the official results (Dana Matete -> Dana Chapman-Bureny) keeps his own profile */
-if(TESTER&&TESTER.id=='dana'&&S.profile=='Dana Matete'){S.profile=TESTER.name;save()}
-if(TESTER&&TESTER.id=='darnie'&&S.profile=='Darnie'){S.profile=TESTER.name;save()} /* 21 Oct 2026: his full name is now known (Danie Oosthuizen) */
 let REAL={}; // name -> [{date,event,round,score,division,club,url}]
 let csvState='loading';
 
@@ -86,7 +83,7 @@ const SHEET_ALIAS={'2014 AWA Field Course Red':'WA Field 24Mk Red','Field 24Mk R
 const isNatheName=n=>{n=String(n||'').toLowerCase();return n.includes('stride')&&n.includes('nath')};
 /* Every tester with data loads his own sheets the same way (data/sheets_<id>.json, built from scores.db); only his main bow feeds stats. */
 const sheetFile=id=>id=='nathe'?'data/my_scoresheets.json':'data/sheets_'+id+'.json';
-async function loadSheets(){const T=TESTER||{id:'nathe',bow:'Compound',data:true};if(!T.data)return;let j;try{const r=await fetch(sheetFile(T.id),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
+async function loadSheets(){const T=TESTER;if(!T||!T.data)return;let j;try{const r=await fetch(sheetFile(T.id),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return}
  const adn=j.archer||T.ad||T.name,nm=T.id=='nathe'?(Object.keys(REAL).find(isNatheName)||'Nathaniel Stride'):(Object.keys(REAL).find(k=>k.toLowerCase()==adn.toLowerCase())||adn),csv=REAL[nm]||[],ex={};const bw=new RegExp('^'+(T.bow||'Compound')+'$','i'),okBow=d=>bw.test(String(d||'').replace(/^.*\b(Male|Female)\s+/i,'').trim())||bw.test(d||'');
  csv.filter(r=>!okBow(r.division)).forEach(r=>{ex['csv '+(r.division||'?')]=(ex['csv '+(r.division||'?')]||0)+1});
  const RL=[],OL=[];(j.sheets||[]).forEach(x=>{if(!okBow(x.div)){ex[x.div]=(ex[x.div]||0)+1;return}if(!(x.sc>0))return;
@@ -100,7 +97,8 @@ async function loadSheets(){const T=TESTER||{id:'nathe',bow:'Compound',data:true
  REAL[nm]=RL;const ok=T.id=='nathe'?Object.keys(OFF).find(isNatheName):aliasKey(OFF,T.name)||aliasKey(OFF,adn);if(ok)delete OFF[ok];OFF[nm]=OL;window._excluded=ex;window._sheetsFor=nm;csvState=RL.length?'ok':csvState}
 async function _loadReal(){await __loadReal();await loadSheets()}
 async function __loadReal(){await loadArrows();
- try{const r=await fetch('data/archer_scores.csv',{cache:'no-store'});if(!r.ok)throw 0;
+ /* 25 Nov 2026: no shared per-person results file is shipped any more, so nothing is fetched (same for every archer). */
+ try{const r=null;throw 0;
   const rows=parseCSV(await r.text());if(rows.length<2){csvState='empty';return}
   const h=rows[0],ix={name:pick(h,['archer','name','archername']),date:pick(h,['date','eventdate']),event:pick(h,['event','eventname','shoot','tournament']),
    round:pick(h,['round','roundname']),score:pick(h,['score','total','totalscore']),division:pick(h,['division','bowclass','bowtype','class','category']),notes:pick(h,['notes']),
@@ -111,8 +109,8 @@ async function __loadReal(){await loadArrows();
   csvState=Object.keys(REAL).length?'ok':'empty';
  }catch(e){csvState='missing'}}
 function normDate(d){const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:d}
-const ARCHERS=TESTER?[TESTER.name]:['Nathaniel Stride'];
-/* 22 Oct 2026: a name that doesn't match is retried with the tester's other names (names.js NM_VARIANTS, e.g. 'Joe Snook' -> Joseph Snook) */
+const ARCHERS=TESTER?[TESTER.name]:[];
+/* a name that doesn't match is retried with the archer's other names (names.js NM_VARIANTS) */
 const nmAlts=n=>{const l=String(n||'').trim().toLowerCase();if(!l||typeof TESTERS=='undefined')return[];const V=typeof NM_VARIANTS!='undefined'?NM_VARIANTS:{};
  const all=t=>[t.name,t.ad,...(V[t.id]||[])].filter(Boolean),t=TESTERS.find(t=>all(t).some(x=>x.toLowerCase()==l));return t?all(t).filter(x=>x.toLowerCase()!=l):[]};
 const aliasKey=(O,n)=>{const k=aliasKey1(O,n);if(k)return k;for(const a of nmAlts(n)){const x=aliasKey1(O,a);if(x)return x}return undefined};
@@ -226,7 +224,7 @@ function csvNote(){if(TESTER&&TESTER.id!='nathe'&&csvState!='ok')return`<p class
  `<p class="small"><span class="sample">No scores yet</span> No official results imported yet. The past competition results are still being collected, so official results will appear here once it's added.</p>`}
 function render(){cbSync();seedNotes();regCustom();
  if(location.hash.startsWith('#share=')) return renderShare();
- if(location.hash.startsWith('#coach=')) return renderCoachLanding();
+ if(COACH_ON&&location.hash.startsWith('#coach=')) return renderCoachLanding();
  if(location.hash.startsWith('#sheet=')) return renderSheetLink();
  if(!TESTER){$('#tabs').hidden=true;app.innerHTML=testerPicker();bindTesterPicker(app);return}
  $('#tabs').hidden=false;
@@ -767,7 +765,7 @@ function stats(){const d=done();if(!d.length){app.innerHTML=officialCard()+'<div
  const nE=Math.max(...ss.map(s=>s.ends.length)),endAvg=[...Array(nE)].map((_,i)=>{const v=ss.map(s=>s.ends[i]?endSum(s.ends[i]):null).filter(x=>x!=null);return v.reduce((a,b)=>a+b,0)/v.length});
  const third=Math.max(1,Math.floor(nE/3)),early=endAvg.slice(0,third).reduce((a,b)=>a+b)/third,late=endAvg.slice(-third).reduce((a,b)=>a+b)/third;
  const cons=ss.map(s=>sd(s.ends.map(endSum)));const real=findReal(S.profile);
- app.innerHTML=`<h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">This official round</h2><p class="small muted" style="margin:0 4px 10px">Only this round’s own arrows from the scoresheet.</p>`+officialCard()+'<p class="small muted" style="margin:-4px 4px 12px">Plots are only for practice sessions. Arrows can’t be plotted at official shoots.</p>'+`<h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">This practice session</h2><p class="small muted" style="margin:0 4px 10px">Pick a practice session. The plot and end-by-end chart use only that session’s arrows.</p><div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select><label for="ps">Session</label><select id="ps">${ss.map((x,j)=>[x,j]).reverse().map(([x,j])=>`<option value="${j}" ${x==last?'selected':''}>${x.date} · ${total(x)}${x.sample?' (sample)':''}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Demo practice sessions, not real scores.</p>':''}</div>`+plottedCard(last)+`<div class="card"><h3>End by end · ${last.date}${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${endChart(ends,last.ends.map(e=>e.length),null)}</div><h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">All your practice</h2><p class="small muted" style="margin:0 4px 10px">Trends across every practice session of the chosen round.</p>`+noteInsights()+`<div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:CBC('#16a34a','#ffffff'),w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(ss.map(s=>s.date)):[]})}</div>
+ app.innerHTML=`<h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">This official round</h2><p class="small muted" style="margin:0 4px 10px">Only this round’s own arrows from the scoresheet.</p>`+officialCard()+'<p class="small muted" style="margin:-4px 4px 12px">Plots are only for practice sessions. Arrows can’t be plotted at official shoots.</p>'+`<h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">This practice session</h2><p class="small muted" style="margin:0 4px 10px">Pick a practice session. The plot and end-by-end chart use only that session’s arrows.</p><div class="card"><h2>Practice</h2><label for="rs">Round</label><select id="rs">${rounds.map(r=>`<option ${r==sel?'selected':''}>${r}</option>`).join('')}</select><label for="ps">Session</label><select id="ps">${ss.map((x,j)=>[x,j]).reverse().map(([x,j])=>`<option value="${j}" ${x==last?'selected':''}>${x.date} · ${total(x)}${x.sample?' (sample)':''}</option>`).join('')}</select>${ss.some(s=>s.sample)?'<p class="small"><span class="sample">Includes sample data</span> Sample practice sessions, not real scores.</p>':''}</div>`+plottedCard(last)+`<div class="card"><h3>End by end · ${last.date}${(last.round.match(/(\d+m)/)||[])[1]?' at '+last.round.match(/(\d+m)/)[1]:''}</h3>${endChart(ends,last.ends.map(e=>e.length),null)}</div><h2 class="sec" style="margin:22px 4px 6px;border-bottom:3px solid #166534;padding-bottom:4px">All your practice</h2><p class="small muted" style="margin:0 4px 10px">Trends across every practice session of the chosen round.</p>`+noteInsights()+`<div class="card"><h3>Score trend</h3>${lineChart([{name:'Score',data:tot,c:'#1d4ed8'},{name:'3-session average',data:roll,c:'#e0a800',dash:1},{name:'PB',data:pb,c:CBC('#16a34a','#ffffff'),w:1.5,dash:1}],{labels:ss.map(s=>s.date.slice(5)),markers:typeof setupMarkers=='function'?setupMarkers(ss.map(s=>s.date)):[]})}</div>
  <div class="card"><h3>Consistency</h3><p class="small muted">How spread out your end scores were. Lower means steadier.</p>${lineChart([{name:'End spread (SD)',data:cons.map(x=>Math.round(x*10)/10),c:'#3b82f6'}],{labels:ss.map(s=>s.date.slice(5))})}</div>
  <div class="card"><h3>Early vs late ends</h3><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${early.toFixed(1)}</b>first ${plN(third,'end','ends')}</div><div class="stat"><b>${late.toFixed(1)}</b>last ${plN(third,'end','ends')}</div></div>
  <p>${late>=early-0.3?'💪 Your last ends held up with your first ends.':`Your last ${third} ends averaged ${(early-late).toFixed(1)} points lower than your first ${third}.`}</p></div>
@@ -956,18 +954,19 @@ sbarSync();
    - coach invites are seeded here for the demo (a real invite would come from the coach's app through a backend),
    - Accept / Decline / Remove only change this phone,
    - the coach view link opens a landing page; the real view needs a coach membership and the coach app (later build).
-   Phill is the coach in the demo. His squad is Steven Snook, Michael Choong, Nathe, Dana, Tahuri Engelen-Burney, Danie Oosthuizen and Joseph Snook;
-   of those, only Nathe is a tester profile in this app, so only Nathe's profile gets the pending invite. Everyone else sees the empty state. */
-const COACH_SEED={id:'ci-phill-2026-10',coach:'Phill Arthur',squad:"Phill's compound squad",sent:'2026-10-17',for:['nathe']};
+   No coach invite is seeded. */
+const COACH_SEED={id:'none',coach:'',squad:'',sent:'',for:[]}; /* 25 Nov 2026: no seeded coach invite */
 function seedCoach(){S.coachInvites=S.coachInvites||[];S.coaches=S.coaches||[];
  if(S.coachSeeded==COACH_SEED.id)return;S.coachSeeded=COACH_SEED.id;
  if(TESTER&&COACH_SEED.for.includes(TESTER.id)&&!S.coaches.some(c=>c.id==COACH_SEED.id))S.coachInvites.push({id:COACH_SEED.id,coach:COACH_SEED.coach,squad:COACH_SEED.squad,sent:COACH_SEED.sent});save()}
 const coachLink=()=>location.origin+location.pathname+'#coach='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({n:S.profile,t:TESTER?TESTER.id:''})))));
+/* 25 Nov 2026 (Nathe): the coach option is hidden for now (My coaches card, coach link, coach sign-in page). Code kept; set true to bring it back. */
+const COACH_ON=false;
 function coachCards(url){seedCoach();const I=S.coachInvites,C=S.coaches;
- return`<div class="card" id="coachcard"><span class="kicker">Coach</span><h2>My coaches</h2>
+ return`${COACH_ON?`<div class="card" id="coachcard"><span class="kicker">Coach</span><h2>My coaches</h2>
  <h3>Coach invites</h3>${I.length?I.map(x=>`<div class="list-item"><b>${esc(x.coach)}</b> invited you to <b>${esc(x.squad)}</b><div class="small muted">Sent ${esc(x.sent)}. If you accept, they can see your scores and stats. They can't change anything.</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-ciacc="${esc(x.id)}">Accept</button><button class="btn ghost" data-cidec="${esc(x.id)}">Decline</button></div></div>`).join(''):'<p class="small muted" id="noinv">No invites right now. When a coach invites you to their squad, it shows up here.</p>'}
  <h3 style="margin-top:14px">Coaches who can see my scores</h3>${C.length?C.map(c=>`<div class="list-item row"><span><b>${esc(c.coach)}</b><br><span class="small muted">${esc(c.squad)} · since ${esc(c.since)}</span></span><button class="btn ghost" data-crm="${esc(c.id)}" style="padding:6px 12px;min-height:36px">Remove</button></div>`).join(''):'<p class="small muted" id="nocoach">No coaches yet.</p>'}
- <h3 style="margin-top:14px">Coach view link</h3><p class="small">Coaches with a ScoreTool coach membership can open this link for a view-only look at your scores and stats.</p><input readonly value="${coachLink()}" id="clink" aria-label="coach view link"><button class="btn ghost" id="clcp" style="margin-top:6px">Copy coach link</button></div>
+ <h3 style="margin-top:14px">Coach view link</h3><p class="small">Coaches with a ScoreTool coach membership can open this link for a view-only look at your scores and stats.</p><input readonly value="${coachLink()}" id="clink" aria-label="coach view link"><button class="btn ghost" id="clcp" style="margin-top:6px">Copy coach link</button></div>`:''}
  <div class="card" id="parentcard"><span class="kicker">Parent</span><h2>Share with a parent</h2><p class="small">A view-only link for a parent. It shows your last 10 sessions, streak and badges as they are right now. They can't change anything. Copy a new link any time to update it.</p><input readonly value="${url}" id="sh" aria-label="parent share link"><button class="btn ghost" id="cp" style="margin-top:6px">Copy link</button> <a class="btn ghost" href="${url}" style="margin-top:6px">Preview</a></div>`}
 function bindCoachCards(){const find=(L,id)=>L.findIndex(x=>x.id==id);
  app.querySelectorAll('[data-ciacc]').forEach(b=>b.onclick=()=>{const i=find(S.coachInvites,b.dataset.ciacc);if(i<0)return;const x=S.coachInvites.splice(i,1)[0];S.coaches.push({id:x.id,coach:x.coach,squad:x.squad,since:today()});save();me()});

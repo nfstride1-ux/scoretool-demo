@@ -220,7 +220,7 @@ try:
         chk('login lists Nathaniel and Nate once each',
             labels==['Nate Evans','Nathaniel Stride'], str(labels))
         page.locator('#lkscorernames .lk-namebtn', has_text='Nathaniel Stride').click()
-        page.fill('#lkpw', 'Kana26')
+        page.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkassigned', timeout=5000)
         assigned = page.inner_text('#lkassigned')
@@ -263,7 +263,7 @@ try:
         page.evaluate("() => lkFlowLogin()")
         page.wait_for_selector('#lkscorernames', timeout=5000)
         page.locator('#lkscorernames .lk-namebtn', has_text='Nate Evans').click()
-        page.fill('#lkpw', 'Kana26')
+        page.fill('#lkpw', os.environ['LK_TEST_PASSCODE'])
         page.locator('#lkpwgo').click()
         page.wait_for_selector('#lkpaidlist', timeout=5000)
         paid_names = page.locator('#lkpaidlist .lk-paidrow .nm').all_inner_texts()
