@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 25 Nov 2026, 15:08 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/practice-no-fairplay` (cache `v2026-11-25-1505-practicefp`). Nathe (t1176u): the Fair Play card is gone from My archery > Practice arrows. Today's arrow tally and daily goal on that page count every arrow logged today, including quick-logged ones still held back from XP and badges. The "-3 from rounds + 6 added today" figure was a display bug: unconfirmed added arrows were taken out of the total, then subtracted again when splitting "from rounds" vs "added today". It now shows 0 from rounds + 6 added today when only added arrows are logged. Fair Play still gates XP, streaks and badges. League scoring is untouched: added practice arrows never go into league scores, and `league.js` was not changed. The Fair Play card stays on My archery > Latest shoot. The one-time "Whoa, that was quick!" modal still appears for a too-fast Just me end, and for a 150-in-10-min added burst when that is not on Practice arrows. New test `tools/practicefp_test.py`. No existing test was edited. Lingkana was not written to.
+- Removed (Practice arrows page only): the Fair Play card ("N quick-logged arrows aren't counting toward XP, league or badges yet" and the "Yes, I shot these" button). Fair Play is not removed from the app.
+- Half-done: PR only, not merged; waits for Nathe's "go live".
+- Decision: Practice arrows is unaffected (no card, full tally). XP and badges still wait for confirmation, with the card left on Latest shoot. League left untouched.
+
 ## 25 Nov 2026, 14:20 AWST — [Jarvis]
 
 - Who: Jarvis.
