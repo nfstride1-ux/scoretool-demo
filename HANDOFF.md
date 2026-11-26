@@ -4,6 +4,16 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 26 Nov 2026, 17:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-1705-nogeorge`), PR #91. Nathe t1221u "i dont want references to george at all": every user-visible George / George Ryles / seminar mark is gone from Tune (lists, badges, hints, What I changed). The Easton FOC citation in the Arrow chooser and Calculators now names the article and date only (this citation is also live on main). Advice text is kept. HANDOFF history lines were not edited.
+- Also t1222u: Torque tune now has Torqued left and Torqued right groups on Before and on After, with their own markers and stats, What I changed between the two rounds, and a left-vs-right gap verdict (closer together / both on the line = forgiving). Old torque sessions without the new fields still open.
+- Also t1223u and Archery Coach's order: Tune helper is "Setup, then tune" with a Compound / Recurve toggle. Steps 1-3 shared (Bow setup, Draw weight / spine, Cut length); compound then Paper, Node, Bare shaft, Creep, Torque, Dudley; recurve then optional Paper, Bare shaft, Node, Walk-back, Plunger spring / group tune; Creep is a form note on recurve. Each step opens the existing screen where one exists.
+- Tests: tools/tuning_test.py 64/64, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass. paid_tier line 98 still the known stale fail, not rerun as a gate.
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay from pr/92 kept).
+- Note: "St George" remains as the official AA historical round name. "George Philip" remains only as a head-to-head test fixture. Code comments in app.js that say source notes are kept in code and never shown were left as comments.
+
 ## 26 Nov 2026, 07:05 AWST — [Jarvis]
 
 - Who: Jarvis.
