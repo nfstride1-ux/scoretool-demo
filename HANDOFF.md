@@ -4,6 +4,39 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 27 Nov 2026, 17:17 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: After a set or game win, the banner now shows the finished score (for example “Blue win the set 6–1”) and says the next set is on the board at 0, so the totals do not look like they reset for no reason. Still on PR #93 only. Cache now in version.json ({"version": "v2026-11-27-1717-bhutanlive"}).
+- Half-done: PR only, not merged. Needs Nathe's "go". Lab preview pr/93 to be republished after this commit.
+
+## 27 Nov 2026, 17:04 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR #93 Bhutan live scores. Nathe’s phone (4:51pm): taps registered but both scores stayed at 0 until the round ended (11 a side), so the buttons looked broken. The big number now updates on every tap (this set so far, including this round), with “This round” and “Set” split out, a per-round tap tally, and cancel notes shown live. Set winners are still confirmed at the end of the round, and the page says so. Same treatment for Datse (bamboo and compound), Khuru and Degor. Scoring decisions applied: a Sa-Karey or bounce-off cancel deducts 1 Kuu from one opponent Karey that round (not a wipe); if there is no opponent Karey, bounce-off scores 2 and Sa-Karey scores 1; only the single closest Daya in a round scores 1; if both sides pass the target in the same round the higher total wins the set, and a level score plays another round. Cache `v2026-11-27-1704-bhutanlive` (test app `v2026-11-27-1704-bhutanlive-test`). Main and `/test/` copies updated.
+- Tests: `python3 tools/bhutan_test.py` (includes live-total cases). safety-smoke and privacy-scan to be confirmed on this commit.
+- Half-done: PR only, not merged. Needs Nathe's "go". Lab preview pr/93 to be republished after this commit.
+
+## 27 Nov 2026, 10:30 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Nathe could not find Bhutan in the PR #93 "test app". The Tools row was already in root `lab.js` (not `app.js`, which is why a grep of app.js was empty), but `/test/` is a separate older copy. `test/lab.js` had no Bhutan row, and `test/` had no `bhutan.html`. Added a clear **Bhutan scoring** button at the top of Tools, a matching Home button, and the same on `/test/`. Copied `bhutan.html` / `bhutan.js` / `bhutan_score.js` into `/test/`. Cache `v2026-11-27-1030-bhutantools` (test app `v2026-11-27-1030-bhutantools-test`).
+- Half-done: PR only, not merged. Needs Nathe's "go". Lab preview pr/93 to be republished after this commit.
+
+## 27 Nov 2026, 08:52 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: PR #93 CI `safety-smoke` failed on the known display-name prompt race (passed 15/15 locally). Brought across the wait-for `#nmlater` or casual button, then Not now, from the later smoke test. App code unchanged. Preview already at https://nfstride1-ux.github.io/scoretool-lab/pr/93/bhutan.html
+- Half-done: PR only, not merged. Needs Nathe's "go". Waiting on CI after this commit.
+
+## 27 Nov 2026, 08:43 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/bhutan-scoring` (cache `v2026-11-27-0840-bhutan`). Nathe (27 Nov, via Grok Bot): standalone Bhutan scoring TEST page. New `bhutan.html` / `bhutan.js` / `bhutan_score.js`, linked from Tools as "Bhutan scoring (test)". Modes: Datse bamboo, Datse compound (same scoring; finger release, no magnifier or release aid), Khuru, Degor. Two teams, end-to-end, two arrows or stones each per turn. Datse buttons: Karey 2, bullseye 3, Sa-Karey 1 (cancels 1 Kuu of an opponent Karey), bounce-off 2 or cancels 1 opponent Karey Kuu, Daya 1 only if closer. Cancels apply at the end of the round and are listed on screen. Settings: team size 11+2, 6, or custom; Datse win by first to 25, 11 rounds, or custom (21, 23…); best of 3 or 5 sets. Khuru: hit 2, bull 3, near-miss within a stick 1, best of 3 sets to 15. Degor: closest stone scores, best of 3 games to 15. Undo last tap. Royal and neon blue only. No George references.
+- Tests: `python3 tools/bhutan_test.py` 23/23. safety-smoke 15/15. privacy-scan pass.
+- Half-done: PR only, not merged. Needs Nathe's "go". Lab preview to be published by hand after the PR number is known.
+- Decision: official school Khuru scoring is almost the same as Datse (including Sa-Karey cancels). This test page uses the simpler table Nathe asked for. A full adult BIGSA or Yangphel rule sheet was not available, so adult win totals follow reported practice (first to 25, or 21/23, sets of 3 or 5).
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.
