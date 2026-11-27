@@ -7,6 +7,7 @@ html=open(os.path.join(ROOT,'index.html'),encoding='utf-8').read()
 refs=[re.sub(r'\?.*$','',u) for u in re.findall(r'(?:src|href)="([^"#:]+)"',html)]
 pre=['./','index.html','version.json']+refs
 pre+=['img/lingkana-flyer.jpg','img/lingkana-logo.png','vendor/jspdf.umd.min.js','vendor/ac-icon.png']  # used later (Lingkana event home, sight card PDF): precached by the service worker, no longer prefetched on first load
+pre+=['bhutan.html','bhutan.js','bhutan_score.js']
 pre+=['fonts/'+f for f in sorted(os.listdir(os.path.join(ROOT,'fonts'))) if f.endswith('.woff2')]
 pre+=['icons/'+f for f in sorted(os.listdir(os.path.join(ROOT,'icons')))]
 pre+=['data/'+f for f in sorted(os.listdir(os.path.join(ROOT,'data'))) if re.search(r'\.(json|csv)$',f)]

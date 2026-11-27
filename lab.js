@@ -136,12 +136,14 @@ sub('lab_settings','me','Settings & help','lab_me','Me',()=>me(),(e,t)=>['settin
 /* ---------- Tools ---------- */
 LABSEC.tools='tools';
 E.tools=()=>menu('Tools',[
+ row('lab_bhutan','🎯','Bhutan scoring (test)','Traditional Datse, Khuru and Degor team scoring'),
  row('lab_tune','🎯','Tune helper','Paper, torque, draw weight and spine, cut length, bare shaft, node, creep, Dudley'),
  row('lab_chooser','🏹','Arrow chooser','Starting spine and cut length from the makers\' charts, FOC and point weight'),
  row('lab_rounds','◎','Rounds','Distances and faces when a club names the round'),
  row('lab_rules','📓','Rules','World Archery, Archery Australia, ABA, IBO, ASA and IFAA, with sources'),
  row('lab_mydata','📥','Import my data','Your own scoresheets, results and sight marks, from the file you were sent')]);
 LABSEC.lab_mydata='tools';if(window.MYDATA_VIEW)E.lab_mydata=window.MYDATA_VIEW;
+LABSEC.lab_bhutan='tools';E.lab_bhutan=function(){location.href='bhutan.html'};
 
 /* Arrow optimizer: groups on a plain tuning face. Before = blue circles, After = black squares (shape and colour both differ). */
 LABSEC.lab_opt='tools';LABSEC.lab_chooser='tools';LABSEC.lab_tune='tools';LABSEC.lab_rounds='tools';

@@ -4,6 +4,14 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 27 Nov 2026, 08:43 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/bhutan-scoring` (cache `v2026-11-27-0840-bhutan`). Nathe (27 Nov, via Grok Bot): standalone Bhutan scoring TEST page. New `bhutan.html` / `bhutan.js` / `bhutan_score.js`, linked from Tools as "Bhutan scoring (test)". Modes: Datse bamboo, Datse compound (same scoring; finger release, no magnifier or release aid), Khuru, Degor. Two teams, end-to-end, two arrows or stones each per turn. Datse buttons: Karey 2, bullseye 3, Sa-Karey 1 (cancels 1 Kuu of an opponent Karey), bounce-off 2 or cancels 1 opponent Karey Kuu, Daya 1 only if closer. Cancels apply at the end of the round and are listed on screen. Settings: team size 11+2, 6, or custom; Datse win by first to 25, 11 rounds, or custom (21, 23…); best of 3 or 5 sets. Khuru: hit 2, bull 3, near-miss within a stick 1, best of 3 sets to 15. Degor: closest stone scores, best of 3 games to 15. Undo last tap. Royal and neon blue only. No George references.
+- Tests: `python3 tools/bhutan_test.py` 23/23. safety-smoke 15/15. privacy-scan pass.
+- Half-done: PR only, not merged. Needs Nathe's "go". Lab preview to be published by hand after the PR number is known.
+- Decision: official school Khuru scoring is almost the same as Datse (including Sa-Karey cancels). This test page uses the simpler table Nathe asked for. A full adult BIGSA or Yangphel rule sheet was not available, so adult win totals follow reported practice (first to 25, or 21/23, sets of 3 or 5).
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.
