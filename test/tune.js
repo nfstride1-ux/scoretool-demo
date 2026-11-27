@@ -13,7 +13,7 @@ const COMPOUND=[
  ['bare','Bare shaft','Compare bare and fletched arrows left and right, and fine-tune the rest, yoke or spine.','opt','Bare shaft vs fletched'],
  ['creep','Creep','Shoot a group at full draw and a group with a shortened draw. If the crept group drops, adjust cam timing only.','opt','Creep tune'],
  ['torque','Torque','Shoot one end torqued left and one end torqued right against the vertical line, then adjust the sight.','opt','Torque tune'],
- ['dudley','Walk back tune','Keep the 5 m sight setting, aim at the tip of the vertical line, then walk back. Where the arrows land shows how far the sight is out. Close miss = sight, far miss = rest.','opt','Walk back tune'],
+ ['dudley','Walk back tune','Enter poundage and target size first. The app gives up to three safe distances. Draw a dot at the top with a line down, set windage at 10 m, then walk back without touching the sight.','opt','Walk back tune'],
  ['group','Group tune','Shoot long-range groups and keep the change that tightens the group.','opt','Group tune']
 ];
 const RECURVE=[
@@ -22,12 +22,11 @@ const RECURVE=[
  ['cut','Cut length','Leave about 1 in past the plunger at full draw, or cut to suit the clicker.','chooser','cut'],
  ['paper','Paper (optional)','A quick flight check at about 4-6 ft, before bare shaft. Less reliable with fingers than bare shaft.','opt','Paper tune'],
  ['bare','Bare shaft','The main recurve tune: height first, then left and right with point weight, plunger spring or limb bolts.','opt','Bare shaft vs fletched'],
- ['walk','Walk back tune','Shoot one vertical line at several distances and adjust the plunger.','opt','Walk back tune'],
+ ['walk','Walk back tune','Enter poundage and target size first. The app gives up to three safe distances. A sloped or curved line points to the plunger; change position or spring one at a time.','opt','Walk back tune'],
  ['group','Group tune','Shoot long-range groups and adjust spring, tiller or brace for the tightest group.','opt','Group tune']
 ];
-/* Held back from live (Nathe 27 Nov): Walk back tune, to be fixed later. "Just a group" is removed from the new-session list. Group tune stays. Old sessions still open. */
-const HOLD=new Set(['dudley','walk']);
-function liveSteps(bt){return (bt=='r'?RECURVE:COMPOUND).filter(s=>!HOLD.has(s[0]))}
+/* Walk back tune is back in the helper (Nathe 27 Nov, go on the new method). "Just a group" stays off the new-session list. Old Walk back / Dudley sessions still open. */
+function liveSteps(bt){return bt=='r'?RECURVE:COMPOUND}
 function curBt(){
  try{const s=localStorage.getItem(KEY);if(s=='r'||s=='c')return s}catch(e){}
  const cb=typeof curBow=='function'&&curBow(),snap=cb&&window.bowSnap&&bowSnap(cb.id);
@@ -35,7 +34,7 @@ function curBt(){
 }
 function setBt(bt){try{localStorage.setItem(KEY,bt)}catch(e){}}
 function go(s){
- if(!s||HOLD.has(s[0]))return;
+ if(!s)return;
  if(s[3]=='opt'){window._tunePref=s[4];window._tuneBt=curBt();nav('lab_opt')}
  else if(s[3]=='bows'){window._tuneSetup=curBt();nav('lab_mybows')}
  else if(s[3]=='chooser'){if(window.acGo&&s[4])acGo(s[4]);else nav('lab_chooser')}
@@ -45,8 +44,8 @@ function go(s){
 E.lab_tune=function(){
  const bt=curBt(),steps=liveSteps(bt);
  const note=bt=='r'
-  ?'Setup first, then the recurve tuning steps in order. Creep is a form note (clicker timing), not a tuning step. Walk back tune is held back for a later fix.'
-  :'Setup first, then the compound tuning steps in order. Each step opens the screen that already does that job. Walk back tune is held back for a later fix.';
+  ?'Setup first, then the recurve tuning steps in order. Creep is a form note (clicker timing), not a tuning step.'
+  :'Setup first, then the compound tuning steps in order. Each step opens the screen that already does that job.';
  app.innerHTML=`<div class="card" id="tunehelper"><span class="kicker">Tune helper</span><h2 style="margin:2px 0 8px">Setup, then tune</h2>
  <div class="labseg" role="group" aria-label="Bow type" id="thbt"><button type="button" data-thbt="c" aria-pressed="${bt=='c'}">Compound</button><button type="button" data-thbt="r" aria-pressed="${bt=='r'}">Recurve</button></div>
  <p class="small" style="margin:0 0 8px">${note}</p>

@@ -4,6 +4,44 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 28 Nov 2026, 05:49 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/walkback-tune` / PR #94 (cache `v2026-11-28-0549-walklive`). Nathe t1252u "goog dgo live": Walk back tune is going live. It is back in Tune helper and the new-session list (compound after Torque, before Group tune; recurve after Bare shaft, before Group tune). "Just a group" stays off. Old Walk back / Dudley sessions still open. Bhutan PR #93 is not included. PRs #1, #90, #92 and #93 were not touched.
+- Tests before merge: tools/walkback_test.js 77/77, safety-smoke 15/15 (one earlier "squad is not defined" flake, clean on rerun), privacy-scan pass. The start-screen lock fix and full preview play-through (412/412 at 390 and 1280, main and /test/) were already on this branch.
+- Half-done: Merge #94, wait for GitHub Pages, then a full real-click check on the live site and /test/.
+
+## 27 Nov 2026, 22:30 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Same PR #94 / cache `v2026-11-27-2220-walkback`. Rebuilt `test/sw.js` and `test/version.json`. The /test/ service worker was still on `v2026-11-25-1025-audit2-test` and its precache omitted `walkback.js`, so the /test/ preview was an old copy. It now uses the same 2220 tag, precaches walkback.js, and still uses the `scoretool-test-` cache prefix so it cannot delete the main app cache.
+- Half-done: Republish pr/94 and redo the full real-click play-through at 390 and 1280, main and /test/. Preview only — do not merge. Bhutan is not in this PR.
+
+## 27 Nov 2026, 22:20 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: On branch `cursor/walkback-tune` / PR #94 (cache `v2026-11-27-2220-walkback`). Fixed the Walk back start screen so bow type is not locked on Compound. Root cause: clicking Recurve or Barebow set the type, then apply() re-read the still-pressed Compound button and overwrote the choice. Apply no longer re-reads bow type from the buttons. Typing a custom height, draw weight or speed and tapping Start no longer rebuilds the card under the tap (that was swallowing the Start click). Custom height stays on Custom even if the number matches a preset. Distances still update live as the first-screen options change.
+- Tests: tools/walkback_test.js 77/77, tools/tuning_test.py 132/132 (includes a real click from Compound to Recurve and Barebow, live distances, custom 50 cm, stop-label 50/60/80/120), tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass.
+- Half-done: Republish lab preview pr/94 and play the whole flow through at phone and desktop width, main and /test/. Preview only — do not merge until Nathe says “go live 94”. Bhutan is not in this PR.
+
+## 27 Nov 2026, 19:51 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: On branch `cursor/walkback-tune` / PR #94 (cache `v2026-11-27-1951-walkback`). Fixed the in-plot Walk back “bottom quarter” label so it never clips at 390px width. Small faces (about 60 cm and under, including custom 50 cm) say “Stop zone”. Medium faces say “Stop if an arrow lands here”. 120 cm still has the full “Bottom quarter — stop if an arrow lands here”. getBBox tests cover 50, 60, 80 and 120 cm.
+- Tests: tools/walkback_test.js 77/77, tools/tuning_test.py 124/124, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass.
+- Half-done: Republish lab preview pr/94 and re-check 60/80/120 cm at phone size. Preview only — do not merge until Nathe says “go live 94”. Bhutan is not in this PR.
+
+## 27 Nov 2026, 19:35 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/walkback-tune` off main `e6aa668` (cache `v2026-11-27-1935-walkback`). New Walk back tune (Nathe t1249u "Go", discussion t1243u–t1248u plus Archery Coach). Preview only — do not merge until Nathe says "go live N". Bhutan is not in this PR.
+- Start screen asks bow type, draw weight, target height (60/80/100/120 cm or custom), optional arrow speed, and (compound) bubble / 2nd-axis pre-checks. Then it gives up to three safe distances (first is always 10 m, then mid and max in 5 m steps) from a point-mass flight model with air drag, in the style of J.L. Park's published trajectory work (Park 2011, 2013, and "Modelling arrows in flight"; cited in walkback.js and HANDOFF). Results are labelled estimates. Sight stays on 10 m; usable drop is target height minus the bottom quarter and a small top margin. Drag distances are never longer than the no-drag cap. Compound gets an optional note that a long-distance sight mark can go further. One test arrow first at each new distance; stop warning if an arrow lands in the bottom quarter.
+- Method: dot at the top and a vertical line down; set windage at 10 m; shoot 1–3 close, then walk back without touching the sight. The plot is the target face with the line. Verdicts: compound rest / yoke (or check bubble and 2nd axis first if those pre-checks are not done), move the rest opposite the far miss one small step (~1/32 in) and re-shoot; 3rd axis is not visible on flat ground. Recurve / barebow: sloped vs curved line, both plunger position and spring tension listed (sources disagree), change one thing at a time (~1/8 turn). Once the line is vertical, adjust windage. Only works if the archer groups well. No George / Ryles in the UI.
+- Walk back is back in the helper and the new-session list, in its old place (compound after Torque, before Group tune; recurve after Bare shaft, before Group tune). "Just a group" stays off the list. Old Walk back / Dudley sessions still open on the earlier plot. Main and /test/ copies. Pro gating unchanged. Lingkana untouched.
+- Default estimated distances with the sight on 10 m: compound 60 lb / 120 cm → 10, 25, 35 m; recurve 30 lb / 120 cm → 10, 20, 25 m; recurve 20 lb / 80 cm → 10, 15 m (only two stay on a target that short). A saved IBO/ATA rating can change the estimate.
+- Tests: tools/walkback_test.js 77/77, tools/tuning_test.py 120/120, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass.
+- Half-done: Preview and play-through on the published lab URL, then wait for Nathe's "go live N". Do not merge this PR.
+
 ## 27 Nov 2026, 18:44 AWST — [Jarvis]
 
 - Who: Jarvis.
