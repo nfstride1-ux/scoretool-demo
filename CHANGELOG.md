@@ -4,6 +4,17 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-27-1935-walkback: New Walk back tune, with safe distances from poundage and target size
+
+- Nathe, 27 Nov about 7:19pm Perth: "Go" on the agreed Walk back method (t1243u–t1249u). **Preview only — not live until he says go live N.** Bhutan is not in this change.
+- **Walk back tune is back** in Tune helper and the new-session list, in its old place: compound after Torque and before Group tune; recurve after Bare shaft and before Group tune. "Just a group" stays off the new-session list. Old Walk back / Dudley sessions still open.
+- At the start, the session asks for bow type, draw weight, roughly how tall the target is, and (optional) arrow speed. Compound also asks whether the bubble is level at full draw and whether the 2nd axis has been checked. It then gives up to three distances that should stay on the boss (always starting at 10 m). These are estimates from a point-mass flight model with air drag, in the style of J.L. Park's published work. The sight stays on 10 m; aim at a dot at the top of the target with a vertical line down; one test arrow first at each new distance; stop if an arrow lands in the bottom quarter. Compound can use a long-distance sight mark to go further.
+- The plot is the target face with that vertical line. If groups drift to one side as you walk back: on compound, that usually means the rest (or yoke / cam lean if the rest is already at true centre), unless the bubble or 2nd axis still needs a check; move the rest opposite the far miss one small step (about 1/32 in) and re-shoot the far distance; a 3rd-axis error cannot be seen on flat ground. On recurve or barebow, a sloped or curved line lists both plunger position and spring tension as candidates (published guides do not all agree); change one thing at a time (about 1/8 turn on the spring). Once the line is vertical, adjust windage. It only works if you can already shoot tight groups.
+- Cache `v2026-11-27-1935-walkback`.
+
+### Files
+walkback.js, lab.js, tune.js, test/walkback.js, test/lab.js, test/tune.js, test/index.html, tools/walkback_test.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-27-1844-tunelive: Tuning goes live, Walk back held back, Just a group removed
 - Nathe, 27 Nov about 6:32–6:34pm Perth: load the tuning live, keep Group tune, remove the extra "Just a group" option, and hold Walk back tune back to fix later. Bhutan (PR #93) is not in this release.
 - **Held back (not shipped in the live helper or the new-session list):** Walk back tune. Old Walk back / Dudley sessions still open and do not crash.

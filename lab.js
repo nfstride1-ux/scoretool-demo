@@ -156,15 +156,15 @@ E.lab_rounds=function(){const esc=h;app.innerHTML=`<p class="small" id="aaintro"
 /* Tuning sessions (26 Nov 2026, Nathe via Grok Bot, "Yes, build the tuning preview"):
    - one bow picker and one arrow picker on a new session (the 'Use my arrow setup' tick box and the Face choice are gone);
    - Paper tune is a keypad of tear shapes laid out like the scoring pad, one tap per arrow, any number of arrows;
-   - every other tune plots on a crosshair: Torque = vertical line only, Walk back tune (the Dudley close/far rules, now named Walk back) = vertical line only, the rest both lines;
+   - every other tune plots on a crosshair: Torque = vertical line only, older Walk back / Dudley sessions = vertical line only (compound) or a crosshair (recurve), new Walk back sessions use a target face with a vertical line from a dot at the top; the rest both lines;
    - 'What I changed' per tune: item + direction + amount + note, filtered by a Compound / Recurve switch (lists from Archery Coach,
      26 Nov ~6:13am Perth), with tear-to-fix hints on Paper tune;
    - the Arrow setup table is an optional, closed section; past sessions can be deleted (with a confirm).
    Stored data: new sessions add their own fields (bt, span, paper, changes, bowSpec, arrow). Old sessions keep their face and plots
    and are shown on the crosshair at their old face's scale; nothing old is rewritten. Lingkana data is never read or written here. */
 const TUNES_ALL=['Paper tune','Bare shaft vs fletched','Torque tune','Walk back tune','Creep tune','Group tune','Just a group','Other'];
-/* Held back from live (Nathe 27 Nov): Walk back tune (to be fixed later) and the extra "Just a group" option. Group tune stays. Old sessions still open. */
-const TUNE_HOLD=new Set(['Walk back tune','Just a group']);
+/* "Just a group" stays off the new-session list (Nathe 27 Nov). Walk back tune is back, with a setup screen and safe distances. Old Walk back / Dudley sessions still open on the earlier plot. */
+const TUNE_HOLD=new Set(['Just a group']);
 const TUNES=TUNES_ALL.filter(c=>!TUNE_HOLD.has(c));
 const FACES={'40cm':20,'60cm':30,'80cm':40,'122cm':61};/* old sessions only: the face they were plotted on */
 const SPAN=20;/* new crosshair: centre to edge = 20 cm, grid every 5 cm */
@@ -173,17 +173,18 @@ function gstats(P,rcm){if(!P.length)return null;const cx=P.reduce((a,p)=>a+p[0],
  return{n:P.length,cx:cx*rcm,cy:cy*rcm,mr:mr*rcm,es:es*rcm}}
 const cm=v=>(Math.round(v*10)/10).toFixed(1);
 const dir=(x,y)=>`${cm(Math.abs(x))} cm ${x>=0?'right':'left'}, ${cm(Math.abs(y))} cm ${y>=0?'low':'high'}`;
-function tKind(T){if(T.face)return'legacy';const c=T.change;if(c=='Walk back tune')return(T.bt&&T.bt!='c')?'walk':'dudley';return({'Paper tune':'paper','Bare shaft vs fletched':'bare','Torque tune':'torque','Dudley / yoke tune':'dudley','Creep tune':'creep','Group tune':'group','Group test':'group','Walk-back':'walk'})[c]||'group'}
+function tKind(T){if(T.face)return'legacy';if(T.walk)return'walkback';const c=T.change;if(c=='Walk back tune')return(T.bt&&T.bt!='c')?'walk':'dudley';return({'Paper tune':'paper','Bare shaft vs fletched':'bare','Torque tune':'torque','Dudley / yoke tune':'dudley','Creep tune':'creep','Group tune':'group','Group test':'group','Walk-back':'walk'})[c]||'group'}
 function tName(T){const c=typeof T=='string'?T:(T&&T.change)||'';return(c=='Dudley / yoke tune'||c=='Walk-back'||c=='Walk back tune')?'Walk back tune':c}
 const tScale=T=>T.face?(FACES[T.face]||20):(T.span||SPAN);
 function torqueInit(){return{before:{L:[],R:[]},after:{L:[],R:[]}}}
 function torqueEnsure(T){if(tKind(T)!='torque')return false;if(T.torque)return false;T.torque=torqueInit();if((T.before||[]).length)T.torque.before.L=T.before.slice();if((T.after||[]).length)T.torque.after.L=T.after.slice();if(!T.side)T.side='L';return true}
 function torqueOn(T){return tKind(T)=='torque'}
-function tuneEmpty(t){const pn=t.paper?(t.paper.before||[]).length+(t.paper.after||[]).length:0;const tn=t.torque?['before','after'].flatMap(g=>['L','R'].map(s=>((t.torque[g]||{})[s]||[]).length)).reduce((a,b)=>a+b,0):0;return!(t.before||[]).length&&!(t.after||[]).length&&!pn&&!tn&&!(t.changes||[]).length&&!t.note&&!((t.name||'').trim())}
+function tuneEmpty(t){const pn=t.paper?(t.paper.before||[]).length+(t.paper.after||[]).length:0;const tn=t.torque?['before','after'].flatMap(g=>['L','R'].map(s=>((t.torque[g]||{})[s]||[]).length)).reduce((a,b)=>a+b,0):0;const wn=t.walk&&((t.walk.shots||[]).length||t.walk.stage=='shoot');return!(t.before||[]).length&&!(t.after||[]).length&&!pn&&!tn&&!wn&&!(t.changes||[]).length&&!t.note&&!((t.name||'').trim())}
 function tuneStart(change,opt){opt=opt||{};if(typeof seedBows=='function')seedBows();const bows=typeof myBows=='function'?myBows():[],cb=typeof curBow=='function'&&curBow();const sets=window.myArrows?myArrows():[],acs=window.arrowSetup&&arrowSetup();const bid=opt.bow!=null?opt.bow:(cb&&cb.id)||'';const b=bows.find(x=>x.id==bid);const snap0=(b||cb)&&window.bowSnap&&bowSnap((b||cb).id);const nbt=opt.bt||(snap0&&snap0.type!='compound'?'r':'c');
  const t={id:'t'+Date.now(),archer:S.profile,date:new Date().toLocaleDateString('en-CA'),name:opt.name||'',change,dist:opt.dist||'',span:SPAN,bt:nbt,bow:b?b.id:null,bowName:b?b.name:'',before:[],after:[],grp:'before',changes:[]};
  if(change=='Paper tune')t.paper={before:[],after:[]};
  if(change=='Torque tune'){t.torque=torqueInit();t.side='L'}
+ if(change=='Walk back tune'&&window.WalkBack)t.walk=walkPrefill(t,snap0);
  if(snap0)t.bowSpec=snap0;
  const asel=(S.arrowSel||{})[S.profile];
  const sdef=acs?'ac':(sets.find(a=>a.id==asel&&(a.shaft||a.spine||a.len))||sets.find(a=>a.shaft||a.spine||a.len)||{}).id||'';
@@ -216,7 +217,8 @@ const WHAT={
  dudley:[['Sight left/right (close, from 5 m)','lr','c'],['Arrow rest left/right (far, after you walk back)','lr','c'],['Yoke twists (no rest move)','lr','c']],
  group:[['Nocking point (small steps)','ud','b'],['Rest height','ud','b'],['Point weight','pt','b'],['Draw weight','ud','b'],['Brace height','hl','b'],['Tiller','id','r'],['Plunger spring','sp','r'],['Yoke twists','lr','c'],['Cam timing','tw','c']],
  creep:[['Cam timing (cable/string twists)','tw','c']],
- walk:[['Plunger in/out (centre shot)','io','r'],['Plunger spring tension','sp','r'],['Nocking point (only if the vertical spread is bad)','ud','r']]};
+ walk:[['Plunger in/out (centre shot)','io','r'],['Plunger spring tension','sp','r'],['Nocking point (only if the vertical spread is bad)','ud','r']],
+ walkback:[['Sight windage at 10 m','lr','b'],['Arrow rest left/right','lr','c'],['Yoke twists (no rest move)','lr','c'],['Plunger in/out (centre shot)','io','r'],['Plunger spring tension','sp','r']]};
 const tWhat=k=>(WHAT[k]||WHAT.group).concat([['Other','any','b']]);
 function eastonLink(p){const S2=window.ARROW_SRC||{},t=S2.eastonTM;return t?`<a href="${t[1]}" target="_blank" rel="noopener">Easton Arrow Tuning and Maintenance Guide</a>${p?', '+p:''}`:`Easton Arrow Tuning and Maintenance Guide${p?', '+p:''}`}
 /* How to read each tune: Coach's lines; Easton cited where it is Easton */
@@ -280,6 +282,98 @@ function whatWire(T,k){const bt=T.bt||'c',all=tWhat(k),L=all.filter(x=>x[2]=='b'
  const wa=$('#wadd');if(wa)wa.onclick=()=>{const x=use[+$('#wi').value];T.changes=T.changes||[];T.changes.push({item:x[0],dir:$('#wd').value,amt:$('#wa').value.trim(),note:$('#wn').value.trim(),bt,date:new Date().toLocaleDateString('en-CA')});save();render()};
  app.querySelectorAll('[data-wdel]').forEach(b=>b.onclick=()=>{if(confirm('Remove this change?')){T.changes.splice(+b.dataset.wdel,1);save();render()}})}
 function bowLine(id){const s=id&&window.bowSnap?bowSnap(id):null;if(!s)return'';return[s.name,s.type=='compound'&&s.speed?({ATA:'ATA','IBO/ATA':'IBO/ATA',actual:'Measured','':'Speed'}[s.kind]??'IBO')+' '+s.speed+' fps':'',s.ata?s.ata+'" axle to axle':'',s.bh?s.bh+'" brace':''].filter(Boolean).join(' · ')}
+
+function walkKindOf(s,bt){if(bt=='r')return'recurve';if(bt=='c')return'compound';const t=((s&&s.type)||'').toLowerCase();if(t=='barebow'||t=='bare')return'barebow';if(t=='recurve'||(t&&t!='compound'))return'recurve';return'compound'}
+function walkPrefill(T,snap){const s=snap||T.bowSpec||{};const kind=walkKindOf(s,T.bt);const dw=s.dw!=null&&isFinite(+s.dw)?+s.dw:(kind=='compound'?50:30);const dl=s.dl!=null&&isFinite(+s.dl)?+s.dl:null;const rated=s.speed!=null&&isFinite(+s.speed)&&+s.speed>0;const ibo=rated?+s.speed:null;const arrowGr=T.arrow&&T.arrow.tw!=null&&isFinite(+T.arrow.tw)?+T.arrow.tw:null;const fps=T.arrow&&T.arrow.fps!=null&&isFinite(+T.arrow.fps)?+T.arrow.fps:null;return WalkBack.defaultWalk({kind,dw,dl,ibo,arrowGr,fps,height:120})}
+function walkPlanOpts(W){return{kind:W.kind||'compound',dw:W.dw,height:W.height,dl:W.dl,ibo:W.ibo,arrowGr:W.arrowGr,fps:W.fpsSrc=='measured'?W.fps:undefined}}
+function walkRefresh(W){const p=WalkBack.plan(walkPlanOpts(W));W.kind=p.kind;W.dw=p.dw;W.height=p.height;if(W.fpsSrc!='measured'){W.fps=p.fps;W.fpsSrc=p.src}W.distances=p.distances;W.usableCm=p.usableCm;W.nodragMax=p.nodragMax;if(!W.distances.includes(+W.dist))W.dist=W.distances[0];return p}
+function walkDistLine(p){if(!p||!p.distances)return'';const d=p.distances.map(x=>x+' m').join(', ');if(p.distances.length<3)return d+' — only these stay on a target this tall at this speed (estimates).';return d+' (estimates).'}
+function walkSetupCard(T){const W=T.walk,p=walkRefresh(W),kind=W.kind||'compound',H=+W.height||120,preset=[60,80,100,120].includes(H),comp=kind=='compound';
+ const yn=(id,on)=>`<div class="labseg" role="group" aria-label="${id}" id="${id}"><button type="button" data-wbyn="${id}" data-v="1" aria-pressed="${on?'true':'false'}">Yes</button><button type="button" data-wbyn="${id}" data-v="0" aria-pressed="${on?'false':'true'}">No / not sure</button></div>`;
+ return`<div class="card" id="wbsetup"><span class="kicker">Walk back tune</span><h2>Set safe distances</h2>
+ <p class="small" style="margin:0 0 8px">Enter the bow and roughly how tall the target is. The app then gives up to three distances that should stay on the boss, using an estimate of arrow drop (air drag included). These are estimates, not a guarantee — shoot one test arrow first at each new distance, and stop if an arrow lands in the bottom quarter.</p>
+ <label>Bow type</label><div class="labseg" role="group" aria-label="Bow type" id="wbkind"><button type="button" data-wbk="compound" aria-pressed="${kind=='compound'}">Compound</button><button type="button" data-wbk="recurve" aria-pressed="${kind=='recurve'}">Recurve</button><button type="button" data-wbk="barebow" aria-pressed="${kind=='barebow'}">Barebow</button></div>
+ <div class="labgrid2"><div><label for="wb_dw">Draw weight (lb)</label><input id="wb_dw" type="number" inputmode="decimal" min="10" max="90" step="1" value="${h(W.dw||'')}">
+ </div><div><label for="wb_h">Target height</label><select id="wb_h"><option value="60"${H==60?' selected':''}>About 60 cm</option><option value="80"${H==80?' selected':''}>About 80 cm</option><option value="100"${H==100?' selected':''}>About 100 cm</option><option value="120"${H==120?' selected':''}>About 120 cm</option><option value="custom"${preset?'':' selected'}>Custom</option></select></div></div>
+ <div id="wb_hwrap"${preset?' hidden':''}><label for="wb_hcustom">Height (cm)</label><input id="wb_hcustom" type="number" inputmode="decimal" min="40" max="200" step="1" value="${h(H)}"></div>
+ <div><label for="wb_fps">Arrow speed (optional, fps)</label><input id="wb_fps" type="number" inputmode="decimal" min="80" max="400" step="1" placeholder="Leave blank to estimate" value="${W.fpsSrc=='measured'&&W.fps?h(W.fps):''}"><p class="small muted" id="wbfpsnote" style="margin:4px 0 0">${W.fpsSrc=='measured'?'Using the speed you entered.':'Estimated speed: '+h(p.fps)+' fps.'}</p></div>
+ ${comp?`<p class="small" style="margin:10px 0 4px">Before you start:</p>
+ <label>Is your bubble level at full draw?</label>${yn('wbbubble',!!W.bubble)}
+ <label>Has the 2nd axis been checked with a level?</label>${yn('wbaxis2',!!W.axis2)}`:''}
+ <div class="lab-note" id="wbdists"><p style="margin:0"><b>Suggested distances:</b> ${h(walkDistLine(p))}</p>
+ <p class="small" style="margin:6px 0 0">Sight stays on 10 m. Aim at a dot at the top of the target, with a vertical line down from it. Usable drop used for this estimate: ${h(p.usableCm)} cm (target height minus the bottom quarter and a small top margin).${comp?' To go further, you can use a long-distance sight mark instead, so the arrows drop less.':''}</p></div>
+ <button class="btn alt full" id="wbgo" type="button" ${W.dw&&W.height?'':'disabled'}>Start shooting</button></div>`}
+function walkSvg(T){const W=T.walk,H=Math.max(40,+W.height||120),half=H/2,pad=8,top=Math.min(WalkBack.TOP_CM,H*0.08);
+ const vbX=-half-pad,vbY=-pad,vbW=H+2*pad,vbH=H+2*pad;let grid='';
+ for(let i=10;i<H;i+=10){grid+=`<path d="M${-half} ${i}h${H}" stroke="var(--tgrid,#cbd5e1)" stroke-width="0.4"/>`;grid+=`<path d="M${-half+i} 0v${H}" stroke="var(--tgrid,#cbd5e1)" stroke-width="0.4"/>`}
+ const zone=`<rect x="${-half}" y="${0.75*H}" width="${H}" height="${0.25*H}" fill="#00c8ff" fill-opacity="0.14"/>`;
+ const pal=['#1d4ed8','#00c8ff','#0b1f4d'],cols={};(W.distances||[]).forEach((d,i)=>cols[d]=pal[i%3]);
+ const marks=(W.shots||[]).map(s=>{const x=Math.max(-half+1,Math.min(half-1,+s.x||0)),y=Math.max(1,Math.min(H-1,+s.y||0)),c=cols[s.d]||'#1d4ed8';
+  return s.test?`<polygon points="${x},${y-2.8} ${x+2.5},${y+2} ${x-2.5},${y+2}" fill="${c}" stroke="#fff" stroke-width="0.6"/>`:`<circle cx="${x}" cy="${y}" r="2.3" fill="${c}" stroke="#fff" stroke-width="0.6"/>`}).join('');
+ const label=`<text x="${-half+3}" y="${Math.min(H-3,0.75*H-3)}" font-size="4.2" fill="#1d4ed8">Bottom quarter — stop if an arrow lands here</text>`;
+ return`<svg class="tface twalk" id="tface" data-lines="v" data-walk="1" viewBox="${vbX} ${vbY} ${vbW} ${vbH}" role="img" aria-label="Walk-back target with a vertical line from a dot at the top. Tap where each arrow landed."><rect x="${-half}" y="0" width="${H}" height="${H}" fill="var(--tbg,#fff)" stroke="#1d4ed8" stroke-width="0.7"/>${grid}${zone}<path d="M0 ${top}V${H}" stroke="#1d4ed8" stroke-width="1.2"/><circle cx="0" cy="${top}" r="2.4" fill="#1d4ed8"/>${marks}${label}</svg>`}
+function walkStats(T){const W=T.walk,rows=(W.distances||[]).map(d=>{const L=WalkBack.byDist(W,d);if(!L.length)return`<tr><th>${d} m</th><td colspan="3" class="muted">No arrows yet</td></tr>`;
+  const mx=L.reduce((a,s)=>a+(+s.x||0),0)/L.length,my=L.reduce((a,s)=>a+(+s.y||0),0)/L.length;
+  return`<tr><th>${d} m</th><td>${L.length}</td><td>${cm(Math.abs(mx))} cm ${mx>=0?'right':'left'}</td><td>${cm(my)} cm down${WalkBack.inBottomQuarter(my,W.height)?' · bottom quarter':''}</td></tr>`}).join('');
+ return`<table class="labtbl" id="wbstats"><thead><tr><th>Distance</th><th>Arrows</th><th>Left / right</th><th>Drop</th></tr></thead><tbody>${rows}</tbody></table>`}
+function walkRender(T,mine){
+ const W=T.walk|| (T.walk=walkPrefill(T,T.bowSpec));
+ const offer=window._tuneOffer&&mine.find(x=>x.id==window._tuneOffer&&x.id!=T.id);
+ const offerCard=offer?`<div class="card" id="tuneoffer"><p class="small" style="margin:0 0 8px">You have an unfinished ${h(tName(offer))} from ${h(offer.date)}${offer.dist?' · '+h(offer.dist):''}. This screen is a new session.</p><button class="btn ghost" id="tuneofferbtn" type="button">Continue the earlier session</button></div>`:'';
+ if(W.stage!='shoot'){
+  app.innerHTML=offerCard+walkSetupCard(T)+`<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">Delete session</button></div>`;
+  bar('Tuning session','lab_opt','Arrow optimizer');
+  const apply=()=>{const kind=app.querySelector('[data-wbk][aria-pressed=true]');if(kind)W.kind=kind.dataset.wbk;
+   W.dw=parseFloat($('#wb_dw').value)||W.dw;const hs=$('#wb_h').value;W.height=hs=='custom'?(parseFloat($('#wb_hcustom').value)||W.height):+hs;
+   const raw=$('#wb_fps').value.trim();if(raw&&isFinite(+raw)){W.fps=+raw;W.fpsSrc='measured'}else{W.fpsSrc='estimate';W.fps=undefined}
+   if(W.kind=='compound'){const y=(id)=>app.querySelector('#'+id+' [data-v="1"]')&&app.querySelector('#'+id+' [data-v="1"]').getAttribute('aria-pressed')=='true';W.bubble=y('wbbubble');W.axis2=y('wbaxis2')}
+   T.bt=W.kind=='compound'?'c':'r';walkRefresh(W);save()};
+  const saveW=()=>{apply();render()};
+  app.querySelectorAll('[data-wbk]').forEach(b=>b.onclick=()=>{W.kind=b.dataset.wbk;T.bt=W.kind=='compound'?'c':'r';saveW()});
+  app.querySelectorAll('[data-wbyn]').forEach(b=>b.onclick=()=>{const id=b.dataset.wbyn,on=b.dataset.v=='1';if(id=='wbbubble')W.bubble=on;if(id=='wbaxis2')W.axis2=on;save();render()});
+  const ready=()=>$('#wbgo').disabled=!($('#wb_dw').value&&($('#wb_h').value!='custom'||$('#wb_hcustom').value));
+  $('#wb_dw').oninput=ready;$('#wb_hcustom').oninput=ready;
+  $('#wb_h').onchange=()=>{$('#wb_hwrap').hidden=$('#wb_h').value!='custom';saveW()};
+  $('#wb_hcustom').onchange=$('#wb_fps').onchange=$('#wb_dw').onchange=saveW;
+  $('#wbgo').onclick=()=>{apply();if(!W.dw||!W.height)return;W.stage='shoot';W.dist=(W.distances||[10])[0];T.dist=(W.distances||[]).map(d=>d+' m').join(', ');T.bt=W.kind=='compound'?'c':'r';save();render();scrollTo(0,0)};
+  $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
+  $('#tdel').onclick=()=>{if(confirm(`Delete "${T.name||tName(T)}" from ${T.date}? This can't be undone.`)){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;window._tuneOffer=null;save();render()}};
+  const ob=$('#tuneofferbtn');if(ob)ob.onclick=()=>{const id=window._tuneOffer,fresh=T;window._tuneOffer=null;if(fresh&&tuneEmpty(fresh))S.tune=S.tune.filter(x=>x!==fresh);S._tuneId=id;save();render();scrollTo(0,0)};
+  return;
+ }
+ const d=W.dist||(W.distances||[10])[0],L=WalkBack.byDist(W,d),needTest=d!=10&&L.length===0;
+ const low=WalkBack.shotsOf(W).some(s=>WalkBack.inBottomQuarter(s.y,W.height));
+ const v=WalkBack.verdict(W);
+ const pal=['#1d4ed8','#00c8ff','#0b1f4d'];
+ const legend=(W.distances||[]).map((x,i)=>`<span style="color:${pal[i%3]}">●</span> ${x} m`).join(' &nbsp;');
+ const seg=`<div class="labseg" role="group" aria-label="Distance" id="wbdseg">${(W.distances||[]).map(x=>`<button type="button" data-wbd="${x}" aria-pressed="${+x===+d}">${x} m</button>`).join('')}</div>`;
+ const guide=needTest?`<p class="lab-note" id="wbguide">This is a new distance. Shoot <b>one test arrow</b> first at ${d} m. If it lands in the bottom quarter, stop. If it is safe, shoot 3 more at the same mark, without touching the sight.</p>`:(d==10?`<p class="small" id="wbguide" style="margin:0 0 8px">At 10 m, set your windage so you hit the centre line, then shoot 1 to 3 arrows at the mark.</p>`:`<p class="small" id="wbguide" style="margin:0 0 8px">Without touching the sight, shoot 3 arrows at ${d} m at the same mark.</p>`);
+ const warn=low?`<p class="lab-note" id="wbwarn"><b>Stop.</b> An arrow has landed in the bottom quarter of the target. Do not walk back any further — the next distance can miss the boss and break arrows.</p>`:'';
+ const method=`<p class="small tread" id="wbmethod" style="margin:6px 0 0">Draw a dot at the top of the target and a vertical line down from it. At 10 m, set windage to hit the centre line. Shoot 1 to 3 arrows at the mark. Then, without touching the sight, walk back to each distance: one test arrow first, then 3 if it is safe. Stop if an arrow lands in the bottom quarter.</p>`;
+ const verdict=`<p class="lab-note" id="wbverdict">${h(v.text)}</p>`;
+ const head=`<div class="card"><span class="kicker">${h(T.date)} · ${h(tName(T))}${T.dist?' · '+h(T.dist):''}${T.bowName?' · '+h(T.bowName):''}</span><h2>${h(T.name||tName(T))}</h2>`;
+ const tools=`<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost" id="tun">↶ Undo</button><button class="btn ghost" id="tclr">Clear ${d} m</button><button class="btn ghost" id="wbedit">Change distances</button><button class="btn ghost" id="tdone">Done</button><button class="btn ghost" id="tdel">Delete session</button></div>`;
+ app.innerHTML=offerCard+`${head}${seg}<p class="tleg small muted" style="margin:0 0 8px">${legend} &nbsp; ▲ test arrow</p>${guide}${warn}${walkSvg(T)}${tools}</div>
+ <div class="card" id="wbafter"><span class="kicker">Reading</span>${walkStats(T)}${verdict}${method}<p class="small muted" style="margin:8px 0 0">Distances are estimates from a point-mass flight model with air drag, in the style of published work by J.L. Park. Tap the target where each arrow landed. The aim dot is at the top; left and right are from the vertical line.</p>
+ <label for="tnote">Note</label><textarea id="tnote" rows="2">${h(T.note||'')}</textarea></div>${whatCard(T,'walkback')}${arwCard(T,false)}`;
+ bar('Tuning session','lab_opt','Arrow optimizer');
+ const sv=$('#tface');sv.onclick=e=>{const r=sv.getBoundingClientRect(),H=Math.max(40,+W.height||120),half=H/2,pad=8,vbW=H+2*pad,vbH=H+2*pad,vbX=-half-pad,vbY=-pad;
+  const x=vbX+(e.clientX-r.left)/r.width*vbW,y=vbY+(e.clientY-r.top)/r.height*vbH,cur=W.dist||W.distances[0],exist=WalkBack.byDist(W,cur),test=cur!=10&&exist.length===0;
+  (W.shots=W.shots||[]).push({d:+cur,x:+(+x).toFixed(1),y:+(+y).toFixed(1),test,date:new Date().toLocaleDateString('en-CA')});save();render()};
+ app.querySelectorAll('[data-wbd]').forEach(b=>b.onclick=()=>{W.dist=+b.dataset.wbd;save();render()});
+ $('#tun').onclick=()=>{const cur=W.dist;let i=-1;for(let k=(W.shots||[]).length-1;k>=0;k--){if(+W.shots[k].d===+cur){i=k;break}}if(i>=0)W.shots.splice(i,1);else if((W.shots||[]).length)W.shots.pop();save();render()};
+ $('#tclr').onclick=()=>{if(confirm('Clear the arrows at '+W.dist+' m?')){W.shots=(W.shots||[]).filter(s=>+s.d!==+W.dist);save();render()}};
+ $('#wbedit').onclick=()=>{W.stage='setup';save();render();scrollTo(0,0)};
+ $('#tdone').onclick=()=>{S._tuneId=null;save();render()};
+ $('#tdel').onclick=()=>{if(confirm(`Delete "${T.name||tName(T)}" from ${T.date}? This can't be undone.`)){S.tune=S.tune.filter(x=>x!==T);S._tuneId=null;window._tuneOffer=null;save();render()}};
+ const ob=$('#tuneofferbtn');if(ob)ob.onclick=()=>{const id=window._tuneOffer,fresh=T;window._tuneOffer=null;if(fresh&&tuneEmpty(fresh))S.tune=S.tune.filter(x=>x!==fresh);S._tuneId=id;save();render();scrollTo(0,0)};
+ $('#tnote').onchange=e=>{T.note=e.target.value;save()};
+ whatWire(T,'walkback');
+ const ad=$('#tarwcard');if(ad)ad.addEventListener('toggle',()=>{window._tarwOpen=ad.open});
+ const ta=$('#tarwafter');if(ta)ta.onclick=()=>{const a=window.arrowSetup&&arrowSetup();if(a){T.arrowAfter=a;window._tarwOpen=true;save();render()}};arwWire(T);
+ app.querySelectorAll('.card [data-go]').forEach(x=>x.onclick=()=>nav(x.dataset.go));
+}
+
 E.lab_opt=function(){S.tune=S.tune||[];
  const pref=window._tunePref;window._tunePref=null;const pbt=window._tuneBt;window._tuneBt=null;
  if(pref){const mine0=S.tune.filter(t=>t.archer==S.profile),cur=mine0.find(t=>t.id==S._tuneId);window._tuneOffer=(cur&&tKind(cur)==tKind({change:pref,bt:pbt||cur.bt||'c'}))?cur.id:null;S._tuneId=null;tuneStart(pref,{bt:pbt})}
@@ -298,8 +392,8 @@ E.lab_opt=function(){S.tune=S.tune||[];
   <div><label for="t_myarr">Arrows</label><select id="t_myarr"><option value="">None</option>${acs?`<option value="ac"${sdef=='ac'?' selected':''}>Arrow chooser: ${h(arwSum(acs))}</option>`:''}${sets.map(a=>`<option value="${h(a.id)}"${a.id==sdef?' selected':''}>${h(a.name||'Arrows')}</option>`).join('')}</select></div>
   <div id="thandw"><label for="thand">Bow hand</label><select id="thand"><option value="R">Right-handed archer</option><option value="L">Left-handed archer</option></select></div></div>
   <button class="btn alt full" id="tgo" style="margin-top:8px">Start</button></div>
-  ${mine.length?`<div class="card" id="tpast"><span class="kicker">Past sessions</span>${mine.slice().reverse().map(t=>{const k=tKind(t),rc=tScale(t),tq=torqueOn(t);if(tq)torqueEnsure(t);const B=k=='paper'||tq?null:gstats(t.before,rc),A=k=='paper'||tq?null:gstats(t.after,rc),pn=t.paper?(t.paper.before||[]).length+(t.paper.after||[]).length:0,tn=tq?['before','after'].map(g=>['L','R'].map(s=>torquePts(t,g,s).length).reduce((a,b)=>a+b,0)):null;
-   return`<div class="tpastrow">${row('x" data-tune="'+t.id,'🎯',t.name||tName(t),`${t.date} · ${tName(t)}${t.dist?' · '+t.dist:''} · ${k=='paper'?pn+' arrow'+(pn==1?'':'s'):tq?(tn[0]+' before / '+tn[1]+' after'):(B?B.n:0)+' before'+(A?' / '+A.n+' after':'')}`)}<button class="btn ghost tpastdel" data-tdel="${t.id}" aria-label="Delete ${h(t.name||tName(t))} from ${h(t.date)}">Delete</button></div>`}).join('')}</div>`:''}
+  ${mine.length?`<div class="card" id="tpast"><span class="kicker">Past sessions</span>${mine.slice().reverse().map(t=>{const k=tKind(t),rc=tScale(t),tq=torqueOn(t);if(tq)torqueEnsure(t);const B=k=='paper'||tq||k=='walkback'?null:gstats(t.before,rc),A=k=='paper'||tq||k=='walkback'?null:gstats(t.after,rc),pn=t.paper?(t.paper.before||[]).length+(t.paper.after||[]).length:0,tn=tq?['before','after'].map(g=>['L','R'].map(s=>torquePts(t,g,s).length).reduce((a,b)=>a+b,0)):null,wn=t.walk?((t.walk.shots||[]).length):null;
+   return`<div class="tpastrow">${row('x" data-tune="'+t.id,'🎯',t.name||tName(t),`${t.date} · ${tName(t)}${t.dist?' · '+t.dist:''} · ${k=='paper'?pn+' arrow'+(pn==1?'':'s'):tq?(tn[0]+' before / '+tn[1]+' after'):k=='walkback'?(wn||0)+' arrow'+(wn==1?'':'s'):(B?B.n:0)+' before'+(A?' / '+A.n+' after':'')}`)}<button class="btn ghost tpastdel" data-tdel="${t.id}" aria-label="Delete ${h(t.name||tName(t))} from ${h(t.date)}">Delete</button></div>`}).join('')}</div>`:''}
   <p class="small muted">Records where your arrows land and what you changed.</p>`;
   bar('Arrow optimizer','tools','Tools');
   let nbt=snap0&&snap0.type!='compound'?'r':'c';
@@ -312,6 +406,7 @@ E.lab_opt=function(){S.tune=S.tune||[];
   app.querySelectorAll('[data-tdel]').forEach(x=>x.onclick=e=>{e.stopPropagation();const t=S.tune.find(y=>y.id==x.dataset.tdel&&y.archer==S.profile);if(!t)return;
    if(confirm(`Delete "${t.name||tName(t)}" from ${t.date}? This can't be undone.`)){S.tune=S.tune.filter(y=>y!==t);save();render()}});return}
  if(torqueEnsure(T))save();
+ const k0=tKind(T);if(k0=='walkback'){walkRender(T,mine);return}
  const k=tKind(T),rcm=tScale(T),g=T.grp||'before',paper=k=='paper',one=T.change=='Just a group',bare=k=='bare',creep=k=='creep',tq=torqueOn(T),side=T.side||'L';
  const B=paper||tq?null:gstats(T.before,rcm),A=paper||tq?null:gstats(T.after,rcm);
  const LB=bare?'Fletched':creep?'Full draw':'Before',LA=bare?'Bare':creep?'Crept':'After';

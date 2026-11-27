@@ -4,6 +4,17 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 27 Nov 2026, 19:35 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/walkback-tune` off main `e6aa668` (cache `v2026-11-27-1935-walkback`). New Walk back tune (Nathe t1249u "Go", discussion t1243u–t1248u plus Archery Coach). Preview only — do not merge until Nathe says "go live N". Bhutan is not in this PR.
+- Start screen asks bow type, draw weight, target height (60/80/100/120 cm or custom), optional arrow speed, and (compound) bubble / 2nd-axis pre-checks. Then it gives up to three safe distances (first is always 10 m, then mid and max in 5 m steps) from a point-mass flight model with air drag, in the style of J.L. Park's published trajectory work (Park 2011, 2013, and "Modelling arrows in flight"; cited in walkback.js and HANDOFF). Results are labelled estimates. Sight stays on 10 m; usable drop is target height minus the bottom quarter and a small top margin. Drag distances are never longer than the no-drag cap. Compound gets an optional note that a long-distance sight mark can go further. One test arrow first at each new distance; stop warning if an arrow lands in the bottom quarter.
+- Method: dot at the top and a vertical line down; set windage at 10 m; shoot 1–3 close, then walk back without touching the sight. The plot is the target face with the line. Verdicts: compound rest / yoke (or check bubble and 2nd axis first if those pre-checks are not done), move the rest opposite the far miss one small step (~1/32 in) and re-shoot; 3rd axis is not visible on flat ground. Recurve / barebow: sloped vs curved line, both plunger position and spring tension listed (sources disagree), change one thing at a time (~1/8 turn). Once the line is vertical, adjust windage. Only works if the archer groups well. No George / Ryles in the UI.
+- Walk back is back in the helper and the new-session list, in its old place (compound after Torque, before Group tune; recurve after Bare shaft, before Group tune). "Just a group" stays off the list. Old Walk back / Dudley sessions still open on the earlier plot. Main and /test/ copies. Pro gating unchanged. Lingkana untouched.
+- Default estimated distances with the sight on 10 m: compound 60 lb / 120 cm → 10, 25, 35 m; recurve 30 lb / 120 cm → 10, 20, 25 m; recurve 20 lb / 80 cm → 10, 15 m (only two stay on a target that short). A saved IBO/ATA rating can change the estimate.
+- Tests: tools/walkback_test.js 77/77, tools/tuning_test.py 120/120, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass.
+- Half-done: Preview and play-through on the published lab URL, then wait for Nathe's "go live N". Do not merge this PR.
+
 ## 27 Nov 2026, 18:44 AWST — [Jarvis]
 
 - Who: Jarvis.
