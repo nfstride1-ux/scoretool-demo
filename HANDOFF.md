@@ -4,6 +4,81 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 27 Nov 2026, 18:44 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-27-1844-tunelive`), PR #91. Nathe t1240u / t1242u: go-live for tuning except Walk back tune (held back to fix later) and the extra "Just a group" option (removed). Group tune stays on compound and recurve. Old Walk back / Dudley sessions still open. Bhutan PR #93 is not included.
+- Tests: tools/tuning_test.py 104/104, tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass. Gating unchanged. Lingkana untouched.
+- Half-done: Merge only after the preview is played through (including Group tune). Then merge #91 and verify on the live ScoreTool site. Walk back still needs a later fix.
+
+## 27 Nov 2026, 17:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-27-1705-tuneaudit`), PR #91. Nathe t1239u: audited the live pr/91 Tune helper at phone size, compound and recurve, against Archery Coach's 26 Nov order and Easton's guide, with sample data. Fixes: Draw weight / spine opens Arrow chooser (not Calculators); recurve paper vertical tears no longer say "move the rest"; compound bare-shaft rest direction uses Easton in/out; Creep What I changed is cam timing only and the verdict is drop, not tightness; Bow setup shows Coach's checklist; recurve bow form has brace height and tiller.
+- Tests: tools/tuning_test.py 104/104, safety-smoke 15/15, privacy-scan pass. Gating unchanged.
+- Half-done: PR only, not merged. Needs Nathe's "go". Recurve Walk back plunger direction left unstated (Easton has no walk-back test) — needs Coach if he wants a direction rule. My bows is still a specs form, not a cam-timing / nock / rest-centre log; the new checklist covers those.
+- Screenshots: /workspace/st-tuning/audit91/ after republish.
+
+## 27 Nov 2026, 16:39 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-27-1639-walkback`), PR #91. Nathe t1235u and t1236u: Walk back tune keeps the existing Dudley close/far rules (close miss = sight, far miss = rest, yoke if the rest would be off centre) and is only renamed and re-explained. Instructions now say: keep the sight at 5 m, aim at the tip of the vertical line, walk back, and plot where the arrows land (that shows how far the sight is out). The plot is a vertical line. No new verdict logic. Recurve Walk back (plunger) is unchanged. No George or Dudley labels on screen.
+- Tests: tools/tuning_test.py 96/96, safety-smoke 15/15, privacy-scan pass. Gating unchanged.
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay kept).
+- Screenshots: /workspace/st-tuning/22-walkback-compound.png (plus 05-walkback-compound.png from the test).
+
+## 27 Nov 2026, 10:42 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-27-1042-tunefix`), PR #91. Nathe t1234u: (1) Paper left as-is. (2) Bare shaft "next step" on compound no longer mentions a cushion plunger (rest / yoke or cam instead; recurve still has the plunger row). (3) Node / nocking point removed from Tune helper on Compound and Recurve. (4) Creep now opens a Creep tune session (Full draw vs Crept; What I changed is timing only), not Group tune. (5) Group tune is a helper step on both bow types and opens its own session.
+- Tests: tools/tuning_test.py 95/95, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass. No George references.
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay kept).
+- Screenshots: /workspace/st-tuning/16-bare-compound-next.png, 17-helper-compound.png, 18-creep.png, 18-creep-helper.png, 19-group-compound.png, 20-helper-recurve.png, 21-group-recurve.png.
+
+## 26 Nov 2026, 17:55 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-1755-tuneopen`), PR #91. Nathe t1228u: Tune helper was reopening whatever session was already open (his Torque tune), so Paper and every other step showed the wrong test. Each helper step now starts a new session of the matching type. A matching unfinished session is offered, default is the new one. Unrelated sessions are never reopened. Old Torque sessions without the two-way fields now get Torqued left/right (existing points kept as the left groups).
+- Also t1229u: every user-visible "Dudley" / "Dudley / yoke tune" is now "Walk back tune". Recurve Walk-back uses the same label. Old saved sessions still open under the new name. Compound keeps the close/far horizontal-line test; recurve keeps the plunger walk-back.
+- Tests: tools/tuning_test.py 87/87, safety-smoke 15/15, privacy-scan pass. Gating unchanged (tier_gate not rerun; no plans.js/gating change this commit).
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay from pr/92 kept).
+- Screenshots: /workspace/st-tuning/14-paper-helper.png and /workspace/st-tuning/15-torque-helper.png (plus live preview shots after republish).
+
+## 26 Nov 2026, 17:22 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-1722-tunetools`), PR #91. Nathe t1227u (and t1226u): Sight marks is not in the tune section; it stays in My archery (data and gating unchanged). Tools now starts Add bow (My bows), then Add arrows (My arrows), then Tune helper. Bow setup in Tune helper opens My bows, not Sight marks. Back buttons and the plan-lock tab for those screens now go to Tools. Empty-state links updated.
+- Tests: tools/tuning_test.py 70/70, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass. Gating unchanged (lab_gear free; lab_mybows, lab_myarrows, lab_tune Pro).
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay from pr/92 kept).
+- Screenshots: /workspace/st-tuning/12-tools.png and /workspace/st-tuning/13-myarchery.png.
+
+## 26 Nov 2026, 17:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-1705-nogeorge`), PR #91. Nathe t1221u "i dont want references to george at all": every user-visible George / George Ryles / seminar mark is gone from Tune (lists, badges, hints, What I changed). The Easton FOC citation in the Arrow chooser and Calculators now names the article and date only (this citation is also live on main). Advice text is kept. HANDOFF history lines were not edited.
+- Also t1222u: Torque tune now has Torqued left and Torqued right groups on Before and on After, with their own markers and stats, What I changed between the two rounds, and a left-vs-right gap verdict (closer together / both on the line = forgiving). Old torque sessions without the new fields still open.
+- Also t1223u and Archery Coach's order: Tune helper is "Setup, then tune" with a Compound / Recurve toggle. Steps 1-3 shared (Bow setup, Draw weight / spine, Cut length); compound then Paper, Node, Bare shaft, Creep, Torque, Dudley; recurve then optional Paper, Bare shaft, Node, Walk-back, Plunger spring / group tune; Creep is a form note on recurve. Each step opens the existing screen where one exists.
+- Tests: tools/tuning_test.py 64/64, tools/tier_gate_test.py 195/195, safety-smoke 15/15, privacy-scan pass. paid_tier line 98 still the known stale fail, not rerun as a gate.
+- Half-done: PR only, not merged. Needs Nathe's "go". Preview at pr/91 to be republished with this cache (score-load overlay from pr/92 kept).
+- Note: "St George" remains as the official AA historical round name. "George Philip" remains only as a head-to-head test fixture. Code comments in app.js that say source notes are kept in code and never shown were left as comments.
+
+## 26 Nov 2026, 07:05 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Nathe 6:59am "Make tune preview not paid version". plans.js tierOf returns 'pro' only when host is nfstride1-ux.github.io and path matches /scoretool-lab/pr/<n>/ (previewOpen). Live /scoretool-demo/ and localhost never match. Cache v2026-11-26-0659-tuningpreview. pr/91 republished.
+- Also: tools/safety_smoke_test.py now waits for the display-name prompt that can open just after the Score tab (CI race, failed 4 runs in a row; the same race shows on the previous commit locally). No app change.
+- Decision: unlock lives in code behind the address check (not a hand-patched preview copy), so any republish keeps it and merging it changes nothing live.
+
+## 26 Nov 2026, 06:50 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/tuning-overhaul` (cache `v2026-11-26-0643-tuning`), separate from coaching PR #90. Nathe 26 Nov 6:25am "Yes, build the tuning preview": tuning sessions get delete-with-confirm, one bow + one arrow picker (no "Use my arrow setup", no Face), the Concept X 40 vs 37 bow mismatch fixed in bowSnap (fixSpec, display only, saved specs untouched), paper-tune tear keypad, crosshair plots (torque vertical, Dudley horizontal, others both), What I changed (Coach's 26 Nov ~6:13 lists, compound/recurve filter, George marks only where Coach marked), Arrow setup collapsed. New tools/tuning_test.py 41/41. safety-smoke 15/15, privacy-scan pass, plans_manage 18/18, paid_tier 58/59 (line 98 known stale).
+- Found: R3 (bare shaft verdict) and AC1-AC5 were already on main (commits 2eb62ef..96361f8 and the R3 bareVerdict in lab.js); kept and re-checked, not rebuilt.
+- Easton plunger direction: the Tuning and Maintenance Guide has no walk-back test. Its only in/out rule is broadheads p. 12 (RH: left/stiff -> in toward the bow; right/weak -> out). Recurve past setup: spring tension only, not in/out (pp. 8, 14). So no walk-back drift-to-plunger hint is coded.
+- Paper left/right rest direction uses Easton p. 7 (RH release: nock-left tear -> rest right), not Coach's "toward the tear" wording.
+- Half-done: PR only, not merged. Needs Nathe's "go".
+- Note: older Playwright tests that use the retired tester picker (mybows, arrowpick, arrowchooser, ac1-ac5) already time out on main; not touched.
+
 ## 26 Nov 2026, 05:00 AWST — [Jarvis]
 
 - Who: Jarvis.

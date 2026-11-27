@@ -44,7 +44,13 @@ function paidOpen(){
  if(Number.isFinite(end)&&end<=Date.now())return false;
  return true}
 window.scoretoolPaidOpen=paidOpen;
+/* Test previews only (Nathe 26 Nov 6:59am "Make tune preview not paid version"): a pull-request preview on scoretool-lab
+   (nfstride1-ux.github.io/scoretool-lab/pr/<n>/) opens every Plus and Pro feature without a paid account. The live app
+   (/scoretool-demo/) and every other address never match, so live gating is unchanged. */
+const previewOpen=()=>{try{return location.hostname==='nfstride1-ux.github.io'&&/^\/scoretool-lab\/pr\/\d+\//.test(location.pathname)}catch(e){return false}};
+window.scoretoolPreviewOpen=previewOpen;
 window.tierOf=function(){
+ if(previewOpen())return 'pro';
  if(founding())return 'founding';
  if(paidOpen()){const t=read(ENT).tier;if(t==='pro'||!early())return t}
  if(early())return 'early';
@@ -189,7 +195,7 @@ nav=function(v){
  const need=PRO.has(v)?'pro':PLUS.has(v)?'plus':null;
  if(need&&!tierHas(need)){
   view=v;$('#tabs').hidden=false;
-  const sec={stats:'myarch',analytics:'myarch',lab_analysis:'myarch',diary:'myarch',lab_diary:'myarch',lab_squad:'clubs',squad:'clubs',lab_group:'clubs',lab_mybows:'myarch',lab_myarrows:'myarch',lab_chooser:'tools',lab_tune:'tools',lab_opt:'tools',lab_calc:'tools'}[v]||'home';
+  const sec={stats:'myarch',analytics:'myarch',lab_analysis:'myarch',diary:'myarch',lab_diary:'myarch',lab_squad:'clubs',squad:'clubs',lab_group:'clubs',lab_mybows:'tools',lab_myarrows:'tools',lab_chooser:'tools',lab_tune:'tools',lab_opt:'tools',lab_calc:'tools'}[v]||'home';
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===sec?'true':'false'));
   app.innerHTML=`<div class="card" id="tierlock"><span class="kicker">Plan</span><h2>Available on ${need==='pro'?'Pro':'Plus'}</h2><button class="btn" id="tierplans" type="button">See plans</button></div><button class="btn ghost" id="tierback" type="button">Back</button>`;
   document.getElementById('tierplans').onclick=()=>nav('plans');

@@ -4,6 +4,90 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-27-1844-tunelive: Tuning goes live, Walk back held back, Just a group removed
+- Nathe, 27 Nov about 6:32–6:34pm Perth: load the tuning live, keep Group tune, remove the extra "Just a group" option, and hold Walk back tune back to fix later. Bhutan (PR #93) is not in this release.
+- **Held back (not shipped in the live helper or the new-session list):** Walk back tune. Old Walk back / Dudley sessions still open and do not crash.
+- **Removed from the new-session list:** Just a group (the extra group-tuning option). Group tune stays, on compound and recurve.
+- Live helper order — compound: Bow setup, Draw weight / spine, Cut length, Paper, Bare shaft, Creep, Torque, Group tune. Recurve: Bow setup, Draw weight / spine, Cut length, Paper (optional), Bare shaft, Group tune.
+- Cache `v2026-11-27-1844-tunelive`.
+
+### Files
+lab.js, tune.js, test/lab.js, test/tune.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-27-1705-tuneaudit: Tune helper checked against Coach and Easton, and the broken steps fixed
+- Nathe, 27 Nov about 4:54pm Perth: don't hand over steps that don't fit Coach or don't work. A full pass of the live pr/91 Tune helper (compound and recurve, phone size, sample data) found and fixed:
+  - **Draw weight / spine** now opens the Arrow chooser (the makers' charts), not Calculators.
+  - **Paper, recurve:** a nock-high or nock-low tear now says to move the nocking point only, not the rest.
+  - **Bare shaft, compound:** the rest direction is Easton's in toward / out away from the bow (the old "toward the weak/stiff reading" line was the wrong way for a stiff reading).
+  - **Creep:** What I changed is cam timing only, and the verdict is whether the crept group dropped, not group tightness.
+  - **Bow setup:** a short Coach checklist is shown when you arrive from Tune helper. Recurve bows can now store brace height and tiller.
+- Recurve Walk back still does not invent a plunger direction (Easton has no walk-back test). Cache `v2026-11-27-1705-tuneaudit`. Not merged until go-live.
+
+### Files
+lab.js, tune.js, bows.js, test/lab.js, test/tune.js, test/bows.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-27-1639-walkback: Walk back tune uses the Dudley rules, with a vertical line and 5 m sight
+- **Walk back tune** (Nathe, 27 Nov, about 4:36pm Perth: same rules as the Dudley tune, just named Walk back). Keep your sight set at 5 m, aim at the tip of the vertical line, then walk back and plot where the arrows land — that shows how far the sight is out. The close/far rules are unchanged: close miss = move the sight, far miss = move the rest and leave the sight alone, both on the line = done, yoke twists if the rest would end up well off centre. The plot is a vertical line (not a horizontal one). Old "Dudley / yoke tune" sessions still open under this name. Recurve Walk back tune is unchanged (plunger walk-back).
+- Cache version is `v2026-11-27-1639-walkback`. Not merged until go-live.
+
+### Files
+lab.js, tune.js, test/lab.js, test/tune.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-27-1042-tunefix: Bare shaft compound hints, Creep tune, Group tune, no Node step
+- **Bare shaft next steps on compound no longer mention a cushion plunger** (Nathe, 27 Nov, about 10:35am Perth). Compound suggestions are rest left/right, yoke or cam, point weight, draw weight and cut length. Recurve still has the plunger row.
+- **Node / nocking point is removed** from Tune helper on both Compound and Recurve. Height is still handled inside Bare shaft.
+- **Creep tune is its own session**, not Group tune. It compares a Full draw group with a Crept (shortened draw) group. What I changed is timing only (cam timing, or drop-away timing). Recurve still treats creep as a form note, not a step.
+- **Group tune is a step on both Compound and Recurve**, and opens a Group tune session.
+- Cache version is `v2026-11-27-1042-tunefix`. Not merged until go-live.
+
+### Files
+lab.js, tune.js, test/lab.js, test/tune.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-26-1755-tuneopen: Tune helper opens the right test; Dudley renamed Walk back tune
+- **Tune helper opens the matching new session** (Nathe, 26 Nov, about 5:46pm Perth: clicking Paper, or any other tuning step, was opening an already-open Torque session). Each step now starts a new session of that type (Paper keypad, Bare shaft Fletched/Bare, Torque left/right, Walk back tune, Group tune). If you already have an unfinished session of the same type, that is offered, but the screen you land on is the new one. An unrelated open session is never reopened.
+- **Old Torque sessions** that only had Before/After points now show the two-way Torqued left / Torqued right controls. Existing points are kept as the left groups.
+- **Dudley is now Walk back tune** (Nathe, about 5:47pm Perth). The compound Tune helper step, the session type, and the picker all use that name. Recurve Walk-back uses the same label. Older sessions saved as "Dudley / yoke tune" or "Walk-back" still open, and are shown as Walk back tune. Compound Walk back tune keeps the close/far sight-and-rest test (horizontal line); recurve Walk back tune keeps the plunger walk-back (both lines).
+- Cache version is `v2026-11-26-1755-tuneopen`. Not merged until go-live.
+
+### Files
+lab.js, tune.js, test/lab.js, test/tune.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-26-1722-tunetools: Tools — Add bow, Add arrows, then Tune; Sight marks in My archery
+- **Tools starts with the tuning flow** (Nathe, 26 Nov, about 5:15pm Perth): Add bow, then Add arrows, then Tune helper. Arrow chooser, Rounds, Rules and Import my data stay after that. Arrow optimizer still opens from Tune helper.
+- **Sight marks is not in Tools.** It stays in My archery only (same screen and data). The My archery menu now calls it Sight marks.
+- Tune helper's Bow setup step opens My bows (Add bow), not Sight marks. Empty-state links that said "My archery › Setups & sight marks" or "My archery › My bows / My arrows" now point at Tools › Add bow and Tools › Add arrows.
+- Tier gating is unchanged: Sight marks stays free; Add bow, Add arrows and Tune stay Pro.
+- Cache version is `v2026-11-26-1722-tunetools`. Not merged until go-live.
+
+### Files
+lab.js, tune.js, bows.js, arrows.js, plans.js, test/lab.js, test/tune.js, test/bows.js, test/arrows.js, tools/tuning_test.py, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-26-1705-nogeorge: Tuning — no named attributions, two-way torque, Tune helper order
+- **No named attributions on Tune** (Nathe 26 Nov, about 4:50pm Perth: no references to George at all). What I changed lists, paper-tune hints and the how-to-read notes no longer name a person or mention seminar notes. The advice itself is unchanged. The Easton FOC source line in the Arrow chooser and Calculators now names the article and date only.
+- **Torque tune is two-way** (Nathe, about 4:50pm Perth): shoot one end torqued left and one end torqued right (Before), log What I changed, then shoot the same two ends again (After). The four groups have their own markers and stats rows. The verdict compares how far the left and right groups are apart before vs after (closer together, or both on the line, means the setup is more forgiving). Older torque sessions that only have Before / After still open unchanged.
+- **Tune helper is setup first, then the tuning steps in a row**, with a Compound / Recurve toggle (Nathe, and Archery Coach's order). Steps 1-3 are shared: Bow setup, Draw weight / spine, Cut length. Compound then goes Paper, Node / nocking point, Bare shaft, Creep, Torque, Dudley. Recurve then goes optional Paper, Bare shaft, Node / nocking point, Walk-back, Plunger spring / group tune (no Torque or Dudley; Creep is a form note). Each step opens the screen that already does that job.
+- Cache version is `v2026-11-26-1705-nogeorge`. Not merged until go-live.
+
+### Files
+lab.js, lab.css, tune.js, arrowchooser.js, test/arrowchooser.js, test/tune.js, tools/tuning_test.py, qa/defects.md, index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
+## v2026-11-26-0659-tuningpreview: Tuning sessions — tear keypad, crosshair, What I changed
+- **Test previews open everything** (Nathe 6:59am): on a scoretool-lab pull-request preview (`/scoretool-lab/pr/<n>/`) every Plus and Pro feature opens without a paid account. The live app's gating is unchanged (the check only matches that preview address).
+- **Past sessions can be deleted.** Each past tuning session has a Delete button, with a confirm ("Delete … from <date>? This can't be undone."). Cancel keeps it.
+- **One bow picker and one arrow picker** on a new session. The bow picker lists your setups and shows the bow's published figures under it. The arrow picker lists your Arrow chooser setup and your My arrows sets.
+- **Bow mismatch fixed:** a setup named "Hoyt concept x 40" showed "Bow specs: Concept X 37" because the specs saved on it came from another list entry. When a setup's name names a different bow on the list, that bow's published figures are used (Hoyt Concept X 40: IBO/ATA 327 fps, 40" axle to axle, 7.25" brace) and your own draw weight, draw length and let-off are kept. Fixed in the tuning form, the Arrow chooser and the Calculators. Saved specs are not rewritten.
+- **Paper tune:** no target face. A keypad of tear shapes laid out like the scoring pad (nock high-left, high, high-right / left, bullet hole, right / low-left, low, low-right). One tap per arrow, any number of arrows, with Undo and Clear. Shows the count per tear and fix hints for the most common tear (compound or recurve, right- or left-handed).
+- **Other tunes plot on a crosshair** (5 cm grid): Torque tune shows the vertical line only, Dudley / yoke tune the horizontal line only, Group tune and the rest both lines.
+- **What I changed** card on every session: what (dropdown), direction, amount and note, filtered by a Compound / Recurve switch. Lists from Archery Coach (26 Nov, about 6:13am Perth) for paper, bare shaft vs fletched, torque, Dudley / yoke, group and walk-back. Yoke twists can be logged without a rest move.
+- **Arrow setup** (Before / After table) is now an optional section, closed unless you open it.
+- **Walk-back:** Easton's guide has no walk-back test, so the app doesn't say which way to move the plunger from a walk-back line. It quotes Easton's only in/out rule (broadheads, p. 12) and Easton's recurve rule to change spring tension only past setup (pp. 8, 14).
+- Bare shaft vs fletched (R3 verdict + next step) and Arrow chooser AC1-AC5 were already live; they are kept and re-checked here. The bare-shaft verdict now uses the session's Compound / Recurve switch.
+- **Removed:** the "Use my arrow setup" tick box, the Face choice on tuning sessions (old sessions keep their face and are shown at its scale), the separate "Bow specs for this session" and "Arrow set for this session" pickers (replaced by one Bow and one Arrows picker), and "Rest or nock height", "Cam timing or shims" and "Group test" as session types ("Group test" is now "Group tune"; rest, nock and cam changes are logged under What I changed). Old sessions with those names still open. The line "It gives no tuning advice; that's your coach's job." is gone now that the app shows fix hints.
+- Cache version is `v2026-11-26-0659-tuningpreview`. Not merged until go-live.
+
+### Files
+lab.js, lab.css, bows.js, arrows.js, tune.js, plans.js, tools/tuning_test.py (new), index.html, sw.js, version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-26-0458-plansmanage: Plans — manage or cancel, copy fixes
 - Signed-in paid members now see "Your plan" at the top of Plans with a "Manage or cancel subscription" button (opens the billing page where they can change card or cancel). The same button is on the home plan card. Their current plan's button says "Your plan".
 - Back from checkout, Plans opens and keeps checking with the server for about 20 seconds until the new plan shows (the payment confirmation can land a few seconds after the return). If not signed in, it asks to sign in to finish.
