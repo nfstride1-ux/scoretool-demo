@@ -4,6 +4,13 @@ Newest first. Each entry names the version tag shown in Settings.
 
 
 
+## v2026-11-28-0549-walklive: Walk back tune goes live
+
+- Nathe, 28 Nov about 5:48am Perth: "goog dgo live" (t1252u). Walk back tune is in Tune helper and the new-session list again: compound after Torque and before Group tune; recurve after Bare shaft and before Group tune. At the start it asks for bow type (Compound, Recurve or Barebow), draw weight, target height (including Custom) and optional arrow speed, then gives up to three safe distances (always starting at 10 m) from a point-mass flight model with air drag, in the style of J.L. Park's published work. These are estimates. The sight stays on 10 m; aim at a dot at the top of the target with a vertical line down; one test arrow first at each new distance; stop if an arrow lands in the bottom quarter. "Just a group" stays off the list. Old Walk back / Dudley sessions still open. Bhutan is not in this change. Cache `v2026-11-28-0549-walklive`.
+
+### Files
+lab.js, test/lab.js, walkback.js, test/walkback.js, tune.js, test/tune.js, tools/walkback_test.js, tools/tuning_test.py, index.html, test/index.html, sw.js, test/sw.js, version.json, test/version.json, CHANGELOG.md, HANDOFF.md.
+
 ## v2026-11-27-2220-walkback: Walk back start screen is not locked on Compound
 
 - Compound, Recurve and Barebow on the Walk back start screen can be changed freely, including after a saved compound bow has pre-filled the form. Draw weight, target height (including Custom) and optional speed all update the suggested distances live, and Start shooting works even if you go straight from typing a custom height. Preview only — not live until Nathe says go live 94. Cache `v2026-11-27-2220-walkback`.

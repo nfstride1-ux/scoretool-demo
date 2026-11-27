@@ -4,6 +4,13 @@ Read this file first, then [PROJECT_RULES.md](PROJECT_RULES.md).
 
 Before you stop, add a signed entry in Australia/Perth time. Say who you are, what is done, what is half-done, what is next, and any decision. Sign with one tag: `[Claude]` `[ChatGPT]` `[OpenAI]` `[Jarvis]` `[Grok Bot]` `[Cursor]`.
 
+## 28 Nov 2026, 05:49 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/walkback-tune` / PR #94 (cache `v2026-11-28-0549-walklive`). Nathe t1252u "goog dgo live": Walk back tune is going live. It is back in Tune helper and the new-session list (compound after Torque, before Group tune; recurve after Bare shaft, before Group tune). "Just a group" stays off. Old Walk back / Dudley sessions still open. Bhutan PR #93 is not included. PRs #1, #90, #92 and #93 were not touched.
+- Tests before merge: tools/walkback_test.js 77/77, safety-smoke 15/15 (one earlier "squad is not defined" flake, clean on rerun), privacy-scan pass. The start-screen lock fix and full preview play-through (412/412 at 390 and 1280, main and /test/) were already on this branch.
+- Half-done: Merge #94, wait for GitHub Pages, then a full real-click check on the live site and /test/.
+
 ## 27 Nov 2026, 22:30 AWST — [Jarvis]
 
 - Who: Jarvis.
